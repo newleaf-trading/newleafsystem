@@ -35,7 +35,10 @@ const path       = require('path');
 const { randomUUID } = require('crypto');
 const { fetchSentiment, computeModifier, buildSentimentContext } = require('./sentiment-engine.cjs');
 const { fetchIndicators, buildIndicatorsContext, validateIndicatorsInResponse } = require('./indicators-fetch.cjs');
+const provenance = require('./firestore-helpers.cjs');
 const CONFIG = require('./config.cjs');
+
+const PROMPT_SEMVER = 'publish-pick-v3.2';
 
 // ── Config ──────────────────────────────────────────────────────────────────
 const ALPACA    = 'https://data.alpaca.markets';
@@ -418,6 +421,7 @@ function extractJSON(raw) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function main() {
+  provenance.initProvenance();
   const weekId = getISOWeek();
   log('');
   log('  ═══════════════════════════════════════════════════════════');
@@ -524,7 +528,8 @@ async function main() {
 
   // ── Step 7: Write tile to Firestore ─────────────────────────────────────
   log('  📝 Writing tile to Firestore...');
-  await db.collection('tiles').doc(tileId).set(tile);
+  const tileProvenanceOpts = { modelUsed: 'n/a', promptVersion: 'n/a', analysisSource: 'publish-pick' };
+  await provenance.writeTileWithProvenance(db, tileId, tile, tileProvenanceOpts);
   log(`     tiles/${tileId} ✅`);
 
   // ── Step 8: Fetch computed indicators ────────────────────────────────────
@@ -549,13 +554,18 @@ async function main() {
   validateIndicatorsInResponse(analysis, indicators);
   log('     Analysis validated ✅');
 
-  // Push to Firestore analyses/
-  await db.collection('analyses').doc(tileId).set({
+  // Push to Firestore analyses/ with provenance
+  const analysisOpts = {
+    modelUsed: 'claude-cli',
+    promptVersion: provenance.computePromptVersion(PROMPT_SEMVER, prompt),
+    analysisSource: 'publish-pick',
+  };
+  await provenance.writeAnalysisWithProvenance(db, tileId, {
     ...analysis,
     _sentiment: sentiment || null,
     _generatedAt: admin.firestore.FieldValue.serverTimestamp(),
     _tileId: tileId, _symbol: SYMBOL, _strategy: result.strategy,
-  });
+  }, analysisOpts);
   log(`     analyses/${tileId} ✅`);
 
   // ── Step 8: Save enriched-pick.json ────────────────────────────────────
@@ -611,14 +621,16 @@ async function main() {
     ivContext: enrichedPick.ivContext,
   };
 
+  const weekOpts = { modelUsed: 'n/a', promptVersion: 'n/a', analysisSource: 'publish-pick' };
+
   if (weekDoc.exists) {
     // Append to existing week
-    await weekRef.update({
+    await provenance.writeWeeklyPicksWithProvenance(db, weekId, {
       tileIds: admin.firestore.FieldValue.arrayUnion(tileId),
       picks: admin.firestore.FieldValue.arrayUnion(pickSummary),
       tileCount: admin.firestore.FieldValue.increment(1),
       lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
-    });
+    }, weekOpts, 'update');
     log(`     Appended to weeklyPicks/${weekId} ✅`);
   } else {
     // Create new week
@@ -627,13 +639,13 @@ async function main() {
     const friday = new Date(monday); friday.setDate(monday.getDate() + 4);
     const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-    await weekRef.set({
+    await provenance.writeWeeklyPicksWithProvenance(db, weekId, {
       weekId, status: 'current',
       dateRange: `${fmt(monday)} — ${fmt(friday)}`,
       publishedAt: admin.firestore.FieldValue.serverTimestamp(),
       theme: 'Options strategies selected by NewLeaf scoring engine',
       tileIds: [tileId], tileCount: 1, picks: [pickSummary],
-    });
+    }, weekOpts, 'set');
     log(`     Created weeklyPicks/${weekId} ✅`);
   }
 
