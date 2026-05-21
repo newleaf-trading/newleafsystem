@@ -1,4 +1,5 @@
 import type { Bar } from './alpaca.js';
+import { sma, rsi, bollingerBands, macd as computeMacd } from '../../../shared/indicators/index.js';
 
 export interface TechnicalIndicators {
   price: number;
@@ -14,31 +15,12 @@ export interface TechnicalIndicators {
   atr14: number;
   priceVsSma: string; // "above_all" | "below_all" | "mixed"
   smaTrend: string;   // "bullish" | "bearish" | "mixed"
+  macdLine: number;
+  macdSignal: number;
+  macdHistogram: number;
 }
 
-function sma(closes: number[], period: number): number {
-  if (closes.length < period) return 0;
-  const slice = closes.slice(-period);
-  return slice.reduce((a, b) => a + b, 0) / period;
-}
-
-function rsi(closes: number[], period = 14): number {
-  if (closes.length < period + 1) return 50;
-  let gains = 0, losses = 0;
-  for (let i = closes.length - period; i < closes.length; i++) {
-    const diff = closes[i] - closes[i - 1];
-    if (diff > 0) gains += diff;
-    else losses -= diff;
-  }
-  if (losses === 0) return 100;
-  const rs = (gains / period) / (losses / period);
-  return +(100 - 100 / (1 + rs)).toFixed(1);
-}
-
-function stddev(values: number[], mean: number): number {
-  const variance = values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / values.length;
-  return Math.sqrt(variance);
-}
+// ── ADX/ATR helpers (bar-based, stay local) ─────────────────────────────────
 
 function trueRange(bars: Bar[]): number[] {
   const tr: number[] = [];
@@ -79,36 +61,32 @@ function adx(bars: Bar[], period = 14): number {
   return +((Math.abs(pdi - mdi) / dxSum) * 100).toFixed(1);
 }
 
+// ── Main computation ────────────────────────────────────────────────────────
+
 export function computeIndicators(bars: Bar[], currentPrice?: number): TechnicalIndicators {
   const closes = bars.map(b => b.c);
   const price = currentPrice ?? closes[closes.length - 1] ?? 0;
 
+  // Delegated to shared/indicators
   const sma20Val = sma(closes, 20);
   const sma50Val = sma(closes, 50);
   const sma100Val = sma(closes, 100);
   const sma200Val = sma(closes, 200);
   const rsi14Val = rsi(closes);
+  const bb = bollingerBands(closes, 20, 2);
+  const macdResult = computeMacd(closes);
+
+  // Local: ADX, ATR (bar-based, not in shared/)
   const adx14Val = adx(bars);
-
-  // Bollinger Bands (20-period, 2 std dev)
-  const bb20 = closes.slice(-20);
-  const bbMean = sma20Val;
-  const bbStd = bb20.length >= 20 ? stddev(bb20, bbMean) : 0;
-  const bollingerUpper = +(bbMean + 2 * bbStd).toFixed(2);
-  const bollingerLower = +(bbMean - 2 * bbStd).toFixed(2);
-  const bollingerWidth = bbMean > 0 ? +((bollingerUpper - bollingerLower) / bbMean * 100).toFixed(2) : 0;
-
-  // ATR
   const trArr = trueRange(bars.slice(-15));
   const atr14 = trArr.length >= 14 ? +(trArr.slice(-14).reduce((a, b) => a + b, 0) / 14).toFixed(2) : 0;
 
-  // SMA alignment
+  // Local: SMA alignment interpretation
   const smas = [sma20Val, sma50Val, sma100Val, sma200Val].filter(s => s > 0);
   const aboveAll = smas.every(s => price > s);
   const belowAll = smas.every(s => price < s);
   const priceVsSma = aboveAll ? 'above_all' : belowAll ? 'below_all' : 'mixed';
 
-  // SMA trend (are SMAs in bullish order: 20 > 50 > 100 > 200?)
   const bullishOrder = sma20Val > sma50Val && sma50Val > sma100Val && sma100Val > sma200Val;
   const bearishOrder = sma20Val < sma50Val && sma50Val < sma100Val && sma100Val < sma200Val;
   const smaTrend = bullishOrder ? 'bullish' : bearishOrder ? 'bearish' : 'mixed';
@@ -120,12 +98,15 @@ export function computeIndicators(bars: Bar[], currentPrice?: number): Technical
     sma100: +sma100Val.toFixed(2),
     sma200: +sma200Val.toFixed(2),
     rsi14: rsi14Val,
-    bollingerUpper,
-    bollingerLower,
-    bollingerWidth,
+    bollingerUpper: bb.upper,
+    bollingerLower: bb.lower,
+    bollingerWidth: bb.width,
     adx14: adx14Val,
-    atr14,
+    atr14: +atr14,
     priceVsSma,
     smaTrend,
+    macdLine: macdResult?.macdLine ?? 0,
+    macdSignal: macdResult?.signalLine ?? 0,
+    macdHistogram: macdResult?.histogram ?? 0,
   };
 }

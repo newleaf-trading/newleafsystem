@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Shared technical indicator computations for the NewLeaf monorepo",
   "main": "index.js",
+  "types": "index.d.ts",
   "license": "UNLICENSED",
   "private": true
 }
