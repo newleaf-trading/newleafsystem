@@ -34,6 +34,7 @@ const fs         = require('fs');
 const path       = require('path');
 const { randomUUID } = require('crypto');
 const { fetchSentiment, computeModifier, buildSentimentContext } = require('./sentiment-engine.cjs');
+const { fetchIndicators, buildIndicatorsContext, validateIndicatorsInResponse } = require('./indicators-fetch.cjs');
 const CONFIG = require('./config.cjs');
 
 // ── Config ──────────────────────────────────────────────────────────────────
@@ -344,7 +345,7 @@ function buildStrategy(strategyName, spot, calls, puts, expiry) {
 
 // ── Claude CLI ──────────────────────────────────────────────────────────────
 // Reuses the prompt + call logic from analyse-tiles.cjs
-function buildClaudePrompt(tile) {
+function buildClaudePrompt(tile, indicators) {
   const legs = (tile.legs || []).map(l =>
     `  ${l.action} ${l.type} $${l.strike} @ mid=${fmtP(l.premium)} | delta=${l.delta ?? 'N/A'} theta=${l.theta ?? 'N/A'} vega=${l.vega ?? 'N/A'}`
   ).join('\n');
@@ -355,6 +356,8 @@ GAMMA WALL CONTEXT:
   Call Wall:      ${fmtP(tile.gammaData.call_wall)}
   Gamma Flip:     ${fmtP(tile.gammaData.gamma_flip)}
   Confidence:     ${tile.gammaData.confidence_score ? (tile.gammaData.confidence_score * 100).toFixed(0) + '%' : 'N/A'}` : '';
+
+  const indicatorsCtx = buildIndicatorsContext(indicators);
 
   return `You are a professional options analyst for NewLeaf Trading.
 Generate a complete deep analysis JSON document for the tile below.
@@ -379,16 +382,19 @@ ${gammaCtx}
 NET GREEKS:
   Delta: ${tile.greeks?.netDelta ?? 'N/A'}  Theta: ${tile.greeks?.netTheta ?? 'N/A'}
   Vega:  ${tile.greeks?.netVega ?? 'N/A'}   Gamma: ${tile.greeks?.netGamma ?? 'N/A'}
+${indicatorsCtx}
 
 OUTPUT INSTRUCTIONS:
 Return ONLY a valid JSON object (no markdown, no backticks).
 The JSON must have these exact top-level keys:
 {
   "strategyRationale": { "whyThisStrategy": "...", "whyTheseStrikes": "...", "whyThisExpiry": "...", "alternativesConsidered": [{"strategy":"...","reason":"..."}] },
-  "technicalIndicators": { "rsi": {"value":0,"signal":"...","description":"..."}, "bollingerBands": {"upper":0,"middle":0,"lower":0,"width":0,"signal":"...","description":"..."}, "macd": {"macdLine":0,"signalLine":0,"histogram":0,"signal":"...","description":"..."}, "movingAverages": {"sma20":0,"sma50":0,"sma100":0,"signal":"...","description":""}, "impliedVolatility": {"currentIV":0,"ivRank":0,"ivPercentile":0,"historicalVol30":0,"description":"..."}, "supportResistance": {"support":[{"level":0,"strength":"...","description":"..."}],"resistance":[{"level":0,"strength":"...","description":"..."}]} },
+  "technicalIndicators": { "rsi": {"value":<EXACT rsi14 from GROUND TRUTH>,"signal":"...","description":"..."}, "bollingerBands": {"upper":<EXACT upper from GROUND TRUTH>,"middle":<EXACT middle from GROUND TRUTH>,"lower":<EXACT lower from GROUND TRUTH>,"width":<EXACT width from GROUND TRUTH>,"signal":"...","description":"..."}, "macd": {"macdLine":<EXACT line from GROUND TRUTH>,"signalLine":<EXACT signal from GROUND TRUTH>,"histogram":<EXACT histogram from GROUND TRUTH>,"signal":"...","description":"..."}, "movingAverages": {"sma20":<EXACT SMA20 from GROUND TRUTH>,"sma50":<EXACT SMA50 from GROUND TRUTH>,"sma100":<EXACT SMA100 from GROUND TRUTH>,"signal":"...","description":""}, "impliedVolatility": {"currentIV":0,"ivRank":0,"ivPercentile":0,"historicalVol30":0,"description":"..."}, "supportResistance": {"support":[{"level":0,"strength":"...","description":"..."}],"resistance":[{"level":0,"strength":"...","description":"..."}]} },
   "thetaDecaySchedule": { "description": "...", "dailyDecay": [{"daysToExpiry":0,"dailyTheta":0,"cumulativeTheta":0}], "earlyCloseRecommendation": "..." },
   "riskAnalysis": { "maxPainScenario": "...", "earningsRisk": "...", "dividendRisk": "...", "eventRisk": "...", "managementPlan": "..." }
 }
+For rsi, bollingerBands, macd, and movingAverages: use the EXACT numeric values from GROUND TRUTH TECHNICAL INDICATORS above. Write your own signal and description text interpreting those values.
+impliedVolatility and supportResistance: generate your best estimates (these are not yet computed server-side — TODO).
 Be specific to ${tile.symbol} and ${tile.strategy}. Use actual spot price ${fmtP(tile.spotPrice)}, strikes, and metrics. Return ONLY JSON.`;
 }
 
@@ -521,11 +527,16 @@ async function main() {
   await db.collection('tiles').doc(tileId).set(tile);
   log(`     tiles/${tileId} ✅`);
 
-  // ── Step 8: Claude analysis ─────────────────────────────────────────────
+  // ── Step 8: Fetch computed indicators ────────────────────────────────────
+  log('  📊 Fetching computed indicators from API...');
+  const indicators = await fetchIndicators(SYMBOL);
+  log(`     RSI=${indicators.rsi14} MACD=${indicators.macdLine.toFixed(3)} SMA20=${indicators.sma20}`);
+
+  // ── Step 9: Claude analysis ─────────────────────────────────────────────
   log('  🤖 Running Claude analysis (30-60s)...');
   const enrichedTile = { ...tile, spotPrice: snapshot.price };
   const sentimentCtx = buildSentimentContext(sentiment);
-  const prompt = buildClaudePrompt(enrichedTile) + (sentimentCtx ? '\n' + sentimentCtx : '');
+  const prompt = buildClaudePrompt(enrichedTile, indicators) + (sentimentCtx ? '\n' + sentimentCtx : '');
   const raw = callClaude(prompt);
   const analysis = extractJSON(raw);
 
@@ -533,6 +544,9 @@ async function main() {
   for (const key of ['strategyRationale', 'technicalIndicators', 'thetaDecaySchedule', 'riskAnalysis']) {
     if (!analysis[key]) throw new Error(`Claude missing: ${key}`);
   }
+
+  // Validate LLM echoed back ground-truth indicator values
+  validateIndicatorsInResponse(analysis, indicators);
   log('     Analysis validated ✅');
 
   // Push to Firestore analyses/

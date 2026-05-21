@@ -29,6 +29,7 @@ const { execSync, spawnSync } = require('child_process');
 const fs     = require('fs');
 const path   = require('path');
 const { fetchSentiment, buildSentimentContext, computeModifier } = require('./sentiment-engine.cjs');
+const { fetchIndicators, buildIndicatorsContext, validateIndicatorsInResponse } = require('./indicators-fetch.cjs');
 const CONFIG = require('./config.cjs');
 
 // ── Firebase Init ──────────────────────────────────────────────────────────────
@@ -71,7 +72,7 @@ function getISOWeek(date = new Date()) {
 
 // ── Build Claude Prompt for a tile ────────────────────────────────────────────
 
-function buildPrompt(tile, sentimentCtx) {
+function buildPrompt(tile, sentimentCtx, indicators) {
   const legs = (tile.legs || []).map(l =>
     `  ${l.action?.toUpperCase()} ${l.type?.toUpperCase()} $${l.strike} @ mid=${fmtPrice(l.mid || l.premium)}` +
     ` | δ=${l.delta ?? 'N/A'}  θ=${l.theta ?? 'N/A'}  ν=${l.vega ?? 'N/A'}`
@@ -92,6 +93,8 @@ NET GREEKS:
   Net Theta:  ${tile.greeks.netTheta ?? 'N/A'} (per share)
   Net Vega:   ${tile.greeks.netVega ?? 'N/A'}
   Net Gamma:  ${tile.greeks.netGamma ?? 'N/A'}` : '';
+
+  const indicatorsCtx = buildIndicatorsContext(indicators);
 
   return `You are a professional options analyst for NewLeaf Trading.
 Generate a complete deep analysis JSON document for the tile below.
@@ -115,6 +118,7 @@ LEGS:
 ${legs}
 ${gammaCtx}
 ${greeksCtx}
+${indicatorsCtx}
 ${sentimentCtx || ''}
 
 OUTPUT INSTRUCTIONS:
@@ -134,29 +138,29 @@ The JSON must follow this EXACT schema:
   },
   "technicalIndicators": {
     "rsi": {
-      "value": <number 30-70 based on strategy direction>,
+      "value": <EXACT rsi14 value from GROUND TRUTH above>,
       "signal": "<bullish|bearish|neutral|bullish_bias|slightly_bearish>",
       "description": "1-2 sentences interpreting RSI for this setup"
     },
     "bollingerBands": {
-      "upper": <spot * 1.06>,
-      "middle": <spot>,
-      "lower": <spot * 0.94>,
-      "width": <percent>,
+      "upper": <EXACT upper from GROUND TRUTH above>,
+      "middle": <EXACT middle from GROUND TRUTH above>,
+      "lower": <EXACT lower from GROUND TRUTH above>,
+      "width": <EXACT width from GROUND TRUTH above>,
       "signal": "<neutral|bullish|bearish|wide_bands|low_vol>",
       "description": "1-2 sentences about BB context"
     },
     "macd": {
-      "macdLine": <number>,
-      "signalLine": <number>,
-      "histogram": <number>,
+      "macdLine": <EXACT line from GROUND TRUTH above>,
+      "signalLine": <EXACT signal from GROUND TRUTH above>,
+      "histogram": <EXACT histogram from GROUND TRUTH above>,
       "signal": "<bullish|bearish|neutral|slightly_bearish|slightly_bullish>",
       "description": "1-2 sentences about MACD momentum"
     },
     "movingAverages": {
-      "sma20": <spot * ~0.99>,
-      "sma50": <spot * ~0.97>,
-      "sma100": <spot * ~0.94>,
+      "sma20": <EXACT SMA20 from GROUND TRUTH above>,
+      "sma50": <EXACT SMA50 from GROUND TRUTH above>,
+      "sma100": <EXACT SMA100 from GROUND TRUTH above>,
       "crossoverDaysAgo": <number or null>,
       "isBullish": <true|false>,
       "signal": "<bullish|bearish|neutral|bullish_bias>",
@@ -203,10 +207,11 @@ The JSON must follow this EXACT schema:
   }
 }
 
+For rsi, bollingerBands, macd, and movingAverages: use the EXACT numeric values from GROUND TRUTH TECHNICAL INDICATORS above. Write your own signal and description text interpreting those values.
+impliedVolatility and supportResistance: generate your best estimates (these are not yet computed server-side — TODO).
 Be specific to ${tile.symbol || tile.ticker} and the ${tile.strategy} strategy.
 Use the actual spot price (${fmtPrice(tile.underlyingPrice || tile.currentPrice)}), strikes, and metrics from the tile data above.
 For theta decay, use netTheta=${fmtPrice(tile.netTheta)}/day as baseline.
-DO NOT use placeholder values — generate real analysis.
 Return ONLY the JSON object, nothing else.`;
 }
 
@@ -353,10 +358,15 @@ async function main() {
         continue;
       }
 
-      // Build prompt with sentiment context
+      // Fetch computed indicators from API
+      log('  → Fetching computed indicators...');
+      const indicators = await fetchIndicators(symbol);
+      log(`     RSI=${indicators.rsi14} MACD=${indicators.macdLine.toFixed(3)} SMA20=${indicators.sma20}`);
+
+      // Build prompt with sentiment context and ground-truth indicators
       log('  → Building prompt...');
       const sentimentCtx = buildSentimentContext(sentiment);
-      const prompt = buildPrompt(tile, sentimentCtx);
+      const prompt = buildPrompt(tile, sentimentCtx, indicators);
       if (VERBOSE) {
         log('  ── PROMPT ──');
         log(prompt.slice(0, 500) + '...');
@@ -377,8 +387,10 @@ async function main() {
       log('  → Parsing analysis JSON...');
       const analysis = extractJSON(raw);
 
-      // Validate
+      // Validate structure
       validate(analysis);
+      // Validate LLM echoed back ground-truth indicator values
+      validateIndicatorsInResponse(analysis, indicators);
       log('  → Validation passed ✅');
 
       // Save analysis JSON locally
