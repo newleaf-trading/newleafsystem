@@ -1,0 +1,8 @@
+{
+  "name": "newleafsystem-shared-indicators",
+  "version": "0.1.0",
+  "description": "Shared technical indicator computations for the NewLeaf monorepo",
+  "main": "index.js",
+  "license": "UNLICENSED",
+  "private": true
+}
