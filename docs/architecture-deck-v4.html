@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NewLeaf Architecture v4 — Monorepo State & Forward Plan</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1c2333;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --red: #f85149;
+      --orange: #d29922;
+      --purple: #bc8cff;
+      --pink: #f778ba;
+      --invest: #3fb950;
+      --picks: #58a6ff;
+      --workbench: #f778ba;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.6;
+    }
+    .header {
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+      border-bottom: 1px solid var(--border); padding: 40px 60px; text-align: center;
+    }
+    .header h1 {
+      font-size: 2.2rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 8px;
+    }
+    .header h1 span { color: var(--green); }
+    .header h1 .v2 {
+      font-size: 1rem; vertical-align: super; color: var(--orange);
+      margin-left: 8px; font-weight: 500;
+    }
+    .header p { color: var(--text-muted); font-size: 1rem; }
+    .header .updated {
+      margin-top: 12px; font-size: 0.8rem; color: var(--text-muted); font-style: italic;
+    }
+    .tab-bar {
+      display: flex; justify-content: center; gap: 4px;
+      padding: 20px 60px 0; background: var(--bg);
+      position: sticky; top: 0; z-index: 100;
+      border-bottom: 1px solid var(--border); flex-wrap: wrap;
+    }
+    .tab {
+      padding: 12px 22px; font-size: 0.88rem; font-weight: 600;
+      color: var(--text-muted); background: transparent; border: none;
+      border-bottom: 2px solid transparent; cursor: pointer;
+      transition: all 0.2s; font-family: inherit;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .section { max-width: 1400px; margin: 0 auto; padding: 40px 60px; }
+    .section-title {
+      font-size: 1.5rem; font-weight: 700; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .section-title .badge {
+      font-size: 0.7rem; padding: 3px 10px; border-radius: 20px;
+      font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .badge-current { background: var(--red); color: #fff; }
+    .badge-target { background: var(--green); color: #fff; }
+    .badge-plan { background: var(--accent); color: #000; }
+    .badge-reality { background: var(--orange); color: #000; }
+    .section-sub {
+      color: var(--text-muted); margin-bottom: 24px; font-size: 0.95rem;
+      max-width: 900px; line-height: 1.65;
+    }
+    .callout {
+      background: rgba(210, 153, 34, 0.08); border-left: 3px solid var(--orange);
+      padding: 16px 20px; margin: 20px 0; border-radius: 4px; font-size: 0.92rem;
+    }
+    .callout strong { color: var(--orange); }
+    .callout.green { background: rgba(63, 185, 80, 0.08); border-left-color: var(--green); }
+    .callout.green strong { color: var(--green); }
+    .callout.red { background: rgba(248, 81, 73, 0.08); border-left-color: var(--red); }
+    .callout.red strong { color: var(--red); }
+    .callout.blue { background: rgba(88, 166, 255, 0.08); border-left-color: var(--accent); }
+    .callout.blue strong { color: var(--accent); }
+    .stats-row {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px; margin: 24px 0 36px;
+    }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 18px 20px;
+    }
+    .stat-num { font-size: 1.9rem; font-weight: 700; line-height: 1.1; margin-bottom: 2px; }
+    .stat-num.green { color: var(--green); }
+    .stat-num.red { color: var(--red); }
+    .stat-num.orange { color: var(--orange); }
+    .stat-num.blue { color: var(--accent); }
+    .stat-num.purple { color: var(--purple); }
+    .stat-label {
+      font-size: 0.78rem; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.4px;
+    }
+    .products {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 16px; margin: 20px 0 36px;
+    }
+    .product {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px;
+      position: relative; overflow: hidden;
+    }
+    .product::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 3px; background: var(--accent-color);
+    }
+    .product[data-c="invest"] { --accent-color: var(--invest); }
+    .product[data-c="picks"] { --accent-color: var(--picks); }
+    .product[data-c="workbench"] { --accent-color: var(--workbench); }
+    .product .tag {
+      display: inline-block; font-size: 0.65rem; padding: 2px 8px;
+      border-radius: 4px; font-weight: 700; letter-spacing: 0.6px;
+      background: var(--accent-color); color: #000; margin-bottom: 10px;
+    }
+    .product h3 { font-size: 1.05rem; margin-bottom: 4px; }
+    .product .url {
+      font-family: 'SF Mono', Monaco, monospace; font-size: 0.72rem;
+      color: var(--text-muted); margin-bottom: 12px; word-break: break-all;
+    }
+    .product p {
+      font-size: 0.84rem; color: var(--text-muted);
+      line-height: 1.55; margin-bottom: 12px;
+    }
+    .product .audience {
+      font-size: 0.72rem; color: var(--text-muted);
+      padding-top: 10px; border-top: 1px solid var(--border);
+      text-transform: uppercase; letter-spacing: 0.4px;
+    }
+    .product .audience strong { color: var(--accent-color); }
+    .arch-diagram { display: flex; flex-direction: column; gap: 20px; }
+    .arch-layer {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 22px; position: relative;
+    }
+    .arch-layer.bypass { border-color: rgba(248, 81, 73, 0.45); }
+    .arch-layer.ok { border-color: rgba(63, 185, 80, 0.45); }
+    .arch-layer.partial { border-color: rgba(210, 153, 34, 0.45); }
+    .layer-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 16px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .layer-title {
+      font-size: 1.05rem; font-weight: 700;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .layer-tag {
+      font-size: 0.65rem; padding: 3px 9px; border-radius: 4px;
+      font-weight: 700; letter-spacing: 0.5px;
+    }
+    .tag-green { background: var(--green); color: #000; }
+    .tag-red { background: var(--red); color: #fff; }
+    .tag-orange { background: var(--orange); color: #000; }
+    .tag-blue { background: var(--accent); color: #000; }
+    .layer-port {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.78rem; color: var(--text-muted);
+    }
+    .box-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+    .box-grid.wide { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .box {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px 16px;
+    }
+    .box-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; }
+    .box-detail { font-size: 0.78rem; color: var(--text-muted); line-height: 1.55; }
+    .box-detail code {
+      background: rgba(88, 166, 255, 0.1); color: var(--accent);
+      padding: 1px 5px; border-radius: 3px;
+      font-size: 0.74rem; font-family: 'SF Mono', Monaco, monospace;
+    }
+    .model {
+      display: inline-block; background: rgba(188, 140, 255, 0.15); color: var(--purple);
+      padding: 1px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 600;
+      margin: 1px 2px;
+    }
+    .good { color: var(--green); font-weight: 600; }
+    .bad { color: var(--red); font-weight: 600; }
+    .warn { color: var(--orange); font-weight: 600; }
+    .connections {
+      margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .conn { font-size: 0.74rem; padding: 4px 10px; border-radius: 4px; }
+    .conn-ok { background: rgba(63, 185, 80, 0.12); color: var(--green); }
+    .conn-bad { background: rgba(248, 81, 73, 0.12); color: var(--red); }
+    .conn-warn { background: rgba(210, 153, 34, 0.12); color: var(--orange); }
+    .flow-arrow {
+      text-align: center; font-size: 0.8rem;
+      color: var(--text-muted); letter-spacing: 1px; padding: 4px 0;
+    }
+    .flow-arrow.bad-arrow { color: var(--red); }
+    .flow-arrow.ok-arrow { color: var(--green); }
+    .flow-arrow.warn-arrow { color: var(--orange); }
+    .matrix-wrap {
+      overflow-x: auto; border: 1px solid var(--border);
+      border-radius: 10px; background: var(--surface);
+    }
+    table.matrix { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .matrix th {
+      background: var(--surface2); padding: 12px 16px; text-align: left;
+      font-weight: 600; font-size: 0.78rem; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--text-muted);
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .matrix td {
+      padding: 11px 16px; border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+      vertical-align: top;
+    }
+    .matrix tr:last-child td { border-bottom: none; }
+    .matrix tr:hover td { background: rgba(255, 255, 255, 0.02); }
+    .matrix .field {
+      font-family: 'SF Mono', Monaco, monospace; font-size: 0.78rem; color: var(--accent);
+    }
+    .status-pill {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.4px;
+      min-width: 60px; text-align: center;
+    }
+    .status-have { background: rgba(63, 185, 80, 0.18); color: var(--green); }
+    .status-preserve { background: rgba(88, 166, 255, 0.18); color: var(--accent); }
+    .status-partial { background: rgba(210, 153, 34, 0.18); color: var(--orange); }
+    .status-missing { background: rgba(248, 81, 73, 0.18); color: var(--red); }
+    .status-hallucinated { background: rgba(248, 81, 73, 0.18); color: var(--red); }
+    .problems {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px;
+    }
+    .problem {
+      background: var(--surface); border: 1px solid var(--border);
+      border-left: 4px solid var(--red); border-radius: 8px; padding: 18px 20px;
+    }
+    .problem.warn { border-left-color: var(--orange); }
+    .problem.info { border-left-color: var(--accent); }
+    .problem.resolved {
+      border-left-color: var(--green);
+      opacity: 0.65;
+    }
+    .problem.resolved .problem-title .num { background: var(--green); color: #000; }
+    .problem.resolved .problem-title::after {
+      content: "RESOLVED";
+      background: var(--green); color: #000;
+      font-size: 0.65rem; padding: 2px 8px; border-radius: 4px;
+      margin-left: auto; letter-spacing: 0.5px; font-weight: 700;
+    }
+    .problem.resolved .problem-title { justify-content: flex-start; }
+    .problem.resolved .problem-body { color: var(--text-muted); }
+    .problem.resolved .problem-body::before {
+      content: "✓ ";
+      color: var(--green);
+      font-weight: 700;
+    }
+    .problem-title {
+      font-size: 1rem; font-weight: 700; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .problem-title .num {
+      background: var(--red); color: #fff; padding: 2px 9px;
+      border-radius: 4px; font-size: 0.72rem; font-weight: 700;
+    }
+    .problem.warn .problem-title .num { background: var(--orange); color: #000; }
+    .problem.info .problem-title .num { background: var(--accent); color: #000; }
+    .problem-body { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; }
+    .problem-body code {
+      background: rgba(88, 166, 255, 0.1); color: var(--accent);
+      padding: 1px 5px; border-radius: 3px;
+      font-size: 0.78rem; font-family: 'SF Mono', Monaco, monospace;
+    }
+    .problem-body strong { color: var(--text); }
+    .timeline { position: relative; padding-left: 28px; }
+    .timeline::before {
+      content: ''; position: absolute; left: 9px; top: 8px; bottom: 8px;
+      width: 2px; background: var(--border);
+    }
+    .phase {
+      position: relative; margin-bottom: 20px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 18px 20px;
+    }
+    .phase::before {
+      content: ''; position: absolute; left: -23px; top: 22px;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--accent); border: 3px solid var(--bg);
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+    .phase.p0::before { background: var(--red); box-shadow: 0 0 0 2px var(--red); }
+    .phase.p1::before, .phase.p2::before, .phase.p3::before { background: var(--orange); box-shadow: 0 0 0 2px var(--orange); }
+    .phase.p4::before, .phase.p5::before, .phase.p6::before { background: var(--purple); box-shadow: 0 0 0 2px var(--purple); }
+    .phase.p7::before { background: var(--green); box-shadow: 0 0 0 2px var(--green); }
+    .phase-header {
+      display: flex; justify-content: space-between; align-items: baseline;
+      gap: 14px; margin-bottom: 8px; flex-wrap: wrap;
+    }
+    .phase-name { font-size: 1.02rem; font-weight: 700; }
+    .phase-name .pcode {
+      font-family: 'SF Mono', Monaco, monospace;
+      color: var(--accent); margin-right: 8px;
+    }
+    .phase-meta { font-size: 0.76rem; color: var(--text-muted); display: flex; gap: 8px; flex-wrap: wrap; }
+    .phase-meta .pill {
+      background: var(--surface2); padding: 2px 8px;
+      border-radius: 4px; border: 1px solid var(--border);
+    }
+    .phase-body { font-size: 0.86rem; color: var(--text-muted); line-height: 1.62; }
+    .phase-body code {
+      background: rgba(88, 166, 255, 0.1); color: var(--accent);
+      padding: 1px 5px; border-radius: 3px;
+      font-size: 0.78rem; font-family: 'SF Mono', Monaco, monospace;
+    }
+    .phase-body ul { margin: 8px 0 0 18px; }
+    .phase-body li { margin-bottom: 4px; }
+    .compare-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0;
+    }
+    .compare-col {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+    }
+    .compare-col-header {
+      padding: 12px 18px; font-weight: 700; font-size: 0.88rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .compare-col-header.current { background: rgba(248, 81, 73, 0.08); color: var(--red); }
+    .compare-col-header.target { background: rgba(63, 185, 80, 0.08); color: var(--green); }
+    .compare-col-body { padding: 14px 18px; }
+    .compare-item {
+      display: flex; justify-content: space-between; gap: 14px;
+      padding: 8px 0; border-bottom: 1px solid rgba(48, 54, 61, 0.5); font-size: 0.82rem;
+    }
+    .compare-item:last-child { border-bottom: none; }
+    .compare-item .label { color: var(--text-muted); flex-shrink: 0; }
+    .compare-item .val { text-align: right; }
+    .decisions {
+      background: var(--surface); border: 1px dashed var(--orange);
+      border-radius: 10px; padding: 18px 22px; margin: 20px 0;
+    }
+    .decisions.decided {
+      border: 1px dashed var(--green);
+    }
+    .decisions h4 {
+      color: var(--orange); margin-bottom: 10px; font-size: 0.92rem;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .decisions.decided h4 { color: var(--green); }
+    .decisions .resolved-tag {
+      background: var(--green); color: #000; font-size: 0.65rem;
+      padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px;
+    }
+    .decisions .decided-note {
+      font-size: 0.84rem; color: var(--text); padding: 8px 12px;
+      background: rgba(63, 185, 80, 0.08); border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    .decisions .decided-note strong { color: var(--green); }
+    .decisions ol {
+      margin: 0 0 0 20px; font-size: 0.88rem;
+      color: var(--text-muted); line-height: 1.7;
+    }
+    .decisions ol li { margin-bottom: 6px; }
+    .decisions ol li strong { color: var(--text); }
+    .decisions ol li.struck { text-decoration: line-through; opacity: 0.5; }
+    @media (max-width: 900px) {
+      .section { padding: 24px 20px; }
+      .header { padding: 24px 20px; }
+      .problems { grid-template-columns: 1fr; }
+      .compare-grid { grid-template-columns: 1fr; }
+      .box-grid { grid-template-columns: 1fr; }
+      .products { grid-template-columns: 1fr; }
+      .tab { padding: 10px 14px; font-size: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>NewLeaf <span>Architecture</span><span class="v2">v4</span></h1>
+  <p>Monorepo state &middot; Migration complete &middot; Forward convergence plan</p>
+  <div class="updated">Post-monorepo migration · 21 May 2026 · supersedes v3 deck</div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab active" onclick="switchTab(event,'status')">Where We Are</button>
+  <button class="tab" onclick="switchTab(event,'monorepo')">Monorepo Layout</button>
+  <button class="tab" onclick="switchTab(event,'products')">Three Products</button>
+  <button class="tab" onclick="switchTab(event,'current')">Current State</button>
+  <button class="tab" onclick="switchTab(event,'gap')">Schema Gap</button>
+  <button class="tab" onclick="switchTab(event,'problems')">Problems</button>
+  <button class="tab" onclick="switchTab(event,'target')">Target State</button>
+  <button class="tab" onclick="switchTab(event,'plan')">Forward Plan</button>
+  <button class="tab" onclick="switchTab(event,'decisions')">Decisions Log</button>
+</div>
+
+<!-- TAB: WHERE WE ARE -->
+<div id="tab-status" class="tab-content active">
+  <div class="section">
+    <div class="section-title">Where We Are <span class="badge badge-reality">Post-Migration</span></div>
+    <p class="section-sub">On 21 May 2026 we consolidated four separate working directories into a single monorepo at <code>/Users/manish/newleafsystem/</code>. This is the new home for all four apps. The deck describes what's done, what's open, and where the work goes next.</p>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num green">1</div><div class="stat-label">Monorepo</div></div>
+      <div class="stat-card"><div class="stat-num green">4</div><div class="stat-label">Subfolders</div></div>
+      <div class="stat-card"><div class="stat-num green">617</div><div class="stat-label">Files in initial commit</div></div>
+      <div class="stat-card"><div class="stat-num green">Pushed</div><div class="stat-label">github.com/newleaf-trading</div></div>
+      <div class="stat-card"><div class="stat-num orange">5</div><div class="stat-label">Convergence phases ahead</div></div>
+    </div>
+
+    <div class="callout green">
+      <strong>Migration shipped.</strong> Two foundational issues from earlier decks are now resolved: (1) the dual-writer Firestore drift on <code>tiles/analyses/weeklyPicks</code> — collapsed by deleting the legacy <code>newleafsystem</code> copies and making <code>generaterecommendations/</code> the sole writer; (2) the lack of a backed-up canonical codebase — resolved by consolidating into a monorepo and pushing to a GitHub remote. The system is no longer one disk-failure from being lost.
+    </div>
+
+    <div class="callout">
+      <strong>The repo migration is structural, not the end of the work.</strong> What we did was create a clean, version-controlled home for the code. The architectural convergence the v2/v3 decks described — unified sentiment, MACD fix, provenance fields, synthesis adapter, retiring direct LLM SDK calls — all still needs doing. The difference is that now we have a stable place to do it.
+    </div>
+
+    <div class="callout blue">
+      <strong>Legacy <code>/Users/manish/dev/*</code> directories remain on disk as fallback.</strong> Four working trees still exist at <code>/Users/manish/dev/{newleafsystem, newleaf-api, newleaf-pipeline, newleaf-generaterecommendations}/</code>. The active production LaunchAgent still runs from <code>dev/newleaf-pipeline/</code>. These remain untouched until the monorepo's runtime is verified working end-to-end, at which point the LaunchAgent gets cut over and the <code>dev/</code> directories get archived or deleted.
+    </div>
+
+    <div class="callout">
+      <strong>Done in this session:</strong>
+      <ul style="margin-left: 20px; margin-top: 8px;">
+        <li><strong>Batch A</strong> — Deleted 25 dead files from <code>newleafsystem</code> (untracked legacy scripts, dead schedulers, abandoned audit code)</li>
+        <li><strong>Batch B</strong> — Deleted 9 duplicated production-pipeline files + 7 broken npm scripts. Resolved dual-writer drift on three Firestore collections.</li>
+        <li><strong>Monorepo migration</strong> — Rsynced all four working directories into <code>/Users/manish/newleafsystem/</code> as subfolders. 617 files, 166k lines, single initial commit, pushed to remote.</li>
+        <li><strong>Secrets handling</strong> — 8 sensitive files (env files + service account keys) excluded from git, manually copied into the new locations, correctly gitignored.</li>
+        <li><strong>Runtime verification</strong> — Each subfolder smoke-tested locally to confirm builds/starts/runs from the new path.</li>
+      </ul>
+    </div>
+
+    <div class="callout">
+      <strong>Open items at the close of this session:</strong>
+      <ul style="margin-left: 20px; margin-top: 8px;">
+        <li><strong>LaunchAgent cutover</strong> — Still pointing at <code>dev/newleaf-pipeline/</code>. Switch to monorepo path after a few days of dual-running confidence.</li>
+        <li><strong>OptionAdvisor decommission</strong> — Legacy repo at <code>/Users/manish/dev/OptionAdvisor/</code>. Contains the Firebase <code>aiChat</code> callable. Decision deferred: leave alone for now, migrate to <code>api/</code> in a later phase.</li>
+        <li><strong>Architectural convergence</strong> — 5 phases of work (see Forward Plan tab). MACD fix, sentiment unification, provenance fields, synthesis adapter, cost dashboard.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: MONOREPO LAYOUT -->
+<div id="tab-monorepo" class="tab-content">
+  <div class="section">
+    <div class="section-title">Monorepo Layout <span class="badge badge-current">Current</span></div>
+    <p class="section-sub">Four subfolders, each a logically separate app. NOT npm workspaces — each has its own <code>package.json</code>, dependencies, env files, runtime concerns. They share git history and that's it.</p>
+
+    <div class="products">
+      <div class="product" data-c="invest">
+        <span class="tag">WEB</span>
+        <h3>web/</h3>
+        <div class="url">React app · Picks site + Invest + Workbench</div>
+        <p>The customer-facing surface. Picks site (public marketing), Invest app (authenticated subscriber), and Workbench (DIY trade builder, served as a static HTML page). All three read from Firestore <code style="font-size:0.7rem">analyses/{tileId}</code> but none of them write to it.</p>
+        <div class="audience">Owns: <strong>user-owned Firestore subcollections only</strong></div>
+      </div>
+
+      <div class="product" data-c="picks">
+        <span class="tag">API</span>
+        <h3>api/</h3>
+        <div class="url">LLM Router + endpoints (TypeScript, Express)</div>
+        <p>The AI gateway. Every LLM call in the ecosystem routes through <code style="font-size:0.7rem">api/src/llm/router.ts</code>. Tools, endpoints, orchestrators. Deploys as a Firebase function at <code style="font-size:0.7rem">cloudfunctions.net/api</code>.</p>
+        <div class="audience">Owns: <strong>apiKeys, jobs (Firestore)</strong></div>
+      </div>
+
+      <div class="product" data-c="workbench">
+        <span class="tag">PIPELINE</span>
+        <h3>pipeline/</h3>
+        <div class="url">Yahoo OI service + cron schedulers</div>
+        <p>The always-on data layer. Yahoo OI service serving on <code style="font-size:0.7rem">localhost:5300</code>. Cron-equivalent jobs via <code style="font-size:0.7rem">com.newleaf.pipeline</code> LaunchAgent: 15-min fast scan, OI enrichment, daily catchup, health checks. No direct LLM calls — talks to <code style="font-size:0.7rem">api/</code> when needed.</p>
+        <div class="audience">Owns: <strong>marketState (Firestore), R2 snapshots</strong></div>
+      </div>
+
+      <div class="product" data-c="invest">
+        <span class="tag">GENRECS</span>
+        <h3>generaterecommendations/</h3>
+        <div class="url">Pick generation + tile creation</div>
+        <p>Candidate scanning, tile creation, weekly workflow. The <strong>sole writer</strong> to <code style="font-size:0.7rem">tiles</code>, <code style="font-size:0.7rem">analyses</code>, <code style="font-size:0.7rem">weeklyPicks</code> collections after the dual-writer cleanup. Triggered by schedulers in <code>pipeline/</code>.</p>
+        <div class="audience">Owns: <strong>tiles, analyses, weeklyPicks, recommendations, pick_outcomes</strong></div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <strong>Why monorepo, not four repos:</strong> One backup unit, one push cycle for foundational work, easier cross-subfolder refactoring during the convergence phases. The trade-off is that all four apps share one branch and deploy cycles need to be coordinated. Acceptable for a solo-dev project at this stage.
+    </div>
+
+    <div class="callout">
+      <strong>Operational notes:</strong>
+      <ul style="margin-left: 20px; margin-top: 8px;">
+        <li><strong>Per-subfolder dependencies.</strong> Each subfolder has its own <code>node_modules</code> (or Python virtualenv) installed independently. No npm workspaces — `npm install` is per-subfolder.</li>
+        <li><strong>Per-subfolder env files.</strong> <code>web/.env</code>, <code>api/.env</code> + <code>.env.local</code> + <code>.env.production</code>, <code>generaterecommendations/.env</code> all live locally and are gitignored.</li>
+        <li><strong>Per-subfolder service account keys.</strong> Three copies of <code>serviceAccountKey.json</code> in <code>web/scanner/</code>, <code>pipeline/</code>, <code>generaterecommendations/</code>. Same Firebase project, same credentials.</li>
+        <li><strong>Backup-by-default.</strong> Pushed to <code>github.com/newleaf-trading/newleafsystem</code> (private). Pre-monorepo, the entire codebase was laptop-disk-only.</li>
+        <li><strong>CLAUDE.md / ARCHITECTURE.md.</strong> The monorepo root contains <code>ARCHITECTURE.md</code> as the operational guide for any AI coding tool. Per-subfolder context is in the prose of that file.</li>
+      </ul>
+    </div>
+
+    <div class="callout">
+      <strong>What's NOT a monorepo of:</strong> shared dependencies, shared build outputs, shared TypeScript configs, npm workspaces, lerna, Nx, Turborepo. We deliberately kept each subfolder independent. If we later want shared tooling, we add it; we did not pre-emptively over-architect.
+    </div>
+  </div>
+</div>
+
+<!-- TAB: THREE PRODUCTS -->
+<div id="tab-products" class="tab-content">
+  <div class="section">
+    <div class="section-title">The Three Products <span class="badge badge-current">As-Is</span></div>
+    <p class="section-sub">NewLeaf has three customer-facing surfaces, intentionally distinct. The system isn't "duplicated" &mdash; it's three products sharing inconsistently-implemented primitives below the product layer. The architecture work is at that primitive layer, not at the product layer.</p>
+
+    <div class="products">
+      <div class="product" data-c="invest">
+        <span class="tag">INVEST</span>
+        <h3>NewLeaf Invest</h3>
+        <div class="url">newleafsystem.com/invest/strategy/{id}</div>
+        <p>Authenticated investor app. Five-phase lifecycle: Discover &rarr; Decide &rarr; Build &rarr; Execute &rarr; Defend. Curated picks consumed inside a workflow with sizing, broker handoff, and position management. Reads from Firestore <code style="font-size:0.7rem">analyses/{tileId}</code>.</p>
+        <div class="audience">Audience: <strong>Paying subscribers</strong></div>
+      </div>
+
+      <div class="product" data-c="picks">
+        <span class="tag">PICKS</span>
+        <h3>NewLeaf Picks</h3>
+        <div class="url">newleafsystem.com/picks/analysis/{ticker}</div>
+        <p>Public marketing/acquisition site. Same tile content rendered for non-subscribers, with a downloadable 12-page PDF report. Same Firestore source as Invest. PDF generated separately by WeasyPrint from a local enriched JSON file.</p>
+        <div class="audience">Audience: <strong>Acquisition</strong></div>
+      </div>
+
+      <div class="product" data-c="workbench">
+        <span class="tag">WORKBENCH</span>
+        <h3>NewLeaf Workbench</h3>
+        <div class="url">newleafsystem.com/workbench/discover.html</div>
+        <p>DIY trade builder. User picks ticker, builds their own trade with sliders, runs the 8-agent <code style="font-size:0.7rem">/verify</code> orchestrator. Outputs ephemeral recommendations and verifications. Today: does not publish to picks/invest.</p>
+        <div class="audience">Audience: <strong>DIY traders</strong></div>
+      </div>
+    </div>
+
+    <div class="callout blue">
+      <strong>Key insight:</strong> Two products (Invest, Picks) consume the same Firestore <code>analyses/{tileId}</code> documents. They are not separate publishing pipelines. They are two render surfaces over one data source. <strong>Whoever writes to <code>analyses/{tileId}</code> is the publisher.</strong> Today that's the manually-run <code>pipeline/publish-pick.cjs</code>. The convergence question is: should the workbench be allowed to write there too?
+    </div>
+  </div>
+</div>
+
+<!-- TAB: CURRENT STATE -->
+<div id="tab-current" class="tab-content">
+  <div class="section">
+    <div class="section-title">Current Architecture <span class="badge badge-current">As-Is</span></div>
+    <p class="section-sub">Three products. Two analysis stacks (pipeline + API). Three AI invocation paths (router-routed, CLI-spawned, direct-SDK). No unified observability across them.</p>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num blue">3</div><div class="stat-label">Products Sharing Primitives</div></div>
+      <div class="stat-card"><div class="stat-num orange">2</div><div class="stat-label">Sentiment Implementations</div></div>
+      <div class="stat-card"><div class="stat-num red">5</div><div class="stat-label">AI Calls Bypassing Router</div></div>
+      <div class="stat-card"><div class="stat-num red">0%</div><div class="stat-label">Pipeline Cost Visibility</div></div>
+      <div class="stat-card"><div class="stat-num orange">3</div><div class="stat-label">API Key Locations</div></div>
+    </div>
+
+    <div class="arch-diagram">
+
+      <div class="arch-layer ok">
+        <div class="layer-header">
+          <div class="layer-title">
+            <span class="layer-tag tag-green">PRODUCT</span>
+            Workbench &mdash; discover.html (DIY trade builder)
+          </div>
+          <div class="layer-port">workbench/discover.html &middot; <span class="warn">not in git</span></div>
+        </div>
+        <div class="box-grid wide">
+          <div class="box">
+            <div class="box-title">Stage 1: Snapshot</div>
+            <div class="box-detail">
+              <code>GET /api/snapshot/:ticker</code><br>
+              <code>GET /api/indicators/:ticker</code><br>
+              <code>GET /api/gamma/:ticker/:exp</code><br>
+              <code>POST /api/ai-read</code> &rarr; <span class="model">QWQ</span><br>
+              <span class="good">Via router · tracked</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Stage 2: Recommend</div>
+            <div class="box-detail">
+              <code>POST /api/recommend</code><br>
+              <span class="model">QWQ</span> / <span class="model">Qwen-Max</span><br>
+              Returns 3-5 ranked structures<br>
+              <span class="good">Via router · tracked</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Stage 3: Drill In</div>
+            <div class="box-detail">
+              Pure client-side<br>
+              Strike sliders, P&amp;L chart<br>
+              No AI calls<br>
+              <span class="good">No model spend</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Stage 4-5: Verify + Verdict</div>
+            <div class="box-detail">
+              <code>POST /verify</code> &rarr; 8-agent orchestrator<br>
+              <span class="model">Sonnet</span> <span class="model">Haiku</span> <span class="model">GPT-4</span> <span class="model">DeepSeek</span><br>
+              Analyst &times; 4, debate, risk, judge<br>
+              <span class="good">Via router · tracked</span>
+            </div>
+          </div>
+        </div>
+        <div class="connections">
+          <span class="conn conn-ok">All AI calls via newleaf-api</span>
+          <span class="conn conn-ok">Cost tracked per request</span>
+          <span class="conn conn-ok">Model versions pinned in router</span>
+        </div>
+      </div>
+
+      <div class="flow-arrow ok-arrow">&darr; AI calls route correctly &darr;</div>
+
+      <div class="arch-layer ok">
+        <div class="layer-header">
+          <div class="layer-title">
+            <span class="layer-tag tag-green">INFRASTRUCTURE</span>
+            newleaf-api &mdash; LLM Router + Tools
+          </div>
+          <div class="layer-port">localhost:4000 &middot; first commit 17 May 2026</div>
+        </div>
+        <div class="box-grid">
+          <div class="box">
+            <div class="box-title">LLM Router (8 models)</div>
+            <div class="box-detail">
+              <span class="model">Claude Sonnet 4</span> <span class="model">Haiku 4.5</span><br>
+              <span class="model">GPT-4o</span> <span class="model">Grok-4</span><br>
+              <span class="model">DeepSeek</span> <span class="model">DeepSeek-R1</span><br>
+              <span class="model">QWQ</span> <span class="model">Qwen-Max</span><br>
+              Token tracking, cost per call
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Tools (data sources)</div>
+            <div class="box-detail">
+              Alpaca (spot, chain, bars)<br>
+              Nasdaq API (Open Interest)<br>
+              Local calc: RSI, ADX, BB, SMA, ATR<br>
+              <span class="bad">MACD: not computed</span><br>
+              Serper (news/web)
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Sentiment (3-engine)</div>
+            <div class="box-detail">
+              Grok grok-3-mini (0.35)<br>
+              Gemini gemini-2.5-flash via SDK (0.35)<br>
+              Reddit/StockTwits scrape (0.30)<br>
+              <span class="bad">No Claude engine</span><br>
+              <span class="warn">Gemini bypasses router</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow warn-arrow">─── separate codebase ───</div>
+
+      <div class="arch-layer bypass">
+        <div class="layer-header">
+          <div class="layer-title">
+            <span class="layer-tag tag-red">PRODUCT BACKEND</span>
+            Pipeline &mdash; generates picks for Invest + Picks site
+          </div>
+          <div class="layer-port">cron &middot; scanner/ + pipeline/ &middot; first commit 26 Apr 2026</div>
+        </div>
+        <div class="box-grid">
+          <div class="box">
+            <div class="box-title">Scheduled Jobs (cron)</div>
+            <div class="box-detail">
+              Every 15min 9-4pm ET: fast scan + OI<br>
+              Daily 6pm ET: pick outcomes update<br>
+              Sun 6pm ET: weekly picks email<br>
+              <span class="warn">Publishing is MANUAL</span><br>
+              <code>publish-pick.cjs</code> run by hand
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Tile Analysis (analyse-tiles.cjs)</div>
+            <div class="box-detail">
+              <code>spawnSync('claude', ['--print'...])</code><br>
+              Claude CLI with <code>WebSearch</code><br>
+              5-min timeout, no version pin<br>
+              <span class="bad">No cost tracking</span><br>
+              <span class="bad">Bypasses router entirely</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Sentiment (4-engine)</div>
+            <div class="box-detail">
+              Claude CLI w/ WebSearch (0.30)<br>
+              Grok grok-3-mini REST (0.25)<br>
+              Gemini gemini-2.5-flash SDK (0.25)<br>
+              Reddit/StockTwits (0.20)<br>
+              <span class="bad">All 4 bypass router</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Data Sources (divergent)</div>
+            <div class="box-detail">
+              Alpaca (spot, chain, bars)<br>
+              <strong>Yahoo Finance</strong> (OI, via local :5300 Python)<br>
+              Multi-factor gamma walls<br>
+              Static earnings-calendar.json<br>
+              Hand-rolled RSI/BB/SMA/ATR
+            </div>
+          </div>
+        </div>
+        <div class="connections">
+          <span class="conn conn-bad">Claude CLI &times; 2 paths · no tracking</span>
+          <span class="conn conn-bad">Grok REST direct · no tracking</span>
+          <span class="conn conn-bad">Gemini SDK direct · no tracking</span>
+          <span class="conn conn-warn">API keys in scanner/config.json (committed)</span>
+        </div>
+      </div>
+
+      <div class="flow-arrow warn-arrow">─── writes to Firestore analyses/{tileId} ───</div>
+
+      <div class="arch-layer bypass">
+        <div class="layer-header">
+          <div class="layer-title">
+            <span class="layer-tag tag-red">PRODUCT FEATURE</span>
+            Firebase aiChat &mdash; portfolio Q&amp;A inside Invest
+          </div>
+          <div class="layer-port">functions/index.js &middot; <span class="warn">not in git</span></div>
+        </div>
+        <div class="box-grid">
+          <div class="box">
+            <div class="box-title">Direct Gemini call</div>
+            <div class="box-detail">
+              <code>@google/generative-ai</code> SDK<br>
+              Model: <span class="model">gemini-2.0-flash</span><br>
+              <span class="bad">Bypasses LLM router</span><br>
+              Separate API key (Firebase Secret)<br>
+              Custom "actions" JSON protocol
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow ok-arrow">&darr; Render layer (consumer-only) &darr;</div>
+
+      <div class="arch-layer ok">
+        <div class="layer-header">
+          <div class="layer-title">
+            <span class="layer-tag tag-green">RENDER</span>
+            Three render surfaces over one Firestore source
+          </div>
+          <div class="layer-port">Firestore analyses/{tileId} &middot; canonical contract</div>
+        </div>
+        <div class="box-grid wide">
+          <div class="box">
+            <div class="box-title">Invest app (Decide page)</div>
+            <div class="box-detail">
+              <code>StrategyDetailPage.jsx</code><br>
+              Reads <code>analyses/{id}</code> direct<br>
+              Authenticated app
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Picks-site (public)</div>
+            <div class="box-detail">
+              <code>PickAnalysisPage.jsx</code><br>
+              Reads <code>weeklyPicks</code> &rarr; <code>analyses/{tileId}</code><br>
+              Public, no auth
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">PDF report</div>
+            <div class="box-detail">
+              <code>generate-report.py</code><br>
+              Reads local enriched JSON<br>
+              WeasyPrint &rarr; PDF &rarr; R2 upload
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TAB: SCHEMA GAP -->
+<div id="tab-gap" class="tab-content">
+  <div class="section">
+    <div class="section-title">Schema Gap Matrix <span class="badge badge-reality">Net New</span></div>
+    <p class="section-sub">For the workbench to become a publisher (write to Firestore <code>analyses/{tileId}</code>), it must produce every field in the tile JSON schema. This matrix maps what the workbench can produce today vs what the tile JSON contract requires. <strong>Updated:</strong> bull/bear/debate/verdict-rationale are now preserved from verify output rather than synthesised — they're product content, not scaffolding.</p>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num green">9</div><div class="stat-label">Fields ✓ Already Available</div></div>
+      <div class="stat-card"><div class="stat-num blue">4</div><div class="stat-label">Fields ◉ Preserve from Verify</div></div>
+      <div class="stat-card"><div class="stat-num orange">6</div><div class="stat-label">Fields ◐ Partial / Transform</div></div>
+      <div class="stat-card"><div class="stat-num red">5</div><div class="stat-label">Fields ✗ Missing Entirely</div></div>
+      <div class="stat-card"><div class="stat-num red">1</div><div class="stat-label">Field Hallucinated (MACD)</div></div>
+    </div>
+
+    <div class="matrix-wrap">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Tile JSON Field</th>
+            <th>Workbench Source Today</th>
+            <th>Status</th>
+            <th>What's Needed</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="field">tileId, symbol, strategy, spotPrice, expiry, dte</td>
+            <td>workbench state + /api/snapshot</td>
+            <td><span class="status-pill status-have">✓ HAVE</span></td>
+            <td>Direct passthrough</td>
+          </tr>
+          <tr>
+            <td class="field">legs[] (with delta/theta/vega/iv)</td>
+            <td>/api/chain Alpaca data</td>
+            <td><span class="status-pill status-have">✓ HAVE</span></td>
+            <td>Direct passthrough</td>
+          </tr>
+          <tr>
+            <td class="field">greeks (netDelta/Theta/Vega/Gamma)</td>
+            <td>Computed from legs client-side</td>
+            <td><span class="status-pill status-have">✓ HAVE</span></td>
+            <td>Move computation server-side for canonical truth</td>
+          </tr>
+          <tr>
+            <td class="field">maxProfit/Loss, netCredit, rewardRisk, oddsOfProfit</td>
+            <td>Computed from legs + IV</td>
+            <td><span class="status-pill status-have">✓ HAVE</span></td>
+            <td>Direct passthrough</td>
+          </tr>
+          <tr>
+            <td class="field">gammaData (walls, flip, band_width, confidence)</td>
+            <td>/api/gamma (Nasdaq OI, simple model)</td>
+            <td><span class="status-pill status-partial">◐ PARTIAL</span></td>
+            <td>Port multi-factor scoring from <code>gamma-analyzer-enhanced.js</code></td>
+          </tr>
+          <tr>
+            <td class="field">technicalIndicators.rsi/bollinger/MAs/IV</td>
+            <td>/api/indicators (RSI, BB, SMA, ATR, ADX)</td>
+            <td><span class="status-pill status-have">✓ HAVE</span></td>
+            <td>Already computed; pass through</td>
+          </tr>
+          <tr>
+            <td class="field">technicalIndicators.macd</td>
+            <td>Currently LLM-hallucinated</td>
+            <td><span class="status-pill status-hallucinated">✗ HALLUCINATED</span></td>
+            <td><strong>Real bug.</strong> Compute MACD properly in <code>indicators.ts</code></td>
+          </tr>
+          <tr>
+            <td class="field">technicalIndicators.supportResistance[]</td>
+            <td>/verify analyst summaries (prose)</td>
+            <td><span class="status-pill status-partial">◐ PARTIAL</span></td>
+            <td>Synthesis call to produce array with strength + description</td>
+          </tr>
+          <tr style="background: rgba(88, 166, 255, 0.04);">
+            <td class="field">verdict.rationale + verdict.flipConditions[]</td>
+            <td>/verify verdict (native field)</td>
+            <td><span class="status-pill status-preserve">◉ PRESERVE</span></td>
+            <td><strong>Preserved as-is.</strong> Becomes the thesis paragraph + "what could change our mind" on Picks</td>
+          </tr>
+          <tr style="background: rgba(88, 166, 255, 0.04);">
+            <td class="field">debate.rounds[] (bull vs bear, 2 rounds)</td>
+            <td>/verify debate (native field)</td>
+            <td><span class="status-pill status-preserve">◉ PRESERVE</span></td>
+            <td><strong>Preserved as-is.</strong> Renders behind "see the full debate" disclosure on Picks</td>
+          </tr>
+          <tr style="background: rgba(88, 166, 255, 0.04);">
+            <td class="field">bullCase[] + bearCase[] (summary bullets)</td>
+            <td>/verify evidence (technical/gamma/iv/sentiment summaries)</td>
+            <td><span class="status-pill status-preserve">◉ PRESERVE</span></td>
+            <td>Light reformatting: cluster analyst summaries by polarity into 4-bullet pro/con</td>
+          </tr>
+          <tr>
+            <td class="field">strategyRationale (whyStrategy/Strikes/Expiry + alternatives)</td>
+            <td>/verify suggestedFix + verdict.rationale (partial)</td>
+            <td><span class="status-pill status-partial">◐ PARTIAL</span></td>
+            <td>Synthesis call for strikes/expiry rationale + alternatives-considered (verify doesn't produce these)</td>
+          </tr>
+          <tr>
+            <td class="field">thetaDecaySchedule (15-row daily theta)</td>
+            <td>Black-Scholes computable</td>
+            <td><span class="status-pill status-missing">✗ MISSING</span></td>
+            <td>New endpoint <code>/api/theta-schedule</code> — pure math, no LLM needed</td>
+          </tr>
+          <tr>
+            <td class="field">riskAnalysis.maxPainScenario</td>
+            <td>/verify riskReport.rationale</td>
+            <td><span class="status-pill status-partial">◐ PARTIAL</span></td>
+            <td>Verify produces brief version; synthesis expands</td>
+          </tr>
+          <tr>
+            <td class="field">riskAnalysis.earningsRisk</td>
+            <td>No source — pipeline reads earnings-calendar.json</td>
+            <td><span class="status-pill status-missing">✗ MISSING</span></td>
+            <td>Port earnings calendar to <code>newleaf-api/src/tools/earnings.ts</code></td>
+          </tr>
+          <tr>
+            <td class="field">riskAnalysis.dividendRisk</td>
+            <td>No source</td>
+            <td><span class="status-pill status-missing">✗ MISSING</span></td>
+            <td>Alpaca provides dividend data; add tool wrapper</td>
+          </tr>
+          <tr>
+            <td class="field">riskAnalysis.eventRisk</td>
+            <td>Pipeline uses Claude WebSearch</td>
+            <td><span class="status-pill status-missing">✗ MISSING</span></td>
+            <td>Serper news (in API) + synthesis</td>
+          </tr>
+          <tr>
+            <td class="field">riskAnalysis.managementPlan + adjustmentTriggers</td>
+            <td>/verify riskReport + suggestedFix (partial)</td>
+            <td><span class="status-pill status-partial">◐ PARTIAL</span></td>
+            <td>Synthesis call to produce graduated plan with specific levels</td>
+          </tr>
+          <tr>
+            <td class="field">sentiment.score + label + summary</td>
+            <td>/api/sentiment (3-engine)</td>
+            <td><span class="status-pill status-partial">◐ PARTIAL</span></td>
+            <td>Add Claude engine to match pipeline 4-engine version</td>
+          </tr>
+          <tr>
+            <td class="field">sentiment.keyDrivers[] (with source attribution)</td>
+            <td>API sentiment doesn't return drivers</td>
+            <td><span class="status-pill status-missing">✗ MISSING</span></td>
+            <td>Extend sentiment endpoint to return structured drivers</td>
+          </tr>
+          <tr>
+            <td class="field">exitStrategy (early-close + 50% target etc)</td>
+            <td>/verify suggestedFix (partial)</td>
+            <td><span class="status-pill status-partial">◐ PARTIAL</span></td>
+            <td>Synthesis with pre/post-event branching</td>
+          </tr>
+          <tr>
+            <td class="field">keyLevels (support/resistance with reasoning)</td>
+            <td>Pipeline-only code path</td>
+            <td><span class="status-pill status-missing">✗ MISSING</span></td>
+            <td>Synthesis combining technical levels + gamma walls + narrative</td>
+          </tr>
+          <tr>
+            <td class="field">confidenceIndex (NewLeaf 75/100 score)</td>
+            <td>No source</td>
+            <td><span class="status-pill status-missing">✗ MISSING</span></td>
+            <td>Define formula: gamma + IV rank + delta + verify verdict</td>
+          </tr>
+          <tr>
+            <td class="field">executionGuide (limit price, sizing, hours)</td>
+            <td>No source</td>
+            <td><span class="status-pill status-missing">✗ MISSING</span></td>
+            <td>Derivable from chain + greeks; templated</td>
+          </tr>
+          <tr>
+            <td class="field">model_used, prompt_version, analysis_source</td>
+            <td>Don't exist anywhere today</td>
+            <td><span class="status-pill status-missing">✗ MISSING</span></td>
+            <td><strong>Provenance fields</strong> — required before any new writer publishes</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <strong>Read the matrix as effort scoping.</strong>
+      9 fields are direct passthrough. 4 fields are <strong>preserved from verify output</strong> (bull/bear/debate/verdict) — these reclassify from "synthesise" to "render as-is," which is the single biggest change from v1. 6 partial fields need transformation or a synthesis call (~1-2 days). 5 missing fields need new tools or new synthesis logic (~2-3 days). The <strong>synthesis adapter</strong> now does narrative-only work — strategy rationale, key levels with reasoning, exit strategy detail, support/resistance descriptions, sentiment driver attribution. The verify output's adversarial reasoning becomes product content, not raw material.
+    </div>
+
+    <div class="callout blue">
+      <strong>Publish gate: deterministic, no override.</strong>
+      The publish-pick endpoint accepts a verify_job_id and gates on two conditions: <code>verdict.call === 'pass'</code> AND <code>verdict.confidence &gt;= 65</code>. Marginal verdicts and low-confidence passes go to a review queue. No analyst override path — discipline over flexibility. The <code>verify_verdict</code> and <code>verify_confidence</code> values are stored in the published doc as provenance (constant in v1, but kept for forward-compatibility).
+    </div>
+  </div>
+</div>
+
+<!-- TAB: PROBLEMS -->
+<div id="tab-problems" class="tab-content">
+  <div class="section">
+    <div class="section-title">Problems Found <span class="badge badge-current">Issues</span></div>
+    <p class="section-sub">Eight problems were identified across v2/v3 audits. Two are resolved by this session's migration work. Six remain — most are part of the forward plan (F1-F5).</p>
+
+    <div class="problems">
+      <div class="problem resolved">
+        <div class="problem-title"><span class="num">P0</span> Dual-writer drift on production Firestore</div>
+        <div class="problem-body">
+          Three production collections (<code>tiles</code>, <code>analyses</code>, <code>weeklyPicks</code>) had writers in both <code>newleafsystem</code> and <code>newleaf-generaterecommendations</code>. Resolved by Batch B: legacy <code>newleafsystem</code> copies deleted; <code>generaterecommendations/</code> is now sole writer for these collections.
+        </div>
+      </div>
+
+      <div class="problem resolved">
+        <div class="problem-title"><span class="num">P1</span> workbench/discover.html not in git</div>
+        <div class="problem-body">
+          Workbench production page was untracked. Resolved by monorepo migration — now committed under <code>web/workbench/</code> as part of the initial commit. Audit confirmed the embedded values (NewLeaf API key, Firebase web config) are public-by-design client keys, safe to commit.
+        </div>
+      </div>
+
+      <div class="problem resolved">
+        <div class="problem-title"><span class="num">P2</span> scanner/config.json contains live secrets</div>
+        <div class="problem-body">
+          API keys for Alpaca, R2, SMTP, Grok, and Gemini were hard-coded in <code>scanner/config.json</code>, present in two repos. Resolved structurally: the file is now gitignored in the monorepo (no longer ends up in any commit). Rotation deferred per the D-keys decision; monitoring instead.
+        </div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title"><span class="num">P3</span> MACD values are LLM-hallucinated</div>
+        <div class="problem-body">
+          The published analysis JSON contains MACD line, signal line, and histogram values (e.g. <code>macdLine: 0.85, signalLine: 1.12, histogram: -0.27</code>) but <strong>MACD is not calculated anywhere in the codebase</strong>. These numbers are generated by Claude based on RSI/BB/SMA context. Eventually a user will compare against a charting tool and find the discrepancy.
+        </div>
+      </div>
+
+      <div class="problem warn">
+        <div class="problem-title"><span class="num">P4</span> Two sentiment implementations with different math</div>
+        <div class="problem-body">
+          Pipeline runs 4 engines (Claude + Grok + Gemini + Reddit) at weights 30/25/25/20. API runs 3 engines (no Claude) at weights 35/35/30. <strong>Same ticker, same day, different score.</strong> When pipeline's Claude engine errors, weights renormalise to 33/33/27 — still different from API's 35/35/30. Both engines were added in their respective initial commits; this isn't drift, it's parallel build.
+        </div>
+      </div>
+
+      <div class="problem warn">
+        <div class="problem-title"><span class="num">P5</span> Data source divergence: pipeline vs API</div>
+        <div class="problem-body">
+          OI: Pipeline uses Yahoo (local Python :5300), API uses Nasdaq. Gamma walls: Pipeline uses 3-factor scoring (OI + delta + volume), API uses simple OI concentration. Earnings: Pipeline has static JSON file, API has nothing. News: Pipeline uses Claude WebSearch, API uses Serper. <strong>Different stacks produce different underlying numbers</strong>, not just different prose.
+        </div>
+      </div>
+
+      <div class="problem warn">
+        <div class="problem-title"><span class="num">P6</span> Pipeline AI calls have zero observability</div>
+        <div class="problem-body">
+          5 AI invocation paths bypass the LLM router: Claude CLI in analyse-tiles, Claude CLI in sentiment-engine, Grok REST in sentiment-engine, Gemini SDK in sentiment-engine, and Firebase aiChat's Gemini SDK call. None are cost-tracked. None are version-pinned. None have token counts. The Claude CLI calls have a 5-minute timeout and can fail silently.
+        </div>
+      </div>
+
+      <div class="problem info">
+        <div class="problem-title"><span class="num">P7</span> Publishing is manual and undocumented</div>
+        <div class="problem-body">
+          <code>publish-pick.cjs</code> is run by hand. <code>create-weekly-picks.js</code> exists but is not in cron — only <code>npm run picks:preview</code> for dry-run is referenced. Picks per week is <strong>5–10</strong>, manually selected. This is actually compatible with a workbench-as-authoring-tool flow — the human-in-the-loop model is already in place; the tool just changes.
+        </div>
+      </div>
+
+      <div class="problem info">
+        <div class="problem-title"><span class="num">P8</span> No provenance on pick_outcomes</div>
+        <div class="problem-body">
+          The <code>pick_outcomes</code> Firestore collection (used to track win rate) does not record which model produced the pick, which prompt version, or which analysis source. <strong>Win-rate changes cannot be attributed to model or prompt changes.</strong> This makes future A/B comparison impossible and must be fixed before any new analysis path writes picks.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: TARGET STATE -->
+<div id="tab-target" class="tab-content">
+  <div class="section">
+    <div class="section-title">Target Architecture <span class="badge badge-target">To-Be</span></div>
+    <p class="section-sub">Three products keep their distinct surfaces. One analysis stack underneath, anchored on the LLM router. Workbench becomes the authoring surface; pipeline becomes a candidate generator. Publishing is one Firestore write that all three products read.</p>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num green">1</div><div class="stat-label">Unified AI Gateway</div></div>
+      <div class="stat-card"><div class="stat-num green">1</div><div class="stat-label">Sentiment Implementation</div></div>
+      <div class="stat-card"><div class="stat-num green">100%</div><div class="stat-label">Cost Visibility</div></div>
+      <div class="stat-card"><div class="stat-num green">0</div><div class="stat-label">Router Bypasses</div></div>
+      <div class="stat-card"><div class="stat-num green">0</div><div class="stat-label">Hallucinated Indicators</div></div>
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-col">
+        <div class="compare-col-header current">Current</div>
+        <div class="compare-col-body">
+          <div class="compare-item"><span class="label">AI invocation paths</span><span class="val">3 (router, CLI, SDK)</span></div>
+          <div class="compare-item"><span class="label">Sentiment engines</span><span class="val">2 implementations</span></div>
+          <div class="compare-item"><span class="label">OI source</span><span class="val">Yahoo + Nasdaq (split)</span></div>
+          <div class="compare-item"><span class="label">Gamma walls</span><span class="val">2 algorithms</span></div>
+          <div class="compare-item"><span class="label">MACD</span><span class="val bad">Hallucinated</span></div>
+          <div class="compare-item"><span class="label">Pipeline cost tracking</span><span class="val bad">None</span></div>
+          <div class="compare-item"><span class="label">Provenance on picks</span><span class="val bad">None</span></div>
+          <div class="compare-item"><span class="label">Secrets in git</span><span class="val bad">5 API keys</span></div>
+          <div class="compare-item"><span class="label">Files untracked</span><span class="val bad">2 production files</span></div>
+          <div class="compare-item"><span class="label">Authoring surface</span><span class="val">Pipeline only</span></div>
+        </div>
+      </div>
+      <div class="compare-col">
+        <div class="compare-col-header target">Target</div>
+        <div class="compare-col-body">
+          <div class="compare-item"><span class="label">AI invocation paths</span><span class="val good">1 (router)</span></div>
+          <div class="compare-item"><span class="label">Sentiment engines</span><span class="val good">1 (4-engine unified)</span></div>
+          <div class="compare-item"><span class="label">OI source</span><span class="val good">Single (chosen explicitly)</span></div>
+          <div class="compare-item"><span class="label">Gamma walls</span><span class="val good">1 algorithm (multi-factor)</span></div>
+          <div class="compare-item"><span class="label">MACD</span><span class="val good">Computed in indicators.ts</span></div>
+          <div class="compare-item"><span class="label">Pipeline cost tracking</span><span class="val good">Per request, Firestore</span></div>
+          <div class="compare-item"><span class="label">Provenance on picks</span><span class="val good">model/prompt/source/job</span></div>
+          <div class="compare-item"><span class="label">Secrets in git</span><span class="val good">Zero · env vars only</span></div>
+          <div class="compare-item"><span class="label">Files untracked</span><span class="val good">Zero</span></div>
+          <div class="compare-item"><span class="label">Authoring surface</span><span class="val good">Workbench (human-in-loop)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-diagram">
+
+      <div class="arch-layer partial">
+        <div class="layer-header">
+          <div class="layer-title">
+            <span class="layer-tag tag-orange">SCHEDULED</span>
+            Pipeline &mdash; candidate generator (reduced scope)
+          </div>
+          <div class="layer-port">cron &middot; scanner/ only &middot; no LLM calls</div>
+        </div>
+        <div class="box-grid">
+          <div class="box">
+            <div class="box-title">What stays</div>
+            <div class="box-detail">
+              144-symbol watchlist scan<br>
+              Alpaca + Yahoo OI enrichment<br>
+              Multi-factor gamma scoring<br>
+              Outcome tracking job<br>
+              Weekly email job
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">What changes</div>
+            <div class="box-detail">
+              <span class="bad">Removes:</span> Claude CLI analysis<br>
+              <span class="bad">Removes:</span> 4-engine sentiment (moves to API)<br>
+              <span class="good">Outputs:</span> ranked candidates to Firestore<br>
+              <code>candidates/{weekId}/{symbol}</code>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Cron unchanged</div>
+            <div class="box-detail">
+              Every 15min: fast scan + OI<br>
+              Daily 6pm: outcomes<br>
+              Sun 6pm: email<br>
+              <span class="good">No LLM spend in cron</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow ok-arrow">&darr; candidates surface in workbench &darr;</div>
+
+      <div class="arch-layer ok">
+        <div class="layer-header">
+          <div class="layer-title">
+            <span class="layer-tag tag-green">AUTHORING SURFACE</span>
+            Workbench &mdash; analyst constructs &amp; publishes
+          </div>
+          <div class="layer-port">workbench/discover.html (in git)</div>
+        </div>
+        <div class="box-grid wide">
+          <div class="box">
+            <div class="box-title">+ New: Candidates view</div>
+            <div class="box-detail">
+              Read this week's <code>candidates/</code><br>
+              Click in to start verify pre-populated<br>
+              Filter by score, sector, IV<br>
+              <span class="good">Bridges scan &harr; authoring</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Existing verify flow</div>
+            <div class="box-detail">
+              <code>POST /verify</code> · 8-agent<br>
+              <span class="model">Sonnet</span> mode for publish path<br>
+              Verdict + debate + risk + fix<br>
+              Cost: ~$0.50/pick at premium
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">+ New: Publish action</div>
+            <div class="box-detail">
+              <code>POST /api/publish-pick</code><br>
+              <span class="good">Gate:</span> pass + confidence &ge; 65<br>
+              Marginal &rarr; review queue<br>
+              Writes <code>analyses/{tileId}</code> + provenance
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">+ New: Synthesis adapter</div>
+            <div class="box-detail">
+              One <span class="model">Sonnet</span> call · narrative-only<br>
+              Preserves verify output as-is<br>
+              Synthesises gaps: rationale, key levels<br>
+              Cost: ~$0.20/pick
+            </div>
+          </div>
+        </div>
+        <div class="connections">
+          <span class="conn conn-ok">All AI via router · tracked</span>
+          <span class="conn conn-ok">Provenance + verify_verdict stamped per pick</span>
+          <span class="conn conn-ok">~$0.70/pick × 10/week = ~$7/week</span>
+        </div>
+      </div>
+
+      <div class="flow-arrow ok-arrow">&darr; one Firestore write &darr;</div>
+
+      <div class="arch-layer ok">
+        <div class="layer-header">
+          <div class="layer-title">
+            <span class="layer-tag tag-green">UNIFIED</span>
+            newleaf-api &mdash; one gateway, one set of tools
+          </div>
+          <div class="layer-port">localhost:4000</div>
+        </div>
+        <div class="box-grid">
+          <div class="box">
+            <div class="box-title">LLM Router (9 models)</div>
+            <div class="box-detail">
+              All existing 8 + <span class="model">Gemini Flash</span><br>
+              Token tracking, cost per call<br>
+              Version pinning<br>
+              Firestore <code>usage/{date}/{requestId}</code>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Tools (consolidated)</div>
+            <div class="box-detail">
+              Alpaca · OI source (chosen)<br>
+              <strong>Multi-factor gamma</strong> (ported)<br>
+              <strong>Earnings tool</strong> (ported)<br>
+              <strong>MACD</strong> (newly computed)<br>
+              Serper + Claude WebSearch
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Sentiment (4-engine, unified)</div>
+            <div class="box-detail">
+              Claude (via router, with WebSearch)<br>
+              Grok-4 (via router)<br>
+              Gemini Flash (via router)<br>
+              Reddit/StockTwits<br>
+              <span class="good">Returns structured drivers</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Endpoints</div>
+            <div class="box-detail">
+              All existing routes<br>
+              + <code>/api/publish-pick</code><br>
+              + <code>/api/theta-schedule</code><br>
+              + <code>/api/portfolio-chat</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow ok-arrow">&darr; render surfaces unchanged &darr;</div>
+
+      <div class="arch-layer ok">
+        <div class="layer-header">
+          <div class="layer-title">
+            <span class="layer-tag tag-green">RENDER</span>
+            Three products &middot; same Firestore source &middot; unchanged
+          </div>
+          <div class="layer-port">Firestore analyses/{tileId}</div>
+        </div>
+        <div class="box-grid wide">
+          <div class="box">
+            <div class="box-title">Invest app</div>
+            <div class="box-detail">
+              Reads <code>analyses/{id}</code><br>
+              <span class="good">No code change</span><br>
+              Schema-compatible
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Picks-site</div>
+            <div class="box-detail">
+              Reads same documents<br>
+              <span class="good">No code change</span><br>
+              Schema-compatible
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">PDF generator</div>
+            <div class="box-detail">
+              Async: reads published JSON<br>
+              <code>/api/generate-pdf?pickId=...</code><br>
+              WeasyPrint unchanged
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Portfolio chat (in Invest)</div>
+            <div class="box-detail">
+              Firebase fn thin wrapper<br>
+              Forwards to <code>/api/portfolio-chat</code><br>
+              Same behaviour to user
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TAB: MIGRATION PLAN -->
+<!-- TAB: FORWARD PLAN -->
+<div id="tab-plan" class="tab-content">
+  <div class="section">
+    <div class="section-title">Forward Plan <span class="badge badge-plan">5 phases</span></div>
+    <p class="section-sub">The migration and dual-writer cleanup are done. What remains is the architectural convergence work the v2 and v3 decks were ultimately aimed at — unify sentiment, fix data integrity bugs, add provenance, build the synthesis adapter, instrument observability. These can run in any order; this is suggested ordering by risk and dependency.</p>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num blue">~2 weeks</div><div class="stat-label">Total effort estimate</div></div>
+      <div class="stat-card"><div class="stat-num green">5</div><div class="stat-label">Phases</div></div>
+      <div class="stat-card"><div class="stat-num orange">2</div><div class="stat-label">Data integrity (F1-F2)</div></div>
+      <div class="stat-card"><div class="stat-num purple">2</div><div class="stat-label">Convergence (F3-F4)</div></div>
+      <div class="stat-card"><div class="stat-num green">1</div><div class="stat-label">Observability (F5)</div></div>
+    </div>
+
+    <div class="callout green">
+      <strong>Foundational work shipped this session (no longer in the plan):</strong>
+      <ul style="margin-left: 20px; margin-top: 8px;">
+        <li><strong>P0a · Dual-writer Firestore drift</strong> — resolved by Batch B. <code>generaterecommendations/</code> is sole writer to <code>tiles/analyses/weeklyPicks</code>.</li>
+        <li><strong>P0b · Secrets + git hygiene</strong> — partially resolved. The legacy <code>scanner/config.json</code> file is now gitignored in the monorepo. Rotation deferred (low realistic risk; monitor instead).</li>
+        <li><strong>Monorepo migration</strong> — net-new this session. Four working dirs consolidated, 617 files in one commit, pushed to remote.</li>
+        <li><strong>Dead code cleanup</strong> — Batch A deleted 25 dead files; Batch B deleted 9 duplicates + 7 broken npm scripts.</li>
+      </ul>
+    </div>
+
+    <div class="timeline">
+
+      <div class="phase p0">
+        <div class="phase-header">
+          <div class="phase-name"><span class="pcode">F1</span> Fix MACD hallucination</div>
+          <div class="phase-meta">
+            <span class="pill">~half day</span>
+            <span class="pill">Data integrity</span>
+          </div>
+        </div>
+        <div class="phase-body">
+          <ul>
+            <li>Add MACD computation to <code>api/src/tools/indicators.ts</code> (alongside existing RSI, Bollinger, MA calculations)</li>
+            <li>Update analysis prompts in <code>generaterecommendations/</code> to receive real MACD values as ground truth, not as fields to be filled in</li>
+            <li>Audit other indicator fields in published JSON to verify none are silently LLM-generated</li>
+            <li>Test on 3-5 historical tickers — compare MACD values against a charting tool (TradingView, etc) to confirm correctness</li>
+          </ul>
+          Independent of architecture work. Should ship even if nothing else does — this is a published data-integrity bug.
+        </div>
+      </div>
+
+      <div class="phase p1">
+        <div class="phase-header">
+          <div class="phase-name"><span class="pcode">F2</span> Add provenance fields to writes</div>
+          <div class="phase-meta">
+            <span class="pill">~1 day</span>
+            <span class="pill">Foundational</span>
+          </div>
+        </div>
+        <div class="phase-body">
+          <ul>
+            <li>Add to <code>analyses/{tileId}</code> writes: <code>model_used</code>, <code>prompt_version</code>, <code>analysis_source</code>, <code>verify_job_id</code>, <code>verify_verdict</code>, <code>verify_confidence</code></li>
+            <li>Add same fields to <code>pick_outcomes</code> for win-rate attribution</li>
+            <li>No backfill of existing picks — tag everything from this point forward</li>
+            <li>Add Gemini to the LLM router (<code>api/src/llm/router.ts</code>) so all four sentiment engines can route through the router uniformly</li>
+          </ul>
+          After this, every new pick is traceable end-to-end. Win-rate drift can be attributed to model or prompt changes.
+        </div>
+      </div>
+
+      <div class="phase p3">
+        <div class="phase-header">
+          <div class="phase-name"><span class="pcode">F3</span> Unify 4-engine sentiment in newleaf-api</div>
+          <div class="phase-meta">
+            <span class="pill">~1 day</span>
+            <span class="pill">Convergence</span>
+          </div>
+        </div>
+        <div class="phase-body">
+          <ul>
+            <li>Make <code>api/src/tools/sentiment.ts</code> the canonical 4-engine implementation: Claude (with WebSearch) + Grok + Gemini + Reddit/StockTwits at weights 30/25/25/20</li>
+            <li>Route all 4 engines through the LLM router (after F2 adds Gemini support)</li>
+            <li>Extend response to include structured <code>keyDrivers[]</code> with source attribution — preserved on published Picks pages</li>
+            <li>Replace <code>generaterecommendations/sentiment-engine.cjs</code> with API calls to <code>/api/sentiment/:ticker</code></li>
+            <li>Retire direct Claude CLI <code>spawnSync</code> calls in <code>generaterecommendations/analyse-tiles.cjs</code>; route those through <code>api/</code> too</li>
+          </ul>
+          After this, all LLM calls in the system flow through the router. Cost tracking is universal.
+        </div>
+      </div>
+
+      <div class="phase p5">
+        <div class="phase-header">
+          <div class="phase-name"><span class="pcode">F4</span> Synthesis adapter + /api/publish-pick endpoint</div>
+          <div class="phase-meta">
+            <span class="pill">~2-3 days</span>
+            <span class="pill">Convergence · keystone</span>
+          </div>
+        </div>
+        <div class="phase-body">
+          <ul>
+            <li><code>POST /api/publish-pick</code> in <code>api/</code> — accepts verify_job_id + trade idea + analyst metadata</li>
+            <li><strong>Publish gate:</strong> reject if <code>verdict.call !== 'pass'</code> OR <code>verdict.confidence &lt; 65</code>. No analyst override path.</li>
+            <li><strong>Synthesis adapter:</strong> one Sonnet call. Preserves verify output (verdict, debate, bull/bear, flip conditions) as-is. Synthesises only the narrative gaps: strategy rationale prose, key levels with reasoning, exit strategy detail, sentiment driver attribution, alternatives considered.</li>
+            <li>Validate output against tile JSON schema (Zod). Fail loudly if any field is low-quality — don't degrade to hedge language.</li>
+            <li>Write Firestore <code>analyses/{tileId}</code> with full provenance from F2.</li>
+            <li><strong>Validation gate:</strong> run on 5 historical tickers, compare to current pipeline output. Ship only if quality matches.</li>
+            <li>Workbench UI gets a Candidates view + Publish action that calls this endpoint. Picks are now authored from the workbench, not generated in the pipeline.</li>
+          </ul>
+          The keystone of the architectural convergence. After this, the workbench becomes the authoring surface and the pipeline becomes a candidate generator.
+        </div>
+      </div>
+
+      <div class="phase p7">
+        <div class="phase-header">
+          <div class="phase-name"><span class="pcode">F5</span> Cost dashboard + observability</div>
+          <div class="phase-meta">
+            <span class="pill">~2 days</span>
+            <span class="pill">Observability</span>
+          </div>
+        </div>
+        <div class="phase-body">
+          <ul>
+            <li>Cost dashboard at <code>/admin/usage</code> reading from <code>usage/{date}/{requestId}</code> Firestore docs</li>
+            <li>Filters: by feature (verify, synthesis, sentiment, chat), by model, by prompt version, by day</li>
+            <li>Budget alerts via Firestore-triggered Cloud Function</li>
+            <li>Migrate Firebase <code>aiChat</code> from <code>OptionAdvisor</code> to <code>api/</code> as <code>/api/portfolio-chat</code> — replicate behaviour, then point Invest app at the new endpoint, then decommission OptionAdvisor</li>
+            <li>LaunchAgent cutover from <code>dev/newleaf-pipeline</code> to <code>newleafsystem/pipeline</code> — schedule a maintenance window, verify with one full cron cycle, switch.</li>
+          </ul>
+          After this, every AI call in the system is tracked. Every pick has provenance. OptionAdvisor is decommissioned. The <code>dev/</code> fallback directories can finally be deleted.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="callout">
+      <strong>Order is suggested, not strict.</strong> F1 (MACD fix) is fully independent and can ship anytime. F2 (provenance) should ship before F4 (synthesis adapter) because the adapter writes provenance fields. F3 (sentiment) should ship before F4 because the adapter reads sentiment output. F5 is a final consolidation pass and can be split if useful.
+    </div>
+  </div>
+</div>
+
+<!-- TAB: OPEN DECISIONS -->
+<div id="tab-decisions" class="tab-content">
+  <div class="section">
+    <div class="section-title">Decisions Log <span class="badge badge-target">Living document</span></div>
+    <p class="section-sub">A running log of decisions made across the v1-v4 deck progression. Resolved decisions are kept here for context (so future you knows why the system is the way it is). Open decisions are at the bottom.</p>
+
+    <div class="decisions decided">
+      <h4>D-publish &middot; Publish gate logic <span class="resolved-tag">RESOLVED</span></h4>
+      <div class="decided-note">
+        <strong>Locked:</strong> Only <code>verdict.call === 'pass'</code> picks publish. Marginal verdicts go to a review queue (no analyst override). Discipline over flexibility — if marginal becomes a regular occurrence, the orchestrator rubric needs tuning, not a bypass.
+      </div>
+      <ol>
+        <li><strong>Pass-only, no override</strong> (chosen) — deterministic publish gate. Hard discipline.</li>
+        <li class="struck"><strong>Pass + optional analyst override for marginal</strong> — rejected. Creates a discipline-erosion habit and a provenance question.</li>
+        <li class="struck"><strong>Marginal publishes with a "tentative" label</strong> — rejected. Mixes brand promise across published picks.</li>
+      </ol>
+    </div>
+
+    <div class="decisions decided">
+      <h4>D-product &middot; Picks vs Invest content split <span class="resolved-tag">RESOLVED</span></h4>
+      <div class="decided-note">
+        <strong>Locked:</strong> Picks carries the full adversarial analysis (bull case, bear case, debate, key levels, sentiment with attribution, flip conditions). Invest stays lean and execution-focused: limit price, position sizing, defend triggers, portfolio fit. Invest links to Picks for depth rather than duplicating it.
+      </div>
+    </div>
+
+    <div class="decisions decided">
+      <h4>D-repos &middot; Monorepo (revised from v3) <span class="resolved-tag">RESOLVED</span></h4>
+      <div class="decided-note">
+        <strong>Locked:</strong> Single monorepo at <code>/Users/manish/newleafsystem/</code> with four subfolders (<code>web/</code>, <code>api/</code>, <code>pipeline/</code>, <code>generaterecommendations/</code>). Each subfolder is logically separate (own <code>package.json</code>, own env, own dependencies) but they share one git history and one remote. v3 had specified four separate repos; that was revised mid-implementation in favour of consolidation, primarily to simplify backup and refactor-across-subfolder work.
+      </div>
+      <ol>
+        <li><strong>Monorepo with independent subfolders</strong> (chosen) — one git history, one remote, easier cross-subfolder convergence.</li>
+        <li class="struck"><strong>Four separate repos as siblings under a parent folder</strong> — initially the plan; rejected when it became clear the backup story was worse and cross-subfolder refactors would be harder.</li>
+        <li class="struck"><strong>Workspace-style monorepo (npm workspaces, Turborepo, Nx)</strong> — deferred. We have the structural unit; we can adopt workspace tooling later if it becomes useful. Don't pre-architect.</li>
+      </ol>
+    </div>
+    <div class="decisions decided">
+      <h4>D-canonical &middot; Canonical Firestore writers <span class="resolved-tag">RESOLVED</span></h4>
+      <div class="decided-note">
+        <strong>Locked:</strong> See the Firestore ownership table in <code>ARCHITECTURE.md</code> and the Monorepo Layout tab. <code>generaterecommendations/</code> is the sole writer to <code>tiles</code>, <code>analyses</code>, <code>weeklyPicks</code>, <code>recommendations</code>, <code>pick_outcomes</code>. Dual-writer drift resolved by Batch B deletion.
+      </div>
+    </div>
+
+    <div class="decisions decided">
+      <h4>D-diff &middot; Canonical copy for the 4 diverged writers <span class="resolved-tag">RESOLVED</span></h4>
+      <div class="decided-note">
+        <strong>Locked:</strong> Diff audit confirmed all four files (<code>publish-pick.cjs</code>, <code>analyse-tiles.cjs</code>, <code>create-weekly-picks.js</code>, <code>close-week.js</code>) were identical in business logic across the two copies. Only difference was import paths. <code>generaterecommendations/</code> versions chosen as canonical; newleafsystem copies deleted in Batch B.
+      </div>
+    </div>
+
+    <div class="decisions decided">
+      <h4>D-stragglers &middot; Dead-or-alive on newleafsystem-only files <span class="resolved-tag">RESOLVED</span></h4>
+      <div class="decided-note">
+        <strong>Locked:</strong> Audit classified 24 files as DEAD (zero callers anywhere) — deleted in Batch A. 6 files classified as LIVE (active in production call chains) — preserved in the monorepo migration. 7 files classified UNCERTAIN (manual-CLI tools that may be used ad-hoc) — preserved. The DEAD batch shipped as commit <code>051bcce</code>.
+      </div>
+    </div>
+
+    <div class="decisions decided">
+      <h4>D-keys &middot; Key rotation after CC saw secrets <span class="resolved-tag">RESOLVED</span></h4>
+      <div class="decided-note">
+        <strong>Locked:</strong> Path B chosen — monitor xAI, Gemini, Alpaca, R2, SMTP dashboards for unusual usage rather than rotating preemptively. The exposure was internal to Anthropic's session log, not externally compromised. Rotation cost ~15 minutes; monitoring is essentially free. Revisit if any dashboard shows anomalous activity.
+      </div>
+    </div>
+
+    <div class="decisions">
+      <h4>D1 &middot; Synthesis adapter design</h4>
+      <ol>
+        <li><strong>Single Sonnet call, narrative-only</strong> (recommended) — verify output (verdict, debate, bull/bear, risk, suggested fix) is preserved as-is. Sonnet synthesises only the narrative gaps: strategy rationale prose, key levels with reasoning, exit strategy detail, alternatives considered, sentiment driver attribution. ~$0.20/pick, 20-30s.</li>
+        <li><strong>Composed: preserve verify + Haiku for narrative gaps</strong> — cheaper (~$0.04) but inconsistent prose voice between preserved sections and Haiku-generated ones.</li>
+        <li><strong>No synthesis, ship with gaps</strong> — only render what verify produces. Misses strategy rationale, key levels, alternatives entirely. Page reads thinner than current pipeline output.</li>
+      </ol>
+    </div>
+
+    <div class="decisions">
+      <h4>D2 &middot; OI data source consolidation</h4>
+      <ol>
+        <li><strong>Keep Yahoo via local Python service</strong> (recommended) — it's the only real OI source today; pipeline already proves it works. Port the wrapper to API tools.</li>
+        <li><strong>Move to Nasdaq API only</strong> — already in API but unproven for pipeline-grade gamma. Risk: gamma walls change shape.</li>
+        <li><strong>Add Polygon or another paid OI source</strong> — most robust but adds cost and a new vendor dependency.</li>
+      </ol>
+    </div>
+
+    <div class="decisions">
+      <h4>D3 &middot; Verify model mode for publish path</h4>
+      <ol>
+        <li><strong>premium</strong> (recommended) — Sonnet across the board, ~$0.50/pick verify + ~$0.20 synthesis = ~$0.70/pick. ~$7/week at 10 picks/week. For paying-product output, quality matters more than savings.</li>
+        <li><strong>budget-qwq</strong> — current default in discover.html, ~$0.05/pick. Risk: published pick quality drops below current pipeline baseline.</li>
+      </ol>
+    </div>
+
+    <div class="decisions">
+      <h4>D4 &middot; What happens to picks published under the old flow</h4>
+      <ol>
+        <li><strong>Freeze</strong> (recommended) — leave existing picks alone, only new picks use new flow. Simplest. Win-rate comparison limited until enough new picks accumulate.</li>
+        <li><strong>Backfill provenance only</strong> — add <code>analysis_source: 'pipeline-v1'</code> to existing docs, no content change. Slightly better for analytics.</li>
+        <li><strong>Republish through new flow</strong> — re-run synthesis on existing picks. Highest effort, would change content, not recommended.</li>
+      </ol>
+    </div>
+
+    <div class="decisions">
+      <h4>D5 &middot; Authoring model: solo or team-ready</h4>
+      <ol>
+        <li><strong>Solo (you) for v1</strong> (recommended) — workbench UI assumes single author. Matches current manual flow. Ship faster.</li>
+        <li><strong>Multi-author with attribution</strong> — add author_id, author display, comments. Defer to v2 once flow is proven.</li>
+      </ol>
+    </div>
+
+    <div class="decisions">
+      <h4>D6 &middot; When to retire Claude CLI in pipeline</h4>
+      <ol>
+        <li><strong>After P5 validation gate passes</strong> (recommended) — keep CLI working until synthesis adapter quality is proven against 5+ historical tickers. Then remove in P6.</li>
+        <li><strong>Run in parallel for 2 weeks</strong> — both engines produce picks, manual comparison. Safer but doubles AI spend during overlap.</li>
+        <li><strong>Cut over in P6 with rollback plan</strong> — fastest but highest risk if synthesis quality regresses.</li>
+      </ol>
+    </div>
+
+    <div class="decisions">
+      <h4>D7 &middot; Minimum conviction floor for publish (new)</h4>
+      <ol>
+        <li><strong>65/100</strong> (recommended) — a pass verdict at 52% reads as uncertain to a paying reader. Setting a floor above the verify-pass threshold ensures published picks signal genuine conviction.</li>
+        <li><strong>60/100</strong> — slightly looser; preserves more candidates as publishable. Risk: borderline picks get through.</li>
+        <li><strong>No floor</strong> — anything verify calls 'pass' publishes. Simplest, but couples publish quality to whatever verify defines as the pass threshold.</li>
+      </ol>
+    </div>
+
+    <div class="decisions">
+      <h4>D8 &middot; OptionAdvisor decommission timing (new)</h4>
+      <p style="font-size: 0.86rem; color: var(--text-muted); margin: 8px 0;">Status of <code>OptionAdvisor/functions/index.js</code> as live backend for <code>cloudfunctions.net/api</code> is currently unknown — audit pending. Options depend on outcome:</p>
+      <ol>
+        <li><strong>If LIVE</strong> (recommended sequence): build <code>/api/portfolio-chat</code> in newleaf-api first (P7), cut over Invest app to call it, verify for 1 week, then archive OptionAdvisor.</li>
+        <li><strong>If NOT LIVE</strong>: archive OptionAdvisor immediately in P0b. Remove from local disk and any references.</li>
+        <li><strong>Defer decision</strong> — leave OptionAdvisor untouched, treat as informational legacy. Risk: file gets edited by accident, or someone forgets it's there and creates new dependencies on it.</li>
+      </ol>
+    </div>
+
+    <div class="callout blue">
+      <strong>State of decisions at v4:</strong> Seven resolved (publish gate, product split, monorepo, canonical Firestore writers, diff-canonical, stragglers, key rotation). Open going forward: D1 (synthesis adapter design), D2 (OI source) — both decided in principle but worth revisiting before F4. D3-D8 are all conditional on F4/F5 progress. The big one to actually decide before starting F4 is D1.
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchTab(ev, name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    ev.currentTarget.classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+</script>
+
+</body>
+</html>
