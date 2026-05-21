@@ -30,7 +30,10 @@ const fs     = require('fs');
 const path   = require('path');
 const { fetchSentiment, buildSentimentContext, computeModifier } = require('./sentiment-engine.cjs');
 const { fetchIndicators, buildIndicatorsContext, validateIndicatorsInResponse } = require('./indicators-fetch.cjs');
+const provenance = require('./firestore-helpers.cjs');
 const CONFIG = require('./config.cjs');
+
+const PROMPT_SEMVER = 'analyse-tiles-v3.2';
 
 // ── Firebase Init ──────────────────────────────────────────────────────────────
 
@@ -280,6 +283,7 @@ function validate(analysis) {
 // ── Main ───────────────────────────────────────────────────────────────────────
 
 async function main() {
+  provenance.initProvenance();
   log('');
   log('═══════════════════════════════════════════════════════════════');
   log('  🍃 NewLeaf — Automated Deep Analysis Generator');
@@ -452,18 +456,24 @@ async function main() {
       fs.writeFileSync(enrichedFile, JSON.stringify(enrichedPick, null, 2));
       log(`  → Saved enriched pick to ${enrichedFile}`);
 
-      // Push to Firestore
+      // Push to Firestore analyses/ with provenance
       log('  → Pushing to Firestore analyses collection...');
-      await db.collection('analyses').doc(tile.id).set({
+      const analysisOpts = {
+        modelUsed: 'claude-cli',
+        promptVersion: provenance.computePromptVersion(PROMPT_SEMVER, prompt),
+        analysisSource: 'analyse-tiles',
+      };
+      await provenance.writeAnalysisWithProvenance(db, tile.id, {
         ...analysis,
         _sentiment: sentiment || null,
         _generatedAt: admin.firestore.FieldValue.serverTimestamp(),
         _tileId:      tile.id,
         _symbol:      symbol,
         _strategy:    tile.strategy,
-      });
+      }, analysisOpts);
 
-      // Push sentiment back to tile document (so all UI surfaces see it)
+      // Tile already has provenance from publish-pick.cjs creation.
+      // Don't overwrite with enrichment-time provenance.
       if (sentiment) {
         const sentMod = computeModifier(sentiment, tile.direction || 'neutral');
         await db.collection('tiles').doc(tile.id).update({
