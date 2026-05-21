@@ -1,0 +1,33 @@
+{
+  "positions": [
+    {
+      "id": "SHOP-20260409",
+      "symbol": "SHOP",
+      "company": "Shopify Inc.",
+      "strategy": "Iron Condor",
+      "status": "adjusted",
+      "openDate": "2026-04-09",
+      "expiry": "April 24, 2026",
+      "entryPrice": "$119.96",
+      "credit": 3.66,
+      "strikes": "$100/$110P | $129/$140C",
+      "maxProfit": "$366",
+      "maxLoss": "$734",
+      "winRate": "80",
+      "score": "73",
+      "currentPnl": 0,
+      "adjustments": [
+        {
+          "date": "2026-04-09",
+          "time": "09:25",
+          "action": "Roll short call from $129 to $135",
+          "reason": "Price approaching call strike",
+          "newCredit": null
+        }
+      ],
+      "notes": [],
+      "reportUrl": "reports/pdf/SHOP/SHOP-Iron-Condor-latest.pdf"
+    }
+  ],
+  "updated": "2026-04-09T10:37:21.688795"
+}

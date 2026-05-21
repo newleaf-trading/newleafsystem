@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Position Detail Page — Redesign Spec</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root { --forest:#0B2D23; --gold:#C9A96E; --cream:#F7F5F0; --ink:#0B0F14; --mid:#3d3d35; --muted:#6b6b60; --green:#1D9E75; --red:#E24B4A; --border:rgba(15,61,46,.10); }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',sans-serif; background:var(--cream); color:var(--ink); line-height:1.7; }
+.container { max-width:900px; margin:0 auto; padding:40px 2rem 80px; }
+.doc-header { margin-bottom:48px; border-bottom:2px solid var(--forest); padding-bottom:24px; }
+.doc-header h1 { font-family:'Playfair Display',serif; font-size:32px; font-weight:700; color:var(--forest); }
+.doc-header .meta { font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); margin-top:12px; }
+h2 { font-family:'Playfair Display',serif; font-size:22px; color:var(--forest); margin:40px 0 16px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+h3 { font-size:15px; font-weight:700; color:var(--forest); margin:24px 0 8px; }
+h4 { font-size:13px; font-weight:700; color:var(--mid); margin:16px 0 6px; text-transform:uppercase; letter-spacing:.06em; }
+p { margin-bottom:12px; font-size:14px; color:var(--mid); }
+ul,ol { margin:8px 0 16px 20px; font-size:14px; color:var(--mid); }
+li { margin-bottom:6px; }
+code { font-family:'Space Mono',monospace; font-size:12px; background:rgba(15,61,46,.06); padding:2px 6px; border-radius:3px; color:var(--forest); }
+pre { font-family:'Space Mono',monospace; font-size:11px; background:var(--forest); color:#e2e8f0; padding:16px 20px; border-radius:8px; overflow-x:auto; margin:12px 0 20px; line-height:1.6; }
+.card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:20px 24px; margin:16px 0; }
+.label { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); margin-bottom:8px; }
+.bug { background:#fef2f2; border:1px solid rgba(226,75,74,.2); border-radius:8px; padding:12px 16px; margin:8px 0; font-size:13px; }
+.bug strong { color:var(--red); }
+.fix { background:#f0fdf4; border:1px solid rgba(29,158,117,.2); border-radius:8px; padding:12px 16px; margin:8px 0; font-size:13px; }
+.fix strong { color:var(--green); }
+table { width:100%; border-collapse:collapse; margin:12px 0 20px; font-size:13px; }
+th { text-align:left; padding:8px 12px; font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); border-bottom:2px solid var(--border); }
+td { padding:8px 12px; border-bottom:1px solid var(--border); color:var(--mid); }
+
+/* Mockup styles */
+.mockup { background:#fff; border:1px solid var(--border); border-radius:16px; padding:0; margin:20px 0; overflow:hidden; }
+.mockup-header { background:var(--forest); padding:16px 24px; color:#fff; }
+.mockup-body { padding:24px; }
+.progress-track { height:8px; background:#f1f5f9; border-radius:4px; position:relative; margin:8px 0; }
+.progress-fill { height:100%; border-radius:4px; position:absolute; top:0; left:0; }
+.metric-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:16px 0; }
+.metric-box { padding:12px 14px; border-radius:8px; background:rgba(15,61,46,.03); }
+.metric-box .val { font-family:'Space Mono',monospace; font-size:18px; font-weight:700; }
+.metric-box .lbl { font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+.leg-row { display:grid; grid-template-columns:80px 1fr 1fr 1fr 1fr 1fr; gap:8px; padding:8px 0; border-bottom:1px solid var(--border); font-size:12px; align-items:center; }
+.leg-row.header { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:600; border-bottom:2px solid var(--border); }
+.badge { font-family:'Space Mono',monospace; font-size:9px; padding:2px 8px; border-radius:4px; font-weight:700; display:inline-block; }
+.badge-buy { background:#E1F5EE; color:#0F6E56; }
+.badge-sell { background:#FEE2E2; color:#B91C1C; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="doc-header">
+  <h1>Position Detail Page — Redesign</h1>
+  <p style="font-size:15px;color:var(--muted);">Fix stale data, add live P&L tracking, progress visualization, and actionable alerts</p>
+  <div class="meta">NewLeaf System &middot; Design Spec &middot; April 2026</div>
+</div>
+
+<!-- BUGS -->
+<h2>1. Current Bugs</h2>
+
+<div class="bug"><strong>BUG:</strong> "Your Position" shows -$905 — R2 option chain matches wrong expiry (04-17 instead of 04-24). <code>matchOptionLeg</code> fixed to require exact expiry match, but PositionPnlCard fetches R2 independently and may not pass the correct expiry.</div>
+
+<div class="bug"><strong>BUG:</strong> "Profit & Loss Profile" says "If AMD stays below $210" — wrong symbol (should be ADBE) and wrong strike (should be $220). Component uses hardcoded generic text instead of tile data.</div>
+
+<div class="bug"><strong>BUG:</strong> Greeks (Theta: 0.00, Vega: 0.00) are from publish time. Never recalculated with current spot price and reduced DTE.</div>
+
+<div class="bug"><strong>BUG:</strong> "Live Trade Example" premiums are entry premiums, not current. Label says "Based on current price" but shows stale data.</div>
+
+<div class="bug"><strong>BUG:</strong> Risk Scenarios ("No Move: -$52") use publish-time spot, not current. Results are stale.</div>
+
+<div class="bug"><strong>BUG:</strong> Strategy Legs show entry premiums only — no comparison with current values.</div>
+
+<!-- REDESIGN -->
+<h2>2. Redesigned Page Structure</h2>
+
+<p>The page should have a single data source: <code>usePositionLiveData</code> hook that fetches R2 data once and distributes current prices, recalculated Greeks, and live P&L to all sections.</p>
+
+<h3>Section Order (Overview Tab)</h3>
+<ol>
+  <li><strong>Hero Header</strong> — symbol, live price, strategy badge, DTE countdown (existing, works fine)</li>
+  <li><strong>Position Monitor</strong> — NEW: replaces "Your Position" card. Progress bar, P&L, profit capture %, action alerts</li>
+  <li><strong>Strategy Summary</strong> — existing EnhancedStrategyHeader (works fine)</li>
+  <li><strong>Live Legs Table</strong> — entry vs current premium, per-leg P&L, live Greeks per leg</li>
+  <li><strong>P&L at Expiry</strong> — Highcharts payoff diagram (works fine)</li>
+  <li><strong>Risk Scenarios</strong> — recalculated with CURRENT price, not publish-time</li>
+  <li><strong>Exit Signals</strong> — calculated from actual strikes (fixed)</li>
+</ol>
+
+<!-- POSITION MONITOR -->
+<h2>3. Position Monitor (New Component)</h2>
+
+<p>Replaces the current "Your Position" dark green card. Shows where P&L sits between max loss and max profit, with clear profit capture percentage and action alerts.</p>
+
+<div class="mockup">
+  <div class="mockup-header">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;color:var(--gold);">YOUR POSITION · 9 CONTRACTS</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:4px;">Entry credit $224/contract · Total $2,016</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:'Space Mono',monospace;font-size:28px;font-weight:700;color:#ff6b6b;">-$900</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);">-$100/contract · -45% of max credit</div>
+      </div>
+    </div>
+  </div>
+  <div class="mockup-body">
+    <!-- Progress bar -->
+    <div style="margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:6px;">
+        <span>MAX LOSS -$276</span>
+        <span>BREAKEVEN</span>
+        <span>MAX PROFIT +$224</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" style="width:100%;background:linear-gradient(90deg,var(--red) 0%,var(--red) 35%,#f59e0b 50%,var(--green) 65%,var(--green) 100%);opacity:.15;"></div>
+        <!-- Current position marker -->
+        <div style="position:absolute;top:-4px;left:35%;width:16px;height:16px;background:var(--red);border:3px solid #fff;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.2);transform:translateX(-50%);"></div>
+      </div>
+      <div style="font-size:12px;color:var(--red);font-weight:600;margin-top:6px;">
+        36% of max loss reached · Breached short call
+      </div>
+    </div>
+
+    <!-- Key metrics -->
+    <div class="metric-row">
+      <div class="metric-box">
+        <div class="lbl">Entry Price</div>
+        <div class="val">$225.48</div>
+      </div>
+      <div class="metric-box">
+        <div class="lbl">Current Price</div>
+        <div class="val">$244.45</div>
+      </div>
+      <div class="metric-box">
+        <div class="lbl">Price Move</div>
+        <div class="val" style="color:var(--red);">+8.4%</div>
+      </div>
+      <div class="metric-box">
+        <div class="lbl">Days Left</div>
+        <div class="val">6d</div>
+      </div>
+    </div>
+
+    <!-- Action alert -->
+    <div style="padding:12px 16px;background:rgba(226,75,74,.08);border-radius:8px;border-left:3px solid var(--red);font-size:13px;color:var(--mid);">
+      <strong style="color:var(--red);">Action Required:</strong> ADBE has breached the $240 short call. Consider rolling the call side out to the next monthly expiry, or close to cap losses at -$900.
+    </div>
+  </div>
+</div>
+
+<h4>Position Monitor Data Requirements</h4>
+<table>
+  <thead><tr><th>Field</th><th>Source</th><th>Live?</th></tr></thead>
+  <tbody>
+    <tr><td>Current P&L ($)</td><td><code>calculatePositionPnl()</code> with R2 chain</td><td>Yes — recalculated every 60s</td></tr>
+    <tr><td>P&L per contract</td><td>P&L / quantity</td><td>Yes</td></tr>
+    <tr><td>% of max profit captured</td><td>P&L / maxProfit × 100</td><td>Yes</td></tr>
+    <tr><td>% of max loss reached</td><td>|P&L| / maxLoss × 100 (when negative)</td><td>Yes</td></tr>
+    <tr><td>Progress bar position</td><td>Map P&L from [-maxLoss, +maxProfit] to [0%, 100%]</td><td>Yes</td></tr>
+    <tr><td>Entry price</td><td><code>portfolioItem.entryUnderlyingPrice</code></td><td>No — fixed at add time</td></tr>
+    <tr><td>Current price</td><td>R2 spot price or PriceContext</td><td>Yes</td></tr>
+    <tr><td>DTE</td><td>Calculated from expiry date</td><td>Yes — counts down daily</td></tr>
+    <tr><td>Status + suggestion</td><td><code>getStrategyStatus()</code></td><td>Yes</td></tr>
+  </tbody>
+</table>
+
+<h4>Action Alert Rules</h4>
+<table>
+  <thead><tr><th>Condition</th><th>Alert</th><th>Color</th></tr></thead>
+  <tbody>
+    <tr><td>P&L ≥ 50% of max profit</td><td>"Consider closing — captured 50%+ of max profit"</td><td style="color:var(--green);">Green</td></tr>
+    <tr><td>P&L ≥ 80% of max profit</td><td>"Strong close signal — 80% profit captured. Close to lock in gains."</td><td style="color:var(--green);">Green</td></tr>
+    <tr><td>Short strike breached, DTE > 5</td><td>"Monitor — stock breached short strike. Consider rolling."</td><td style="color:#f59e0b;">Amber</td></tr>
+    <tr><td>Short strike breached, DTE ≤ 5</td><td>"Action required — breached with ≤5 DTE. Close or roll immediately."</td><td style="color:var(--red);">Red</td></tr>
+    <tr><td>P&L ≥ 80% of max loss</td><td>"Near max loss. Close to prevent further damage."</td><td style="color:var(--red);">Red</td></tr>
+    <tr><td>DTE = 0, in profit zone</td><td>"Let expire — full credit collected."</td><td style="color:var(--green);">Green</td></tr>
+    <tr><td>DTE = 0, breached</td><td>"Close immediately — assignment risk."</td><td style="color:var(--red);">Red</td></tr>
+    <tr><td>DTE ≤ 7, profit zone</td><td>"Theta harvesting — accelerated decay in your favor."</td><td style="color:var(--gold);">Gold</td></tr>
+  </tbody>
+</table>
+
+<!-- LIVE LEGS TABLE -->
+<h2>4. Live Legs Table (Redesigned)</h2>
+
+<p>Replace the current "Live Trade Example" (which shows stale entry premiums) and "Strategy Legs" (which shows no current data) with a single unified table showing entry vs current.</p>
+
+<div class="mockup">
+  <div class="mockup-body">
+    <h3 style="margin-top:0;">Strategy Legs — ADBE Iron Condor</h3>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Expiry: 2026-04-24 · 6 DTE · Entry credit: $2.24/share ($224/contract)</div>
+
+    <div class="leg-row header">
+      <div>Action</div><div>Strike</div><div>Entry</div><div>Current</div><div>Leg P&L</div><div>Greeks</div>
+    </div>
+    <div class="leg-row">
+      <div><span class="badge badge-buy">BUY</span></div>
+      <div><strong>$215 PUT</strong></div>
+      <div>$3.41</div>
+      <div style="color:var(--green);">$0.23</div>
+      <div style="color:var(--green);font-weight:600;">—</div>
+      <div style="font-size:10px;color:var(--muted);">Δ -0.01 · Θ -0.02</div>
+    </div>
+    <div class="leg-row">
+      <div><span class="badge badge-sell">SELL</span></div>
+      <div><strong>$220 PUT</strong></div>
+      <div>$5.05</div>
+      <div style="color:var(--green);">$0.48</div>
+      <div style="color:var(--green);font-weight:600;">+$457</div>
+      <div style="font-size:10px;color:var(--muted);">Δ -0.03 · Θ -0.04</div>
+    </div>
+    <div class="leg-row">
+      <div><span class="badge badge-sell">SELL</span></div>
+      <div><strong>$240 CALL</strong></div>
+      <div>$2.25</div>
+      <div style="color:var(--red);">$8.92</div>
+      <div style="color:var(--red);font-weight:600;">-$667</div>
+      <div style="font-size:10px;color:var(--muted);">Δ 0.82 · Θ -0.15</div>
+    </div>
+    <div class="leg-row">
+      <div><span class="badge badge-buy">BUY</span></div>
+      <div><strong>$245 CALL</strong></div>
+      <div>$1.65</div>
+      <div style="color:var(--green);">$5.93</div>
+      <div style="color:var(--green);font-weight:600;">+$428</div>
+      <div style="font-size:10px;color:var(--muted);">Δ 0.65 · Θ -0.12</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:12px 0;font-weight:700;border-top:2px solid var(--border);margin-top:4px;">
+      <span>Net Position P&L</span>
+      <span style="font-family:'Space Mono',monospace;color:var(--red);">-$100/contract</span>
+    </div>
+  </div>
+</div>
+
+<h4>Data Sources for Legs Table</h4>
+<ul>
+  <li><strong>Entry premium</strong> — <code>leg.entryPremium</code> (stored at portfolio add time)</li>
+  <li><strong>Current premium</strong> — Tier 1: <code>matchOptionLeg(r2Chain, strike, expiry, type)</code> with exact expiry. Tier 2: <code>bsPrice()</code> fallback.</li>
+  <li><strong>Leg P&L</strong> — <code>(currentPremium - entryPremium) × multiplier × 100</code></li>
+  <li><strong>Current Greeks</strong> — Recalculate with <code>bsPrice()</code> using current spot, current DTE, entry IV. Not the stale publish-time Greeks.</li>
+</ul>
+
+<!-- LIVE GREEKS -->
+<h2>5. Live Greeks (Recalculated)</h2>
+
+<p>Currently shows Theta: 0.00, Vega: 0.00 — these are from publish time when DTE was higher. With 6 DTE and the stock near the short call, Greeks should be significantly different.</p>
+
+<div class="fix"><strong>FIX:</strong> Use <code>pnlCalculator.bsPrice()</code> to recalculate Greeks with current spot price, remaining DTE, and entry IV. Display as "Estimated" with a badge showing the calculation method.</div>
+
+<h4>Expected Values for ADBE at $244.45, 6 DTE</h4>
+<table>
+  <thead><tr><th>Greek</th><th>Publish Time</th><th>Current (estimated)</th><th>Impact</th></tr></thead>
+  <tbody>
+    <tr><td>Delta</td><td>0.036</td><td>~-0.35</td><td>Position is now significantly short delta (bearish exposure)</td></tr>
+    <tr><td>Theta</td><td>0.00</td><td>~+$15/day</td><td>Theta decay is working in your favor (credit position)</td></tr>
+    <tr><td>Vega</td><td>0.00</td><td>~-$8/1% IV</td><td>IV decrease would help the position</td></tr>
+    <tr><td>Gamma</td><td>-0.006</td><td>~-0.04</td><td>High gamma risk near short strike with low DTE</td></tr>
+  </tbody>
+</table>
+
+<!-- RISK SCENARIOS -->
+<h2>6. Risk Scenarios (Recalculated)</h2>
+
+<div class="bug"><strong>BUG:</strong> Current risk scenarios use publish-time spot ($225.48). With ADBE now at $244.45, scenarios should show: "If ADBE rises 10% from HERE ($244.45 → $268.90)", not from publish price.</div>
+
+<div class="fix"><strong>FIX:</strong> Recalculate all three scenarios using current spot price:
+<ul>
+  <li><strong>Bullish +10%:</strong> $244.45 → $268.90 → P&L at expiry: -$276 (max loss, well beyond long call)</li>
+  <li><strong>No Move:</strong> $244.45 → $244.45 → P&L at expiry: -$221 (between short and long call)</li>
+  <li><strong>Bearish -10%:</strong> $244.45 → $220.01 → P&L at expiry: +$224 (back in profit zone)</li>
+</ul>
+</div>
+
+<!-- IMPLEMENTATION PLAN -->
+<h2>7. Implementation Plan</h2>
+
+<h3>Step 1: Create <code>usePositionLiveData</code> hook</h3>
+<p>Single hook for the PositionDetail page that provides all live data:</p>
+<pre><code>const {
+  currentSpot,         // from R2 or PriceContext
+  r2Chain,             // option chain for leg matching
+  pnlResult,           // from calculatePositionPnl
+  strategyStatus,      // from getStrategyStatus
+  liveGreeks,          // recalculated from BS
+  liveLegDetails,      // entry vs current per leg
+  riskScenarios,       // recalculated with current spot
+  progressPct,         // position on max-loss ↔ max-profit scale
+  profitCapturePct,    // % of max profit (or max loss) reached
+} = usePositionLiveData(tile, portfolioItem);</code></pre>
+
+<h3>Step 2: Build PositionMonitor component</h3>
+<p>Replaces PositionPnlCard. Contains progress bar, metric row, and action alert. Uses data from the hook.</p>
+
+<h3>Step 3: Build LiveLegsTable component</h3>
+<p>Replaces both LiveTradeExampleCard and the Strategy Legs section. Single table with entry vs current columns.</p>
+
+<h3>Step 4: Update Greeks section</h3>
+<p>Recalculate Greeks per leg using BS with current spot and remaining DTE. Show net position Greeks.</p>
+
+<h3>Step 5: Fix Risk Scenarios</h3>
+<p>Pass current spot instead of publish spot. Fix symbol reference (use <code>tile.symbol</code> not hardcoded).</p>
+
+<h3>Step 6: Fix P&L Profile</h3>
+<p>Replace hardcoded "AMD" with <code>tile.symbol</code>. Use actual short strikes for condition text.</p>
+
+<!-- FILES -->
+<h2>8. Files to Create/Modify</h2>
+<table>
+  <thead><tr><th>File</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td><code>src/trading/hooks/usePositionLiveData.js</code></td><td>NEW — single data hook for PositionDetail</td></tr>
+    <tr><td><code>src/trading/components/analysis/PositionMonitor.jsx</code></td><td>NEW — progress bar + metrics + alerts</td></tr>
+    <tr><td><code>src/trading/components/analysis/LiveLegsTable.jsx</code></td><td>NEW — entry vs current legs with P&L</td></tr>
+    <tr><td><code>src/trading/utils/pnlCalculator.js</code></td><td>ADD: <code>recalculateGreeks()</code> function</td></tr>
+    <tr><td><code>src/trading/pages/PositionDetail.jsx</code></td><td>MODIFY: wire new hook + components, remove old cards</td></tr>
+    <tr><td><code>src/trading/components/analysis/ProfitLossMetricsCard.jsx</code></td><td>FIX: use tile.symbol, actual strikes</td></tr>
+    <tr><td><code>src/trading/components/analysis/StrategyRisksCard.jsx</code></td><td>FIX: recalculate scenarios with current spot</td></tr>
+  </tbody>
+</table>
+
+<div style="margin-top:60px;padding-top:20px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);text-align:center;">
+  NewLeaf System — Position Detail Redesign Spec v1.0
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,72 @@
+/**
+ * NewLeaf Design Tokens — Single source of truth.
+ * Import this in main.jsx. All components reference these variables.
+ */
+
+:root {
+  /* ─── Brand Colors ─── */
+  --nl-green: #0B2D23;
+  --nl-gold: #C9A96E;
+  --nl-bg: #F7F5F0;
+  --nl-text: #111827;
+  --nl-text-muted: #6b7280;
+  --nl-text-dim: #9ca3af;
+  --nl-card: #FFFFFF;
+  --nl-border: rgba(17, 24, 39, 0.10);
+
+  /* ─── Semantic Colors ─── */
+  --nl-profit: #0B7A52;
+  --nl-profit-bg: rgba(11, 122, 82, 0.06);
+  --nl-profit-border: rgba(11, 122, 82, 0.15);
+
+  --nl-loss: #C94F4F;
+  --nl-loss-bg: rgba(201, 79, 79, 0.06);
+  --nl-loss-border: rgba(201, 79, 79, 0.15);
+
+  --nl-warn: #B7791F;
+  --nl-warn-bg: rgba(183, 121, 31, 0.06);
+  --nl-warn-border: rgba(183, 121, 31, 0.15);
+
+  --nl-action: #ea580c;
+  --nl-action-bg: rgba(234, 88, 12, 0.06);
+  --nl-action-border: rgba(234, 88, 12, 0.15);
+
+  /* ─── Typography ─── */
+  --nl-font-display: 'Playfair Display', serif;
+  --nl-font-mono: 'Space Mono', monospace;
+  --nl-font-body: 'Inter', -apple-system, sans-serif;
+
+  /* ─── Spacing ─── */
+  --nl-space-xs: 4px;
+  --nl-space-sm: 8px;
+  --nl-space-md: 14px;
+  --nl-space-lg: 20px;
+  --nl-space-xl: 32px;
+
+  /* ─── Radii ─── */
+  --nl-radius: 14px;
+  --nl-radius-sm: 8px;
+  --nl-radius-lg: 18px;
+  --nl-radius-pill: 999px;
+
+  /* ─── Shadows ─── */
+  --nl-shadow-sm: 0 1px 3px rgba(17, 24, 39, 0.04);
+  --nl-shadow-md: 0 4px 12px rgba(17, 24, 39, 0.06);
+  --nl-shadow-lg: 0 8px 24px rgba(17, 24, 39, 0.10);
+
+  /* ─── Breakpoints (for reference, used in media queries) ─── */
+  /* Mobile: < 640px | Tablet: 640-1024px | Desktop: > 1024px */
+}
+
+/* ─── Responsive container ─── */
+.nl-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 22px 16px 60px;
+}
+
+@media (max-width: 640px) {
+  .nl-container {
+    padding: 12px 12px 40px;
+  }
+}

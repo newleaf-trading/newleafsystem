@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1080px;
+  height: 1080px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(180deg, #0f172a 0%, #1a1a2e 50%, #16213e 100%);
+  color: #f8fafc;
+  overflow: hidden;
+  position: relative;
+}
+
+.container {
+  padding: 64px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 1px;
+}
+
+.leaf-icon {
+  font-size: 24px;
+}
+
+.badge {
+  padding: 8px 20px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.badge-bullish { background: linear-gradient(135deg, #22c55e, #16a34a); }
+.badge-bearish { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.badge-neutral { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+
+/* Center */
+.center {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.symbol-huge {
+  font-size: 120px;
+  font-weight: 900;
+  letter-spacing: -4px;
+  line-height: 1;
+  background: linear-gradient(180deg, #ffffff 0%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.strategy-label {
+  font-size: 28px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.divider {
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, #22c55e, #6366f1);
+  border-radius: 2px;
+}
+
+/* Metrics */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 32px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.metric {
+  text-align: center;
+  padding: 20px;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 16px;
+  border: 1px solid #334155;
+}
+
+.metric-value {
+  font-size: 36px;
+  font-weight: 800;
+}
+
+.metric-value.green { color: #4ade80; }
+.metric-value.blue { color: #60a5fa; }
+.metric-value.purple { color: #a5b4fc; }
+
+.metric-label {
+  font-size: 13px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 6px;
+}
+
+/* Legs */
+.legs-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.legs-title {
+  font-size: 13px;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.legs-display {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.leg-chip {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'SF Mono', monospace;
+}
+
+.leg-chip.buy { background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+.leg-chip.sell { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+
+/* Footer */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sentiment-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sentiment-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.sentiment-circle.bullish { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 2px solid #22c55e; }
+.sentiment-circle.bearish { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 2px solid #ef4444; }
+.sentiment-circle.neutral { background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border: 2px solid #6366f1; }
+
+.sentiment-info {
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+.expiry-info {
+  text-align: right;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.expiry-info .date { font-size: 18px; font-weight: 600; color: #94a3b8; }
+
+/* Decorative */
+.ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(99, 102, 241, 0.1);
+}
+.ring-1 { width: 600px; height: 600px; top: -200px; right: -200px; }
+.ring-2 { width: 400px; height: 400px; bottom: -100px; left: -100px; }
+</style>
+</head>
+<body>
+  <div class="ring ring-1"></div>
+  <div class="ring ring-2"></div>
+
+  <div class="container">
+    <div class="header">
+      <div class="brand">
+        <span class="leaf-icon">&#127811;</span>
+        NEWLEAF INVEST
+      </div>
+      <div class="badge badge-{{DIRECTION}}">{{DIRECTION_LABEL}}</div>
+    </div>
+
+    <div class="center">
+      <div class="symbol-huge">{{SYMBOL}}</div>
+      <div class="strategy-label">{{STRATEGY}}</div>
+      <div class="divider"></div>
+
+      <div class="metrics-grid">
+        <div class="metric">
+          <div class="metric-value green">${{NET_CREDIT}}</div>
+          <div class="metric-label">Credit</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value blue">{{POP}}%</div>
+          <div class="metric-label">Win Rate</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value purple">{{RR}}x</div>
+          <div class="metric-label">R:R</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="legs-section">
+      <div class="legs-title">Position</div>
+      <div class="legs-display">
+        {{LEGS_CHIPS_HTML}}
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="sentiment-block">
+        <div class="sentiment-circle {{SENTIMENT_CLASS}}">{{SENTIMENT_SCORE}}</div>
+        <div class="sentiment-info">AI Sentiment<br>{{SENTIMENT_LABEL}}</div>
+      </div>
+      <div class="expiry-info">
+        <div class="date">{{EXPIRY}}</div>
+        {{DTE}} days to expiry
+      </div>
+    </div>
+  </div>
+</body>
+</html>

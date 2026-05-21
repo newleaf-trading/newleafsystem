@@ -1,0 +1,9 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // API keys and jobs are server-side only (Firebase Admin SDK bypasses rules)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

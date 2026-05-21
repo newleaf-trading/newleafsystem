@@ -1,0 +1,20 @@
+{
+  "id": "SLV-20260409",
+  "symbol": "SLV",
+  "company": "iShares Silver Trust",
+  "strategy": "Iron Condor",
+  "status": "open",
+  "openDate": "2026-04-09",
+  "expiry": "2026-04-17",
+  "entryPrice": "",
+  "credit": 1.38,
+  "strikes": "",
+  "maxProfit": "$138",
+  "maxLoss": "",
+  "winRate": "",
+  "score": "",
+  "currentPnl": 0,
+  "adjustments": [],
+  "notes": [],
+  "reportUrl": "reports/pdf/SLV/SLV-Iron-Condor-latest.pdf"
+}

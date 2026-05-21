@@ -1,0 +1,8 @@
+node_modules
+dist/assets/
+dist/trading/
+# dist/workbench/ is tracked — static HTML from newleaf-alpaca-r2
+dist-backup/
+.env
+.env.local
+serviceAccountKey.json

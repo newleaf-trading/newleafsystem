@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Alpaca All Endpoints Test</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #00ff00; }
+    button { padding: 10px 20px; margin: 10px 5px; cursor: pointer; background: #333; color: #0f0; border: 1px solid #0f0; }
+    button:hover { background: #0f0; color: #000; }
+    input { width: 400px; padding: 5px; margin: 5px; background: #333; color: #0f0; border: 1px solid #0f0; }
+    pre { background: #000; padding: 10px; overflow-x: auto; border: 1px solid #0f0; margin: 10px 0; font-size: 11px; }
+    .success { color: #00ff00; }
+    .error { color: #ff0000; }
+    .warning { color: #ff9900; }
+    h3 { color: #C9A96E; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Alpaca - Test ALL Endpoints for Open Interest</h1>
+
+  <div>
+    <label>OCC Symbol:</label><br>
+    <input type="text" id="occSymbol" value="AMD260402C00200000">
+  </div>
+
+  <div>
+    <button onclick="testEndpoint('snapshots')">1. Snapshots</button>
+    <button onclick="testEndpoint('snapshots-opra')">2. Snapshots (OPRA)</button>
+    <button onclick="testEndpoint('trades')">3. Latest Trade</button>
+    <button onclick="testEndpoint('bars')">4. Bars</button>
+    <button onclick="testEndpoint('quotes')">5. Latest Quote</button>
+    <button onclick="testEndpoint('meta')">6. Meta/Contract Info</button>
+  </div>
+
+  <div id="output"></div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const KEY = 'AK45G2WHRJH2FSPJKCUDT6FDWE';
+    const SECRET = 'NarNQFfjopAQrpgWxY5MUaQqBZPt87XGss7HkCVUsMU';
+
+    async function testEndpoint(type) {
+      const occ = $('occSymbol').value;
+      $('output').innerHTML = `<h2>Testing: ${type.toUpperCase()}</h2>`;
+
+      let url;
+      switch(type) {
+        case 'snapshots':
+          url = `https://data.alpaca.markets/v1beta1/options/snapshots?symbols=${occ}`;
+          break;
+        case 'snapshots-opra':
+          url = `https://data.alpaca.markets/v1beta1/options/snapshots?symbols=${occ}&feed=opra`;
+          break;
+        case 'trades':
+          url = `https://data.alpaca.markets/v1beta1/options/trades/latest?symbols=${occ}`;
+          break;
+        case 'bars':
+          url = `https://data.alpaca.markets/v1beta1/options/bars/latest?symbols=${occ}`;
+          break;
+        case 'quotes':
+          url = `https://data.alpaca.markets/v1beta1/options/quotes/latest?symbols=${occ}`;
+          break;
+        case 'meta':
+          url = `https://data.alpaca.markets/v1beta1/options/meta/exchanges`;
+          break;
+      }
+
+      log(`Fetching: ${url}`);
+
+      try {
+        const res = await fetch(url, {
+          headers: {
+            'APCA-API-KEY-ID': KEY,
+            'APCA-API-SECRET-KEY': SECRET
+          }
+        });
+
+        log(`Status: ${res.status} ${res.statusText}`, res.ok ? 'success' : 'error');
+
+        const data = await res.json();
+        logJSON('Full Response', data);
+
+        // Check for OI in different possible locations
+        checkForOI(data, occ);
+
+      } catch (err) {
+        log(`Error: ${err.message}`, 'error');
+      }
+    }
+
+    function checkForOI(data, occ) {
+      const checks = [];
+
+      // Check snapshots
+      if (data.snapshots && data.snapshots[occ]) {
+        const snap = data.snapshots[occ];
+        checks.push({
+          location: 'snapshots[symbol]',
+          hasOI: 'openInterest' in snap,
+          value: snap.openInterest,
+          hasOIChange: 'openInterestChange' in snap,
+          oiChange: snap.openInterestChange
+        });
+      }
+
+      // Check snapshot (singular)
+      if (data.snapshot) {
+        checks.push({
+          location: 'snapshot',
+          hasOI: 'openInterest' in data.snapshot,
+          value: data.snapshot.openInterest
+        });
+      }
+
+      // Check trades
+      if (data.trades && data.trades[occ]) {
+        const trade = data.trades[occ];
+        checks.push({
+          location: 'trades[symbol]',
+          hasOI: 'openInterest' in trade,
+          value: trade.openInterest
+        });
+      }
+
+      // Check bars
+      if (data.bars && data.bars[occ]) {
+        const bar = data.bars[occ];
+        checks.push({
+          location: 'bars[symbol]',
+          hasOI: 'openInterest' in bar,
+          value: bar.openInterest
+        });
+      }
+
+      // Check quotes
+      if (data.quotes && data.quotes[occ]) {
+        const quote = data.quotes[occ];
+        checks.push({
+          location: 'quotes[symbol]',
+          hasOI: 'openInterest' in quote,
+          value: quote.openInterest
+        });
+      }
+
+      // Display results
+      if (checks.length > 0) {
+        const summary = document.createElement('div');
+        summary.innerHTML = '<h3>Open Interest Check:</h3>';
+
+        checks.forEach(c => {
+          const div = document.createElement('div');
+          div.className = c.hasOI ? 'success' : 'error';
+          div.innerHTML = `
+            <strong>${c.location}:</strong>
+            ${c.hasOI ? `✅ Field exists, value = ${c.value !== undefined ? c.value : 'null/undefined'}` : '❌ No openInterest field'}
+            ${c.hasOIChange ? ` (change: ${c.oiChange})` : ''}
+          `;
+          summary.appendChild(div);
+        });
+
+        $('output').appendChild(summary);
+
+        // Final verdict
+        const hasAnyOI = checks.some(c => c.hasOI && c.value !== undefined && c.value !== null);
+        const verdict = document.createElement('div');
+        verdict.style.marginTop = '20px';
+        verdict.style.fontSize = '16px';
+        verdict.style.fontWeight = 'bold';
+        verdict.className = hasAnyOI ? 'success' : 'error';
+        verdict.textContent = hasAnyOI
+          ? '🎉 SUCCESS: Open Interest data is available!'
+          : '❌ FAIL: No Open Interest data in this endpoint';
+        $('output').appendChild(verdict);
+
+      } else {
+        log('⚠️  No data structure recognized', 'warning');
+      }
+    }
+
+    function log(msg, type = 'success') {
+      const div = document.createElement('div');
+      div.className = type;
+      div.textContent = msg;
+      $('output').appendChild(div);
+    }
+
+    function logJSON(label, data) {
+      const div = document.createElement('div');
+      div.innerHTML = `<h3>${label}</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+      $('output').appendChild(div);
+    }
+  </script>
+</body>
+</html>

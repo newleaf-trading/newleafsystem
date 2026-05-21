@@ -1,0 +1,29 @@
+# NewLeaf System — Pipeline Schedulers
+# ═══════════════════════════════════════════════════════════════════
+# Times are in London (BST/GMT). 14:00 London = 9:00am ET.
+#
+# Jobs:
+#   1. Fast pipeline (intraday): every 15 min during market hours
+#   2. OI enrichment (daily): 9:32am ET = 14:32 London
+#   3. Watchlist pipeline (daily): 9:35am ET = 14:35 London
+#   4. Health check: every 5 min
+#
+# To enable:  ./start.sh
+# To disable: ./stop.sh
+# ═══════════════════════════════════════════════════════════════════
+
+# NewLeaf System — Intraday fast pipeline (Alpaca only, every 15 min, 9am-4pm ET Mon-Fri)
+*/15 14-21 * * 1-5 cd /Users/manish/dev/newleafsystem/scanner && /Users/manish/.nvm/versions/node/v20.19.5/bin/node pipeline-fast.js --watchlist >> /tmp/newleaf-fast-pipeline.log 2>&1
+
+# NewLeaf System — Daily catch-up (OI + watchlist + sync, runs every 15 min but only executes once/day)
+# Uses marker files so it never misses even if Mac was asleep at the original fixed time
+*/15 14-21 * * 1-5 cd /Users/manish/dev/newleafsystem/scanner && /bin/bash run-daily-catchup.sh
+
+# NewLeaf System — Update pick outcomes (6pm ET = 23:00 London BST, Mon-Fri)
+0 23 * * 1-5 cd /Users/manish/dev/newleafsystem && /Users/manish/.nvm/versions/node/v20.19.5/bin/node scripts/update-pick-outcomes.js >> /tmp/newleaf-pick-outcomes.log 2>&1
+
+# NewLeaf System — Weekly picks email (Sunday 6pm ET = 23:00 London BST)
+0 23 * * 0 cd /Users/manish/dev/newleafsystem && /Users/manish/.nvm/versions/node/v20.19.5/bin/node pipeline/send-weekly-email.js >> /tmp/newleaf-weekly-email.log 2>&1
+
+# NewLeaf System — Health check (every 5 min)
+*/5 * * * * cd /Users/manish/dev/newleafsystem/scanner && /bin/bash check-scheduler-health.sh >> /tmp/newleaf-health.log 2>&1

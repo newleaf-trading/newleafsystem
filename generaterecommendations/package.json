@@ -1,0 +1,32 @@
+{
+  "name": "newleaf-generaterecommendations",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "publish": "node publish-pick.cjs",
+    "process-wip": "node process-wip-picks.cjs",
+    "analyse": "node analyse-tiles.cjs",
+    "weekly": "node create-weekly-picks.js",
+    "close": "node close-week.js",
+    "outputs": "node generate-outputs.js",
+    "content": "node generate-content.js",
+    "content:social": "node generate-content.js --social-only",
+    "content:cards": "node generate-social-cards.js",
+    "content:copy": "node generate-social-copy.js",
+    "content:pdf": "node generate-content.js --pdf-only",
+    "email:preview": "node send-weekly-email.js --preview",
+    "email:send": "node send-weekly-email.js",
+    "email:dry-run": "node send-weekly-email.js --dry-run",
+    "outcomes": "node update-pick-outcomes.js",
+    "pdf": "python3 generate-report.py"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "axios": "^1.13.6",
+    "dotenv": "^16.4.5",
+    "firebase-admin": "^12.0.0",
+    "nodemailer": "^8.0.6",
+    "puppeteer": "^24.43.0"
+  }
+}

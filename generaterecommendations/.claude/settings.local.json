@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(python3:*)",
+      "Bash(wrangler r2:*)",
+      "Bash(curl -s \"https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev/reports/BA/latest.json\")"
+    ]
+  }
+}

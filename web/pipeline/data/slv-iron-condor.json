@@ -1,0 +1,60 @@
+{
+  "SYMBOL": "SLV",
+  "STRATEGY_NAME": "IRON CONDOR",
+  "REPORT_DATE": "April 6, 2026",
+  "REPORT_TIME": "5:30 PM ET",
+  "EXPIRATION_DATE": "April 17, 2026",
+  "DAYS_TO_EXPIRY": "11",
+  
+  "CURRENT_PRICE": "$65.79",
+  "PRICE_CHANGE": "-$3.45 (-3.45%)",
+  
+  "LONG_PUT_STRIKE": "$61",
+  "SHORT_PUT_STRIKE": "$66",
+  "SHORT_CALL_STRIKE": "$67.50",
+  "LONG_CALL_STRIKE": "$74.50",
+  
+  "MAX_PROFIT": "$120",
+  "MAX_LOSS": "$30",
+  "WIN_RATE": "71",
+  "RISK_REWARD": "4:1",
+  "BREAKEVEN_RANGE": "$64.80-$67.20",
+  "PROFIT_ZONE_RANGE": "$64.80 - $67.20",
+  
+  "TRADE_SCORE": "60",
+  "CONFIDENCE_LEVEL": "Moderate Confidence",
+  
+  "TRADE_SETUP_DESCRIPTION": "SLV Iron Condor ($66/$61 put, $67.50/$74.50 call, April 17, 2026).",
+  
+  "MARKET_CONTEXT": "After silver's 147% rally (from $30 to $111 in January 2026), SLV has consolidated to $65.79. This post-parabolic consolidation with 70.2% IV creates an ideal premium collection opportunity.",
+  
+  "THESIS_POINTS": "<li>Post-parabolic consolidation with neutral RSI (38.5)</li>\n        <li>Elevated IV (70.2%, 88th percentile) provides premium; expected contraction</li>\n        <li>Gamma walls at $60 (put) and $70 (call) define natural boundaries</li>\n        <li>Analyst consensus supports range-bound behavior through Q2 2026</li>",
+  
+  "WHY_NOW_POINTS": "<li>Post-Parabolic Consolidation Pattern (rare 147% rally → range-bound)</li>\n        <li>IV at 88th Percentile = Fat premium to collect</li>\n        <li>Analyst Consensus Aligned on consolidation view</li>\n        <li>Clean Catalyst Calendar (low tail risk over 11 days)</li>\n        <li>Strong Gamma Walls provide structural price support</li>",
+  
+  "MARKET_CONTEXT_FULL": "Silver experienced one of the most dramatic rallies in modern commodity history during 2025, surging from $30 to $111.36 on January 27, 2026—a gain of 147%. This move was driven by supply deficits, Chinese export restrictions, massive institutional buying, and accelerating industrial demand. Following this parabolic advance, SLV corrected 29% to $79, then consolidated into the $60-$75 range. Current price of $65.79 represents a new equilibrium.",
+  
+  "TECHNICAL_INDICATORS_ROWS": "<tr>\n            <td><strong>Implied Volatility</strong></td>\n            <td class=\"number neutral\">70.2%</td>\n            <td>Elevated - favorable for premium selling</td>\n        </tr>\n        <tr>\n            <td><strong>RSI (14-day)</strong></td>\n            <td class=\"number\">38.5</td>\n            <td>Neutral - range-bound expected</td>\n        </tr>\n        <tr>\n            <td><strong>Put Gamma Wall</strong></td>\n            <td class=\"number loss\">$60</td>\n            <td>Strong support</td>\n        </tr>\n        <tr>\n            <td><strong>Call Gamma Wall</strong></td>\n            <td class=\"number profit\">$70</td>\n            <td>Resistance ceiling</td>\n        </tr>",
+  
+  "ANALYST_QUOTES": "<div class=\"quote\">\n    Prices should consolidate below $100 until new fundamentals present themselves.\n    <div class=\"quote-author\">— James Cordier, CEO, OptionSpreaders.com (April 2026)</div>\n</div>\n\n<div class=\"quote\">\n    Silver averaging $81 for 2026, with Q4 high of $85. Steady but not explosive outlook expected.\n    <div class=\"quote-author\">— JP Morgan Global Research (March 2026)</div>\n</div>\n\n<div class=\"quote\">\n    Mid-year peak forecast around $100, followed by retreat to $85 year-end. Range-bound trading expected through Q2/Q3.\n    <div class=\"quote-author\">— UBS Strategists (March 2026)</div>\n</div>",
+  
+  "ANALYST_CONSENSUS_SUMMARY": "No major analyst is calling for immediate breakout. Consensus points to consolidation—precisely the environment where Iron Condors excel.",
+  
+  "GAMMA_WALL_EXPLANATION": "Market maker positioning creates natural support and resistance levels through gamma hedging. Put Wall at $60: Dealers must buy SLV as price approaches, creating mechanical support. Call Wall at $70: Dealers must sell as price rallies, creating mechanical resistance.",
+  
+  "GAMMA_WALL_TRADE_ALIGNMENT": "Our short strikes ($66 put, $67.50 call) are positioned between these walls, with long strikes ($61 put, $74.50 call) aligned just beyond them. This structure takes advantage of natural price containment created by dealer hedging flows.",
+  
+  "THETA_VALUE": "+$10-12/day",
+  "THETA_EXPLANATION": "<p><strong>What It Means:</strong> You earn $10-12 every day SLV stays range-bound.</p>\n        <p><strong>Why It Matters:</strong> 11 days × $10 = $110 potential profit from time decay alone (92% of max profit).</p>",
+  
+  "VEGA_VALUE": "-$15 per 1% IV drop",
+  "VEGA_EXPLANATION": "<p><strong>Current IV:</strong> 70.2% (88th percentile)</p>\n        <p><strong>Expected Move:</strong> IV likely to contract to 50-60% as consolidation continues.</p>\n        <p><strong>Benefit:</strong> 10-point IV drop = +$150 to position value.</p>",
+  
+  "POSITION_SIZING_ROWS": "<tr>\n            <td class=\"number\">$10,000</td>\n            <td class=\"number\">$200</td>\n            <td class=\"number emphasis\">6</td>\n        </tr>\n        <tr>\n            <td class=\"number\">$25,000</td>\n            <td class=\"number\">$500</td>\n            <td class=\"number emphasis\">16</td>\n        </tr>\n        <tr>\n            <td class=\"number\">$50,000</td>\n            <td class=\"number\">$1,000</td>\n            <td class=\"number emphasis\">33</td>\n        </tr>",
+  
+  "EXIT_STRATEGIES_ROWS": "<tr>\n            <td class=\"profit\">Profit Target</td>\n            <td>50% of max ($60)</td>\n            <td>Close entire position</td>\n        </tr>\n        <tr>\n            <td class=\"loss\">Stop Loss</td>\n            <td>Price <$63 or >$69</td>\n            <td>Close immediately</td>\n        </tr>\n        <tr>\n            <td class=\"neutral\">Time-Based</td>\n            <td>3 days to expiration</td>\n            <td>Close if not at 50%+ profit</td>\n        </tr>",
+  
+  "SCORE_BREAKDOWN_BARS": "<div class=\"score-bar-row\">\n            <div class=\"score-bar-label\">Technical Setup</div>\n            <div class=\"score-bar-track\">\n                <div class=\"score-bar-fill\" style=\"width: 75%;\"></div>\n                <div class=\"score-bar-value\">15/20</div>\n            </div>\n        </div>\n        \n        <div class=\"score-bar-row\">\n            <div class=\"score-bar-label\">Volatility Edge</div>\n            <div class=\"score-bar-track\">\n                <div class=\"score-bar-fill\" style=\"width: 90%;\"></div>\n                <div class=\"score-bar-value\">18/20</div>\n            </div>\n        </div>\n        \n        <div class=\"score-bar-row\">\n            <div class=\"score-bar-label\">Gamma Support</div>\n            <div class=\"score-bar-track\">\n                <div class=\"score-bar-fill\" style=\"width: 80%;\"></div>\n                <div class=\"score-bar-value\">12/15</div>\n            </div>\n        </div>\n        \n        <div class=\"score-bar-row\">\n            <div class=\"score-bar-label\">Catalyst Risk</div>\n            <div class=\"score-bar-track\">\n                <div class=\"score-bar-fill\" style=\"width: 67%;\"></div>\n                <div class=\"score-bar-value\">10/15</div>\n            </div>\n        </div>\n        \n        <div class=\"score-bar-row\">\n            <div class=\"score-bar-label\">Time Advantage</div>\n            <div class=\"score-bar-track\">\n                <div class=\"score-bar-fill\" style=\"width: 50%;\"></div>\n                <div class=\"score-bar-value\">5/10</div>\n            </div>\n        </div>",
+  
+  "TRADE_SUMMARY_ROWS": "<tr>\n            <td><strong>Symbol</strong></td>\n            <td>SLV (iShares Silver Trust)</td>\n        </tr>\n        <tr>\n            <td><strong>Strategy</strong></td>\n            <td>Iron Condor</td>\n        </tr>\n        <tr>\n            <td><strong>Current Price</strong></td>\n            <td class=\"number\">$65.79 (-$3.45)</td>\n        </tr>\n        <tr>\n            <td><strong>Expiration</strong></td>\n            <td>April 17, 2026</td>\n        </tr>\n        <tr>\n            <td><strong>Days to Expiry</strong></td>\n            <td>11</td>\n        </tr>\n        <tr>\n            <td><strong>Put Spread</strong></td>\n            <td>Sell $66 / Buy $61</td>\n        </tr>\n        <tr>\n            <td><strong>Call Spread</strong></td>\n            <td>Sell $67.50 / Buy $74.50</td>\n        </tr>\n        <tr>\n            <td><strong>Max Profit</strong></td>\n            <td class=\"number profit\">$120</td>\n        </tr>\n        <tr>\n            <td><strong>Max Loss</strong></td>\n            <td class=\"number loss\">$30</td>\n        </tr>\n        <tr>\n            <td><strong>Break-Evens</strong></td>\n            <td class=\"number\">$64.80, $67.20</td>\n        </tr>\n        <tr>\n            <td><strong>Win Probability</strong></td>\n            <td class=\"emphasis\">71%</td>\n        </tr>\n        <tr>\n            <td><strong>Risk/Reward</strong></td>\n            <td class=\"emphasis\">4:1</td>\n        </tr>\n        <tr>\n            <td><strong>Trade Score</strong></td>\n            <td class=\"neutral\">60/100 (Moderate)</td>\n        </tr>"
+}

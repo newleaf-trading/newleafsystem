@@ -1,0 +1,42 @@
+.badge {
+  display: inline-block;
+  border-radius: var(--nl-radius-pill);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sm { padding: 3px 8px; font-size: 10px; }
+.md { padding: 4px 10px; font-size: 11px; }
+
+/* ─── States ─── */
+.onTrack {
+  background: var(--nl-profit-bg);
+  color: var(--nl-profit);
+  border: 1px solid var(--nl-profit-border);
+}
+
+.profit {
+  background: var(--nl-profit-bg);
+  color: var(--nl-profit);
+  border: 1px solid var(--nl-profit-border);
+}
+
+.warn {
+  background: var(--nl-warn-bg);
+  color: var(--nl-warn);
+  border: 1px solid var(--nl-warn-border);
+}
+
+.action {
+  background: var(--nl-action-bg);
+  color: var(--nl-action);
+  border: 1px solid var(--nl-action-border);
+}
+
+.danger {
+  background: var(--nl-loss-bg);
+  color: var(--nl-loss);
+  border: 1px solid var(--nl-loss-border);
+}

@@ -1,0 +1,165 @@
+/* ─── Dashboard Page ─── */
+
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 0 60px;
+}
+
+/* ─── Eyebrow section label ─── */
+.eyebrow {
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(15, 61, 46, 0.48);
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+/* ─── Defend section ─── */
+.defendSection {
+  margin-top: 32px;
+}
+
+/* ─── Two-column layout ─── */
+.twoCol {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 32px;
+  align-items: stretch;
+}
+
+/* ─── Opportunity list ─── */
+.oppList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.oppCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.oppCard:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--nl-shadow-md);
+}
+
+.oppSymbol {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--nl-text);
+}
+
+.oppMeta {
+  font-size: 12px;
+  color: var(--nl-text-dim);
+}
+
+.oppRoc {
+  font-family: var(--nl-font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--nl-profit);
+}
+
+/* ─── Performance column ─── */
+.perfList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.perfHint {
+  font-size: 12px;
+  color: var(--nl-text-dim);
+  font-style: italic;
+  padding: 8px 0;
+}
+
+/* ─── Urgent card ─── */
+.urgentCard {
+  margin-bottom: 10px;
+  border-left-width: 3px;
+  border-left-style: solid;
+}
+
+.urgentRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.urgentLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.urgentRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.urgentReason {
+  font-size: 13px;
+  color: var(--nl-text-muted);
+  flex: 1;
+}
+
+/* ─── Calm summary bar ─── */
+.calmBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--nl-radius-sm);
+  margin-bottom: 20px;
+}
+
+.calmBarOk {
+  background: var(--nl-profit-bg);
+  border: 1px solid var(--nl-profit-border);
+}
+
+.calmBarNeutral {
+  background: rgba(17, 24, 39, 0.03);
+  border: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.calmText {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.calmTextOk { color: var(--nl-profit); }
+.calmTextNeutral { color: var(--nl-text-muted); }
+
+.viewAllLink {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--nl-green);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .twoCol {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .urgentLeft {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat /Users/manish/dev/newleaf-pipeline/output/*.log)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('gammaWall:', d.get\\('gammaWall'\\)\\); print\\('putWall:', d.get\\('putWall'\\)\\); print\\('callWall:', d.get\\('callWall'\\)\\); print\\('dataSource:', json.dumps\\(d.get\\('meta',{}\\).get\\('dataSource',{}\\), indent=2\\)\\); print\\('gammaLevels count:', len\\(d.get\\('gammaLevels',[]\\)\\) if d.get\\('gammaLevels'\\) else 0\\); print\\('score:', d.get\\('score',{}\\).get\\('total'\\) if isinstance\\(d.get\\('score'\\),dict\\) else d.get\\('score'\\)\\)\")",
+      "Bash(python3 -c ':*)",
+      "Bash(ls:*)",
+      "Bash(python3:*)",
+      "WebFetch(domain:pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev)",
+      "Bash(xxd /Users/manish/dev/newleaf-pipeline/pipeline-fast.js)",
+      "Bash(curl -sf \"https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev/reports/AAPL/latest.json\")",
+      "Bash(crontab:*)",
+      "Bash(kill 61985)",
+      "Bash(kill 61982)",
+      "Bash(curl -sf \"https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev/reports/NVDA/latest.json\")",
+      "Bash(curl -sf \"https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev/reports/NVDA/2026-05-20.json\")"
+    ]
+  }
+}

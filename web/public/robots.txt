@@ -1,0 +1,25 @@
+User-agent: *
+Allow: /
+Allow: /picks
+Allow: /picks/
+Allow: /picks/recap
+Allow: /picks/monthly
+Allow: /learn
+Allow: /how-we-pick
+Allow: /how-we-manage
+Allow: /how-we-recommend
+Allow: /track-record
+Allow: /blog
+Allow: /blog/
+Allow: /strategies/
+Allow: /privacy-policy
+Allow: /terms-and-conditions
+
+Disallow: /trading/
+Disallow: /workbench/
+Disallow: /quant/
+Disallow: /desk/
+Disallow: /admin
+Disallow: /invest
+
+Sitemap: https://newleafsystem.com/sitemap.xml

@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-06YFVHFNYT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-06YFVHFNYT");</script>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NewLeaf System — Strategy Logic</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,700&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="nl-brand.css">
+<script src="load-nav.js" defer></script>
+<style>
+:root{--forest: #0B2D23;--forest-mid:#1a5c44;--gold: #C9A96E;--cream: #F7F5F0;--cream-dark:#EDE8DC;--ink: #0B0F14;--ink-mid:#3d3d35;--ink-muted:#6b6b60;--ink-faint:#9b9b8e;--white:#fff;--border:rgba(15,61,46,.12);--border-mid:rgba(15,61,46,.22);--teal:#0d6e56;--teal-bg:#e0f2ec;--teal-text:#07473a;--amber:#a0620c;--amber-bg:#fef3dc;--amber-text:#7a4a07;--blue:#1a5ca0;--blue-bg:#e6f0fb;--blue-text:#0d3d6e;--purple:#5a3ab5;--purple-bg:#eeedfb;--purple-text:#3a2580;--coral:#b83c20;--coral-bg:#faeae6;--coral-text:#8a2c14;--pink:#993556;--pink-bg:#fbeaf0;--pink-text:#72243e;--green:#1a8c5e;--red:#c0392b;}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter', sans-serif;background:var(--cream);color:var(--ink);min-height:100vh}
+nav{background:var(--forest);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
+.nav-links{display:flex;list-style:none;align-items:center}
+.nav-links>a,.nav-links>.nav-item>a{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(201,169,110,.6);text-decoration:none;padding:0 14px;height:56px;display:flex;align-items:center;border-bottom:2px solid transparent;transition:all .2s}
+.nav-links>a:hover,.nav-links>a.active,.nav-links>.nav-item>a:hover,.nav-links>.nav-item>a.active{color:var(--gold);border-bottom-color:var(--gold)}
+.nav-item{position:relative;height:56px;display:flex;align-items:center}
+.nav-item>a{cursor:pointer}
+.nav-dropdown{position:absolute;top:56px;left:0;background:var(--forest);min-width:220px;border-radius:0 0 8px 8px;box-shadow:0 4px 12px rgba(0,0,0,.2);opacity:0;visibility:hidden;transform:translateY(-10px);transition:all .2s;z-index:200}
+.nav-item:hover .nav-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dropdown-group{padding:12px 0}
+.nav-dropdown-group:not(:last-child){border-bottom:1px solid rgba(201,169,110,.15)}
+.nav-dropdown-label{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);padding:8px 18px 6px;font-weight:400}
+.nav-dropdown a{font-family:'Inter', sans-serif;font-size:13px;color:rgba(255,255,255,.75);text-decoration:none;padding:8px 18px;display:block;transition:all .15s}
+.nav-dropdown a:hover{color:var(--gold);background:rgba(201,169,110,.08)}
+.nav-dropdown a.active{color:var(--gold);font-weight:500}
+.wrap{max-width:1100px;margin:0 auto;padding:0 2rem 60px}
+.ph{padding:36px 0 24px}
+.eyebrow{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.ph h1{font-family:'Playfair Display', serif;font-size:clamp(28px,4vw,42px);font-weight:300;color:var(--forest);letter-spacing:-.02em;margin-bottom:8px}
+.ph p{font-size:14px;color:var(--ink-muted);max-width:560px;line-height:1.6}
+
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border-mid);margin-bottom:28px}
+.tab{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:10px 18px;cursor:pointer;border:none;background:none;color:var(--ink-muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .18s}
+.tab.on{color:var(--forest);border-bottom-color:var(--forest);font-weight:700}
+.panel{display:none}.panel.on{display:block}
+
+/* === TAB 1: SCORING LOGIC === */
+.strat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+.sc-card{background:var(--white);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .18s}
+.sc-card.active,.sc-card:hover{border-color:var(--forest)}
+.sc-card.active{background:var(--forest)}
+.sc-card.active .sc-name{color:var(--gold)}
+.sc-card.active .sc-dir,.sc-card.active .sc-tag{color:rgba(201,169,110,.5)}
+.sc-card.active .sc-badge{background:rgba(201,169,110,.15);color:var(--gold)}
+.sc-tag{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:3px}
+.sc-name{font-size:13px;font-weight:500;color:var(--forest);margin-bottom:2px}
+.sc-dir{font-size:11px;color:var(--ink-muted)}
+.sc-badge{display:inline-block;border-radius:20px;padding:2px 8px;font-size:9px;font-family:'Space Mono',monospace;margin-top:5px}
+.b-credit{background:var(--teal-bg);color:var(--teal-text)}.b-debit{background:var(--amber-bg);color:var(--amber-text)}.b-neutral{background:var(--blue-bg);color:var(--blue-text)}
+
+.detail-area{display:grid;grid-template-columns:1fr 340px;gap:16px}
+.pillars-wrap{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px}
+.det-title{font-family:'Playfair Display', serif;font-size:20px;font-weight:400;color:var(--forest);margin-bottom:4px}
+.det-sub{font-size:12px;color:var(--ink-muted);margin-bottom:16px;line-height:1.5}
+.pillar{border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.p-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.p-name{font-size:12px;font-weight:500;color:var(--ink)}
+.p-wt{font-family:'Space Mono',monospace;font-size:10px;color:var(--teal);background:var(--teal-bg);padding:1px 7px;border-radius:20px}
+.p-desc{font-size:11px;color:var(--ink-muted);line-height:1.5;margin-bottom:7px}
+.p-thresh{display:flex;flex-wrap:wrap;gap:4px}
+.thresh{font-family:'Space Mono',monospace;font-size:9px;background:var(--cream-dark);border-radius:4px;padding:2px 6px;color:var(--ink-mid)}
+.thresh.g{background:var(--teal-bg);color:var(--teal-text)}.thresh.w{background:var(--amber-bg);color:var(--amber-text)}.thresh.r{background:var(--coral-bg);color:var(--coral-text)}
+
+.blockers-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px}
+.bl-title{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--red);margin-bottom:10px}
+.bl-item{display:flex;gap:8px;font-size:12px;color:var(--ink-muted);padding:5px 0;border-bottom:1px solid var(--border);align-items:flex-start;line-height:1.4}
+.bl-item:last-child{border-bottom:none}
+.bl-x{color:var(--red);font-weight:700;flex-shrink:0}
+
+/* === TAB 2: SIMULATOR === */
+.sim-layout{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.slider-block{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px}
+.sim-title{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:14px}
+.srow{margin-bottom:14px}
+.sl-hdr{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
+.sl-lbl{color:var(--ink-muted)}
+.sl-val{font-family:'Space Mono',monospace;font-weight:700;color:var(--forest)}
+input[type=range]{width:100%;accent-color:var(--forest)}
+.scores-block{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px}
+.score-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.score-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.sr-name{font-size:12px;color:var(--ink-mid);width:130px;flex-shrink:0}
+.sr-bar-bg{flex:1;height:7px;background:var(--cream-dark);border-radius:4px;overflow:hidden}
+.sr-bar-fill{height:100%;border-radius:4px;transition:width .35s ease}
+.sr-num{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;width:28px;text-align:right}
+.grade-pill{font-family:'Space Mono',monospace;font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px}
+.g-A{background:var(--teal-bg);color:var(--teal-text)}.g-B{background:var(--amber-bg);color:var(--amber-text)}.g-C{background:var(--cream-dark);color:var(--ink-muted)}.g-F{background:var(--coral-bg);color:var(--coral-text)}
+.earn-warn{background:var(--coral-bg);border:1px solid rgba(184,60,32,.2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--coral-text);margin-bottom:12px;display:none}
+
+/* === TAB 3: WHY THIS STOCK === */
+.why-intro{font-size:13px;color:var(--ink-muted);line-height:1.6;margin-bottom:20px;max-width:620px}
+.example-card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.ex-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.ex-sym{font-family:'Playfair Display', serif;font-size:22px;font-weight:400;color:var(--forest)}
+.ex-name{font-size:12px;color:var(--ink-muted);margin-top:2px}
+.ex-status{font-family:'Space Mono',monospace;font-size:9px;font-weight:700;padding:3px 10px;border-radius:20px}
+.s-pass{background:var(--teal-bg);color:var(--teal-text)}.s-fail{background:var(--coral-bg);color:var(--coral-text)}
+.factors-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.factor{background:var(--cream);border-radius:8px;padding:8px 10px}
+.f-lbl{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:3px}
+.f-val{font-size:14px;font-weight:500;color:var(--ink);margin-bottom:2px}
+.f-bar{height:3px;background:var(--cream-dark);border-radius:2px;overflow:hidden;margin-bottom:3px}
+.f-fill{height:100%;border-radius:2px}
+.f-ok{font-size:10px;color:var(--green)}.f-warn{font-size:10px;color:var(--amber)}.f-bad{font-size:10px;color:var(--red)}
+.reasons-area{border-top:1px solid var(--border);padding-top:12px}
+.ri{display:flex;gap:7px;font-size:12px;color:var(--ink-muted);padding:4px 0;align-items:flex-start;line-height:1.4}
+.r-ok::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+.r-warn::before{content:'⚠';color:var(--amber);flex-shrink:0}
+.r-bad::before{content:'✕';color:var(--red);font-weight:700;flex-shrink:0}
+.field-ref{font-family:'Space Mono',monospace;font-size:9px;background:var(--cream-dark);padding:1px 5px;border-radius:3px;color:var(--ink-faint);margin-left:4px}
+
+@media(max-width:900px){.strat-grid{grid-template-columns:repeat(2,1fr)}.detail-area{grid-template-columns:1fr}.sim-layout{grid-template-columns:1fr}.factors-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.strat-grid{grid-template-columns:1fr 1fr}.wrap{padding:0 1rem 60px}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="ph">
+    <p class="eyebrow">Transparency</p>
+    <h1>How NewLeaf System<br><em style="font-style:italic;color:var(--gold)">picks stocks</em></h1>
+    <p>Every scanner score is built from measurable pillars pulled from live pipeline data. No black box — you can audit every number.</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" data-tab="logic" onclick="switchTab('logic',this)">Scoring logic</button>
+    <button class="tab" data-tab="sim" onclick="switchTab('sim',this)">Live simulator</button>
+    <button class="tab" data-tab="why" onclick="switchTab('why',this)">Why this stock?</button>
+  </div>
+
+  <!-- TAB 1: SCORING LOGIC -->
+  <div id="panel-logic" class="panel on">
+    <div class="strat-grid" id="strat-grid"></div>
+    <div class="detail-area" id="strat-detail"></div>
+  </div>
+
+  <!-- TAB 2: SIMULATOR -->
+  <div id="panel-sim" class="panel">
+    <p style="font-size:13px;color:var(--ink-muted);margin-bottom:16px">Adjust any factor and all 8 strategy scores update instantly. This is exactly the logic the engine runs on your watchlist.</p>
+    <div class="sim-layout">
+      <div class="slider-block">
+        <p class="sim-title">Stock profile</p>
+        <div id="earn-warn" class="earn-warn">⚠ Earnings within 7 days — all credit strategies blocked</div>
+        <div class="srow"><div class="sl-hdr"><span class="sl-lbl">IV Rank</span><span class="sl-val" id="sv-ivr">48</span></div><input type="range" id="s-ivr" min="0" max="100" value="48" step="1" oninput="simUpdate()"></div>
+        <div class="srow"><div class="sl-hdr"><span class="sl-lbl">Put yield (weekly)</span><span class="sl-val" id="sv-py">1.5%</span></div><input type="range" id="s-py" min="0" max="8" value="1.5" step="0.1" oninput="simUpdate()"></div>
+        <div class="srow"><div class="sl-hdr"><span class="sl-lbl">Trend direction</span><span class="sl-val" id="sv-td">Neutral</span></div><input type="range" id="s-td" min="0" max="2" value="1" step="1" oninput="simUpdate()"></div>
+        <div class="srow"><div class="sl-hdr"><span class="sl-lbl">Trend strength</span><span class="sl-val" id="sv-ts">50</span></div><input type="range" id="s-ts" min="0" max="100" value="50" step="1" oninput="simUpdate()"></div>
+        <div class="srow"><div class="sl-hdr"><span class="sl-lbl">ATR % (14d range-bound)</span><span class="sl-val" id="sv-atr">1.8%</span></div><input type="range" id="s-atr" min="0" max="6" value="1.8" step="0.1" oninput="simUpdate()"></div>
+        <div class="srow"><div class="sl-hdr"><span class="sl-lbl">Days to earnings</span><span class="sl-val" id="sv-earn">45d</span></div><input type="range" id="s-earn" min="0" max="90" value="45" step="1" oninput="simUpdate()"></div>
+        <div class="srow"><div class="sl-hdr"><span class="sl-lbl">IV term slope (calendar)</span><span class="sl-val" id="sv-cal">+4%</span></div><input type="range" id="s-cal" min="-2" max="12" value="4" step="0.5" oninput="simUpdate()"></div>
+      </div>
+      <div class="scores-block">
+        <p class="sim-title">Strategy scores</p>
+        <div id="score-bars"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: WHY THIS STOCK -->
+  <div id="panel-why" class="panel">
+    <p class="why-intro">When you expand any row in a scanner, this is what appears. Every factor is traceable to a specific field in the pipeline output — no mystery scores.</p>
+
+    <!-- PASS example -->
+    <div class="example-card">
+      <div class="ex-hdr">
+        <div>
+          <div class="ex-sym">NVDA</div>
+          <div class="ex-name">Nvidia Corp · mega cap · Technology</div>
+        </div>
+        <span class="ex-status s-pass">CSP eligible · Score 84 · Grade A</span>
+      </div>
+      <div class="factors-grid">
+        <div class="factor">
+          <div class="f-lbl">IV Rank</div>
+          <div class="f-val">62</div>
+          <div class="f-bar"><div class="f-fill" style="width:62%;background:var(--teal)"></div></div>
+          <div class="f-ok">✓ above 35 minimum</div>
+        </div>
+        <div class="factor">
+          <div class="f-lbl">Trend</div>
+          <div class="f-val">Bullish · 78</div>
+          <div class="f-bar"><div class="f-fill" style="width:78%;background:var(--teal)"></div></div>
+          <div class="f-ok">✓ put stays OTM</div>
+        </div>
+        <div class="factor">
+          <div class="f-lbl">Put yield (25d)</div>
+          <div class="f-val">2.4%</div>
+          <div class="f-bar"><div class="f-fill" style="width:72%;background:var(--teal)"></div></div>
+          <div class="f-ok">✓ above 1.5% target</div>
+        </div>
+        <div class="factor">
+          <div class="f-lbl">Open interest</div>
+          <div class="f-val">3,840</div>
+          <div class="f-bar"><div class="f-fill" style="width:88%;background:var(--blue)"></div></div>
+          <div class="f-ok">✓ liquid chain</div>
+        </div>
+        <div class="factor">
+          <div class="f-lbl">Days to earnings</div>
+          <div class="f-val">48d</div>
+          <div class="f-bar"><div class="f-fill" style="width:53%;background:var(--blue)"></div></div>
+          <div class="f-ok">✓ no near-term risk</div>
+        </div>
+        <div class="factor">
+          <div class="f-lbl">Above SMA50</div>
+          <div class="f-val">Yes</div>
+          <div class="f-bar"><div class="f-fill" style="width:100%;background:var(--teal)"></div></div>
+          <div class="f-ok">✓ uptrend confirmed</div>
+        </div>
+      </div>
+      <div class="reasons-area">
+        <div class="ri r-ok">IV Rank 62 — elevated premium environment<span class="field-ref">gammaData.ivData.ivRank</span></div>
+        <div class="ri r-ok">Bullish trend score 78 — put spread stays OTM<span class="field-ref">technicalData.trendEngine.state</span></div>
+        <div class="ri r-ok">Put yield 2.4% — solid weekly income<span class="field-ref">optionChain[] delta≈0.25</span></div>
+        <div class="ri r-ok">OI 3,840 — liquid, tight bid-ask<span class="field-ref">optionChain[].openInterest</span></div>
+        <div class="ri r-ok">48 days to earnings — no event risk<span class="field-ref">earningsDate</span></div>
+        <div class="ri r-warn">IV Rank > 60 — verify not a distress event before entering</div>
+      </div>
+    </div>
+
+    <!-- FAIL example -->
+    <div class="example-card">
+      <div class="ex-hdr">
+        <div>
+          <div class="ex-sym">UVXY</div>
+          <div class="ex-name">VIX 2× ETF · etf · Volatility</div>
+        </div>
+        <span class="ex-status s-fail">CSP blocked · Score 22 · Grade F</span>
+      </div>
+      <div class="factors-grid">
+        <div class="factor">
+          <div class="f-lbl">IV Rank</div>
+          <div class="f-val">88</div>
+          <div class="f-bar"><div class="f-fill" style="width:88%;background:var(--red)"></div></div>
+          <div class="f-warn">⚠ extreme — verify cause</div>
+        </div>
+        <div class="factor">
+          <div class="f-lbl">Trend</div>
+          <div class="f-val">Bearish · 82</div>
+          <div class="f-bar"><div class="f-fill" style="width:82%;background:var(--red)"></div></div>
+          <div class="f-bad">✕ high assignment risk</div>
+        </div>
+        <div class="factor">
+          <div class="f-lbl">marketCapTier</div>
+          <div class="f-val">ETF</div>
+          <div class="f-bar"><div class="f-fill" style="width:45%;background:var(--amber)"></div></div>
+          <div class="f-warn">⚠ volatility ETF — mean reverts</div>
+        </div>
+      </div>
+      <div class="reasons-area">
+        <div class="ri r-bad">Bearish trend score 82 — put assignment near certain<span class="field-ref">technicalData.trendEngine</span></div>
+        <div class="ri r-bad">UVXY mean-reverts — owning 100 shares is a capital trap</div>
+        <div class="ri r-warn">IV Rank 88 — extreme reading, not caused by earnings. Avoid CSP.</div>
+        <div class="ri r-ok">Better suited: Bear Call Spread (score 74) — check Bear Call scanner</div>
+      </div>
+    </div>
+
+    <!-- IRON CONDOR example -->
+    <div class="example-card">
+      <div class="ex-hdr">
+        <div>
+          <div class="ex-sym">SPY</div>
+          <div class="ex-name">S&amp;P 500 ETF · etf · Index</div>
+        </div>
+        <span class="ex-status s-pass">Iron Condor eligible · Score 78 · Grade B</span>
+      </div>
+      <div class="factors-grid">
+        <div class="factor">
+          <div class="f-lbl">IV Rank</div>
+          <div class="f-val">44</div>
+          <div class="f-bar"><div class="f-fill" style="width:44%;background:var(--blue)"></div></div>
+          <div class="f-ok">✓ elevated premium</div>
+        </div>
+        <div class="factor">
+          <div class="f-lbl">Trend</div>
+          <div class="f-val">Neutral</div>
+          <div class="f-bar"><div class="f-fill" style="width:95%;background:var(--teal)"></div></div>
+          <div class="f-ok">✓ condor stays in range</div>
+        </div>
+        <div class="factor">
+          <div class="f-lbl">ATR % (range-bound)</div>
+          <div class="f-val">1.1%</div>
+          <div class="f-bar"><div class="f-fill" style="width:88%;background:var(--teal)"></div></div>
+          <div class="f-ok">✓ tight daily range</div>
+        </div>
+        <div class="factor">
+          <div class="f-lbl">Condor gate</div>
+          <div class="f-val">Allowed</div>
+          <div class="f-bar"><div class="f-fill" style="width:100%;background:var(--teal)"></div></div>
+          <div class="f-ok">✓ gamma model approves</div>
+        </div>
+        <div class="factor">
+          <div class="f-lbl">IV − Realized Vol</div>
+          <div class="f-val">+6.2%</div>
+          <div class="f-bar"><div class="f-fill" style="width:82%;background:var(--teal)"></div></div>
+          <div class="f-ok">✓ selling rich premium</div>
+        </div>
+        <div class="factor">
+          <div class="f-lbl">Gamma wall distance</div>
+          <div class="f-val">8.4% above</div>
+          <div class="f-bar"><div class="f-fill" style="width:78%;background:var(--blue)"></div></div>
+          <div class="f-ok">✓ wing safely inside wall</div>
+        </div>
+      </div>
+      <div class="reasons-area">
+        <div class="ri r-ok">Neutral trend — condor profit zone holds<span class="field-ref">technicalData.trendEngine.state</span></div>
+        <div class="ri r-ok">ATR 1.1% — tight daily range confirms range-bound<span class="field-ref">technicalData.atrPct</span></div>
+        <div class="ri r-ok">IV − RV spread +6.2% — selling premium above realised vol<span class="field-ref">technicalData.realizedVol30d</span></div>
+        <div class="ri r-ok">Gamma wall 8.4% above — call wing safely inside resistance<span class="field-ref">gammaData.analysis.key_levels</span></div>
+        <div class="ri r-ok">condorGate.condorAllowed = true — gamma model confirms<span class="field-ref">gammaData.condorGate</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STRATS=[
+  {key:'WHEEL',name:'Wheel',dir:'Neutral / Bullish',type:'credit',badge:'b-credit',label:'collect premium',
+   desc:'Full stock ownership cycle. Sell a put, get assigned, sell covered calls. Requires willing to own 100 shares of the stock.',
+   pillars:[
+     {name:'Quality score',w:'25%',desc:'Market cap tier × fundamental quality. Mega/large cap preferred — you need to be happy owning the stock if assigned.',th:[{l:'mega=100',c:'g'},{l:'large=85',c:'g'},{l:'etf=80',c:'g'},{l:'mid=55',c:'w'},{l:'small=30',c:'r'}]},
+     {name:'IV Rank',w:'25%',desc:'Premium selling environment. Wheel needs 35–65 sweet spot. Too low = not worth the capital. Too extreme = distress event.',th:[{l:'<25 → 20pts',c:'r'},{l:'35–50 → 80pts',c:'g'},{l:'50–65 → 95pts',c:'g'},{l:'>80 → 50pts',c:'w'}]},
+     {name:'Put yield',w:'25%',desc:'Weekly yield = put mid ÷ stock price. 1.5% minimum to make the Wheel math work.',th:[{l:'<0.4% → 15',c:'r'},{l:'0.8% → 35',c:'w'},{l:'1.5% → 75',c:'g'},{l:'>4% → 100',c:'g'}]},
+     {name:'Trend',w:'15%',desc:'Bullish or neutral only. Bearish trend = high assignment probability into falling stock.',th:[{l:'bullish → 90',c:'g'},{l:'neutral → 70',c:'g'},{l:'bearish → 10',c:'r'}]},
+     {name:'Liquidity',w:'10%',desc:'Open interest on the 25-delta put. Low OI = wide bid-ask = value leakage at entry and exit.',th:[{l:'OI>2000 → 100',c:'g'},{l:'OI>500 → 75',c:'g'},{l:'OI<50 → 15',c:'r'}]},
+   ],
+   blockers:['Assignment not accepted in user settings','Price × 100 > max capital setting','Small cap tier — too risky for Wheel assignment','Earnings within 7 days — avoid entering']},
+  {key:'CSP',name:'Cash-Secured Put',dir:'Neutral / Bullish',type:'credit',badge:'b-credit',label:'collect premium',
+   desc:'Sell OTM put, collect premium. Simpler than Wheel — no phase 2 covered call commitment required.',
+   pillars:[
+     {name:'IV Rank',w:'30%',desc:'Needs elevated premium. IV Rank < 35 = not worth selling puts at all.',th:[{l:'<25 → 20pts',c:'r'},{l:'35–65 → 95pts',c:'g'},{l:'>80 → 50pts',c:'w'}]},
+     {name:'Put yield',w:'30%',desc:'Weekly put yield = put mid / price. Below 0.8% weekly = questionable trade.',th:[{l:'<0.4% → 15',c:'r'},{l:'1.5% → 75',c:'g'},{l:'>4% → 100',c:'g'}]},
+     {name:'Trend',w:'25%',desc:'Bullish or neutral protects the put from going deep ITM.',th:[{l:'bullish → 90',c:'g'},{l:'neutral → 70',c:'g'},{l:'bearish → 10',c:'r'}]},
+     {name:'Liquidity',w:'15%',desc:'Tight bid-ask spread. Wide spreads = value leakage at entry and at 50% profit management.',th:[{l:'OI>2000 → 100',c:'g'},{l:'OI>200 → 55',c:'w'},{l:'OI<50 → 15',c:'r'}]},
+   ],
+   blockers:['Earnings within 7 days','No put contract for 14–60 DTE in option chain']},
+  {key:'IRON_CONDOR',name:'Iron Condor',dir:'Neutral',type:'neutral',badge:'b-neutral',label:'range-bound',
+   desc:'Sell put spread + call spread. Four legs. Profits if stock stays inside both wing strikes until expiry.',
+   pillars:[
+     {name:'IV Rank',w:'25%',desc:'Condor credit must be worthwhile for the defined risk. Below 35 = skip.',th:[{l:'<35 → 45',c:'r'},{l:'40–65 → 95',c:'g'},{l:'>75 → 75',c:'w'}]},
+     {name:'Trend neutrality',w:'25%',desc:'High directional bias = condor gets tested immediately. Needs neutral state.',th:[{l:'neutral → 95',c:'g'},{l:'weak trend → 70',c:'w'},{l:'strong trend → 20',c:'r'}]},
+     {name:'ATR % (range-bound)',w:'20%',desc:'14-day ATR as % of price. Low ATR = tight range. Condor profit zone survives.',th:[{l:'ATR<1% → 100',c:'g'},{l:'ATR<2% → 75',c:'g'},{l:'ATR>4% → 20',c:'r'}]},
+     {name:'IV minus Realized Vol',w:'15%',desc:'Positive IV-RV spread = selling rich premium above what the stock actually moves.',th:[{l:'IV-RV>10% → 100',c:'g'},{l:'IV-RV>2% → 70',c:'g'},{l:'IV<RV → 25',c:'r'}]},
+     {name:'Gamma wall clearance',w:'15%',desc:'Wings must be inside gamma walls. Wall distance = buffer before breakthrough.',th:[{l:'wall>10% → 100',c:'g'},{l:'wall>5% → 80',c:'g'},{l:'wall<1% → 10',c:'r'}]},
+   ],
+   blockers:['gammaData.condorGate.condorAllowed = false (gamma model blocks it)','Earnings within 7 days — gap risk kills condor','No put25 + call25 contracts in chain']},
+  {key:'BULL_PUT',name:'Bull Put Spread',dir:'Mild Bullish',type:'credit',badge:'b-credit',label:'collect premium',
+   desc:'Sell put spread below price. Defined risk vs cash-secured put. Capital efficient.',
+   pillars:[
+     {name:'IV Rank',w:'30%',desc:'Credit spread needs premium to collect. Below 30 = not worth the defined-risk constraint.',th:[{l:'<25 → 20',c:'r'},{l:'35–65 → 95',c:'g'},{l:'>80 → 50',c:'w'}]},
+     {name:'Trend',w:'35%',desc:'Bullish trend is the core thesis. Bearish trend = spread gets tested immediately.',th:[{l:'bullish → 90',c:'g'},{l:'neutral → 65',c:'w'},{l:'bearish → 10',c:'r'}]},
+     {name:'Liquidity',w:'20%',desc:'Both legs must be liquid. Check OI on both the short and long put.',th:[{l:'OI>2000 → 100',c:'g'},{l:'OI>500 → 75',c:'g'},{l:'OI<50 → 15',c:'r'}]},
+     {name:'Gamma wall below',w:'15%',desc:'Wall below short put = stock less likely to break through the short strike.',th:[{l:'wall>10% → 100',c:'g'},{l:'wall>5% → 80',c:'g'},{l:'wall<1% → 10',c:'r'}]},
+   ],
+   blockers:['Bearish trend state','Earnings within 7 days','No put15 wing contract in chain']},
+  {key:'BEAR_CALL',name:'Bear Call Spread',dir:'Mild Bearish',type:'credit',badge:'b-credit',label:'collect premium',
+   desc:'Sell call spread above price. Gamma wall above acts as natural resistance ceiling.',
+   pillars:[
+     {name:'IV Rank',w:'30%',desc:'Elevated call premium required. Works best at IV Rank 35–70.',th:[{l:'<35 → 45',c:'r'},{l:'35–70 → 95',c:'g'},{l:'>80 → 50',c:'w'}]},
+     {name:'Trend',w:'30%',desc:'Bearish or neutral. Bullish trend = spread gets tested immediately.',th:[{l:'bearish → 90',c:'g'},{l:'neutral → 65',c:'w'},{l:'bullish → 10',c:'r'}]},
+     {name:'Gamma wall above',w:'25%',desc:'Wall above price = natural resistance. Short call placed below the wall.',th:[{l:'wall>10% → 100',c:'g'},{l:'wall>5% → 80',c:'g'},{l:'wall<3% → 40',c:'r'}]},
+     {name:'Liquidity',w:'15%',desc:'Both call legs must be liquid at entry and roll time.',th:[{l:'OI>2000 → 100',c:'g'},{l:'OI>200 → 55',c:'w'}]},
+   ],
+   blockers:['Bullish trend state','Earnings within 7 days','No call15 wing contract']},
+  {key:'BULL_CALL',name:'Bull Call Spread',dir:'Bullish',type:'debit',badge:'b-debit',label:'pay premium',
+   desc:'Buy ATM call, sell OTM call. Pay debit. Need strong bullish move to profit.',
+   pillars:[
+     {name:'IV Rank (low = good)',w:'35%',desc:'Opposite logic to credit strategies. LOW IV = cheap calls = better entry. High IV = expensive debit, avoid.',th:[{l:'<25 → 100pts',c:'g'},{l:'<40 → 85pts',c:'g'},{l:'>55 → 30pts',c:'r'},{l:'>70 → 10pts',c:'r'}]},
+     {name:'Trend',w:'40%',desc:'Needs strong bullish conviction. Neutral is not enough — debit spreads require the stock to actually move.',th:[{l:'bullish strong → 95',c:'g'},{l:'bullish weak → 70',c:'w'},{l:'neutral → 30',c:'r'},{l:'bearish → 5',c:'r'}]},
+     {name:'Catalyst window',w:'15%',desc:'Earnings in back month (14–45d) = expected price move. Significantly improves expected R/R.',th:[{l:'earnings 14–45d → 80',c:'g'},{l:'no catalyst → 50',c:'w'}]},
+     {name:'Liquidity',w:'10%',desc:'Both call legs must be tradeable with reasonable spreads.',th:[{l:'OI>500 → 75',c:'g'},{l:'OI>200 → 55',c:'w'}]},
+   ],
+   blockers:['Trend not bullish — debit calls require directional conviction']},
+  {key:'BEAR_PUT',name:'Bear Put Spread',dir:'Bearish',type:'debit',badge:'b-debit',label:'pay premium',
+   desc:'Buy ATM put, sell lower put. Pay debit. Need stock to fall for profit.',
+   pillars:[
+     {name:'IV Rank (low = good)',w:'35%',desc:'Low IV = cheap puts = better debit entry. High IV environments make put spreads expensive.',th:[{l:'<25 → 100pts',c:'g'},{l:'<40 → 85pts',c:'g'},{l:'>55 → 30pts',c:'r'}]},
+     {name:'Trend',w:'40%',desc:'Needs confirmed bearish trend. Strong bearish conviction required. Neutral = insufficient for debit.',th:[{l:'bearish strong → 95',c:'g'},{l:'bearish weak → 70',c:'w'},{l:'neutral → 30',c:'r'},{l:'bullish → 5',c:'r'}]},
+     {name:'Catalyst window',w:'15%',desc:'Negative catalyst in back month amplifies bearish move.',th:[{l:'earnings 14–45d → 80',c:'g'},{l:'no catalyst → 50',c:'w'}]},
+     {name:'Liquidity',w:'10%',desc:'Both put legs must be liquid.',th:[{l:'OI>500 → 75',c:'g'}]},
+   ],
+   blockers:['Trend not bearish — bear puts need directional conviction']},
+  {key:'CALENDAR',name:'Calendar Spread',dir:'Neutral pin play',type:'neutral',badge:'b-neutral',label:'term structure',
+   desc:'Sell front-month IV, buy back-month IV at same strike. Profits from IV term structure slope.',
+   pillars:[
+     {name:'IV term slope',w:'40%',desc:'Front month IV minus back month IV. Positive slope = sell rich front, buy cheap back. Minimum 2% slope required.',th:[{l:'slope>8% → 100',c:'g'},{l:'slope>5% → 85',c:'g'},{l:'slope>2% → 55',c:'w'},{l:'<1.5% → blocked',c:'r'}]},
+     {name:'Neutrality',w:'30%',desc:'Stock must pin near the strike at front expiry. Strong trend kills the calendar — stock moves away from the strike.',th:[{l:'neutral → 95',c:'g'},{l:'weak trend → 70',c:'w'},{l:'strong trend → 20',c:'r'}]},
+     {name:'Catalyst in back',w:'20%',desc:'Earnings in back month (14–45d) boosts long vega position. Front month event = block completely.',th:[{l:'earnings 14–45d → 90',c:'g'},{l:'no catalyst → 40',c:'w'},{l:'earn <14d → block',c:'r'}]},
+     {name:'Liquidity (both expiries)',w:'10%',desc:'Both legs AND both expiries must be liquid. Calendar fails if back month has thin OI.',th:[{l:'OI>500 both → 75',c:'g'}]},
+   ],
+   blockers:['IV term slope < 1.5% — no edge to trade','No ivByExpiry in pipeline data','Earnings in front month (<14d)']},
+];
+
+let activeIdx=0;
+
+function renderGrid(){
+  document.getElementById('strat-grid').innerHTML=STRATS.map((s,i)=>`
+    <div class="sc-card${i===activeIdx?' active':''}" onclick="selectS(${i})">
+      <div class="sc-tag">${s.type}</div>
+      <div class="sc-name">${s.name}</div>
+      <div class="sc-dir">${s.dir}</div>
+      <span class="sc-badge ${s.badge}">${s.label}</span>
+    </div>`).join('');
+}
+
+function renderDetail(){
+  const s=STRATS[activeIdx];
+  document.getElementById('strat-detail').innerHTML=`
+    <div class="pillars-wrap">
+      <div class="det-title">${s.name}</div>
+      <div class="det-sub">${s.desc}</div>
+      ${s.pillars.map(p=>`
+        <div class="pillar">
+          <div class="p-hdr"><span class="p-name">${p.name}</span><span class="p-wt">${p.w} weight</span></div>
+          <div class="p-desc">${p.desc}</div>
+          <div class="p-thresh">${p.th.map(t=>`<span class="thresh ${t.c}">${t.l}</span>`).join('')}</div>
+        </div>`).join('')}
+    </div>
+    <div class="blockers-card">
+      <div class="bl-title">Hard blockers — score → 0</div>
+      ${s.blockers.map(b=>`<div class="bl-item"><span class="bl-x">×</span>${b}</div>`).join('')}
+    </div>`;
+}
+
+function selectS(i){activeIdx=i;renderGrid();renderDetail();}
+
+// SIMULATOR
+function sc(n){return n>=80?'var(--teal)':n>=65?'var(--blue)':n>=50?'var(--amber)':'var(--red)';}
+function gr(n){return n>=80?'A':n>=65?'B':n>=50?'C':'F';}
+function scoreIVRCredit(v){if(v<25)return 20;if(v<35)return 45;if(v<50)return 80;if(v<65)return 95;if(v<80)return 75;return 50;}
+function scoreIVRDebit(v){if(v<25)return 100;if(v<35)return 90;if(v<45)return 75;if(v<55)return 55;if(v<65)return 30;return 10;}
+function scoreYield(v){if(v>=4)return 100;if(v>=2.5)return 90;if(v>=1.5)return 75;if(v>=0.8)return 55;return 15;}
+function scoreTBull(d,ts){return d===2?Math.max(70,ts):d===1?Math.max(40,ts*.7):10;}
+function scoreTBear(d,ts){return d===0?Math.max(70,ts):d===1?Math.max(40,ts*.7):10;}
+function scoreTNeut(d,ts){return d===1?95:ts>75?20:50;}
+function scoreATR(v){if(v<1)return 100;if(v<1.5)return 90;if(v<2)return 75;if(v<3)return 55;if(v<4)return 35;return 20;}
+function scoreSlope(v){if(v>=8)return 100;if(v>=5)return 85;if(v>=3)return 70;if(v>=2)return 55;if(v>=1)return 35;return 10;}
+function wt(ps){const t=ps.reduce((a,p)=>a+p.w,0);return Math.round(ps.reduce((a,p)=>a+p.s*p.w,0)/t);}
+
+function simUpdate(){
+  const ivr=+document.getElementById('s-ivr').value;
+  const py=+document.getElementById('s-py').value;
+  const td=+document.getElementById('s-td').value;
+  const ts=+document.getElementById('s-ts').value;
+  const atr=+document.getElementById('s-atr').value;
+  const earn=+document.getElementById('s-earn').value;
+  const cal=+document.getElementById('s-cal').value;
+  const dirs=['Bearish','Neutral','Bullish'];
+  const earnNear=earn>0&&earn<=7;
+  const earnWin=earn>=14&&earn<=45;
+
+  document.getElementById('sv-ivr').textContent=ivr;
+  document.getElementById('sv-py').textContent=py.toFixed(1)+'%';
+  document.getElementById('sv-td').textContent=dirs[td];
+  document.getElementById('sv-ts').textContent=ts;
+  document.getElementById('sv-atr').textContent=atr.toFixed(1)+'%';
+  document.getElementById('sv-earn').textContent=earn+(earn===0?'d (none)':'d');
+  document.getElementById('sv-cal').textContent=(cal>=0?'+':'')+cal.toFixed(1)+'%';
+
+  const ew=document.getElementById('earn-warn');
+  ew.style.display=earnNear?'block':'none';
+
+  const L=75;
+  const rows=[
+    {name:'Wheel',sc:earnNear?5:wt([{s:scoreIVRCredit(ivr),w:25},{s:scoreYield(py),w:25},{s:td===2?90:td===1?70:10,w:25},{s:scoreTBull(td,ts),w:15},{s:L,w:10}])},
+    {name:'Cash-Secured Put',sc:earnNear?5:wt([{s:scoreIVRCredit(ivr),w:30},{s:scoreYield(py),w:30},{s:scoreTBull(td,ts),w:25},{s:L,w:15}])},
+    {name:'Iron Condor',sc:earnNear?5:wt([{s:scoreIVRCredit(ivr),w:25},{s:scoreTNeut(td,ts),w:25},{s:scoreATR(atr),w:20},{s:70,w:15},{s:80,w:15}])},
+    {name:'Bull Put Spread',sc:earnNear?5:wt([{s:scoreIVRCredit(ivr),w:30},{s:scoreTBull(td,ts),w:35},{s:L,w:20},{s:70,w:15}])},
+    {name:'Bear Call Spread',sc:earnNear?5:wt([{s:scoreIVRCredit(ivr),w:30},{s:scoreTBear(td,ts),w:30},{s:80,w:25},{s:L,w:15}])},
+    {name:'Bull Call Spread',sc:wt([{s:scoreIVRDebit(ivr),w:35},{s:scoreTBull(td,ts),w:40},{s:earnWin?80:50,w:15},{s:L,w:10}])},
+    {name:'Bear Put Spread',sc:wt([{s:scoreIVRDebit(ivr),w:35},{s:scoreTBear(td,ts),w:40},{s:earnWin?80:50,w:15},{s:L,w:10}])},
+    {name:'Calendar Spread',sc:cal<1.5?5:wt([{s:scoreSlope(cal),w:40},{s:scoreTNeut(td,ts),w:30},{s:earnWin?90:40,w:20},{s:L,w:10}])},
+  ];
+
+  document.getElementById('score-bars').innerHTML=rows.map(r=>`
+    <div class="score-row">
+      <div class="sr-name">${r.name}</div>
+      <div class="sr-bar-bg"><div class="sr-bar-fill" style="width:${r.sc}%;background:${sc(r.sc)}"></div></div>
+      <div class="sr-num">${r.sc}</div>
+      <span class="grade-pill g-${gr(r.sc)}">${gr(r.sc)}</span>
+    </div>`).join('');
+}
+
+function switchTab(id,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('panel-'+id).classList.add('on');
+}
+
+// URL parameter pre-selection
+// Usage: strategy-logic.html?s=CSP or ?s=WHEEL etc.
+// Also: ?tab=sim to open simulator tab, ?tab=why to open why tab
+(function() {
+  const p = new URLSearchParams(location.search);
+  const KEYS = ['WHEEL','CSP','IRON_CONDOR','BULL_PUT','BEAR_CALL','BULL_CALL','BEAR_PUT','CALENDAR'];
+  const sParam = p.get('s');
+  const tabParam = p.get('tab');
+
+  if (sParam) {
+    const idx = KEYS.indexOf(sParam.toUpperCase());
+    if (idx >= 0) activeIdx = idx;
+  }
+
+  if (tabParam && tabParam !== 'logic') {
+    const tabEl = document.querySelector(`.tab[data-tab="${tabParam}"]`);
+    const panelEl = document.getElementById(`panel-${tabParam}`);
+    if (tabEl && panelEl) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+      tabEl.classList.add('on');
+      panelEl.classList.add('on');
+    }
+  }
+})();
+
+renderGrid();renderDetail();simUpdate();
+</script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--nl-space-sm);
+  padding: 10px 16px;
+  border-radius: var(--nl-radius-sm);
+  font-family: var(--nl-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #fff;
+  box-shadow: var(--nl-shadow-lg);
+  pointer-events: auto;
+  min-width: 240px;
+  max-width: 480px;
+  animation: slideUp 0.25s ease-out;
+}
+
+/* ─── Type variants ─── */
+.success { background: var(--nl-green); }
+.error   { background: var(--nl-loss); }
+.warning { background: var(--nl-warn); color: #fff; }
+.info    { background: #1e40af; }
+
+/* ─── Icon ─── */
+.icon {
+  flex-shrink: 0;
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* ─── Message ─── */
+.message {
+  flex: 1;
+}
+
+/* ─── Dismiss button ─── */
+.dismiss {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  margin-left: var(--nl-space-xs);
+}
+.dismiss:hover {
+  color: #fff;
+}
+
+/* ─── Animation ─── */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

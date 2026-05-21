@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf System — Site Architecture & Access Matrix</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--forest:#0B2D23;--forest-mid:#1a5c44;--gold:#C9A96E;--gold-pale:#f5ecd4;--cream:#F7F5F0;--ink:#0B0F14;--ink-mid:#3d3d35;--ink-muted:#6b6b60;--white:#fff;--green:#2d7d4f;--red:#c0392b;--blue:#1a5ca0;--purple:#5a3ab5;--amber:#a0620c}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);line-height:1.6}
+.container{max-width:1200px;margin:0 auto;padding:0 2rem}
+header{background:var(--forest);padding:20px 0}
+header h1{font-family:'Playfair Display',serif;font-size:28px;color:var(--gold);font-weight:400;text-align:center}
+header p{font-size:13px;color:rgba(201,169,110,.5);text-align:center;margin-top:4px;font-family:'Space Mono',monospace;letter-spacing:.08em}
+.section{padding:40px 0}
+.section-title{font-family:'Playfair Display',serif;font-size:24px;color:var(--forest);margin-bottom:6px}
+.section-sub{font-size:13px;color:var(--ink-muted);margin-bottom:24px}
+.divider{border:none;border-top:1px solid rgba(15,61,46,.12);margin:40px 0}
+.sitemap-section{border:1px solid rgba(15,61,46,.12);border-radius:12px;overflow:hidden;margin-bottom:16px;background:var(--white)}
+.sitemap-header{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sitemap-header.public{background:linear-gradient(135deg,rgba(45,125,79,.08),rgba(45,125,79,.02))}
+.sitemap-header.auth{background:linear-gradient(135deg,rgba(26,92,160,.08),rgba(26,92,160,.02))}
+.sitemap-header.workbench{background:linear-gradient(135deg,rgba(201,169,110,.12),rgba(201,169,110,.02))}
+.sitemap-header.other{background:linear-gradient(135deg,rgba(90,58,181,.08),rgba(90,58,181,.02))}
+.sitemap-app{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+.sitemap-app.public{color:var(--green)}.sitemap-app.auth{color:var(--blue)}.sitemap-app.workbench{color:var(--gold)}.sitemap-app.other{color:var(--purple)}
+.sitemap-tier{font-family:'Space Mono',monospace;font-size:9px;padding:3px 10px;border-radius:20px;font-weight:700;letter-spacing:.06em}
+.tier-public{background:#e8f4eb;color:#2d7d4f;border:1px solid rgba(45,125,79,.2)}
+.tier-auth{background:#e6f0fb;color:#1a5ca0;border:1px solid rgba(26,92,160,.2)}
+.tier-admin{background:var(--gold-pale);color:var(--amber);border:1px solid rgba(201,169,110,.3)}
+.sitemap-routes{padding:10px 20px 16px}
+.route{display:flex;align-items:flex-start;gap:12px;padding:8px 0;border-bottom:1px solid rgba(15,61,46,.06)}
+.route:last-child{border-bottom:none}
+.route-path{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--forest);min-width:260px;flex-shrink:0}
+.route-desc{font-size:12px;color:var(--ink-muted);flex:1}
+.route-tech{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:3px;background:rgba(15,61,46,.06);color:var(--ink-muted);white-space:nowrap}
+.url-example{font-family:'Space Mono',monospace;font-size:11px;background:rgba(15,61,46,.06);padding:12px 16px;border-radius:6px;margin:8px 0;color:var(--forest);overflow-x:auto;white-space:pre}
+table.matrix{width:100%;border-collapse:collapse;font-size:12px;background:var(--white);border-radius:12px;overflow:hidden;border:1px solid rgba(15,61,46,.12)}
+table.matrix thead{background:var(--forest)}
+table.matrix th{padding:12px 14px;text-align:left;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700;white-space:nowrap}
+table.matrix td{padding:10px 14px;border-bottom:1px solid rgba(15,61,46,.06);vertical-align:top}
+table.matrix tr:last-child td{border-bottom:none}
+table.matrix tr:hover{background:rgba(201,169,110,.04)}
+.yes{color:var(--green);font-weight:700}.no{color:#ccc}.blur{color:var(--amber);font-weight:500}
+.group-header td{background:rgba(15,61,46,.04);font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);font-weight:700;padding:8px 14px}
+.flow{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+@media(max-width:768px){.flow{grid-template-columns:1fr}}
+.flow-card{background:var(--white);border:1px solid rgba(15,61,46,.12);border-radius:10px;padding:20px}
+.flow-day{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px}
+.flow-title{font-family:'Playfair Display',serif;font-size:18px;color:var(--forest);margin-bottom:8px}
+.flow-items{list-style:none;font-size:12px;color:var(--ink-muted)}
+.flow-items li{padding:3px 0;padding-left:16px;position:relative}
+.flow-items li::before{content:'';position:absolute;left:0;top:10px;width:6px;height:6px;border-radius:50%;background:var(--gold)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>NewLeaf System &mdash; Site Architecture</h1>
+    <p>Version 2.0 &middot; April 2026 &middot; Post-Migration</p>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 1: URL MAP -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">1. URL Map</h2>
+  <p class="section-sub">All pages served from newleafsystem.com. React SPA for public + trading + picks. Static HTML for workbench.</p>
+
+  <div class="url-example">PUBLIC (no auth required)
+https://newleafsystem.com/                          Landing page
+https://newleafsystem.com/learn                     Strategy education
+https://newleafsystem.com/strategies/iron-condor    Strategy skill pages (10)
+https://newleafsystem.com/picks/                    Current week picks
+https://newleafsystem.com/picks/recap               Performance recap
+https://newleafsystem.com/picks/monthly             Monthly ledger
+https://newleafsystem.com/picks/2026-W16            Week archive (dynamic)
+
+AUTH-GATED (requires sign-in)
+https://newleafsystem.com/trading/                  Dashboard
+https://newleafsystem.com/trading/discover           Browse all tiles
+https://newleafsystem.com/trading/portfolio          Portfolio tracker
+https://newleafsystem.com/trading/performance        P&L history
+https://newleafsystem.com/trading/analysis/AAPL      Symbol analysis
+https://newleafsystem.com/trading/position/abc123    Position detail
+https://newleafsystem.com/trading/admin              Admin panel
+
+STATIC HTML (newleaf-alpaca-r2)
+https://newleafsystem.com/workbench/                Strategy hub
+https://newleafsystem.com/workbench/all-stocks.html Scanner
+https://newleafsystem.com/workbench/watchlist.html  Watchlist
+https://newleafsystem.com/workbench/strategy-builder.html  Builder
+
+LEGACY (pre-built, untouched)
+https://newleafsystem.com/quant/                    Quant engine
+https://newleafsystem.com/desk/                     Trade execution</div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 2: SITE STRUCTURE -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">2. Site Structure</h2>
+  <p class="section-sub">Grouped by access level. React SPA serves /, /trading/*, /picks/*. Static HTML for /workbench/*.</p>
+
+  <!-- PUBLIC PAGES -->
+  <div class="sitemap-section">
+    <div class="sitemap-header public">
+      <span class="sitemap-app public">Public Pages</span>
+      <span class="sitemap-tier tier-public">No auth required</span>
+    </div>
+    <div class="sitemap-routes">
+      <div class="route">
+        <span class="route-path">/</span>
+        <span class="route-desc">Landing page &mdash; hero, value prop, sign-up CTA. Redirects to /trading if already signed in.</span>
+        <span class="route-tech">React SPA</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/learn</span>
+        <span class="route-desc">Strategy education &mdash; guides for all 10 options strategies with interactive examples.</span>
+        <span class="route-tech">React SPA</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/strategies/:strategy</span>
+        <span class="route-desc">Individual strategy skill pages (iron-condor, double-diagonal, bull-put-spread, etc.). 10 pages total.</span>
+        <span class="route-tech">React SPA</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/picks/</span>
+        <span class="route-desc">Current week's picks &mdash; symbols, strategies, direction, scores. Reads from Firestore weeklyPicks.</span>
+        <span class="route-tech">React SPA</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/picks/recap</span>
+        <span class="route-desc">Performance recap &mdash; win rate, P&L by week, all-time summary. Reads from Firestore pick_outcomes.</span>
+        <span class="route-tech">React SPA</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/picks/monthly</span>
+        <span class="route-desc">Monthly performance ledger &mdash; P&L heatmap, week-by-week breakdown.</span>
+        <span class="route-tech">React SPA</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/picks/:weekId</span>
+        <span class="route-desc">Week archive (e.g. /picks/2026-W16). Shareable URL. Reads pick_outcomes by weekId.</span>
+        <span class="route-tech">React SPA</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRADING APP (AUTH) -->
+  <div class="sitemap-section">
+    <div class="sitemap-header auth">
+      <span class="sitemap-app auth">NewLeaf Trading</span>
+      <span class="sitemap-tier tier-auth">Sign-in required</span>
+    </div>
+    <div class="sitemap-routes">
+      <div class="route">
+        <span class="route-path">/trading/</span>
+        <span class="route-desc">Dashboard &mdash; portfolio summary, recent picks, market pulse. Redirects to / if not signed in.</span>
+        <span class="route-tech">React SPA</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/trading/discover</span>
+        <span class="route-desc">Browse all active tiles &mdash; full detail with legs, strikes, Greeks, payoff diagrams.</span>
+        <span class="route-tech">React SPA</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/trading/portfolio</span>
+        <span class="route-desc">Track positions, open/close trades, aggregate P&L, capital deployed.</span>
+        <span class="route-tech">React SPA</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/trading/performance</span>
+        <span class="route-desc">Historical performance &mdash; P&L charts, strategy breakdown, monthly returns.</span>
+        <span class="route-tech">React SPA</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/trading/analysis/:ticker</span>
+        <span class="route-desc">Symbol deep-dive &mdash; gamma walls, technicals, strategy recommendations.</span>
+        <span class="route-tech">React SPA</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/trading/position/:tileId</span>
+        <span class="route-desc">Position detail &mdash; live P&L, Greeks, gamma overlay, technical analysis.</span>
+        <span class="route-tech">React SPA</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/trading/admin</span>
+        <span class="route-desc">Admin panel &mdash; system diagnostics, tile management. Admin emails only.</span>
+        <span class="route-tech">React SPA</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORKBENCH (STATIC HTML) -->
+  <div class="sitemap-section">
+    <div class="sitemap-header workbench">
+      <span class="sitemap-app workbench">NewLeaf Workbench</span>
+      <span class="sitemap-tier tier-admin">Static HTML &middot; newleaf-alpaca-r2</span>
+    </div>
+    <div class="sitemap-routes">
+      <div class="route">
+        <span class="route-path">/workbench/</span>
+        <span class="route-desc">Strategy hub &mdash; "Your Income Engine, Live". Overview of all strategies with live eligibility counts.</span>
+        <span class="route-tech">Static HTML</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/workbench/all-stocks.html</span>
+        <span class="route-desc">Scanner &mdash; all 111 symbols, scores, strategy recommendations, sector filters.</span>
+        <span class="route-tech">Static HTML</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/workbench/strategy-builder.html</span>
+        <span class="route-desc">Strategy builder &mdash; strike config, payoff charts, gamma + technical overlays, publish to Firebase.</span>
+        <span class="route-tech">Static HTML</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/workbench/watchlist.html</span>
+        <span class="route-desc">Watchlist tracker &mdash; custom symbol list, price/IV monitoring.</span>
+        <span class="route-tech">Static HTML</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/workbench/stock.html?s=AAPL</span>
+        <span class="route-desc">Individual stock analysis &mdash; gamma walls, RSI, Bollinger, MACD, SMA.</span>
+        <span class="route-tech">Static HTML</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/workbench/{strategy}.html</span>
+        <span class="route-desc">Strategy pages: sell-puts, wheel, condor-scanner, broken-wing, bull-put, bear-call, bull-call, bear-put, calendar.</span>
+        <span class="route-tech">Static HTML</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUANT + DESK -->
+  <div class="sitemap-section">
+    <div class="sitemap-header other">
+      <span class="sitemap-app other">Quant + Desk</span>
+      <span class="sitemap-tier" style="background:#eeedfb;color:#5a3ab5;border:1px solid rgba(90,58,181,.2)">Legacy &middot; Pre-built</span>
+    </div>
+    <div class="sitemap-routes">
+      <div class="route">
+        <span class="route-path">/quant/</span>
+        <span class="route-desc">Simulation engine &mdash; backtesting, scenario analysis. Pre-built app, untouched.</span>
+        <span class="route-tech">Pre-built</span>
+      </div>
+      <div class="route">
+        <span class="route-path">/desk/</span>
+        <span class="route-desc">Trade execution &mdash; live IB connection, order entry. Pre-built app, untouched.</span>
+        <span class="route-tech">Pre-built</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 3: ACCESS MATRIX -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">3. Access Matrix</h2>
+  <p class="section-sub">What each user type can access.</p>
+
+  <table class="matrix">
+    <thead>
+      <tr>
+        <th>Route</th>
+        <th>Page</th>
+        <th>Anonymous</th>
+        <th>Signed In</th>
+        <th>Admin</th>
+        <th>Tech</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="group-header"><td colspan="6">Public Pages (no auth)</td></tr>
+      <tr><td><code>/</code></td><td>Landing page</td><td class="yes">&#10003;</td><td class="yes">&#8594; /trading</td><td class="yes">&#8594; /trading</td><td>React</td></tr>
+      <tr><td><code>/learn</code></td><td>Strategy education</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td>React</td></tr>
+      <tr><td><code>/strategies/*</code></td><td>Strategy skill pages (10)</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td>React</td></tr>
+      <tr><td><code>/picks/</code></td><td>Current week picks</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td>React</td></tr>
+      <tr><td><code>/picks/recap</code></td><td>Performance recap</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td>React</td></tr>
+      <tr><td><code>/picks/monthly</code></td><td>Monthly ledger</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td>React</td></tr>
+      <tr><td><code>/picks/:weekId</code></td><td>Week archive</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td>React</td></tr>
+
+      <tr class="group-header"><td colspan="6">Trading App (auth required)</td></tr>
+      <tr><td><code>/trading/</code></td><td>Dashboard</td><td class="no">&#8594; /</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td>React</td></tr>
+      <tr><td><code>/trading/discover</code></td><td>Browse tiles</td><td class="no">&#8594; /</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td>React</td></tr>
+      <tr><td><code>/trading/portfolio</code></td><td>Portfolio</td><td class="no">&#8594; /</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td>React</td></tr>
+      <tr><td><code>/trading/performance</code></td><td>Performance</td><td class="no">&#8594; /</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td>React</td></tr>
+      <tr><td><code>/trading/analysis/:ticker</code></td><td>Symbol analysis</td><td class="no">&#8594; /</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td>React</td></tr>
+      <tr><td><code>/trading/position/:tileId</code></td><td>Position detail</td><td class="no">&#8594; /</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td>React</td></tr>
+      <tr><td><code>/trading/admin</code></td><td>Admin panel</td><td class="no">&#8594; /</td><td class="no">&#10007;</td><td class="yes">&#10003;</td><td>React</td></tr>
+
+      <tr class="group-header"><td colspan="6">Workbench (static HTML &mdash; newleaf-alpaca-r2)</td></tr>
+      <tr><td><code>/workbench/</code></td><td>Strategy hub</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td>Static</td></tr>
+      <tr><td><code>/workbench/all-stocks.html</code></td><td>Scanner</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td>Static</td></tr>
+      <tr><td><code>/workbench/strategy-builder.html</code></td><td>Strategy builder</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td>Static</td></tr>
+      <tr><td><code>/workbench/watchlist.html</code></td><td>Watchlist</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td class="yes">&#10003;</td><td>Static</td></tr>
+
+      <tr class="group-header"><td colspan="6">Legacy Apps (pre-built)</td></tr>
+      <tr><td><code>/quant/</code></td><td>Quant engine</td><td class="no">&#10007;</td><td class="no">&#10007;</td><td class="yes">&#10003;</td><td>Pre-built</td></tr>
+      <tr><td><code>/desk/</code></td><td>Trade execution</td><td class="no">&#10007;</td><td class="no">&#10007;</td><td class="yes">&#10003;</td><td>Pre-built</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 4: TECHNOLOGY STACK -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">4. Technology Stack</h2>
+  <p class="section-sub">What powers each layer after migration.</p>
+
+  <table class="matrix">
+    <thead>
+      <tr>
+        <th>Layer</th>
+        <th>Technology</th>
+        <th>Location</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Hosting</td><td>Firebase Hosting</td><td>newleafsystem.web.app + newleafsystem.com</td><td>Single site, path-based rewrites</td></tr>
+      <tr><td>React SPA</td><td>React 18 + Vite 5 + Tailwind 4</td><td>src/ &rarr; dist/index.html + dist/assets/</td><td>Serves /, /trading/*, /picks/*, /strategies/*</td></tr>
+      <tr><td>Workbench</td><td>Static HTML + vanilla JS</td><td>dist/workbench/ (from newleaf-alpaca-r2)</td><td>27 HTML pages, nl-brand.css, load-nav.js</td></tr>
+      <tr><td>Database</td><td>Cloud Firestore</td><td>newleaf-trading / newleafdb</td><td>Shared across all apps</td></tr>
+      <tr><td>Auth</td><td>Firebase Auth</td><td>Google + email/password</td><td>Shared auth, subscription tier in user doc</td></tr>
+      <tr><td>Storage</td><td>Cloudflare R2</td><td>pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev</td><td>Reports, ATM contracts, manifests</td></tr>
+      <tr><td>Data &mdash; Options</td><td>Alpaca Markets API</td><td>Paid OPRA feed</td><td>Bid/ask, Greeks, IV, OI</td></tr>
+      <tr><td>Data &mdash; Supplemental</td><td>Yahoo Finance (yfinance)</td><td>localhost:5300</td><td>Expiry list, OI enrichment, IV fallback</td></tr>
+      <tr><td>Pipeline</td><td>Node.js scripts</td><td>pipeline/ in monorepo</td><td>Writes Firestore data only (no HTML generation)</td></tr>
+      <tr><td>Scanner</td><td>Node.js + cron</td><td>scanner/ in monorepo</td><td>Daily/intraday scans &rarr; R2 + Firestore</td></tr>
+      <tr><td>Local Server</td><td>Node.js (server.cjs)</td><td>Port 3000</td><td>SPA fallback + R2 proxy + API proxy to :4000</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 5: WEEKLY FLOW -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">5. Weekly Content Rhythm</h2>
+  <p class="section-sub">Publishing cadence &mdash; pipeline writes Firestore data, React picks pages display it dynamically.</p>
+
+  <div class="flow">
+    <div class="flow-card">
+      <div class="flow-day">Monday AM</div>
+      <div class="flow-title">Weekly Picks</div>
+      <ul class="flow-items">
+        <li>Analyse stocks in Workbench</li>
+        <li>Build strategies in Strategy Builder</li>
+        <li>Publish tiles to Firebase</li>
+        <li>Run: <code>npm run picks:create</code></li>
+        <li>/picks page auto-updates (Firestore)</li>
+        <li>Share link on social + newsletter</li>
+      </ul>
+    </div>
+    <div class="flow-card">
+      <div class="flow-day">Wednesday</div>
+      <div class="flow-title">Mid-Week Update</div>
+      <ul class="flow-items">
+        <li>Check positions &mdash; any hit targets?</li>
+        <li>Close tiles that reached profit target</li>
+        <li>Adjust or roll positions if needed</li>
+        <li>Active tiles auto-refresh via pipeline</li>
+      </ul>
+    </div>
+    <div class="flow-card">
+      <div class="flow-day">Friday PM</div>
+      <div class="flow-title">Weekly Review</div>
+      <ul class="flow-items">
+        <li>Run: <code>npm run picks:close</code></li>
+        <li>Script closes remaining open tiles</li>
+        <li>Calculates actual P&L per position</li>
+        <li>/picks/recap page auto-updates (Firestore)</li>
+        <li>Cron job updates pick_outcomes daily</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<footer style="text-align:center;padding:40px 2rem;font-size:11px;color:var(--ink-muted);border-top:1px solid rgba(15,61,46,.1)">
+  NewLeaf System Architecture Document &middot; Version 2.0 &middot; Updated April 2026 &middot; Internal use only
+</footer>
+
+</body>
+</html>

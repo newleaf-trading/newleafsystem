@@ -1,0 +1,15 @@
+PATCH: Two-part fix for syncPrices useEffect
+
+FIX 1 — Add portfolioItemsRef to break the infinite loop
+  Add after the existing `const safeSettings = ...` line:
+  
+  // Keep portfolioItems in a ref so syncPrices only re-fires when TILES change,
+  // not when our own Firestore writes update portfolioItems
+  const portfolioItemsRef = useRef(portfolioItems);
+  useEffect(() => { portfolioItemsRef.current = portfolioItems; }, [portfolioItems]);
+
+FIX 2 — Replace the syncPrices useEffect
+  Change dependency array from [tiles, portfolioItems, updatePortfolioItem]
+                              to [tiles, updatePortfolioItem]
+  Use portfolioItemsRef.current instead of portfolioItems inside the effect
+  In the hasChanges block: use portfolioItem.entryNetCredit (stored) — never recalculate it

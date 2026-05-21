@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf — Sentiment Data Sync Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--forest:#0B2D23;--gold:#C9A96E;--cream:#F7F5F0;--ink:#0B0F14;--ink-mid:#3d3d35;--ink-muted:#6b6b60;--white:#fff;--green:#1D9E75;--red:#E24B4A;--blue:#1a5ca0;--amber:#d97706;--purple:#7c3aed}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);line-height:1.6}
+.container{max-width:1100px;margin:0 auto;padding:0 2rem}
+header{background:var(--forest);padding:28px 0}
+header h1{font-family:'Playfair Display',serif;font-size:28px;color:var(--gold);font-weight:400;text-align:center}
+header p{font-size:12px;color:rgba(201,169,110,.5);text-align:center;margin-top:4px;font-family:'Space Mono',monospace;letter-spacing:.08em}
+.section{padding:32px 0}
+.section-title{font-family:'Playfair Display',serif;font-size:22px;color:var(--forest);margin-bottom:16px}
+.divider{border:none;border-top:1px solid rgba(15,61,46,.12);margin:32px 0}
+.card{background:var(--white);border:1px solid rgba(15,61,46,.12);border-radius:12px;padding:20px;margin-bottom:12px}
+code{font-family:'Space Mono',monospace;font-size:11px;background:rgba(15,61,46,.06);padding:2px 6px;border-radius:3px}
+.mono{font-family:'Space Mono',monospace;font-size:11px}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.badge-green{background:rgba(29,158,117,.12);color:var(--green)}
+.badge-red{background:rgba(226,75,74,.12);color:var(--red)}
+.badge-amber{background:rgba(217,119,6,.12);color:var(--amber)}
+.badge-gray{background:rgba(107,107,96,.12);color:var(--ink-muted)}
+table.t{width:100%;border-collapse:collapse;font-size:12px;background:var(--white);border-radius:12px;overflow:hidden;border:1px solid rgba(15,61,46,.12);margin:16px 0}
+table.t thead{background:var(--forest)}
+table.t th{padding:10px 14px;text-align:left;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700}
+table.t td{padding:8px 14px;border-bottom:1px solid rgba(15,61,46,.06);vertical-align:top}
+table.t tr:last-child td{border-bottom:none}
+.callout{padding:16px 20px;border-radius:10px;margin:16px 0;font-size:13px;line-height:1.6}
+.callout-forest{background:var(--forest);color:rgba(255,255,255,.85)}
+.callout-forest strong{color:var(--gold)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>Sentiment Data Sync — What's Broken, What's Fixed</h1>
+    <p>8 Output Surfaces &bull; 4 AI Engines &bull; Consistency Audit</p>
+  </div>
+</header>
+
+<div class="container">
+
+<div class="section">
+  <h2 class="section-title">Current State — What Shows Where</h2>
+
+  <table class="t">
+    <thead>
+      <tr><th>Output Surface</th><th>Sentiment?</th><th>Format</th><th>Problem</th><th>Fix</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Strategy Detail Page</strong><br><span class="mono">StrategyDetailPage.jsx</span></td>
+        <td><span class="badge badge-green">YES</span></td>
+        <td>4-engine composite + breakdown cards</td>
+        <td>Only if tile or analysis has data. Old tiles show single-engine.</td>
+        <td>Already working. Background job updating all tiles.</td>
+      </tr>
+      <tr>
+        <td><strong>Discover Cards</strong><br><span class="mono">TechnicalCard.jsx</span></td>
+        <td><span class="badge badge-green">YES</span></td>
+        <td>SentimentBadge (dot + score)</td>
+        <td>Badge only — no engine count visible</td>
+        <td>Add engine count to badge tooltip</td>
+      </tr>
+      <tr>
+        <td><strong>Positions Cards</strong><br><span class="mono">PositionsPage.jsx</span></td>
+        <td><span class="badge badge-green">YES</span></td>
+        <td>SentimentBadge (dot + score)</td>
+        <td>Same as discover cards</td>
+        <td>Same fix — tooltip shows engines</td>
+      </tr>
+      <tr>
+        <td><strong>Picks Page (This Week)</strong><br><span class="mono">PicksPage.jsx</span></td>
+        <td><span class="badge badge-red">NO</span></td>
+        <td>N/A</td>
+        <td>Picks object strips sentiment. No badge, no data.</td>
+        <td>Add sentiment to picks data + show badge on pick cards</td>
+      </tr>
+      <tr>
+        <td><strong>Week Viewer (History)</strong><br><span class="mono">WeekViewerPage.jsx</span></td>
+        <td><span class="badge badge-amber">OLD</span></td>
+        <td>Simple string (BULLISH/BEARISH)</td>
+        <td>Old format, not 4-engine composite</td>
+        <td>Update to read composite score from pick_outcomes</td>
+      </tr>
+      <tr>
+        <td><strong>Performance Recap</strong><br><span class="mono">RecapPage.jsx</span></td>
+        <td><span class="badge badge-red">NO</span></td>
+        <td>N/A</td>
+        <td>Doesn't read sentiment at all</td>
+        <td>Add sentiment accuracy tracking (was sentiment right?)</td>
+      </tr>
+      <tr>
+        <td><strong>PDF Reports</strong><br><span class="mono">generate-report.py</span></td>
+        <td><span class="badge badge-red">NO</span></td>
+        <td>N/A</td>
+        <td>build-enriched-report-data.py never flattens sentiment to template vars. PDF template has no section.</td>
+        <td>Add SENTIMENT_* template vars + new PDF section</td>
+      </tr>
+      <tr>
+        <td><strong>Video Scripts</strong><br><span class="mono">generate-script.py</span></td>
+        <td><span class="badge badge-red">NO</span></td>
+        <td>N/A</td>
+        <td>Script generator unaware of sentiment</td>
+        <td>Add "Market Sentiment" slide with composite + key drivers</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <h2 class="section-title">Root Cause — Why Data Is Out of Sync</h2>
+
+  <div class="card" style="border-left:3px solid var(--red)">
+    <strong style="color:var(--red)">Problem 1: analyse-tiles.cjs doesn't update tiles collection</strong>
+    <p style="margin-top:8px;font-size:13px;color:var(--ink-mid)">
+      When analysis runs, sentiment is saved to <code>analyses/{tileId}</code> and <code>enriched-pick.json</code>
+      but <strong>never pushed back to <code>tiles/{tileId}</code></strong>. The React frontend reads from <code>tile.sentiment</code>,
+      so tiles published before the 4-engine update still have old/missing data.
+    </p>
+    <p class="mono" style="margin-top:8px;color:var(--green)">Fix: Add tile.update() after analysis push (1 line)</p>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--red)">
+    <strong style="color:var(--red)">Problem 2: generate-outputs.js strips sentiment from picks.json</strong>
+    <p style="margin-top:8px;font-size:13px;color:var(--ink-mid)">
+      The enriched-pick.json has complete 4-engine sentiment. But <code>generate-outputs.js</code> builds
+      the <code>picks.json</code> archive without the sentiment field. This archive feeds PicksPage, WeekViewerPage, and RecapPage.
+    </p>
+    <p class="mono" style="margin-top:8px;color:var(--green)">Fix: Include sentiment in picks.json output object</p>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--red)">
+    <strong style="color:var(--red)">Problem 3: PDF/video generators don't know about sentiment</strong>
+    <p style="margin-top:8px;font-size:13px;color:var(--ink-mid)">
+      <code>build-enriched-report-data.py</code> creates 70+ template variables but zero sentiment vars.
+      <code>generate-script.py</code> has 10 slides but no sentiment slide. The enriched data is there — it's just not being extracted.
+    </p>
+    <p class="mono" style="margin-top:8px;color:var(--green)">Fix: Add SENTIMENT_* template vars + new PDF section + new video slide</p>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <h2 class="section-title">Fix Plan — 6 Steps</h2>
+
+  <table class="t">
+    <thead>
+      <tr><th>#</th><th>Fix</th><th>File</th><th>What Changes</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><strong>Tile sync</strong></td>
+        <td class="mono">pipeline/analyse-tiles.cjs</td>
+        <td>After pushing to analyses collection, also update <code>tiles/{tileId}.sentiment</code> with the composite data</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><strong>Picks data</strong></td>
+        <td class="mono">pipeline/generate-outputs.js</td>
+        <td>Include <code>sentiment</code> field in picks.json archive object</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><strong>Picks UI</strong></td>
+        <td class="mono">src/picks/PicksPage.jsx</td>
+        <td>Add SentimentBadge to each pick card. Show composite score + engine count.</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><strong>PDF template</strong></td>
+        <td class="mono">pipeline/build-enriched-report-data.py<br>pipeline/templates/report-v3.html</td>
+        <td>Flatten sentiment to SENTIMENT_SCORE, SENTIMENT_LABEL, SENTIMENT_ENGINES, SENTIMENT_DRIVERS_HTML, SENTIMENT_EVENTS. Add "Market Sentiment" section to PDF template.</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td><strong>Video script</strong></td>
+        <td class="mono">pipeline/generate-script.py</td>
+        <td>Add slide 2 "Market Sentiment" after Cover: composite score, key drivers, material events, social mood</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td><strong>Backfill</strong></td>
+        <td class="mono">One-time script</td>
+        <td>Re-run sentiment for all 8 published tiles with 4-engine data, update Firestore tiles + analyses</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-forest">
+    <strong>After these 6 fixes:</strong> Every output surface — React detail page, discover cards, positions, picks page, PDF reports, and video scripts — will show consistent 4-engine sentiment data from the same source (enriched-pick.json).
+  </div>
+</div>
+
+</div>
+
+<footer style="background:var(--forest);padding:16px 0;margin-top:32px;text-align:center">
+  <div style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(201,169,110,.5);letter-spacing:.1em">
+    NEWLEAF SYSTEM &bull; SENTIMENT SYNC PLAN &bull; APRIL 2026
+  </div>
+</footer>
+
+</body>
+</html>

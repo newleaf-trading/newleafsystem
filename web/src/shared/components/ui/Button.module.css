@@ -1,0 +1,63 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: var(--nl-radius-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.btn:active { transform: scale(0.98); }
+
+/* ─── Sizes ─── */
+.sm { padding: 6px 12px; font-size: 12px; }
+.md { padding: 10px 20px; font-size: 14px; }
+.lg { padding: 12px 24px; font-size: 15px; }
+
+/* ─── Variants ─── */
+.primary {
+  background: var(--nl-green);
+  color: #fff;
+}
+.primary:hover { opacity: 0.9; }
+
+.gold {
+  background: var(--nl-gold);
+  color: var(--nl-green);
+}
+.gold:hover { opacity: 0.9; }
+
+.secondary {
+  background: rgba(11, 45, 35, 0.06);
+  border: 1px solid rgba(11, 45, 35, 0.15);
+  color: var(--nl-green);
+}
+.secondary:hover { background: rgba(11, 45, 35, 0.10); }
+
+.ghost {
+  background: none;
+  color: var(--nl-text-muted);
+  border: 1px solid var(--nl-border);
+}
+.ghost:hover { background: rgba(17, 24, 39, 0.03); }
+
+.danger {
+  background: var(--nl-loss);
+  color: #fff;
+}
+.danger:hover { opacity: 0.9; }
+
+/* ─── States ─── */
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.loading {
+  opacity: 0.7;
+  cursor: wait;
+}

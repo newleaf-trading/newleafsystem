@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{SYMBOL}} {{STRATEGY_NAME}} - Part 3: Strategy & Deep Analysis</title>
+<style>
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 300; src: url('../assets/fonts/Inter-300.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; src: url('../assets/fonts/Inter-400.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 500; src: url('../assets/fonts/Inter-500.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 600; src: url('../assets/fonts/Inter-600.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 700; src: url('../assets/fonts/Inter-700.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 800; src: url('../assets/fonts/Inter-800.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 400; src: url('../assets/fonts/Playfair-400.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 700; src: url('../assets/fonts/Playfair-700.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 800; src: url('../assets/fonts/Playfair-800.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-style: italic; font-weight: 400; src: url('../assets/fonts/Playfair-Italic-400.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-style: italic; font-weight: 700; src: url('../assets/fonts/Playfair-Italic-700.ttf') format('truetype'); }
+
+:root {
+    --forest: #0B2D23; --forest2: #1A4A36; --gold: #C9A96E;
+    --gold-bg: #FDF8EE; --offwhite: #F7F5F0; --green-bg: #EEF7F2;
+    --green: #1A7A4A; --red: #C0392B; --red-bg: #FEF0EE;
+    --blue: #185FA5; --blue-bg: #EEF4FD; --amber: #B45309; --amber-bg: #FEF8EE;
+    --charcoal: #0B0F14; --grey: #6B7280; --grey-lt: #E5E7EB; --white: #FFFFFF;
+}
+
+@page {
+    size: 8.5in 11in;
+    margin: 0.4in 0.5in 0.5in 0.5in;
+    @bottom-left { content: "NewLeaf System"; font-family: 'Playfair Display', serif; font-size: 7pt; font-weight: 700; color: var(--forest); }
+    @bottom-center { content: "Not financial advice. See disclosures."; font-family: 'Inter', sans-serif; font-size: 6pt; color: var(--grey); }
+    @bottom-right { content: ""; font-family: 'Inter', sans-serif; font-size: 7pt; font-weight: 600; color: var(--charcoal); }
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; font-size: 8.5pt; line-height: 1.55; color: var(--charcoal); background: var(--white); }
+
+.banner { background: var(--forest); color: white; padding: 6pt 14pt; margin: -0.4in -0.5in 0 -0.5in; width: calc(100% + 1in); display: flex; justify-content: space-between; align-items: center; }
+.banner-left { display: flex; align-items: center; gap: 10pt; }
+.banner-logo { width: 28pt; height: 28pt; border-radius: 4pt; border: 1.5pt solid var(--gold); }
+.banner-text { display: flex; flex-direction: column; }
+.banner-brand { font-family: 'Playfair Display', serif; font-size: 13pt; font-weight: 700; line-height: 1.2; }
+.banner-system { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 400; color: var(--gold); font-size: 13pt; }
+.banner-tagline { font-family: 'Inter', sans-serif; color: var(--gold); font-size: 6pt; letter-spacing: 0.5pt; text-transform: uppercase; font-weight: 600; white-space: nowrap; margin-top: 1pt; }
+.banner-right { text-align: right; font-size: 7.5pt; line-height: 1.5; }
+.banner-date { font-weight: 600; color: #e2e8f0; }
+.banner-section { color: #94d2bd; letter-spacing: 0.3pt; text-transform: uppercase; font-size: 6pt; font-weight: 600; }
+.gold-rule { height: 1.5pt; background: var(--gold); margin: 0 -0.5in 12pt -0.5in; width: calc(100% + 1in); }
+
+h2 { font-family: 'Playfair Display', serif; font-size: 11pt; font-weight: 700; color: var(--forest); margin: 10pt 0 6pt 0; padding-bottom: 3pt; border-bottom: 1pt solid var(--gold); }
+h3 { font-family: 'Inter', sans-serif; font-size: 9pt; font-weight: 600; color: var(--charcoal); margin: 8pt 0 4pt 0; }
+p { margin-bottom: 4pt; color: var(--charcoal); font-size: 8.5pt; }
+.page-break { page-break-after: always; }
+
+table { width: 100%; border-collapse: collapse; margin: 6pt 0; font-size: 8pt; page-break-inside: auto; }
+tr { page-break-inside: avoid; }
+thead { display: table-header-group; }
+thead { background: var(--forest); color: white; }
+th { padding: 6pt 8pt; text-align: left; font-weight: 600; font-size: 7.5pt; }
+td { padding: 6pt 8pt; border-bottom: 0.5pt solid var(--grey-lt); color: var(--charcoal); word-break: break-word; overflow-wrap: break-word; }
+.highlight-row { background: var(--gold-bg) !important; font-weight: 600; }
+.highlight-row td { color: var(--forest); }
+.selected-row { background: var(--green-bg) !important; font-weight: 600; }
+.selected-badge { color: var(--green); font-weight: 700; }
+.avoid-badge { color: var(--red); font-weight: 700; }
+.spec-table td:first-child { font-weight: 600; color: var(--forest); width: 30%; }
+
+.two-col { display: table; width: 100%; table-layout: fixed; }
+.two-col > .col { display: table-cell; vertical-align: top; }
+.two-col > .col-left { width: 50%; padding-right: 10pt; }
+.two-col > .col-right { width: 50%; padding-left: 10pt; }
+
+/* ---- CONFIDENCE ---- */
+.confidence-wrap { border: 1pt solid var(--grey-lt); border-top: 2.5pt solid var(--gold); padding: 12pt; border-radius: 4pt; }
+.confidence-section { text-align: center; margin: 4pt 0; }
+.confidence-score-big { font-size: 24pt; font-weight: 800; color: var(--gold); }
+.confidence-level-label { font-size: 8pt; font-weight: 700; letter-spacing: 1pt; text-transform: uppercase; color: var(--grey); margin-bottom: 6pt; }
+.confidence-bar-track { background: #f1f5f9; height: 10pt; border-radius: 3pt; margin: 4pt 0; }
+.confidence-bar-fill { height: 100%; background: linear-gradient(to right, var(--red), var(--gold), var(--green)); border-radius: 3pt; width: 100%; }
+.confidence-tiers { display: flex; justify-content: space-between; font-size: 6.5pt; color: var(--grey); margin: 4pt 0; }
+.confidence-tiers .tier { text-align: center; padding: 3pt 6pt; border-radius: 2pt; }
+.confidence-tiers .tier.active { background: var(--amber-bg); color: #92400e; font-weight: 700; }
+
+/* ---- KPI / INFO CARDS ---- */
+.kpi-card { padding: 10pt; border-radius: 4pt; margin-bottom: 6pt; }
+.warning-box { background: var(--amber-bg); border-left: 3pt solid var(--amber); padding: 8pt 10pt; margin: 6pt 0; }
+.warning-box h3 { color: #92400e; font-size: 8pt; margin-bottom: 4pt; }
+.warning-box ul { margin: 3pt 0; padding-left: 14pt; }
+.warning-box li { font-size: 7.5pt; color: #78350f; margin: 2pt 0; }
+.insight-box { background: var(--green-bg); border-left: 3pt solid var(--green); padding: 10pt 12pt; margin: 8pt 0; }
+.insight-box h3 { color: #065f46; margin-top: 0; margin-bottom: 4pt; }
+
+.metric-label { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.5pt; color: var(--grey); font-weight: 600; }
+.metric-value { font-size: 18pt; font-weight: 800; color: var(--charcoal); margin-bottom: 2pt; }
+.metric-sub { font-size: 7pt; color: var(--grey); margin-top: 2pt; }
+
+/* ---- DISCLOSURES ---- */
+.disclosures { background: #f8fafc; border-top: 1.5pt solid var(--gold); padding: 10pt; margin-top: 12pt; font-size: 6.5pt; color: var(--grey); line-height: 1.5; }
+.disclosures h3 { font-size: 7.5pt; color: var(--charcoal); margin-bottom: 4pt; }
+.disclosures p { font-size: 6.5pt; color: var(--grey); margin-bottom: 3pt; }
+.disclosures strong { color: var(--charcoal); }
+
+@media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+</style>
+</head>
+<body>
+
+<!-- ============ PAGE 1: STRATEGY & CONFIDENCE ============ -->
+<div class="banner">
+    <div class="banner-left"><img class="banner-logo" src=""><div class="banner-text"><div class="banner-brand">NewLeaf <span class="banner-system">System</span></div><div class="banner-tagline">Defined-Risk Trading OS</div></div></div>
+    <div class="banner-right"><div class="banner-date">{{REPORT_DATE}}</div><div class="banner-section">{{SYMBOL}} {{STRATEGY_NAME}} &middot; Strategy &amp; Confidence</div></div>
+</div>
+<div class="gold-rule"></div>
+
+<h2>Capital Allocation</h2>
+<p style="font-size:7.5pt;color:var(--grey);">Max exposure: 2% of portfolio per position.</p>
+<table><thead><tr><th>Portfolio</th><th>Max Risk</th><th>Contracts</th><th>Margin</th><th>Note</th></tr></thead><tbody>{{CAPITAL_TABLE_ROWS}}</tbody></table>
+
+<div class="two-col">
+    <div class="col col-left">
+        <h2>Strategy Selection</h2>
+        <table><thead><tr><th>Strategy</th><th>Profit</th><th>Loss</th><th>Win%</th><th>Capital</th></tr></thead><tbody>{{STRATEGY_TABLE_ROWS}}</tbody></table>
+    </div>
+    <div class="col col-right">
+        <h2>NewLeaf Confidence Index</h2>
+        <div class="confidence-wrap">
+            <div class="confidence-section">
+                <div class="confidence-score-big">{{TRADE_SCORE}}/100</div>
+                <div class="confidence-level-label">{{CONFIDENCE_LEVEL}} &middot; {{CONFIDENCE_THRESHOLD_LABEL}}</div>
+                <div class="confidence-bar-track"><div class="confidence-bar-fill"></div></div>
+                <div class="confidence-tiers">
+                    <div class="tier active">{{TRADE_SCORE}} &larr; This Trade</div>
+                    <div class="tier">60+ Recommended</div>
+                    <div class="tier">70+ High Conviction</div>
+                    <div class="tier">80+ Exceptional</div>
+                </div>
+            </div>
+        </div>
+        <div class="warning-box" style="margin-top:8pt;">
+            <h3>Interpretation</h3>
+            <p style="font-size:7.5pt;color:#78350f;">{{SCORE_INTERPRETATION}}</p>
+            <ul><li>{{SCORE_FACTORS}}</li></ul>
+        </div>
+    </div>
+</div>
+<div class="page-break"></div>
+
+<!-- ============ PAGE 2: TECHNICAL ANALYSIS ============ -->
+<div class="banner">
+    <div class="banner-left"><img class="banner-logo" src=""><div class="banner-text"><div class="banner-brand">NewLeaf <span class="banner-system">System</span></div><div class="banner-tagline">Defined-Risk Trading OS</div></div></div>
+    <div class="banner-right"><div class="banner-date">{{REPORT_DATE}}</div><div class="banner-section">{{SYMBOL}} {{STRATEGY_NAME}} &middot; Technical Analysis</div></div>
+</div>
+<div class="gold-rule"></div>
+
+<h2>Technical Indicators</h2>
+<div class="two-col">
+    <div class="col col-left">
+        <div class="kpi-card" style="background:var(--green-bg);border:1pt solid #b8d8c7;border-top:2pt solid var(--green);">
+            <div class="metric-label">RSI (14)</div>
+            <div class="metric-value" style="font-size:18pt;">{{RSI_VALUE}}</div>
+            <div class="metric-sub">{{RSI_SIGNAL}} &mdash; {{RSI_DESCRIPTION}}</div>
+        </div>
+    </div>
+    <div class="col col-right">
+        <div class="kpi-card" style="background:var(--blue-bg);border:1pt solid #b3cde3;border-top:2pt solid var(--blue);">
+            <div class="metric-label">IV Rank</div>
+            <div class="metric-value" style="font-size:18pt;">{{IV_RANK}}%</div>
+            <div class="metric-sub">Current IV: {{CURRENT_IV}}% | Historical 30d: {{HISTORICAL_VOL}}%</div>
+        </div>
+    </div>
+</div>
+
+<h3 style="margin-top:12pt;">Moving Averages</h3>
+<table><thead><tr><th>Indicator</th><th>Value</th><th>Signal</th></tr></thead>
+<tbody>
+    <tr><td>SMA 20</td><td>{{SMA_20}}</td><td rowspan="3" style="vertical-align:middle;">{{MA_SIGNAL}}<br><span style="font-size:7pt;color:var(--grey);">{{MA_DESCRIPTION}}</span></td></tr>
+    <tr><td>SMA 50</td><td>{{SMA_50}}</td></tr>
+    <tr><td>SMA 100</td><td>{{SMA_100}}</td></tr>
+</tbody></table>
+
+<h3 style="margin-top:12pt;">MACD &amp; Bollinger Bands</h3>
+<div class="two-col">
+    <div class="col col-left">
+        <table><thead><tr><th>MACD</th><th>Value</th></tr></thead>
+        <tbody>
+            <tr><td>MACD Line</td><td>{{MACD_LINE}}</td></tr>
+            <tr><td>Signal Line</td><td>{{MACD_SIGNAL_LINE}}</td></tr>
+            <tr><td>Histogram</td><td>{{MACD_HISTOGRAM}}</td></tr>
+        </tbody></table>
+        <p style="font-size:7pt;color:var(--grey);margin-top:4pt;">{{MACD_DESCRIPTION}}</p>
+    </div>
+    <div class="col col-right">
+        <table><thead><tr><th>Bollinger Bands</th><th>Value</th></tr></thead>
+        <tbody>
+            <tr><td>Upper Band</td><td>{{BB_UPPER}}</td></tr>
+            <tr><td>Middle (SMA20)</td><td>{{BB_MIDDLE}}</td></tr>
+            <tr><td>Lower Band</td><td>{{BB_LOWER}}</td></tr>
+            <tr><td>Width</td><td>{{BB_WIDTH}}%</td></tr>
+        </tbody></table>
+        <p style="font-size:7pt;color:var(--grey);margin-top:4pt;">{{BB_DESCRIPTION}}</p>
+    </div>
+</div>
+<div class="page-break"></div>
+
+<!-- ============ PAGE 3: RISK SCENARIOS ============ -->
+<div class="banner">
+    <div class="banner-left"><img class="banner-logo" src=""><div class="banner-text"><div class="banner-brand">NewLeaf <span class="banner-system">System</span></div><div class="banner-tagline">Defined-Risk Trading OS</div></div></div>
+    <div class="banner-right"><div class="banner-date">{{REPORT_DATE}}</div><div class="banner-section">{{SYMBOL}} {{STRATEGY_NAME}} &middot; Risk Scenarios</div></div>
+</div>
+<div class="gold-rule"></div>
+
+<h2>Comprehensive Risk Analysis</h2>
+
+<div class="kpi-card" style="background:var(--red-bg);border:1pt solid #e8c5c0;border-left:3pt solid var(--red);margin-bottom:10pt;">
+    <div class="metric-label" style="color:var(--red);">Max Pain Scenario</div>
+    <p style="font-size:8.5pt;margin-top:4pt;">{{MAX_PAIN_SCENARIO}}</p>
+</div>
+
+<div class="two-col">
+    <div class="col col-left">
+        <div class="kpi-card" style="background:var(--amber-bg);border:1pt solid #e8d5b0;border-left:3pt solid var(--amber);">
+            <div class="metric-label" style="color:var(--amber);">Earnings Risk</div>
+            <p style="font-size:8pt;margin-top:4pt;">{{EARNINGS_RISK}}</p>
+        </div>
+    </div>
+    <div class="col col-right">
+        <div class="kpi-card" style="background:var(--amber-bg);border:1pt solid #e8d5b0;border-left:3pt solid var(--amber);">
+            <div class="metric-label" style="color:var(--amber);">Event Risk</div>
+            <p style="font-size:8pt;margin-top:4pt;">{{EVENT_RISK}}</p>
+        </div>
+    </div>
+</div>
+
+<h3>Position Management Plan</h3>
+<div class="kpi-card" style="background:var(--green-bg);border:1pt solid #b8d8c7;border-left:3pt solid var(--green);">
+    <p style="font-size:8.5pt;">{{MANAGEMENT_PLAN}}</p>
+</div>
+
+<h3 style="margin-top:10pt;">Why This Strategy Was Selected</h3>
+<div class="kpi-card" style="border:1pt solid var(--grey-lt);border-top:2pt solid var(--gold);">
+    <p style="font-size:8.5pt;"><strong>Strategy:</strong> {{WHY_THIS_STRATEGY}}</p>
+    <p style="font-size:8.5pt;margin-top:4pt;"><strong>Strikes:</strong> {{WHY_THESE_STRIKES}}</p>
+    <p style="font-size:8.5pt;margin-top:4pt;"><strong>Expiry:</strong> {{WHY_THIS_EXPIRY}}</p>
+</div>
+<div class="page-break"></div>
+
+<!-- ============ PAGE 4: ALTERNATIVES + TRADE SPEC + DISCLOSURES ============ -->
+<div class="banner">
+    <div class="banner-left"><img class="banner-logo" src=""><div class="banner-text"><div class="banner-brand">NewLeaf <span class="banner-system">System</span></div><div class="banner-tagline">Defined-Risk Trading OS</div></div></div>
+    <div class="banner-right"><div class="banner-date">{{REPORT_DATE}}</div><div class="banner-section">{{SYMBOL}} {{STRATEGY_NAME}} &middot; Trade Specification</div></div>
+</div>
+<div class="gold-rule"></div>
+
+<h2>Alternatives Considered</h2>
+<table><thead><tr><th style="width:25%;">Strategy</th><th>Why It Was Rejected</th></tr></thead>
+<tbody>{{ALTERNATIVES_TABLE_ROWS}}</tbody></table>
+
+<h2 style="margin-top:12pt;">Complete Trade Specification</h2>
+<table class="spec-table"><thead><tr><th>Parameter</th><th>Detail</th></tr></thead><tbody>{{TRADE_SPEC_ROWS}}</tbody></table>
+
+<div style="page-break-before:always;"></div>
+<div class="banner">
+    <div class="banner-left"><img class="banner-logo" src=""><div class="banner-text"><div class="banner-brand">NewLeaf <span class="banner-system">System</span></div><div class="banner-tagline">Defined-Risk Trading OS</div></div></div>
+    <div class="banner-right"><div class="banner-date">{{REPORT_DATE}}</div><div class="banner-section">{{SYMBOL}} {{STRATEGY_NAME}} &middot; Disclosures</div></div>
+</div>
+<div class="gold-rule"></div>
+
+<h2>Important Disclosures</h2>
+
+<div style="border:1pt solid var(--grey-lt);border-top:2pt solid var(--gold);padding:10pt;margin-bottom:8pt;">
+    <h3 style="color:var(--forest);margin-bottom:4pt;">Educational Purpose</h3>
+    <p style="font-size:8pt;">This report is generated by NewLeaf System for educational and informational purposes only. It does not constitute investment advice, a solicitation, or a recommendation to buy or sell any security or financial instrument.</p>
+</div>
+
+<div style="border:1pt solid var(--grey-lt);border-top:2pt solid var(--red);padding:10pt;margin-bottom:8pt;">
+    <h3 style="color:var(--red);margin-bottom:4pt;">Risk Warning</h3>
+    <p style="font-size:8pt;">Options trading involves substantial risk of loss and is not suitable for all investors. Max loss on this position is {{MAX_LOSS}} per contract. You should only trade with capital you can afford to lose.</p>
+</div>
+
+<div style="border:1pt solid var(--grey-lt);border-top:2pt solid var(--amber);padding:10pt;margin-bottom:8pt;">
+    <h3 style="color:var(--amber);margin-bottom:4pt;">No Guarantees</h3>
+    <p style="font-size:8pt;">Past performance is not indicative of future results. Market conditions change rapidly. Probability estimates are based on historical data and mathematical models that may not reflect future outcomes.</p>
+</div>
+
+<div style="border:1pt solid var(--grey-lt);border-top:2pt solid var(--blue);padding:10pt;margin-bottom:8pt;">
+    <h3 style="color:var(--blue);margin-bottom:4pt;">Professional Consultation</h3>
+    <p style="font-size:8pt;">Consult qualified financial, tax, and legal advisors before making investment decisions. This report does not take into account your individual financial situation, objectives, or risk tolerance.</p>
+</div>
+
+<div style="text-align:center;margin-top:20pt;padding:12pt;border-top:1pt solid var(--gold);">
+    <p style="font-size:8pt;font-weight:600;color:var(--forest);">NewLeaf System &middot; Defined-Risk Trading OS</p>
+    <p style="font-size:7pt;color:var(--grey);">support@newleafsystem.com &middot; newleafsystem.com</p>
+    <p style="font-size:6.5pt;color:var(--grey);margin-top:4pt;">&copy; 2026 NewLeaf System. All rights reserved.</p>
+</div>
+
+</body>
+</html>

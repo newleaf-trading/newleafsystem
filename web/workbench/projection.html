@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-06YFVHFNYT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-06YFVHFNYT");</script>
+<meta charset="UTF-8">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Safe Bets Projection · NewLeaf Trading</title>
+<meta name="description" content="Interactive projection simulator showing how a 60–65% win-rate, capped-risk options strategy unfolds over 100–200 trades per year.">
+<meta property="og:title" content="Safe Bets Projection · NewLeaf Trading">
+<meta property="og:description" content="Interactive simulator: see how a systematic, defined-risk options strategy compounds over 100–200 trades per year with a 60–65% win rate.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://newleafsystem.com/workbench/projection.html">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Space+Mono:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://code.highcharts.com/highcharts.js"></script>
+
+<!-- Shared workbench navigation -->
+<script src="load-nav.js" defer></script>
+
+<style>
+
+    :root {
+      --forest: #0B2D23;
+      --forest-2: #0F3D2E;
+      --forest-3: #18523D;
+      --forest-soft: #2E7358;
+      --gold: #C8A85A;
+      --gold-soft: #E8D9A9;
+      --gold-deep: #9B7F3D;
+      --paper: #FBFAF5;
+      --cream: #F4EEDC;
+      --cream-2: #EDE4C9;
+      --ink: #161712;
+      --muted: #5A5A4D;
+      --rule: #D9CDA8;
+      --rule-strong: #B9A66F;
+      --danger: #8F3D2E;
+      --shadow: 0 24px 70px rgba(15, 61, 46, 0.13);
+      --radius: 28px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: "DM Sans", sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.55;
+      overflow-x: hidden;
+    }
+
+    /* body::before gradient removed — using workbench shell background */
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: min(1280px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid rgba(200, 168, 90, 0.3);
+      background: rgba(251, 250, 245, 0.84);
+      backdrop-filter: blur(18px);
+    }
+
+    .topbar-inner {
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 14px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+    }
+
+    .brand-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: var(--forest);
+      color: var(--gold);
+      box-shadow: 0 16px 36px rgba(11, 45, 35, 0.18), inset 0 0 0 1px rgba(232, 217, 169, 0.24);
+    }
+
+    .brand-title {
+      font-family: "Fraunces", serif;
+      font-size: 25px;
+      line-height: 1;
+      letter-spacing: -0.035em;
+      color: var(--forest);
+      font-weight: 600;
+    }
+
+    .brand-subtitle {
+      margin-top: 5px;
+      font-family: "Space Mono", monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      color: var(--gold-deep);
+    }
+
+    .reset-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 46px;
+      padding: 0 20px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--forest);
+      color: var(--gold-soft);
+      font-family: "Space Mono", monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 14px 32px rgba(11, 45, 35, 0.22);
+      transition: 0.2s ease;
+    }
+
+    .reset-btn:hover {
+      transform: translateY(-2px);
+      background: #061913;
+    }
+
+    main {
+      padding: 48px 0 64px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(390px, 0.92fr);
+      gap: 42px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      border: 1px solid rgba(200, 168, 90, 0.42);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.56);
+      padding: 9px 14px;
+      font-family: "Space Mono", monospace;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--gold-deep);
+    }
+
+    h1 {
+      max-width: 900px;
+      margin-top: 22px;
+      font-family: "Fraunces", serif;
+      font-size: clamp(48px, 7vw, 88px);
+      font-weight: 500;
+      line-height: 0.95;
+      letter-spacing: -0.06em;
+      color: var(--forest);
+    }
+
+    .hero-copy {
+      max-width: 760px;
+      margin-top: 26px;
+      font-size: 21px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    .hero-copy strong {
+      color: var(--forest);
+      font-weight: 700;
+    }
+
+    .trust-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 30px;
+    }
+
+    .trust-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .trust-chip::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--gold);
+      box-shadow: 0 0 0 4px rgba(200, 168, 90, 0.15);
+    }
+
+    .panel {
+      border: 1px solid rgba(200, 168, 90, 0.38);
+      border-radius: 34px;
+      background: rgba(255, 255, 255, 0.74);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-content {
+      padding: 28px;
+    }
+
+    .base-case-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .label {
+      font-family: "Space Mono", monospace;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--gold-deep);
+    }
+
+    .base-case-title {
+      margin-top: 5px;
+      font-family: "Fraunces", serif;
+      font-size: 34px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: -0.035em;
+      color: var(--forest);
+    }
+
+    .ev-box {
+      min-width: 138px;
+      border-radius: 22px;
+      background: var(--forest);
+      color: var(--gold-soft);
+      padding: 14px 16px;
+      text-align: right;
+    }
+
+    .ev-box small {
+      display: block;
+      font-family: "Space Mono", monospace;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      opacity: 0.82;
+    }
+
+    .ev-box strong {
+      display: block;
+      margin-top: 3px;
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .quick-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .quick-stat {
+      border-radius: 22px;
+      background: var(--cream);
+      padding: 17px 12px;
+      text-align: center;
+    }
+
+    .quick-stat strong {
+      display: block;
+      font-family: "Fraunces", serif;
+      font-size: 36px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      color: var(--forest);
+    }
+
+    .quick-stat span {
+      display: block;
+      margin-top: 8px;
+      font-family: "Space Mono", monospace;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+    }
+
+    .investor-message {
+      margin-top: 18px;
+      border: 1px solid rgba(200, 168, 90, 0.28);
+      border-radius: 22px;
+      background: rgba(255, 248, 219, 0.72);
+      padding: 17px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.65;
+    }
+
+    .investor-message strong {
+      color: var(--forest);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-top: 34px;
+    }
+
+    .metric-card {
+      border: 1px solid rgba(217, 205, 168, 0.86);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.78);
+      padding: 22px;
+      box-shadow: 0 12px 36px rgba(15, 61, 46, 0.06);
+    }
+
+    .metric-icon {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 17px;
+      margin-bottom: 18px;
+      background: rgba(11, 45, 35, 0.09);
+      color: var(--forest);
+      font-size: 20px;
+    }
+
+    .metric-card.gold .metric-icon {
+      background: rgba(200, 168, 90, 0.18);
+      color: var(--gold-deep);
+    }
+
+    .metric-card.red .metric-icon {
+      background: rgba(143, 61, 46, 0.12);
+      color: var(--danger);
+    }
+
+    .metric-label {
+      font-family: "Space Mono", monospace;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: #8C8A7D;
+    }
+
+    .metric-value {
+      margin-top: 8px;
+      font-size: 31px;
+      line-height: 1;
+      letter-spacing: -0.045em;
+      color: var(--forest);
+      font-weight: 700;
+    }
+
+    .metric-helper {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .simulator-layout {
+      display: grid;
+      grid-template-columns: 370px minmax(0, 1fr);
+      gap: 28px;
+      margin-top: 30px;
+      align-items: start;
+    }
+
+    .assumptions-panel {
+      position: sticky;
+      top: 100px;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      margin-bottom: 22px;
+    }
+
+    .section-icon {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 17px;
+      background: var(--forest);
+      color: var(--gold);
+    }
+
+    .section-heading h2 {
+      font-family: "Fraunces", serif;
+      font-size: 30px;
+      line-height: 1;
+      letter-spacing: -0.035em;
+      color: var(--forest);
+    }
+
+    .section-heading p {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .control-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .control {
+      border: 1px solid rgba(11, 45, 35, 0.1);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.72);
+      padding: 16px;
+      box-shadow: 0 8px 22px rgba(15, 61, 46, 0.04);
+    }
+
+    .control-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 13px;
+    }
+
+    .control-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--forest);
+    }
+
+    .control-helper {
+      margin-top: 3px;
+      color: #777467;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .control-value {
+      white-space: nowrap;
+      border-radius: 999px;
+      background: var(--forest);
+      color: var(--gold-soft);
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--gold);
+    }
+
+    .range-minmax {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #B0AA98;
+    }
+
+    .chart-grid {
+      display: grid;
+      gap: 28px;
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .chart-header h2 {
+      margin-top: 6px;
+      font-family: "Fraunces", serif;
+      font-size: 34px;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      color: var(--forest);
+    }
+
+    .pill {
+      border-radius: 999px;
+      background: var(--cream);
+      color: var(--forest);
+      padding: 10px 14px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .chart-wrap {
+      height: 360px;
+      width: 100%;
+    }
+
+    .lower-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+    }
+
+    .mc-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .mc-row {
+      border: 1px solid rgba(217, 205, 168, 0.86);
+      border-radius: 20px;
+      background: var(--paper);
+      padding: 16px;
+    }
+
+    .mc-row-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      color: var(--forest);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .mc-track {
+      height: 12px;
+      border-radius: 999px;
+      margin-top: 12px;
+      background: #E4DDC9;
+      overflow: hidden;
+    }
+
+    .mc-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: var(--forest);
+      width: 50%;
+      transition: width 0.2s ease;
+    }
+
+    .mc-fill.gold { background: var(--gold); }
+    .mc-fill.green { background: var(--forest-soft); }
+
+    .explain-section {
+      margin-top: 32px;
+      border: 1px solid rgba(200, 168, 90, 0.34);
+      border-radius: 34px;
+      background:
+        radial-gradient(circle at 78% 18%, rgba(200, 168, 90, 0.17), transparent 34%),
+        var(--forest);
+      color: var(--cream);
+      padding: 34px;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.2);
+    }
+
+    .explain-grid {
+      display: grid;
+      grid-template-columns: 1fr 0.82fr;
+      gap: 34px;
+      align-items: center;
+    }
+
+    .explain-section h2 {
+      margin-top: 12px;
+      max-width: 760px;
+      font-family: "Fraunces", serif;
+      font-size: clamp(36px, 4.5vw, 58px);
+      line-height: 1.04;
+      letter-spacing: -0.05em;
+    }
+
+    .explain-section p {
+      margin-top: 18px;
+      max-width: 780px;
+      color: var(--gold-soft);
+      font-size: 18px;
+      line-height: 1.7;
+    }
+
+    .formula-cards {
+      display: grid;
+      gap: 14px;
+    }
+
+    .formula-card {
+      border: 1px solid rgba(200, 168, 90, 0.32);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.07);
+      padding: 20px;
+    }
+
+    .formula-card small {
+      display: block;
+      font-family: "Space Mono", monospace;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--gold);
+    }
+
+    .formula-card strong {
+      display: block;
+      margin-top: 8px;
+      color: var(--cream);
+      font-size: 19px;
+      line-height: 1.45;
+    }
+
+    .scenario-section {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .scenario-card {
+      border: 1px solid rgba(217, 205, 168, 0.86);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.78);
+      padding: 24px;
+    }
+
+    .scenario-card h3 {
+      font-family: "Fraunces", serif;
+      font-size: 27px;
+      color: var(--forest);
+      letter-spacing: -0.035em;
+      line-height: 1.08;
+    }
+
+    .scenario-card p {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .scenario-card button {
+      margin-top: 18px;
+      min-height: 42px;
+      border: 1px solid var(--rule-strong);
+      border-radius: 999px;
+      background: transparent;
+      padding: 0 16px;
+      color: var(--forest);
+      font-family: "Space Mono", monospace;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .scenario-card button:hover {
+      background: var(--cream);
+      transform: translateY(-1px);
+    }
+
+    footer {
+      border-top: 1px solid rgba(200, 168, 90, 0.28);
+      background: #04100D;
+      color: rgba(232, 217, 169, 0.7);
+      padding: 28px 0;
+      font-family: "Space Mono", monospace;
+      font-size: 11px;
+      letter-spacing: 0.09em;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 1120px) {
+      .hero,
+      .simulator-layout,
+      .explain-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .assumptions-panel {
+        position: static;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .scenario-section {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 780px) {
+      .container {
+        width: min(100% - 28px, 1280px);
+      }
+
+      .topbar-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .reset-btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      main {
+        padding-top: 32px;
+      }
+
+      h1 {
+        font-size: 46px;
+      }
+
+      .hero-copy {
+        font-size: 18px;
+      }
+
+      .base-case-header,
+      .chart-header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .ev-box {
+        text-align: left;
+      }
+
+      .quick-stats,
+      .metrics,
+      .lower-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .panel-content,
+      .explain-section {
+        padding: 22px;
+      }
+
+      .chart-wrap {
+        height: 300px;
+      }
+
+      .metric-value {
+        font-size: 28px;
+      }
+    }
+  
+
+/* Override: workbench nav is 64px, adjust main padding */
+main { padding-top: 32px; }
+
+/* Reset button repositioned as floating action since topbar is replaced by nav */
+.projection-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 0 0;
+}
+</style>
+</head>
+<body>
+
+<!-- Projection toolbar (reset button, replaces standalone topbar) -->
+<div class="container projection-toolbar">
+  <button class="reset-btn" id="resetBtn" type="button">
+    <span>↺</span>
+    Reset assumptions
+  </button>
+</div>
+
+<main class="container">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">100–200 trades/year · small edge · controlled risk</div>
+        <h1>Show how a safe options approach unfolds over many trades.</h1>
+        <p class="hero-copy">
+          One trade is uncertain. A repeatable edge over <strong>100–200 trades</strong> can become meaningful when risk is capped, position sizing is controlled, and the strategy is diversified.
+        </p>
+        <div class="trust-row" aria-label="Safe approach principles">
+          <span class="trust-chip">60–65% target win-rate scenario</span>
+          <span class="trust-chip">Defined-risk setups</span>
+          <span class="trust-chip">Small losses by design</span>
+        </div>
+      </div>
+
+      <aside class="panel" aria-label="Base case summary">
+        <div class="panel-content">
+          <div class="base-case-header">
+            <div>
+              <div class="label">Base case</div>
+              <div class="base-case-title"><span id="baseWinRate">62</span>% win rate</div>
+            </div>
+            <div class="ev-box">
+              <small>Expected value</small>
+              <strong id="evBox">0.36%</strong>
+            </div>
+          </div>
+
+          <div class="quick-stats">
+            <div class="quick-stat">
+              <strong id="expectedWins">74</strong>
+              <span>Expected wins</span>
+            </div>
+            <div class="quick-stat">
+              <strong id="expectedLosses">46</strong>
+              <span>Expected losses</span>
+            </div>
+            <div class="quick-stat">
+              <strong id="totalTrades">120</strong>
+              <span>Total trades</span>
+            </div>
+          </div>
+
+          <div class="investor-message">
+            <strong>Investor message:</strong> we are not trying to win every trade. We are trying to make each trade small enough that the law of large numbers can work in our favour.
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="metrics" aria-label="Projection metrics">
+      <article class="metric-card">
+        <div class="metric-icon">↗</div>
+        <div class="metric-label">Final portfolio</div>
+        <div class="metric-value" id="finalPortfolio">$153,870</div>
+        <div class="metric-helper" id="finalPortfolioHelper">53.9% return after 120 trades</div>
+      </article>
+
+      <article class="metric-card gold">
+        <div class="metric-icon">◆</div>
+        <div class="metric-label">Projected profit</div>
+        <div class="metric-value" id="projectedProfit">$53,870</div>
+        <div class="metric-helper">Based on the current win/loss assumptions.</div>
+      </article>
+
+      <article class="metric-card red">
+        <div class="metric-icon">!</div>
+        <div class="metric-label">Worst simulated path</div>
+        <div class="metric-value" id="worstPath">$111,982</div>
+        <div class="metric-helper">Worst ending value across 80 simulated paths.</div>
+      </article>
+
+      <article class="metric-card">
+        <div class="metric-icon">✓</div>
+        <div class="metric-label">Losing-path risk</div>
+        <div class="metric-value" id="losingPathRisk">0.0%</div>
+        <div class="metric-helper">How many simulated paths ended below starting capital.</div>
+      </article>
+    </section>
+
+    <section class="scenario-section" aria-label="Preset scenarios">
+      <article class="scenario-card">
+        <h3>Conservative case</h3>
+        <p>60% win rate, 100 trades/year, smaller average wins. Useful for showing the safe lower-expectation version.</p>
+        <button type="button" data-scenario="conservative">Apply conservative</button>
+      </article>
+      <article class="scenario-card">
+        <h3>Base NewLeaf case</h3>
+        <p>62% win rate, 120 trades/year, 1.2% average win and 1% loss cap.</p>
+        <button type="button" data-scenario="base">Apply base case</button>
+      </article>
+      <article class="scenario-card">
+        <h3>High activity case</h3>
+        <p>65% win rate, 200 trades/year. Useful for explaining how more repetitions can strengthen the system.</p>
+        <button type="button" data-scenario="active">Apply high activity</button>
+      </article>
+    </section>
+
+    <section class="simulator-layout">
+      <aside class="panel assumptions-panel">
+        <div class="panel-content">
+          <div class="section-heading">
+            <div class="section-icon">☰</div>
+            <div>
+              <h2>Assumptions</h2>
+              <p>Change the inputs live.</p>
+            </div>
+          </div>
+
+          <div class="control-list">
+            <div class="control">
+              <div class="control-top">
+                <div>
+                  <div class="control-name">Starting capital</div>
+                  <div class="control-helper">Total portfolio or model account size.</div>
+                </div>
+                <div class="control-value" id="startCapitalLabel">$100,000</div>
+              </div>
+              <input id="startCapital" type="range" min="25000" max="500000" step="25000" value="100000" />
+              <div class="range-minmax"><span>$25,000</span><span>$500,000</span></div>
+            </div>
+
+            <div class="control">
+              <div class="control-top">
+                <div>
+                  <div class="control-name">Trades per year</div>
+                  <div class="control-helper">Use 100–200 for the NewLeaf story.</div>
+                </div>
+                <div class="control-value" id="tradesPerYearLabel">120</div>
+              </div>
+              <input id="tradesPerYear" type="range" min="50" max="240" step="10" value="120" />
+              <div class="range-minmax"><span>50</span><span>240</span></div>
+            </div>
+
+            <div class="control">
+              <div class="control-top">
+                <div>
+                  <div class="control-name">Win rate</div>
+                  <div class="control-helper">Safe strategies may target 60–65%, but losses still happen.</div>
+                </div>
+                <div class="control-value" id="winRateLabel">62%</div>
+              </div>
+              <input id="winRate" type="range" min="45" max="75" step="1" value="62" />
+              <div class="range-minmax"><span>45%</span><span>75%</span></div>
+            </div>
+
+            <div class="control">
+              <div class="control-top">
+                <div>
+                  <div class="control-name">Average winning trade</div>
+                  <div class="control-helper">Profit as percentage of the portfolio.</div>
+                </div>
+                <div class="control-value" id="avgWinPctLabel">1.2%</div>
+              </div>
+              <input id="avgWinPct" type="range" min="0.4" max="3" step="0.1" value="1.2" />
+              <div class="range-minmax"><span>0.4%</span><span>3%</span></div>
+            </div>
+
+            <div class="control">
+              <div class="control-top">
+                <div>
+                  <div class="control-name">Average losing trade</div>
+                  <div class="control-helper">Loss as percentage of the portfolio before cap.</div>
+                </div>
+                <div class="control-value" id="avgLossPctLabel">1.0%</div>
+              </div>
+              <input id="avgLossPct" type="range" min="0.4" max="3" step="0.1" value="1.0" />
+              <div class="range-minmax"><span>0.4%</span><span>3%</span></div>
+            </div>
+
+            <div class="control">
+              <div class="control-top">
+                <div>
+                  <div class="control-name">Maximum loss cap</div>
+                  <div class="control-helper">Safe approach: cap max loss per idea.</div>
+                </div>
+                <div class="control-value" id="maxLossPctLabel">1.0%</div>
+              </div>
+              <input id="maxLossPct" type="range" min="0.5" max="2" step="0.1" value="1.0" />
+              <div class="range-minmax"><span>0.5%</span><span>2%</span></div>
+            </div>
+
+            <div class="control">
+              <div class="control-top">
+                <div>
+                  <div class="control-name">Projection years</div>
+                  <div class="control-helper">Show one year or a multi-year system.</div>
+                </div>
+                <div class="control-value" id="yearsLabel">1</div>
+              </div>
+              <input id="years" type="range" min="1" max="5" step="1" value="1" />
+              <div class="range-minmax"><span>1</span><span>5</span></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <div class="chart-grid">
+        <article class="panel">
+          <div class="panel-content">
+            <div class="chart-header">
+              <div>
+                <div class="label">Projection curve</div>
+                <h2>Capital growth over repeated trades</h2>
+              </div>
+              <div class="pill" id="finalPill">Final: $153,870</div>
+            </div>
+            <div class="chart-wrap">
+              <div id="capitalChart"></div>
+            </div>
+          </div>
+        </article>
+
+        <div class="lower-grid">
+          <article class="panel">
+            <div class="panel-content">
+              <div class="label">Yearly outcome</div>
+              <div class="chart-header" style="margin-bottom: 10px;">
+                <h2>Profit by year</h2>
+              </div>
+              <div class="chart-wrap" style="height: 280px;">
+                <div id="profitChart"></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-content">
+              <div class="label">Monte Carlo summary</div>
+              <div class="chart-header" style="margin-bottom: 0;">
+                <h2>Range of possible paths</h2>
+              </div>
+
+              <div class="mc-list">
+                <div class="mc-row">
+                  <div class="mc-row-top"><span>10th percentile</span><span id="p10Value">$125,000</span></div>
+                  <div class="mc-track"><div class="mc-fill gold" id="p10Fill"></div></div>
+                </div>
+                <div class="mc-row">
+                  <div class="mc-row-top"><span>Median path</span><span id="medianValue">$153,870</span></div>
+                  <div class="mc-track"><div class="mc-fill" id="medianFill"></div></div>
+                </div>
+                <div class="mc-row">
+                  <div class="mc-row-top"><span>90th percentile</span><span id="p90Value">$182,000</span></div>
+                  <div class="mc-track"><div class="mc-fill green" id="p90Fill"></div></div>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="explain-section">
+      <div class="explain-grid">
+        <div>
+          <div class="label" style="color: var(--gold);">How to explain this to investors</div>
+          <h2>We are not promising every trade will win. We are designing the process so losses are survivable.</h2>
+          <p>
+            With 100–200 trades per year, the result depends less on one trade and more on the repeatability of the edge. A 60–65% win rate can be powerful only when the losses are capped, position size is controlled, and trades are diversified.
+          </p>
+        </div>
+
+        <div class="formula-cards">
+          <div class="formula-card">
+            <small>Formula</small>
+            <strong>Expected value = win rate × average win − loss rate × average loss</strong>
+          </div>
+          <div class="formula-card">
+            <small>Current scenario</small>
+            <strong id="currentScenarioFormula">62% × 1.2% − 38% × 1.0% = 0.36% expected value per trade</strong>
+          </div>
+          <div class="formula-card">
+            <small>Safe approach</small>
+            <strong>Small edge × many trades × capped risk = system, not gambling.</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+<footer>
+  <div class="container footer-inner">
+    <div>NewLeaf System · Projection Simulator</div>
+    <div>Educational content only · Not financial advice</div>
+  </div>
+</footer>
+
+<script>
+
+    const state = {
+      startCapital: 100000,
+      tradesPerYear: 120,
+      winRate: 62,
+      avgWinPct: 1.2,
+      avgLossPct: 1.0,
+      maxLossPct: 1.0,
+      years: 1
+    };
+
+    const currencyFormatter = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0
+    });
+
+    const percentFormatter = new Intl.NumberFormat('en-US', {
+      style: 'percent',
+      maximumFractionDigits: 1
+    });
+
+    const ids = {
+      startCapital: document.getElementById('startCapital'),
+      tradesPerYear: document.getElementById('tradesPerYear'),
+      winRate: document.getElementById('winRate'),
+      avgWinPct: document.getElementById('avgWinPct'),
+      avgLossPct: document.getElementById('avgLossPct'),
+      maxLossPct: document.getElementById('maxLossPct'),
+      years: document.getElementById('years')
+    };
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function formatCurrency(value) {
+      return currencyFormatter.format(Math.round(value));
+    }
+
+    function formatPct(value) {
+      return percentFormatter.format(value);
+    }
+
+    function expectedValuePerTrade(winRate, avgWinPct, avgLossPct) {
+      const w = winRate / 100;
+      return w * avgWinPct - (1 - w) * avgLossPct;
+    }
+
+    function buildDeterministicSequence() {
+      // Bresenham-style distribution: spreads wins and losses evenly so the
+      // realised win rate exactly matches state.winRate over any number of
+      // trades. No undefined variables, no hash approximation.
+      const totalTrades = state.tradesPerYear * state.years;
+      const winProb = state.winRate / 100;
+      const cappedLoss = Math.min(state.avgLossPct, state.maxLossPct);
+
+      let capital = state.startCapital;
+      const chart = [{ trade: 0, capital, pnl: 0 }];
+      let wins = 0;
+      let losses = 0;
+      let winAccumulator = 0;
+
+      for (let i = 1; i <= totalTrades; i++) {
+        winAccumulator += winProb;
+        let isWin;
+        if (winAccumulator >= 1) {
+          isWin = true;
+          winAccumulator -= 1;
+        } else {
+          isWin = false;
+        }
+
+        const outcome = isWin ? state.avgWinPct : -cappedLoss;
+        capital = capital * (1 + outcome / 100);
+        if (isWin) wins += 1; else losses += 1;
+
+        chart.push({
+          trade: i,
+          capital: Math.round(capital),
+          pnl: Math.round(capital - state.startCapital),
+          outcome
+        });
+      }
+
+      return {
+        chart,
+        finalCapital: capital,
+        wins,
+        losses,
+        totalTrades
+      };
+    }
+
+    function buildMonteCarlo() {
+      const runs = 80;
+      const totalTrades = state.tradesPerYear * state.years;
+      const finalValues = [];
+      let losingRuns = 0;
+      let best = -Infinity;
+      let worst = Infinity;
+
+      for (let r = 0; r < runs; r++) {
+        let capital = state.startCapital;
+        let seed = r * 9301 + 49297;
+
+        for (let i = 1; i <= totalTrades; i++) {
+          seed = (seed * 233280 + 49297) % 100000;
+          const random = seed / 100000;
+          const isWin = random < state.winRate / 100;
+          const move = isWin ? state.avgWinPct : -Math.min(state.avgLossPct, state.maxLossPct);
+          capital *= 1 + move / 100;
+        }
+
+        finalValues.push(Math.round(capital));
+        best = Math.max(best, capital);
+        worst = Math.min(worst, capital);
+
+        if (capital < state.startCapital) {
+          losingRuns += 1;
+        }
+      }
+
+      finalValues.sort((a, b) => a - b);
+
+      return {
+        median: finalValues[Math.floor(finalValues.length / 2)],
+        p10: finalValues[Math.floor(finalValues.length * 0.1)],
+        p90: finalValues[Math.floor(finalValues.length * 0.9)],
+        best,
+        worst,
+        losingRuns,
+        losingRunRate: losingRuns / runs
+      };
+    }
+
+    function buildYearlyBars(sequence) {
+      const rows = [];
+      for (let y = 1; y <= state.years; y++) {
+        const index = y * state.tradesPerYear;
+        const row = sequence.chart[Math.min(index, sequence.chart.length - 1)];
+        rows.push({
+          year: `Year ${y}`,
+          profit: Math.round(row.capital - state.startCapital),
+          capital: row.capital
+        });
+      }
+      return rows;
+    }
+
+    // Highcharts global theme
+    Highcharts.setOptions({
+      chart: { style: { fontFamily: '"DM Sans", sans-serif' } },
+      credits: { enabled: false },
+      title: { text: null },
+      legend: { enabled: false },
+      tooltip: {
+        backgroundColor: '#0B2D23',
+        borderColor: '#C8A85A',
+        borderRadius: 8,
+        style: { color: '#FBFAF5', fontSize: '12px' }
+      }
+    });
+
+    const capitalChart = Highcharts.chart('capitalChart', {
+      chart: { type: 'areaspline', backgroundColor: 'transparent', height: null },
+      xAxis: {
+        labels: { style: { color: '#6F6B5E', fontSize: '11px' } },
+        lineColor: 'transparent',
+        tickLength: 0
+      },
+      yAxis: {
+        gridLineColor: 'rgba(185,166,111,0.22)',
+        labels: {
+          style: { color: '#6F6B5E', fontSize: '11px' },
+          formatter: function () { return '$' + Math.round(this.value / 1000) + 'k'; }
+        },
+        title: { text: null }
+      },
+      tooltip: {
+        headerFormat: '<span style="color:#E8D9A9;font-size:11px">Trade {point.key}</span><br/>',
+        pointFormatter: function () { return formatCurrency(this.y); }
+      },
+      plotOptions: {
+        areaspline: { marker: { enabled: false }, lineWidth: 3 },
+        spline: { marker: { enabled: false }, lineWidth: 2 }
+      },
+      series: [
+        {
+          name: 'Capital',
+          type: 'areaspline',
+          data: [],
+          color: '#0B2D23',
+          fillColor: { linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 }, stops: [[0, 'rgba(11,45,35,0.18)'], [1, 'rgba(11,45,35,0)']] }
+        },
+        {
+          name: 'Starting capital',
+          type: 'spline',
+          data: [],
+          color: 'rgba(200,168,90,0.9)',
+          dashStyle: 'Dash'
+        }
+      ]
+    });
+
+    const profitChart = Highcharts.chart('profitChart', {
+      chart: { type: 'column', backgroundColor: 'transparent', height: null },
+      xAxis: {
+        labels: { style: { color: '#6F6B5E', fontSize: '11px' } },
+        lineColor: 'transparent',
+        tickLength: 0
+      },
+      yAxis: {
+        gridLineColor: 'rgba(185,166,111,0.22)',
+        labels: {
+          style: { color: '#6F6B5E', fontSize: '11px' },
+          formatter: function () { return '$' + Math.round(this.value / 1000) + 'k'; }
+        },
+        title: { text: null }
+      },
+      tooltip: {
+        pointFormatter: function () { return formatCurrency(this.y); }
+      },
+      plotOptions: {
+        column: { borderRadius: 6, borderWidth: 1, borderColor: '#9B7F3D' }
+      },
+      series: [{
+        name: 'Profit',
+        data: [],
+        color: '#C8A85A'
+      }]
+    });
+
+    function updateLabels() {
+      document.getElementById('startCapitalLabel').textContent = formatCurrency(state.startCapital);
+      document.getElementById('tradesPerYearLabel').textContent = state.tradesPerYear;
+      document.getElementById('winRateLabel').textContent = `${state.winRate}%`;
+      document.getElementById('avgWinPctLabel').textContent = `${state.avgWinPct.toFixed(1)}%`;
+      document.getElementById('avgLossPctLabel').textContent = `${state.avgLossPct.toFixed(1)}%`;
+      document.getElementById('maxLossPctLabel').textContent = `${state.maxLossPct.toFixed(1)}%`;
+      document.getElementById('yearsLabel').textContent = state.years;
+      document.getElementById('baseWinRate').textContent = state.winRate;
+    }
+
+    function updateUI() {
+      updateLabels();
+
+      const sequence = buildDeterministicSequence();
+      const monteCarlo = buildMonteCarlo();
+      const yearlyBars = buildYearlyBars(sequence);
+      const cappedLoss = Math.min(state.avgLossPct, state.maxLossPct);
+      const ev = expectedValuePerTrade(state.winRate, state.avgWinPct, cappedLoss);
+      const finalProfit = sequence.finalCapital - state.startCapital;
+      const finalReturn = finalProfit / state.startCapital;
+      const expectedWins = Math.round(sequence.totalTrades * (state.winRate / 100));
+      const expectedLosses = sequence.totalTrades - expectedWins;
+
+      document.getElementById('evBox').textContent = `${ev.toFixed(2)}%`;
+      document.getElementById('expectedWins').textContent = expectedWins;
+      document.getElementById('expectedLosses').textContent = expectedLosses;
+      document.getElementById('totalTrades').textContent = sequence.totalTrades;
+
+      document.getElementById('finalPortfolio').textContent = formatCurrency(sequence.finalCapital);
+      document.getElementById('finalPortfolioHelper').textContent = `${formatPct(finalReturn)} return after ${sequence.totalTrades} trades`;
+      document.getElementById('projectedProfit').textContent = formatCurrency(finalProfit);
+      document.getElementById('worstPath').textContent = formatCurrency(monteCarlo.worst);
+      document.getElementById('losingPathRisk').textContent = formatPct(monteCarlo.losingRunRate);
+      document.getElementById('finalPill').textContent = `Final: ${formatCurrency(sequence.finalCapital)}`;
+
+      document.getElementById('p10Value').textContent = formatCurrency(monteCarlo.p10);
+      document.getElementById('medianValue').textContent = formatCurrency(monteCarlo.median);
+      document.getElementById('p90Value').textContent = formatCurrency(monteCarlo.p90);
+
+      const spread = monteCarlo.best - monteCarlo.worst || 1;
+      document.getElementById('p10Fill').style.width = `${clamp(((monteCarlo.p10 - monteCarlo.worst) / spread) * 100, 3, 100)}%`;
+      document.getElementById('medianFill').style.width = `${clamp(((monteCarlo.median - monteCarlo.worst) / spread) * 100, 3, 100)}%`;
+      document.getElementById('p90Fill').style.width = `${clamp(((monteCarlo.p90 - monteCarlo.worst) / spread) * 100, 3, 100)}%`;
+
+      // Update the formula card with the live scenario
+      const lossRate = 100 - state.winRate;
+      document.getElementById('currentScenarioFormula').textContent =
+        `${state.winRate}% × ${state.avgWinPct.toFixed(1)}% − ${lossRate}% × ${cappedLoss.toFixed(1)}% = ${ev.toFixed(2)}% expected value per trade`;
+
+      // Update the capital growth line chart (Highcharts)
+      const capitalLabels = sequence.chart.map(point => point.trade);
+      capitalChart.xAxis[0].setCategories(capitalLabels, false);
+      capitalChart.series[0].setData(sequence.chart.map(point => point.capital), false);
+      capitalChart.series[1].setData(sequence.chart.map(() => state.startCapital), false);
+      capitalChart.redraw();
+
+      // Update the per-year profit bar chart (Highcharts)
+      profitChart.xAxis[0].setCategories(yearlyBars.map(row => row.year), false);
+      profitChart.series[0].setData(yearlyBars.map(row => row.profit), false);
+      profitChart.redraw();
+    }
+
+    // ---------- Wire up sliders ----------
+    function bindSlider(input, key, parser) {
+      input.addEventListener('input', () => {
+        const value = parser(input.value);
+        if (Number.isFinite(value)) {
+          state[key] = value;
+          updateUI();
+        }
+      });
+    }
+
+    bindSlider(ids.startCapital, 'startCapital', parseInt);
+    bindSlider(ids.tradesPerYear, 'tradesPerYear', parseInt);
+    bindSlider(ids.winRate, 'winRate', parseInt);
+    bindSlider(ids.avgWinPct, 'avgWinPct', parseFloat);
+    bindSlider(ids.avgLossPct, 'avgLossPct', parseFloat);
+    bindSlider(ids.maxLossPct, 'maxLossPct', parseFloat);
+    bindSlider(ids.years, 'years', parseInt);
+
+    // ---------- Scenario presets ----------
+    const scenarios = {
+      conservative: {
+        startCapital: 100000,
+        tradesPerYear: 100,
+        winRate: 60,
+        avgWinPct: 0.9,
+        avgLossPct: 1.0,
+        maxLossPct: 1.0,
+        years: 1
+      },
+      base: {
+        startCapital: 100000,
+        tradesPerYear: 120,
+        winRate: 62,
+        avgWinPct: 1.2,
+        avgLossPct: 1.0,
+        maxLossPct: 1.0,
+        years: 1
+      },
+      active: {
+        startCapital: 100000,
+        tradesPerYear: 200,
+        winRate: 65,
+        avgWinPct: 1.2,
+        avgLossPct: 1.0,
+        maxLossPct: 1.0,
+        years: 1
+      }
+    };
+
+    function applyScenario(name) {
+      const preset = scenarios[name];
+      if (!preset) return;
+      Object.assign(state, preset);
+
+      // Sync slider positions to new state values
+      ids.startCapital.value = state.startCapital;
+      ids.tradesPerYear.value = state.tradesPerYear;
+      ids.winRate.value = state.winRate;
+      ids.avgWinPct.value = state.avgWinPct;
+      ids.avgLossPct.value = state.avgLossPct;
+      ids.maxLossPct.value = state.maxLossPct;
+      ids.years.value = state.years;
+
+      updateUI();
+    }
+
+    document.querySelectorAll('[data-scenario]').forEach(btn => {
+      btn.addEventListener('click', () => applyScenario(btn.dataset.scenario));
+    });
+
+    // ---------- Reset to defaults ----------
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      applyScenario('base');
+    });
+
+    // ---------- Initial render ----------
+    updateUI();
+  
+</script>
+</body>
+</html>

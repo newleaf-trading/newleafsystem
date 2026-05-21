@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "newleaf-trading"
+  },
+  "targets": {
+    "newleaf-trading": {
+      "hosting": {
+        "newleafsystem": ["newleafsystem"]
+      }
+    }
+  }
+}

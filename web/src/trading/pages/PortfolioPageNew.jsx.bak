@@ -1,0 +1,1332 @@
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { usePortfolio } from '../hooks/usePortfolio';
+import { usePortfolioSettings } from '../hooks/usePortfolioSettings';
+import { OnboardingModal } from '../components/OnboardingModal';
+import { formatStrategy, formatCurrency } from '../utils/formatters';
+import { calculateMetrics, getUnderlyingPrice } from '../utils/optionsCalc';
+import { getStrategyTheme } from '../utils/strategyThemes';
+
+export function PortfolioPageNew({ tiles }) {
+  const navigate = useNavigate();
+  const { portfolioItems, loading, removeFromPortfolio, addToPortfolio, updateQuantity, isInPortfolio } = usePortfolio();
+  const { settings, updateSettings, loading: settingsLoading, needsOnboarding } = usePortfolioSettings();
+  const [mode, setMode] = useState('build'); // 'build' | 'manage'
+  const [onboardingDone, setOnboardingDone] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [posFilter, setPosFilter] = useState('all'); // 'all' | 'profitable' | 'at-risk'
+  const [showLegs, setShowLegs] = useState(false);
+  const [expandedPos, setExpandedPos] = useState(new Set());
+  const [editingDrawdown, setEditingDrawdown] = useState(false);
+  const [drawdownInput, setDrawdownInput] = useState(10);
+  const [equalRiskMode, setEqualRiskMode] = useState(false);
+
+  // Build slots derived from Firebase portfolio — always in sync
+  const buildSlots = useMemo(() => {
+    return portfolioItems
+      .map(pi => pi.tileId)
+      .filter(id => tiles.some(t => t.id === id));
+  }, [portfolioItems, tiles]);
+
+  // Calculate margin requirement based on strategy type and legs
+  const calculateMargin = useCallback((tile) => {
+    const strategy = (tile.strategy || '').toLowerCase();
+    const legs = tile.legs || [];
+
+    console.log('🔍 Calculating margin for:', {
+      symbol: tile.symbol,
+      strategy: strategy,
+      legsCount: legs.length,
+      legs: legs.map(l => ({ type: l.type, strike: l.strike, action: l.action }))
+    });
+
+    // If marginRequired is explicitly set in tile data, use it
+    if (tile.technical?.marginRequired && tile.technical.marginRequired > 0) {
+      console.log('✓ Using explicit marginRequired:', tile.technical.marginRequired);
+      return tile.technical.marginRequired;
+    }
+    if (tile.marginRequired && tile.marginRequired > 0) {
+      console.log('✓ Using explicit marginRequired:', tile.marginRequired);
+      return tile.marginRequired;
+    }
+
+    // Calculate based on strategy type
+    if (strategy.includes('iron_condor') || strategy.includes('iron condor') || strategy.includes('ironcondor')) {
+      // Iron Condor: Margin = max(put spread width, call spread width) × 100
+      const putLegs = legs.filter(l => l && l.type && l.type.toLowerCase() === 'put');
+      const callLegs = legs.filter(l => l && l.type && l.type.toLowerCase() === 'call');
+
+      console.log('📊 Iron Condor legs:', { putCount: putLegs.length, callCount: callLegs.length });
+
+      if (putLegs.length >= 2 && callLegs.length >= 2) {
+        const putStrikes = putLegs.map(l => l.strike).sort((a, b) => a - b);
+        const callStrikes = callLegs.map(l => l.strike).sort((a, b) => a - b);
+
+        const putWidth = putStrikes[putStrikes.length - 1] - putStrikes[0];
+        const callWidth = callStrikes[callStrikes.length - 1] - callStrikes[0];
+
+        const margin = Math.max(putWidth, callWidth) * 100;
+        console.log('✓ Calculated Iron Condor margin:', {
+          putWidth,
+          callWidth,
+          margin,
+          putStrikes,
+          callStrikes
+        });
+        return margin;
+      } else {
+        console.log('⚠️ Not enough legs for iron condor margin calc');
+      }
+    }
+
+    if (strategy.includes('spread')) {
+      // Credit/Debit Spread: Margin = spread width × 100
+      if (legs.length >= 2) {
+        const strikes = legs.map(l => l.strike).filter(Boolean).sort((a, b) => a - b);
+        if (strikes.length >= 2) {
+          const spreadWidth = strikes[strikes.length - 1] - strikes[0];
+          return spreadWidth * 100;
+        }
+      }
+    }
+
+    if (strategy.includes('covered') && strategy.includes('call')) {
+      // Covered Call: Margin = stock value (100 shares × stock price)
+      const currentPrice = tile.currentPrice || tile.underlyingPrice || getUnderlyingPrice(tile);
+      return currentPrice * 100;
+    }
+
+    if (strategy.includes('naked') || (strategy.includes('call') && !strategy.includes('spread') && !strategy.includes('covered'))) {
+      // Naked options or single leg: Use a conservative estimate
+      // Typically 20% of underlying value + option premium
+      const currentPrice = tile.currentPrice || tile.underlyingPrice || getUnderlyingPrice(tile);
+      return currentPrice * 100 * 0.20; // 20% margin requirement
+    }
+
+    // Default fallback: use max loss as margin (conservative)
+    const metrics = calculateMetrics(tile);
+    return tile.technical?.maxLoss || tile.maxLoss || metrics.maxLoss || 0;
+  }, []);
+
+  // Show onboarding if needed
+  useState(() => {
+    if (!settingsLoading && needsOnboarding && !onboardingDone) {
+      const timer = setTimeout(() => setShowOnboarding(true), 300);
+      return () => clearTimeout(timer);
+    }
+  });
+
+  // Join portfolio items with tile data
+  const portfolioWithTiles = useMemo(() => {
+    return portfolioItems.map(pi => {
+      const tile = tiles.find(t => t.id === pi.tileId);
+      return { ...pi, tile: tile || {} };
+    }).filter(item => item.tile.id);
+  }, [portfolioItems, tiles]);
+
+  // Available tiles for build mode — exclude tiles already in build slots
+  const availableTiles = useMemo(() => {
+    return tiles.filter(t => {
+      const hasData = (t.lottery?.maxWin > 0 || t.technical?.maxLoss > 0 || t.maxProfit > 0);
+      return hasData && !buildSlots.includes(t.id);
+    }).sort((a, b) => {
+      const aRoc = a.returnOnCapital || a.technical?.returnOnCapital || 0;
+      const bRoc = b.returnOnCapital || b.technical?.returnOnCapital || 0;
+      return bRoc - aRoc;
+    });
+  }, [tiles, buildSlots]);
+
+  // Tiles in build slots
+  const slotTiles = useMemo(() => {
+    return buildSlots.map(id => tiles.find(t => t.id === id)).filter(Boolean);
+  }, [buildSlots, tiles]);
+
+  // Build stats — realistic scenario-based expected returns
+  // Logic: Sum probabilities to estimate winners vs losers.
+  //   Winners take 60% of max profit (realistic target - traders aim for this)
+  //   Losers lose 100% of max loss (worst case for defined risk)
+  //   Net = Sum of (prob × maxProfit × 0.60) - ((1-prob) × maxLoss) for each tile
+  const buildStats = useMemo(() => {
+    let maxRisk = 0, totalMargin = 0;
+    let totalExpectedProfit = 0;
+    let totalMaxProfit = 0;
+    let totalProbSum = 0;
+
+    const WIN_TAKE_PCT = 0.60;  // realistic target - traders aim for 60% of max profit
+    const LOSS_TAKE_PCT = 1.00; // worst case - lose 100% of max loss (defined risk)
+
+    slotTiles.forEach(tile => {
+      const portfolioItem = portfolioItems.find(pi => pi.tileId === tile.id);
+      const quantity = portfolioItem?.quantity || 1;
+      const metrics = calculateMetrics(tile);
+      const profit = (tile.maxProfit || tile.technical?.maxProfit || tile.lottery?.maxWin || metrics.maxProfit || 0) * quantity;
+      const loss = (tile.maxLoss || tile.technical?.maxLoss || tile.lottery?.ticketCost || metrics.maxLoss || 0) * quantity;
+      const prob = (tile.oddsOfProfit || tile.probOfProfit || tile.lottery?.oddsOfProfit || tile.technical?.probability || 50) / 100;
+      const margin = calculateMargin(tile) * quantity;
+
+      // Expected profit per tile = (prob × maxProfit × 0.60) - ((1-prob) × maxLoss)
+      const tileExpectedProfit = (prob * profit * WIN_TAKE_PCT) - ((1 - prob) * loss * LOSS_TAKE_PCT);
+      totalExpectedProfit += tileExpectedProfit;
+
+      totalMaxProfit += profit;
+      maxRisk += loss;
+      totalMargin += margin;
+      totalProbSum += prob;
+    });
+
+    const count = slotTiles.length;
+    const expectedNetProfit = totalExpectedProfit;
+
+    // Calculate average probability of profit
+    const avgPoP = count > 0 ? (totalProbSum / count) * 100 : 0;
+
+    // Calculate expected winners vs losers
+    const expectedWinners = count > 0 ? totalProbSum : 0;
+    const expectedLosers = count > 0 ? count - totalProbSum : 0;
+
+    // ROC based on total margin deployed
+    const expectedReturnPct = totalMargin > 0 ? (expectedNetProfit / totalMargin) * 100 : 0;
+
+    // Annual: compound monthly expected return over 12 months
+    const monthlyRate = expectedReturnPct / 100;
+    const annualProjected = monthlyRate > -1
+      ? ((Math.pow(1 + monthlyRate, 12) - 1) * 100)
+      : -100;
+
+    // Risk-based allocation check
+    const totalCapital = settings?.totalCapital || 50000;
+    const maxDrawdown = settings?.maxDrawdown || 0.10;
+    const maxAllowedRisk = totalCapital * maxDrawdown;
+    const riskUtilizationPct = maxAllowedRisk > 0 ? (maxRisk / maxAllowedRisk) * 100 : 0;
+    const isOverRisk = maxRisk > maxAllowedRisk;
+
+    // Margin check
+    const marginUtilizationPct = totalCapital > 0 ? (totalMargin / totalCapital) * 100 : 0;
+    const isOverCapital = totalMargin > totalCapital;
+    const cashAfterMargin = totalCapital - totalMargin;
+
+    const progressPct = Math.min((Math.max(annualProjected, 0) / 25) * 100, 100);
+    return {
+      // New intuitive stats
+      expectedNetProfit: count > 0 ? expectedNetProfit : 0,
+      expectedReturnPct: count > 0 ? expectedReturnPct.toFixed(1) : '0.0',
+      expectedWinners: count > 0 ? Math.round(expectedWinners) : 0,
+      expectedLosers: count > 0 ? Math.round(expectedLosers) : 0,
+      expectedWinnersExact: expectedWinners,
+      avgPoP: count > 0 ? avgPoP.toFixed(0) : '0',
+      totalMaxProfit,
+      // Legacy/compatible
+      monthlyReturn: count > 0 ? expectedReturnPct.toFixed(1) : '0.0',
+      annualProjected: count > 0 ? annualProjected.toFixed(1) : '0.0',
+      maxRisk,
+      maxAllowedRisk,
+      riskUtilizationPct,
+      isOverRisk,
+      totalMargin,
+      marginUtilizationPct,
+      isOverCapital,
+      cashAfterMargin,
+      doubleTime: annualProjected > 0 ? (72 / annualProjected).toFixed(0) : '—',
+      progressPct,
+      count,
+    };
+  }, [slotTiles, portfolioItems, settings, calculateMargin]);
+
+  // Equal risk distribution handler
+  const applyEqualRiskDistribution = useCallback(async () => {
+    if (slotTiles.length === 0) return;
+
+    const totalCapital = settings?.totalCapital || 50000;
+    const maxDrawdown = settings?.maxDrawdown || 0.10;
+    const totalRiskBudget = totalCapital * maxDrawdown;
+    const riskPerStrategy = totalRiskBudget / slotTiles.length;
+
+    console.log('📊 Equal Risk Distribution:', {
+      totalRiskBudget,
+      strategiesCount: slotTiles.length,
+      riskPerStrategy
+    });
+
+    // Calculate and update quantities for each strategy
+    for (const tile of slotTiles) {
+      const metrics = calculateMetrics(tile);
+      const maxLoss = tile.maxLoss || tile.technical?.maxLoss || tile.lottery?.ticketCost || metrics.maxLoss || 0;
+
+      if (maxLoss > 0) {
+        const optimalQuantity = Math.max(1, Math.floor(riskPerStrategy / maxLoss));
+
+        console.log(`  ${tile.symbol}: maxLoss=$${maxLoss}, optimal qty=${optimalQuantity}`);
+
+        try {
+          await updateQuantity(tile.id, optimalQuantity);
+        } catch (err) {
+          console.error(`Failed to update quantity for ${tile.symbol}:`, err);
+        }
+      }
+    }
+  }, [slotTiles, settings, updateQuantity]);
+
+  // Auto-apply equal distribution when mode is enabled
+  useEffect(() => {
+    if (equalRiskMode && slotTiles.length > 0) {
+      applyEqualRiskDistribution();
+    }
+  }, [equalRiskMode, slotTiles.length]);
+
+  // Manage mode stats — uses real unrealizedPnl from Firestore
+  const manageStats = useMemo(() => {
+    const totalValue = settings?.totalCapital || 50000;
+    let capitalDeployed = 0;
+    let totalPnl = 0;
+    portfolioWithTiles.forEach(item => {
+      const metrics = calculateMetrics(item.tile);
+      const cost = item.tile.technical?.maxLoss || item.tile.maxLoss || metrics.maxLoss;
+      capitalDeployed += cost * (item.quantity || 1);
+      totalPnl += (item.unrealizedPnl || 0) * (item.quantity || 1);
+    });
+    const thisMonth = totalPnl; // no monthly breakdown yet
+    const deployedPct = totalValue > 0 ? Math.round((capitalDeployed / totalValue) * 100) : 0;
+    const totalPnlPct = totalValue > 0 ? ((totalPnl / totalValue) * 100).toFixed(1) : '0.0';
+    const thisMonthPct = totalPnlPct;
+    return {
+      portfolioValue: totalValue,
+      totalPnl,
+      totalPnlPct,
+      thisMonth,
+      thisMonthPct,
+      activePositions: portfolioWithTiles.filter(i => i.status !== 'closed').length,
+      capitalDeployed,
+      deployedPct,
+    };
+  }, [portfolioWithTiles, settings]);
+
+  // Filtered positions for manage mode
+  const filteredPositions = useMemo(() => {
+    if (posFilter === 'all') return portfolioWithTiles;
+    if (posFilter === 'profitable') {
+      return portfolioWithTiles.filter(item => {
+        return (item.unrealizedPnl || 0) > 0;
+      });
+    }
+    if (posFilter === 'at-risk') {
+      return portfolioWithTiles.filter(item => {
+        const dte = item.tile.daysToExpiry || 30;
+        const prob = item.tile.oddsOfProfit || item.tile.probOfProfit || item.tile.lottery?.oddsOfProfit || 70;
+        return dte < 14 || prob < 55;
+      });
+    }
+    return portfolioWithTiles;
+  }, [portfolioWithTiles, posFilter]);
+
+  const addToSlot = async (tileId) => {
+    const maxSlots = 12; // Increased from 6 to 12
+    if (buildSlots.length < maxSlots && !buildSlots.includes(tileId)) {
+      const tile = tiles.find(t => t.id === tileId);
+      if (tile) {
+        try { await addToPortfolio(tile); } catch (err) { console.error('Failed to add to portfolio:', err); }
+      }
+    }
+  };
+
+  const removeFromSlot = async (tileId) => {
+    try { await removeFromPortfolio(tileId); } catch (err) { console.error('Failed to remove from portfolio:', err); }
+  };
+
+  const resetSlots = async () => {
+    try {
+      await Promise.all(buildSlots.map(id => removeFromPortfolio(id)));
+    } catch (err) { console.error('Failed to reset slots:', err); }
+  };
+
+  const getStatusClass = (item) => {
+    const dte = item.tile.daysToExpiry || 30;
+    const prob = item.tile.oddsOfProfit || item.tile.probOfProfit || item.tile.lottery?.oddsOfProfit || 70;
+    if (item.status === 'closed') return 'profit';
+    if (dte < 7 || prob < 50) return 'warning';
+    return 'healthy';
+  };
+
+  const getStatusLabel = (item) => {
+    if (item.status === 'closed') return '✓ Closed';
+    const dte = item.tile.daysToExpiry || 30;
+    if (dte < 7) return '⚠ Watch';
+    return '● Healthy';
+  };
+
+  // Helper: get strike description from legs
+  const getStrikeDesc = (tile) => {
+    const legs = tile.legs || [];
+    const strategy = (tile.strategy || '').toLowerCase();
+    if (strategy.includes('iron_condor') || strategy.includes('iron condor')) {
+      const putSell = legs.find(l => l.type === 'put' && l.action === 'sell');
+      const putBuy = legs.find(l => l.type === 'put' && l.action === 'buy');
+      const callSell = legs.find(l => l.type === 'call' && l.action === 'sell');
+      const callBuy = legs.find(l => l.type === 'call' && l.action === 'buy');
+      if (putBuy && putSell && callSell && callBuy) {
+        return `$${putSell.strike}/$${putBuy.strike} — $${callSell.strike}/$${callBuy.strike}`;
+      }
+    }
+    if (strategy.includes('spread')) {
+      const strikes = legs.map(l => l.strike).filter(Boolean).sort((a, b) => a - b);
+      if (strikes.length >= 2) {
+        return `$${strikes[0]}/$${strikes[strikes.length - 1]}`;
+      }
+    }
+    if (strategy.includes('covered')) {
+      const shortCall = legs.find(l => l.type === 'call' && l.action === 'sell');
+      if (shortCall) return `Short $${shortCall.strike} call`;
+    }
+    return '';
+  };
+
+  // Helper: expiration action suggestion
+  const getExpiryAction = (item) => {
+    const dte = item.tile.daysToExpiry || 30;
+    const prob = item.tile.oddsOfProfit || item.tile.probOfProfit || item.tile.lottery?.oddsOfProfit || 70;
+    if (dte <= 3) return '→ Let expire or close early?';
+    if (dte <= 7) return '→ Review for early close';
+    if (prob < 55) return '→ Review adjustment';
+    if (dte <= 14) return '→ Monitor closely';
+    return null;
+  };
+
+  // Helper: expiration condition text
+  const getExpiryCondition = (item) => {
+    const prob = item.tile.oddsOfProfit || item.tile.probOfProfit || item.tile.lottery?.oddsOfProfit || 70;
+    const roc = item.tile.returnOnCapital || item.tile.technical?.returnOnCapital || 0;
+    const strikeDesc = getStrikeDesc(item.tile);
+    if (prob < 55) return `${strikeDesc} · ⚠ watch position`;
+    if (roc > 0) return `${strikeDesc} · on track`;
+    return strikeDesc;
+  };
+
+  // Find the most "at risk" position for alert card
+  const atRiskPosition = useMemo(() => {
+    return portfolioWithTiles.find(item => {
+      const prob = item.tile.oddsOfProfit || item.tile.probOfProfit || item.tile.lottery?.oddsOfProfit || 70;
+      const dte = item.tile.daysToExpiry || 30;
+      return (prob < 60 || dte < 10) && item.status !== 'closed';
+    });
+  }, [portfolioWithTiles]);
+
+  if (loading || settingsLoading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner">🍃</div>
+        <p className="loading-text">Loading your portfolio...</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {showOnboarding && <OnboardingModal onComplete={() => { setOnboardingDone(true); setShowOnboarding(false); }} />}
+
+      <div className="page-body">
+
+        {/* ========== BUILD MODE ========== */}
+        {mode === 'build' && (
+          <>
+            {/* Header + Mode Toggle */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <h1 style={{ fontSize: '22px', fontWeight: '700', margin: 0, letterSpacing: '-0.02em' }}>Portfolio Builder</h1>
+                <p style={{ fontSize: '13px', color: '#9ca3af', margin: '4px 0 0' }}>
+                  {slotTiles.length} strategies · {slotTiles.length >= 9 ? 12 : 9} slots · {portfolioWithTiles[0]?.tile?.daysToExpiry || 20}d to expiry
+                </p>
+              </div>
+              <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: '8px', padding: '3px', gap: '2px' }}>
+                <button
+                  onClick={() => setMode('build')}
+                  style={{
+                    padding: '8px 20px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                    fontSize: '13px', fontWeight: '600',
+                    background: mode === 'build' ? '#fff' : 'transparent',
+                    color: mode === 'build' ? '#1a1a2e' : '#9ca3af',
+                    boxShadow: mode === 'build' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                  }}
+                >
+                  🧩 Build
+                </button>
+                <button
+                  onClick={() => setMode('manage')}
+                  style={{
+                    padding: '8px 20px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                    fontSize: '13px', fontWeight: '600',
+                    background: mode === 'manage' ? '#fff' : 'transparent',
+                    color: mode === 'manage' ? '#1a1a2e' : '#9ca3af',
+                    boxShadow: mode === 'manage' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                  }}
+                >
+                  📋 Manage
+                </button>
+              </div>
+            </div>
+
+            {/* 5 Stat Cards at TOP */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginBottom: '20px' }}>
+              {/* Expected Profit */}
+              <div style={{
+                background: buildStats.expectedNetProfit >= 0 ? 'linear-gradient(135deg, #ecfdf5, #d1fae5)' : 'linear-gradient(135deg, #fef2f2, #fecaca)',
+                borderRadius: '12px', padding: '14px 16px',
+                border: buildStats.expectedNetProfit >= 0 ? '1px solid #a7f3d0' : '1px solid #fca5a5'
+              }}>
+                <div style={{ fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6b7280' }}>Expected Profit</div>
+                <div style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', letterSpacing: '-0.02em', color: buildStats.expectedNetProfit >= 0 ? '#059669' : '#dc2626' }}>
+                  {slotTiles.length > 0 ? `${buildStats.expectedNetProfit >= 0 ? '+' : ''}${formatCurrency(buildStats.expectedNetProfit)}` : '—'}
+                </div>
+                <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>per monthly cycle</div>
+              </div>
+
+              {/* Scenario */}
+              <div style={{
+                background: 'linear-gradient(135deg, #eff6ff, #dbeafe)',
+                borderRadius: '12px', padding: '14px 16px', border: '1px solid #93c5fd'
+              }}>
+                <div style={{ fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6b7280' }}>Scenario</div>
+                <div style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', letterSpacing: '-0.02em', color: '#2563eb' }}>
+                  {slotTiles.length > 0 ? `~${buildStats.expectedWinners} of ${buildStats.count} win` : '—'}
+                </div>
+                <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>avg {buildStats.avgPoP}% probability</div>
+              </div>
+
+              {/* Max Gain */}
+              <div style={{ background: '#fff', borderRadius: '12px', padding: '14px 16px', border: '1px solid #e5e7eb' }}>
+                <div style={{ fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6b7280' }}>Max Gain 🎯</div>
+                <div style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', color: '#059669', letterSpacing: '-0.02em' }}>
+                  {slotTiles.length > 0 ? formatCurrency(buildStats.totalMaxProfit) : '—'}
+                </div>
+                <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>if all strategies hit max</div>
+              </div>
+
+              {/* Max Risk */}
+              <div style={{ background: '#fff', borderRadius: '12px', padding: '14px 16px', border: '1px solid #e5e7eb' }}>
+                <div style={{ fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6b7280' }}>Max Risk ⚠️</div>
+                <div style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', color: '#dc2626', letterSpacing: '-0.02em' }}>
+                  {slotTiles.length > 0 ? formatCurrency(buildStats.maxRisk) : '—'}
+                </div>
+                <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>{slotTiles.length > 0 ? `${buildStats.riskUtilizationPct.toFixed(0)}% of risk budget` : '—'}</div>
+              </div>
+
+              {/* Risk Budget */}
+              <div style={{ background: '#fff', borderRadius: '12px', padding: '14px 16px', border: '1px solid #e5e7eb' }}>
+                <div style={{ fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6b7280' }}>Risk Budget</div>
+                <div style={{ fontSize: '24px', fontWeight: '800', marginTop: '4px', color: '#1a1a2e', letterSpacing: '-0.02em' }}>
+                  {formatCurrency(buildStats.maxAllowedRisk)}
+                </div>
+                <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>max {((settings?.maxDrawdown || 0.10) * 100).toFixed(0)}% drawdown</div>
+              </div>
+            </div>
+
+            {/* Compact Risk Toolbar */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: '#fff', borderRadius: '10px', padding: '10px 16px',
+              border: '1px solid #e5e7eb', marginBottom: '20px', fontSize: '13px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ color: '#6b7280' }}>Max Drawdown:</span>
+                  {editingDrawdown ? (
+                    <>
+                      <input
+                        type="range"
+                        min="5"
+                        max="25"
+                        step="5"
+                        value={drawdownInput}
+                        onChange={(e) => setDrawdownInput(parseInt(e.target.value))}
+                        style={{ width: '80px' }}
+                      />
+                      <span style={{ fontWeight: '700', color: '#059669' }}>{drawdownInput}%</span>
+                      <button
+                        onClick={() => {
+                          updateSettings({ ...settings, maxDrawdown: drawdownInput / 100 });
+                          setEditingDrawdown(false);
+                        }}
+                        style={{
+                          fontSize: '11px', padding: '2px 8px', background: '#059669',
+                          color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer'
+                        }}
+                      >
+                        Save
+                      </button>
+                      <button onClick={() => setEditingDrawdown(false)} style={{ fontSize: '11px', padding: '2px 8px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ fontWeight: '700', color: '#059669' }}>{((settings?.maxDrawdown || 0.10) * 100).toFixed(0)}%</span>
+                      <button
+                        onClick={() => {
+                          setDrawdownInput(Math.round((settings?.maxDrawdown || 0.10) * 100));
+                          setEditingDrawdown(true);
+                        }}
+                        style={{ fontSize: '11px', padding: '2px 8px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        Edit
+                      </button>
+                    </>
+                  )}
+                </div>
+                <div style={{ width: '1px', height: '20px', background: '#e5e7eb' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ color: '#6b7280' }}>Budget:</span>
+                  <span style={{ fontWeight: '700' }}>{formatCurrency(buildStats.maxAllowedRisk)}</span>
+                </div>
+                <div style={{ width: '1px', height: '20px', background: '#e5e7eb' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ color: '#6b7280' }}>Capital:</span>
+                  <span style={{ fontWeight: '700' }}>${((settings?.totalCapital || 50000) / 1000).toFixed(0)}K</span>
+                </div>
+              </div>
+              <label style={{
+                display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+                padding: '6px 14px', borderRadius: '6px',
+                background: equalRiskMode ? '#dcfce7' : '#f9fafb',
+                border: `1.5px solid ${equalRiskMode ? '#15803d' : '#d1d5db'}`,
+                fontWeight: '600', fontSize: '12px'
+              }}>
+                <input type="checkbox" checked={equalRiskMode} onChange={(e) => setEqualRiskMode(e.target.checked)} style={{ width: '14px', height: '14px' }} />
+                <span style={{ color: equalRiskMode ? '#15803d' : '#6b7280' }}>
+                  ⚖️ Equal Risk · {slotTiles.length > 0 ? formatCurrency(buildStats.maxAllowedRisk / slotTiles.length) + '/strategy' : '$—/strategy'}
+                </span>
+              </label>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: '20px' }}>
+              {/* Left Shelf */}
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af', marginBottom: '10px' }}>
+                  Available ({availableTiles.length})
+                </div>
+                {availableTiles.map(tile => {
+                  const roc = tile.returnOnCapital || tile.technical?.returnOnCapital || 0;
+                  const risk = tile.technical?.riskPercent || (tile.technical?.maxLoss ? ((tile.technical.maxLoss / (tile.technical.maxLoss + (tile.maxProfit || 0))) * 100) : 0);
+                  const dte = tile.daysToExpiry || 0;
+                  return (
+                    <div
+                      key={tile.id}
+                      onClick={() => addToSlot(tile.id)}
+                      style={{
+                        background: '#fff', borderRadius: '10px', padding: '14px 16px',
+                        border: '1px solid #e5e7eb', cursor: 'pointer', marginBottom: '8px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '15px', fontWeight: '700' }}>{tile.symbol}</span>
+                        <span style={{ fontSize: '10px', fontWeight: '600', padding: '3px 8px', borderRadius: '4px', background: '#ecfdf5', color: '#059669' }}>
+                          {formatStrategy(tile.strategy)}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px', display: 'flex', gap: '8px' }}>
+                        <span>+{roc.toFixed(1)}%</span><span>·</span>
+                        <span style={{ color: '#dc2626' }}>{risk > 0 ? risk.toFixed(1) + '%' : '—'}</span><span>·</span>
+                        <span>{dte}d</span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#059669', marginTop: '8px', fontWeight: '600', textAlign: 'center' }}>
+                        + Add to portfolio
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Right Canvas */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9ca3af' }}>
+                    Your Portfolio
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+                      {slotTiles.length} of {slotTiles.length >= 9 ? 12 : 9}
+                    </span>
+                    {buildSlots.length > 0 && (
+                      <button onClick={resetSlots} style={{ fontSize: '11px', padding: '4px 12px', background: '#f3f4f6', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer' }}>
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                  {Array.from({ length: slotTiles.length >= 9 ? 12 : 9 }).map((_, i) => {
+                    const tile = slotTiles[i];
+                    if (!tile) {
+                      return (
+                        <div key={`empty-${i}`} style={{
+                          borderRadius: '10px', border: '2px dashed #e5e7eb',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          minHeight: '120px', color: '#d1d5db', fontSize: '20px'
+                        }}>+</div>
+                      );
+                    }
+
+                    const roc = tile.returnOnCapital || tile.technical?.returnOnCapital || 0;
+                    const prob = tile.oddsOfProfit || tile.probOfProfit || tile.lottery?.oddsOfProfit || tile.technical?.probability || 0;
+                    const portfolioItem = portfolioItems.find(pi => pi.tileId === tile.id);
+                    const quantity = portfolioItem?.quantity || 1;
+
+                    return (
+                      <div key={tile.id} style={{
+                        background: '#fff', borderRadius: '10px', padding: '14px 16px',
+                        border: '2px solid #a7f3d0', position: 'relative'
+                      }}>
+                        <button
+                          onClick={() => removeFromSlot(tile.id)}
+                          style={{
+                            position: 'absolute', top: '8px', right: '8px',
+                            border: 'none', background: 'none', cursor: 'pointer',
+                            fontSize: '14px', color: '#9ca3af'
+                          }}
+                        >✕</button>
+                        <div style={{ fontSize: '15px', fontWeight: '700' }}>{tile.symbol}</div>
+                        <div style={{ fontSize: '11px', color: '#059669', fontWeight: '500' }}>
+                          {formatStrategy(tile.strategy)}
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginTop: '10px' }}>
+                          <div>
+                            <div style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase' }}>Return</div>
+                            <div style={{ fontSize: '16px', fontWeight: '700', color: '#059669' }}>{roc.toFixed(1)}%</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase' }}>Prob</div>
+                            <div style={{ fontSize: '16px', fontWeight: '700', color: prob >= 50 ? '#059669' : '#f59e0b' }}>
+                              {prob.toFixed(0)}%
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{
+                          marginTop: '8px', fontSize: '11px', textAlign: 'center',
+                          fontWeight: '600', color: '#059669', background: '#ecfdf5',
+                          padding: '4px 0', borderRadius: '4px'
+                        }}>
+                          Qty: {quantity} {equalRiskMode ? '(auto)' : ''}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Progressive grid hint */}
+                {slotTiles.length >= 7 && slotTiles.length < 9 && (
+                  <div style={{ textAlign: 'center', fontSize: '11px', color: '#9ca3af', marginTop: '8px', fontStyle: 'italic' }}>
+                    Fill {9 - slotTiles.length} more to unlock 3 bonus slots
+                  </div>
+                )}
+                {slotTiles.length >= 9 && (
+                  <div style={{ textAlign: 'center', fontSize: '11px', color: '#059669', marginTop: '8px', fontWeight: '600' }}>
+                    ✓ Expanded to 12 slots
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Margin + Activate (side by side) */}
+            {slotTiles.length > 0 && (
+              <div style={{
+                marginTop: '24px',
+                display: 'grid',
+                gridTemplateColumns: '1fr 300px',
+                gap: '16px'
+              }}>
+                {/* Left: Margin Requirements */}
+                <div style={{
+                  background: '#fff', borderRadius: '12px', padding: '20px 24px',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>
+                    💰 Margin & Capital
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', color: '#9ca3af' }}>Margin Needed</div>
+                      <div style={{ fontSize: '18px', fontWeight: '700' }}>{formatCurrency(buildStats.totalMargin)}</div>
+                      <div style={{ fontSize: '11px', color: '#9ca3af' }}>{buildStats.marginUtilizationPct.toFixed(1)}% of capital</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '11px', color: '#9ca3af' }}>Total Capital</div>
+                      <div style={{ fontSize: '18px', fontWeight: '700' }}>${((settings?.totalCapital || 50000) / 1000).toFixed(0)}K</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '11px', color: '#9ca3af' }}>Cash After Margin</div>
+                      <div style={{ fontSize: '18px', fontWeight: '700', color: '#059669' }}>
+                        +{formatCurrency(buildStats.cashAfterMargin)}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '11px', color: '#9ca3af' }}>Risk:Reward</div>
+                      <div style={{ fontSize: '18px', fontWeight: '700', color: '#2563eb' }}>
+                        1:{buildStats.maxRisk > 0 ? (buildStats.totalMaxProfit / buildStats.maxRisk).toFixed(1) : '—'}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#059669', fontWeight: '600' }}>✓ Favorable</div>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '12px' }}>
+                    <div style={{ height: '6px', background: '#f3f4f6', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%',
+                        width: `${Math.min(buildStats.marginUtilizationPct, 100)}%`,
+                        background: 'linear-gradient(90deg, #059669, #34d399)',
+                        borderRadius: '3px'
+                      }} />
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
+                      {buildStats.marginUtilizationPct.toFixed(1)}% margin utilization
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Activate */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)',
+                  borderRadius: '12px', padding: '20px 24px', border: '1px solid #a7f3d0',
+                  display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                  alignItems: 'center', textAlign: 'center'
+                }}>
+                  <div style={{ position: 'relative', width: '64px', height: '64px', marginBottom: '12px' }}>
+                    <svg width="64" height="64" viewBox="0 0 64 64">
+                      <circle cx="32" cy="32" r="28" fill="none" stroke="#d1fae5" strokeWidth="4" />
+                      <circle cx="32" cy="32" r="28" fill="none" stroke="#059669" strokeWidth="4"
+                        strokeDasharray={`${176 * buildStats.riskUtilizationPct / 100} 176`}
+                        strokeLinecap="round" transform="rotate(-90 32 32)" />
+                    </svg>
+                    <div style={{
+                      position: 'absolute', inset: 0, display: 'flex',
+                      alignItems: 'center', justifyContent: 'center',
+                      fontSize: '14px', fontWeight: '800', color: '#059669'
+                    }}>
+                      {buildStats.riskUtilizationPct.toFixed(0)}%
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#1a1a2e' }}>
+                    {buildStats.isOverRisk ? '⚠️ Over Risk Limit' : buildStats.riskUtilizationPct >= 90 ? 'Ready to Activate' : 'Building Portfolio'}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '12px' }}>
+                    {buildStats.riskUtilizationPct.toFixed(0)}% of risk budget used
+                  </div>
+                  <button
+                    onClick={() => setMode('manage')}
+                    disabled={buildStats.isOverRisk || buildStats.isOverCapital}
+                    style={{
+                      width: '100%', padding: '12px 0', borderRadius: '8px', border: 'none',
+                      background: buildStats.isOverRisk || buildStats.isOverCapital ? '#9ca3af' : '#059669',
+                      color: '#fff', fontSize: '14px', fontWeight: '700',
+                      cursor: buildStats.isOverRisk || buildStats.isOverCapital ? 'not-allowed' : 'pointer',
+                      boxShadow: buildStats.isOverRisk || buildStats.isOverCapital ? 'none' : '0 2px 8px rgba(5,150,105,0.3)'
+                    }}
+                  >
+                    {buildStats.isOverCapital ? '⚠️ Insufficient Capital' : buildStats.isOverRisk ? '⚠️ Reduce Risk' : '🌿 Activate Portfolio'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ========== MANAGE MODE ========== (keep as is but need to close old section first) */}
+        {/* Two-Column Layout: Margin + Progress */}
+                {slotTiles.length > 0 && (
+                  <div style={{
+                    marginTop: '24px',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 400px',
+                    gap: '24px',
+                    alignItems: 'start'
+                  }}>
+                    {/* Left: Margin Requirements */}
+                    <div style={{
+                      padding: '16px',
+                      background: buildStats.isOverCapital ? '#fef2f2' : '#f9fafb',
+                      border: `2px solid ${buildStats.isOverCapital ? '#ef4444' : '#e5e7eb'}`,
+                      borderRadius: '12px'
+                    }}>
+                    <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px', color: '#111827' }}>
+                      💰 Margin Requirements
+                    </h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '3px', fontWeight: '600' }}>Total Margin Needed</div>
+                        <div style={{ fontSize: '18px', fontWeight: '700', color: buildStats.isOverCapital ? '#dc2626' : '#15803d' }}>
+                          {formatCurrency(buildStats.totalMargin)}
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '1px' }}>
+                          {buildStats.marginUtilizationPct.toFixed(1)}% of capital
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '3px', fontWeight: '600' }}>Total Capital</div>
+                        <div style={{ fontSize: '18px', fontWeight: '700', color: '#374151' }}>
+                          {formatCurrency(settings?.totalCapital || 50000)}
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '1px' }}>
+                          available capital
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '3px', fontWeight: '600' }}>Cash After Margin</div>
+                        <div style={{ fontSize: '18px', fontWeight: '700', color: buildStats.cashAfterMargin >= 0 ? '#10b981' : '#dc2626' }}>
+                          {buildStats.cashAfterMargin >= 0 ? '+' : ''}{formatCurrency(buildStats.cashAfterMargin)}
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '1px' }}>
+                          {buildStats.cashAfterMargin >= 0 ? 'remaining' : 'insufficient'}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Margin Utilization Bar */}
+                    <div style={{ marginTop: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: '600' }}>Margin Utilization</span>
+                        <span style={{ fontSize: '11px', color: buildStats.isOverCapital ? '#dc2626' : '#374151', fontWeight: '700' }}>
+                          {buildStats.marginUtilizationPct.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div style={{
+                        width: '100%',
+                        height: '8px',
+                        background: '#e5e7eb',
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                        position: 'relative'
+                      }}>
+                        <div style={{
+                          width: `${Math.min(buildStats.marginUtilizationPct, 100)}%`,
+                          height: '100%',
+                          background: buildStats.isOverCapital
+                            ? '#ef4444'
+                            : buildStats.marginUtilizationPct > 90
+                              ? '#f59e0b'
+                              : buildStats.marginUtilizationPct > 70
+                                ? '#3b82f6'
+                                : '#10b981',
+                          transition: 'width 0.3s ease'
+                        }}></div>
+                        {/* 100% marker */}
+                        <div style={{
+                          position: 'absolute',
+                          left: '100%',
+                          top: 0,
+                          bottom: 0,
+                          width: '2px',
+                          background: '#dc2626',
+                          transform: 'translateX(-1px)'
+                        }}></div>
+                      </div>
+                    </div>
+                    {buildStats.isOverCapital && (
+                      <div style={{
+                        marginTop: '10px',
+                        padding: '10px',
+                        background: '#fee2e2',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        color: '#991b1b',
+                        fontWeight: '500'
+                      }}>
+                        ⚠️ Required margin ({formatCurrency(buildStats.totalMargin)}) exceeds capital. Reduce quantities.
+                      </div>
+                    )}
+                    <div style={{
+                      marginTop: '10px',
+                      padding: '10px',
+                      background: '#ffffff',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      color: '#6b7280',
+                      borderLeft: '3px solid #3b82f6'
+                    }}>
+                      <div style={{ marginBottom: '8px' }}>
+                        <strong style={{ color: '#374151', fontSize: '11px' }}>Risk & Reward Overview:</strong>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                        <div>
+                          <div style={{ fontWeight: '600', color: '#15803d', marginBottom: '2px', fontSize: '11px' }}>
+                            🎯 Max Gain: {formatCurrency(buildStats.totalMaxProfit)}
+                          </div>
+                          <div style={{ fontSize: '10px' }}>
+                            If all strategies hit maximum profit
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: '600', color: '#dc2626', marginBottom: '2px', fontSize: '11px' }}>
+                            ⚠️ Max Risk: {formatCurrency(buildStats.maxRisk)}
+                          </div>
+                          <div style={{ fontSize: '10px' }}>
+                            Maximum loss exposure after premium
+                          </div>
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: '600', color: '#374151', marginBottom: '2px', fontSize: '11px' }}>
+                            💰 Margin: {formatCurrency(buildStats.totalMargin)}
+                          </div>
+                          <div style={{ fontSize: '10px' }}>
+                            Collateral locked by broker
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{
+                        marginTop: '8px',
+                        padding: '6px',
+                        background: buildStats.totalMaxProfit > buildStats.maxRisk ? '#dcfce7' : '#fef3c7',
+                        borderRadius: '4px',
+                        textAlign: 'center'
+                      }}>
+                        <strong style={{ color: buildStats.totalMaxProfit > buildStats.maxRisk ? '#15803d' : '#92400e', fontSize: '11px' }}>
+                          Risk:Reward = 1:{(buildStats.totalMaxProfit / buildStats.maxRisk).toFixed(2)}
+                          {buildStats.totalMaxProfit > buildStats.maxRisk ? ' ✓ Favorable' : ' ⚠️ Review'}
+                        </strong>
+                      </div>
+                    </div>
+                    </div>
+
+                    {/* Right: Progress Ring & Start Building */}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '16px',
+                      padding: '20px',
+                      background: '#ffffff',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '12px'
+                    }}>
+                      {/* Progress Ring */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div className="prog-ring">
+                          <svg width="70" height="70" viewBox="0 0 90 90">
+                            <circle className="ring-bg" cx="45" cy="45" r="38" />
+                            <circle
+                              className="ring-fg"
+                              cx="45" cy="45" r="38"
+                              strokeDasharray={`${2 * Math.PI * 38}`}
+                              strokeDashoffset={`${2 * Math.PI * 38 * (1 - Math.min(buildStats.riskUtilizationPct, 100) / 100)}`}
+                              style={{ stroke: buildStats.isOverRisk ? '#ef4444' : '#10b981' }}
+                            />
+                          </svg>
+                          <div className="prog-center" style={{ color: buildStats.isOverRisk ? '#ef4444' : 'inherit', fontSize: '18px' }}>
+                            {Math.round(buildStats.riskUtilizationPct)}%
+                          </div>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <h4 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '6px', color: '#111827' }}>
+                            {buildStats.isOverRisk
+                              ? '⚠️ Risk Budget Exceeded!'
+                              : buildStats.riskUtilizationPct >= 90
+                                ? '✓ Fully Allocated!'
+                                : buildStats.riskUtilizationPct > 50
+                                  ? 'Building Portfolio...'
+                                  : 'Start Building'}
+                          </h4>
+                          <p style={{ fontSize: '11px', color: '#6b7280', lineHeight: '1.4', margin: 0 }}>
+                            {buildStats.isOverRisk
+                              ? `Risk (${formatCurrency(buildStats.maxRisk)}) exceeds ${((settings?.maxDrawdown || 0.10) * 100).toFixed(0)}% limit. Reduce positions.`
+                              : buildStats.riskUtilizationPct >= 90
+                                ? `Using ${buildStats.riskUtilizationPct.toFixed(0)}% of risk budget (${ formatCurrency(buildStats.maxAllowedRisk)}). Ready!`
+                                : `Using ${buildStats.riskUtilizationPct.toFixed(0)}% of ${((settings?.maxDrawdown || 0.10) * 100).toFixed(0)}% budget (${formatCurrency(buildStats.maxAllowedRisk)} available).`}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Activate Button */}
+                      {slotTiles.length >= 2 && (
+                        <>
+                          <button
+                            className="activate-btn"
+                            onClick={() => setMode('manage')}
+                            disabled={buildStats.isOverRisk || buildStats.isOverCapital}
+                            style={{
+                              opacity: (buildStats.isOverRisk || buildStats.isOverCapital) ? 0.5 : 1,
+                              cursor: (buildStats.isOverRisk || buildStats.isOverCapital) ? 'not-allowed' : 'pointer',
+                              width: '100%',
+                              padding: '12px',
+                              fontSize: '14px'
+                            }}
+                          >
+                            {buildStats.isOverCapital
+                              ? '⚠️ Insufficient Capital'
+                              : buildStats.isOverRisk
+                                ? '⚠️ Reduce Risk'
+                                : '🚀 Activate Portfolio'}
+                          </button>
+                          {(buildStats.isOverRisk || buildStats.isOverCapital) && (
+                            <p style={{ fontSize: '11px', color: '#dc2626', margin: 0, textAlign: 'center' }}>
+                              {buildStats.isOverCapital
+                                ? `Margin (${formatCurrency(buildStats.totalMargin)}) exceeds capital`
+                                : 'Reduce quantities to stay within budget'}
+                            </p>
+                          )}
+                          {!buildStats.isOverRisk && !buildStats.isOverCapital && buildStats.riskUtilizationPct >= 90 && (
+                            <p style={{ fontSize: '11px', color: '#15803d', margin: 0, textAlign: 'center' }}>
+                              ✓ Optimized with {buildStats.riskUtilizationPct.toFixed(0)}% allocation
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ========== MANAGE MODE ========== */}
+        {mode === 'manage' && (
+          <>
+            {/* Top: Title + Toggle side by side */}
+            <div className="manage-top">
+              <h1>My Portfolio</h1>
+              <div className="build-toggle" style={{ margin: 0 }}>
+                <button className={`bt-btn${mode === 'build' ? ' active' : ''}`} onClick={() => setMode('build')}>
+                  🧩 Build Mode
+                </button>
+                <button className={`bt-btn${mode === 'manage' ? ' active' : ''}`} onClick={() => setMode('manage')}>
+                  📋 Manage Mode
+                </button>
+              </div>
+            </div>
+
+            {/* Summary Stats */}
+            <div className="manage-summary">
+              <div className="ms-box">
+                <div className="ms-label">Portfolio Value</div>
+                <div className="ms-val">{formatCurrency(manageStats.portfolioValue)}</div>
+              </div>
+              <div className="ms-box">
+                <div className="ms-label">Total P&L</div>
+                <div className="ms-val" style={{ color: manageStats.totalPnl >= 0 ? 'var(--profit)' : 'var(--loss)' }}>
+                  {manageStats.totalPnl >= 0 ? '+' : ''}{formatCurrency(manageStats.totalPnl)}
+                </div>
+                <div className="ms-sub">{manageStats.totalPnl >= 0 ? '+' : ''}{manageStats.totalPnlPct}%</div>
+              </div>
+              <div className="ms-box">
+                <div className="ms-label">This Month</div>
+                <div className="ms-val" style={{ color: manageStats.thisMonth >= 0 ? 'var(--profit)' : 'var(--loss)' }}>
+                  {manageStats.thisMonth >= 0 ? '+' : ''}{formatCurrency(manageStats.thisMonth)}
+                </div>
+                <div className="ms-sub">{manageStats.thisMonth >= 0 ? '+' : ''}{manageStats.thisMonthPct}%</div>
+              </div>
+              <div className="ms-box">
+                <div className="ms-label">Active Positions</div>
+                <div className="ms-val">{manageStats.activePositions}</div>
+              </div>
+              <div className="ms-box">
+                <div className="ms-label">Capital Deployed</div>
+                <div className="ms-val">{formatCurrency(manageStats.capitalDeployed)}</div>
+                <div className="ms-sub">{manageStats.deployedPct}%</div>
+              </div>
+            </div>
+
+            {portfolioWithTiles.length === 0 ? (
+              <div className="placeholder-card">
+                <div className="placeholder-icon">📋</div>
+                <h3>No positions yet</h3>
+                <p>Switch to Build mode to add strategies, or go to Discover to find opportunities.</p>
+              </div>
+            ) : (
+              <div className="manage-layout">
+                {/* Positions Table */}
+                <div className="positions-card">
+                  <div className="pos-header">
+                    <h3>Active Positions</h3>
+                    <div className="pos-controls">
+                      <label className="pos-legs-toggle" title="Show individual option legs">
+                        <input type="checkbox" checked={showLegs} onChange={e => { setShowLegs(e.target.checked); if (!e.target.checked) setExpandedPos(new Set()); }} />
+                        <span>Show Legs</span>
+                      </label>
+                      <div className="pos-filter">
+                        <button className={posFilter === 'all' ? 'active' : ''} onClick={() => setPosFilter('all')}>All</button>
+                        <button className={posFilter === 'profitable' ? 'active' : ''} onClick={() => setPosFilter('profitable')}>Profitable</button>
+                        <button className={posFilter === 'at-risk' ? 'active' : ''} onClick={() => setPosFilter('at-risk')}>At Risk</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`pos-row header${showLegs ? ' with-legs' : ''}`}>
+                    {showLegs && <div></div>}
+                    <div>Ticker</div>
+                    <div>Strategy</div>
+                    <div>P&L</div>
+                    <div>Return</div>
+                    <div>Status</div>
+                    <div></div>
+                  </div>
+                  {filteredPositions.length === 0 ? (
+                    <div className="pos-empty">
+                      {posFilter === 'profitable'
+                        ? 'No profitable positions yet. Set current prices in Admin to track real P&L.'
+                        : posFilter === 'at-risk'
+                          ? 'No at-risk positions — looking good!'
+                          : 'No positions found.'}
+                    </div>
+                  ) : filteredPositions.map(item => {
+                    const pnl = (item.unrealizedPnl || 0) * (item.quantity || 1);
+                    const entryCredit = item.entryNetCredit || 0;
+                    const pnlPct = entryCredit !== 0 ? ((pnl / Math.abs(entryCredit)) * 100).toFixed(1) : '0.0';
+                    const isExpanded = showLegs && expandedPos.has(item.id);
+                    const hasLegs = item.legs && item.legs.length > 0;
+                    return (
+                      <div key={item.id} className={`pos-item-wrap${isExpanded ? ' expanded' : ''}`}>
+                        <div className={`pos-row${showLegs ? ' with-legs' : ''}`} onClick={() => {
+                          if (showLegs && hasLegs) {
+                            setExpandedPos(prev => { const n = new Set(prev); n.has(item.id) ? n.delete(item.id) : n.add(item.id); return n; });
+                          } else {
+                            navigate(`/position/${item.tile.id}`);
+                          }
+                        }}>
+                          {showLegs && (
+                            <div className="pos-expand-icon">
+                              {hasLegs ? (isExpanded ? '▼' : '▶') : '—'}
+                            </div>
+                          )}
+                          <div>
+                            <div className="pos-ticker">{item.symbol}</div>
+                            <div className="pos-strat">{item.status === 'closed' ? 'Closed' : `${item.tile.daysToExpiry || 0} DTE`}</div>
+                          </div>
+                          <div className="pos-strategy">{formatStrategy(item.strategy)}</div>
+                          <div className="pos-val" style={{ color: pnl >= 0 ? 'var(--profit)' : 'var(--loss)' }}>
+                            {pnl >= 0 ? '+' : ''}{formatCurrency(pnl)}
+                          </div>
+                          <div className="pos-val" style={{ color: pnl >= 0 ? 'var(--profit)' : 'var(--loss)' }}>
+                            {pnl >= 0 ? '+' : ''}{pnlPct}%
+                          </div>
+                          <div>
+                            <span className={`pos-status-badge ${getStatusClass(item)}`}>
+                              {getStatusLabel(item)}
+                            </span>
+                          </div>
+                          <div className="pos-chevron" onClick={(e) => { e.stopPropagation(); navigate(`/position/${item.tile.id}`); }}>›</div>
+                        </div>
+                        {/* Expanded Leg Details */}
+                        {isExpanded && hasLegs && (
+                          <div className="pos-legs-detail">
+                            <table className="pos-legs-table">
+                              <thead>
+                                <tr>
+                                  <th>Type</th>
+                                  <th>Action</th>
+                                  <th>Strike</th>
+                                  <th>Entry $</th>
+                                  <th>Current $</th>
+                                  <th>Leg P&L</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {item.legs.map(leg => {
+                                  const legPnl = leg.action === 'sell'
+                                    ? (leg.entryPremium - (leg.currentPremium || 0)) * 100
+                                    : ((leg.currentPremium || 0) - leg.entryPremium) * 100;
+                                  const hasCurrent = (leg.currentPremium || 0) > 0;
+                                  return (
+                                    <tr key={leg.legIndex}>
+                                      <td>
+                                        <span className={`leg-type-badge ${leg.type}`}>
+                                          {leg.type === 'call' ? '↗ Call' : leg.type === 'put' ? '↘ Put' : '● Stock'}
+                                        </span>
+                                      </td>
+                                      <td>
+                                        <span className={`leg-action-badge ${leg.action}`}>
+                                          {leg.action === 'sell' ? 'SELL' : 'BUY'}
+                                        </span>
+                                      </td>
+                                      <td className="leg-mono">${leg.strike}</td>
+                                      <td className="leg-mono">${(leg.entryPremium || 0).toFixed(2)}</td>
+                                      <td className="leg-mono">{hasCurrent ? `${leg.currentPremium.toFixed(2)}` : '—'}</td>
+                                      <td className={`leg-mono ${legPnl > 0 ? 'leg-profit' : legPnl < 0 ? 'leg-loss' : ''}`}>
+                                        {hasCurrent ? `${legPnl >= 0 ? '+' : ''}${legPnl.toFixed(0)}` : '—'}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                              <tfoot>
+                                <tr>
+                                  <td colSpan="3" style={{ textAlign: 'right', fontWeight: 600, fontSize: 11, color: 'var(--gray-500)' }}>Net:</td>
+                                  <td className="leg-mono" style={{ fontWeight: 600 }}>{entryCredit !== 0 ? formatCurrency(Math.abs(entryCredit)) : '—'}</td>
+                                  <td className="leg-mono" style={{ fontWeight: 600 }}>{item.currentNetValue ? formatCurrency(Math.abs(item.currentNetValue)) : '—'}</td>
+                                  <td className={`leg-mono ${pnl > 0 ? 'leg-profit' : pnl < 0 ? 'leg-loss' : ''}`} style={{ fontWeight: 700 }}>
+                                    {pnl !== 0 ? `${pnl >= 0 ? '+' : ''}${formatCurrency(pnl)}` : '—'}
+                                  </td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
+                        )}
+                        {isExpanded && !hasLegs && (
+                          <div className="pos-legs-detail" style={{ textAlign: 'center', padding: 16 }}>
+                            <span style={{ fontSize: 12, color: 'var(--gray-400)' }}>No legs data — sync from Admin → Portfolios tab</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Right Panel: Expiration Timeline + Alert */}
+                <div>
+                  <div className="expiry-card">
+                    <h3>Expiration Timeline</h3>
+                    <div className="expiry-timeline">
+                      {portfolioWithTiles
+                        .filter(i => i.status !== 'closed')
+                        .sort((a, b) => (a.tile.daysToExpiry || 99) - (b.tile.daysToExpiry || 99))
+                        .slice(0, 4)
+                        .map((item) => {
+                          const dte = item.tile.daysToExpiry || 30;
+                          const dotClass = dte <= 7 ? 'soon' : dte <= 21 ? 'ok' : 'far';
+                          const expDate = new Date();
+                          expDate.setDate(expDate.getDate() + dte);
+                          const conditionText = getExpiryCondition(item);
+                          const actionText = getExpiryAction(item);
+                          return (
+                            <div key={item.id} className="expiry-item">
+                              <div className={`exp-dot ${dotClass}`}>{dte}d</div>
+                              <div className="exp-info">
+                                <div className="exp-date">
+                                  {expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </div>
+                                <div className="exp-name">{item.symbol} {formatStrategy(item.strategy)}</div>
+                                {conditionText && <div className="exp-detail">{conditionText}</div>}
+                                {actionText && (
+                                  <div className="exp-action" onClick={(e) => { e.stopPropagation(); navigate(`/position/${item.tile.id}`); }}>
+                                    {actionText}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      {portfolioWithTiles.filter(i => i.status !== 'closed').length === 0 && (
+                        <div style={{ fontSize: 12, color: 'var(--gray-400)', padding: '12px 0' }}>
+                          No upcoming expirations. Build your portfolio to see the timeline.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Alert Card */}
+                  {atRiskPosition && (
+                    <div className="alert-card">
+                      <h4>⚠️ Adjustment Suggested</h4>
+                      <p>
+                        {atRiskPosition.symbol} {formatStrategy(atRiskPosition.strategy)} needs attention.
+                        {' '}
+                        {(atRiskPosition.tile.daysToExpiry || 30) < 10
+                          ? `Only ${atRiskPosition.tile.daysToExpiry || 0} days to expiration — consider rolling or closing to maintain your risk budget.`
+                          : 'Probability of profit has dropped below target. Consider rolling the tested side to widen your safety margin.'}
+                      </p>
+                      <div className="alert-actions">
+                        <button className="alert-btn primary" onClick={() => navigate(`/position/${atRiskPosition.tile.id}`)}>
+                          Review Position
+                        </button>
+                        <button className="alert-btn secondary">Dismiss</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </>
+  );
+}

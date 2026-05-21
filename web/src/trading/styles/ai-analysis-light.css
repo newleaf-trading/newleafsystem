@@ -1,0 +1,395 @@
+/* ═══════════════════════════════════════════════════════════════
+   AI Analysis Components — Light Theme
+   Replaces ai-enhanced-dark.css for the NewLeaf light design
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --ai-primary-gold: #C9A96E;
+  --ai-text-primary: #0B0F14;
+  --ai-text-secondary: #3d3d35;
+  --ai-text-muted: #6b6b60;
+  --ai-text-white: #fff;
+  --ai-success: #1D9E75;
+  --ai-danger: #E24B4A;
+  --ai-warning: #d97706;
+  --ai-info: #1a5ca0;
+  --ai-primary-green: #0B2D23;
+  --ai-accent-bg: rgba(201, 169, 110, 0.08);
+  --ai-accent-bg-strong: rgba(201, 169, 110, 0.15);
+  --ai-border: rgba(15, 61, 46, 0.12);
+  --ai-border-subtle: rgba(15, 61, 46, 0.06);
+  --ai-surface: #fff;
+  --ai-surface-hover: rgba(15, 61, 46, 0.03);
+  --ai-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --ai-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Cards ────────────────────────────────────────────────────── */
+.ai-card {
+  background: var(--ai-surface);
+  border: 1px solid var(--ai-border);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--ai-shadow);
+}
+
+.ai-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ai-primary-green);
+}
+
+.ai-full-width {
+  grid-column: 1 / -1;
+}
+
+.ai-warning-card {
+  background: #fef0ee;
+  border: 1px solid rgba(226, 75, 74, 0.15);
+  border-left: 3px solid var(--ai-danger);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+/* ── Typography ────────────────────────────────────────────────── */
+.ai-title-serif {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  color: var(--ai-primary-green);
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.ai-title-mono {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  color: var(--ai-primary-gold);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}
+
+/* ── Tables ────────────────────────────────────────────────────── */
+.ai-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+}
+
+.ai-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ai-primary-green);
+  border-bottom: 2px solid var(--ai-primary-green);
+  background: rgba(15, 61, 46, 0.03);
+}
+
+.ai-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--ai-border-subtle);
+  color: var(--ai-text-secondary);
+}
+
+.ai-table tr:last-child td {
+  border-bottom: none;
+}
+
+.ai-table tr:hover td {
+  background: var(--ai-surface-hover);
+}
+
+/* ── Metrics Grid ──────────────────────────────────────────────── */
+.ai-pnl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.ai-pnl-card {
+  background: rgba(15, 61, 46, 0.03);
+  border: 1px solid var(--ai-border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+
+.ai-pnl-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ai-text-muted);
+  margin-bottom: 6px;
+}
+
+.ai-pnl-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--ai-primary-green);
+  line-height: 1.1;
+}
+
+.ai-pnl-value.positive {
+  color: var(--ai-success);
+}
+
+.ai-pnl-value.negative {
+  color: var(--ai-danger);
+}
+
+.ai-pnl-subtitle {
+  font-size: 11px;
+  color: var(--ai-text-muted);
+  margin-top: 4px;
+}
+
+/* ── Bullets & Conclusion ─────────────────────────────────────── */
+.ai-bullet {
+  font-size: 14px;
+  color: var(--ai-text-secondary);
+  padding: 6px 0 6px 24px;
+  position: relative;
+  line-height: 1.6;
+}
+
+.ai-bullet:before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--ai-primary-gold);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.ai-conclusion {
+  padding: 16px 20px;
+  border-left: 3px solid var(--ai-primary-gold);
+  background: var(--ai-accent-bg);
+  border-radius: 0 10px 10px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ai-primary-green);
+  margin: 16px 0;
+  line-height: 1.6;
+}
+
+/* ── Badges & Tags ─────────────────────────────────────────────── */
+.ai-confidence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ai-primary-gold);
+  background: var(--ai-accent-bg);
+  border: 1px solid rgba(201, 169, 110, 0.2);
+  border-radius: 20px;
+  padding: 4px 12px;
+}
+
+.ai-strategy-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+
+.ai-strategy-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ai-primary-green);
+  background: rgba(15, 61, 46, 0.06);
+  border: 1px solid var(--ai-border);
+  border-radius: 20px;
+  padding: 4px 12px;
+}
+
+/* ── Buy/Sell Action Badges ────────────────────────────────────── */
+.ai-action-buy {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(29, 158, 117, 0.1);
+  border: 1px solid rgba(29, 158, 117, 0.2);
+  color: var(--ai-success);
+}
+
+.ai-action-sell {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(226, 75, 74, 0.1);
+  border: 1px solid rgba(226, 75, 74, 0.2);
+  color: var(--ai-danger);
+}
+
+/* ── Chart Legend ───────────────────────────────────────────────── */
+.ai-chart-legend {
+  text-align: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--ai-text-muted);
+  margin-top: 8px;
+}
+
+/* ── Mode Toggle ───────────────────────────────────────────────── */
+.ai-mode-toggle {
+  position: fixed;
+  top: 76px;
+  right: 20px;
+  z-index: 50;
+  display: flex;
+  gap: 0;
+  background: var(--ai-surface);
+  border: 1px solid var(--ai-border);
+  border-radius: 8px;
+  padding: 3px;
+  box-shadow: var(--ai-shadow);
+}
+
+.ai-mode-btn {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ai-text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ai-mode-btn:hover {
+  color: var(--ai-primary-green);
+  background: var(--ai-surface-hover);
+}
+
+.ai-mode-btn.active {
+  background: var(--ai-primary-green);
+  color: var(--ai-text-white);
+  border-color: var(--ai-primary-green);
+  font-weight: 700;
+}
+
+/* ── Advanced Mode ─────────────────────────────────────────────── */
+.advanced-only {
+  display: none;
+}
+
+body.advanced-mode .advanced-only {
+  display: block;
+}
+
+/* ── Risk Severity Badges ──────────────────────────────────────── */
+.ai-risk-high {
+  background: rgba(226, 75, 74, 0.1);
+  border: 1px solid rgba(226, 75, 74, 0.2);
+  color: var(--ai-danger);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+.ai-risk-medium {
+  background: rgba(217, 119, 6, 0.1);
+  border: 1px solid rgba(217, 119, 6, 0.2);
+  color: var(--ai-warning);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+.ai-risk-low {
+  background: rgba(26, 92, 160, 0.1);
+  border: 1px solid rgba(26, 92, 160, 0.2);
+  color: var(--ai-info);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+/* ── Progress Bar ──────────────────────────────────────────────── */
+.ai-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(15, 61, 46, 0.06);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+.ai-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--ai-primary-gold), var(--ai-success));
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* ── Gamma Metrics ─────────────────────────────────────────────── */
+.ai-gamma-improved {
+  background: rgba(15, 61, 46, 0.03);
+  border: 1px solid var(--ai-border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.ai-gamma-metric {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--ai-border-subtle);
+}
+
+.ai-gamma-metric:last-child {
+  border-bottom: none;
+}
+
+.ai-gamma-label {
+  color: var(--ai-text-muted);
+  font-size: 12px;
+}
+
+.ai-gamma-value {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  color: var(--ai-primary-green);
+  font-size: 13px;
+}

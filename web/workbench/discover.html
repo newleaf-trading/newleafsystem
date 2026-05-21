@@ -1,0 +1,2492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-06YFVHFNYT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-06YFVHFNYT");</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NewLeaf System — AI Discover</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script>window.__CONFIG__={API_URL:"https://us-central1-newleaf-trading.cloudfunctions.net/api",API_KEY:"nl_31ee32be43bd4f07a3520ae15c4b3162"};</script>
+  <script src="load-nav.js" defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,700&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --forest: #0B2D23; --forest-mid: #1a5c44; --gold: #C9A96E; --gold-pale: #f5ecd4;
+      --cream: #F7F5F0; --cream-dark: #EDE8DC; --ink: #0B0F14; --ink-mid: #3d3d35;
+      --ink-muted: #6b6b60; --ink-faint: #9b9b8e; --white: #fff;
+      --border: rgba(15,61,46,.12); --border-mid: rgba(15,61,46,.22);
+      --teal: #0d6e56; --teal-bg: #e0f2ec; --teal-text: #07473a;
+      --bg: var(--cream); --surface: var(--white); --surface-2: var(--cream-dark);
+      --text: var(--ink); --text-muted: var(--ink-muted); --accent: var(--teal);
+      --brand-green: var(--forest); --brand-gold: var(--gold);
+      --pass-bg: #e0f2ec; --pass-border: #2D5A3F; --pass-text: #07473a;
+      --concern-bg: #fef3c7; --concern-border: #d97706; --concern-text: #92400e;
+      --fail-bg: #fee2e2; --fail-border: #dc2626; --fail-text: #991b1b;
+      --info-bg: #e0f2fe; --info-border: #0284c7; --info-text: #075985;
+      --chart-profit: #1a8c5e; --chart-loss: #c0392b;
+      --green: #1a8c5e; --yellow: #d97706; --red: #c0392b;
+      --green-bg: rgba(26,140,94,0.08); --yellow-bg: rgba(217,119,6,0.08); --red-bg: rgba(192,57,43,0.08);
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; padding-top: 0; }
+    header { display: none; }
+    header h1 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+    header h1 span { color: var(--teal); }
+    header nav { display: flex; gap: 16px; align-items: center; }
+    header nav a { color: var(--ink-muted); text-decoration: none; font-size: 12px; font-weight: 500; }
+    header nav a:hover { color: var(--ink); }
+    header nav a.active { color: var(--teal); }
+    .badge { font-size: 11px; padding: 3px 8px; border-radius: 4px; background: var(--cream-dark); color: var(--ink-muted); border: 1px solid var(--border); position: fixed; top: 72px; right: 24px; z-index: 50; }
+
+    /* Progress bar */
+    .progress-nav { display: flex; align-items: center; justify-content: center; gap: 0; padding: 24px 24px 8px; max-width: 700px; margin: 0 auto; }
+    .pn-step { display: flex; align-items: center; gap: 0; }
+    .pn-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; border: 2px solid var(--border-mid); background: var(--white); color: var(--ink-muted); cursor: default; transition: all 0.3s; flex-shrink: 0; }
+    .pn-circle.active { border-color: var(--teal); background: var(--teal); color: white; }
+    .pn-circle.done { border-color: var(--pass-border); background: var(--teal-bg); color: var(--teal-text); cursor: pointer; }
+    .pn-circle.done:hover { border-color: var(--teal); }
+    .pn-label { font-size: 10px; color: var(--ink-muted); text-align: center; margin-top: 4px; white-space: nowrap; font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.04em; }
+    .pn-label.active { color: var(--teal); }
+    .pn-label.done { color: var(--teal-text); }
+    .pn-line { width: 60px; height: 2px; background: var(--border-mid); margin: 0 4px; margin-bottom: 18px; flex-shrink: 0; transition: background 0.3s; }
+    .pn-line.done { background: var(--teal); }
+    .pn-col { display: flex; flex-direction: column; align-items: center; }
+
+    /* Main container */
+    .main { max-width: 820px; margin: 0 auto; padding: 16px 24px 80px; }
+    .panel { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(15,61,46,.04); }
+    .panel-title { font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); margin-bottom: 16px; }
+
+    /* Traces banner */
+    .traces-banner { padding: 8px 16px; background: var(--cream-dark); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 16px; cursor: pointer; font-size: 12px; color: var(--ink-muted); display: flex; justify-content: space-between; align-items: center; }
+    .traces-banner:hover { border-color: var(--teal); }
+    .traces-list { display: none; margin-top: 8px; }
+    .traces-list.open { display: block; }
+    .trace-item { padding: 8px 12px; background: var(--white); border: 1px solid var(--border); border-radius: 4px; margin-top: 4px; font-size: 11px; display: flex; justify-content: space-between; align-items: center; }
+    .trace-item .ticker { font-weight: 700; color: var(--text); }
+    .trace-item .verdict-pill { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+    .trace-item .verdict-pill.pass { background: var(--pass-bg); color: var(--pass-text); }
+    .trace-item .verdict-pill.concern { background: var(--concern-bg); color: var(--concern-text); }
+    .trace-item .verdict-pill.fail { background: var(--fail-bg); color: var(--fail-text); }
+
+    /* Forms */
+    label { display: block; font-size: 12px; font-weight: 500; color: var(--ink-muted); margin-bottom: 4px; }
+    input, select { width: 100%; padding: 8px 10px; background: var(--white); border: 1px solid var(--border-mid); border-radius: 6px; color: var(--ink); font-size: 13px; outline: none; font-family: inherit; }
+    input:focus, select:focus { border-color: var(--teal); }
+    button { padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); transition: all 0.15s; font-family: inherit; }
+    .btn-primary { background: var(--teal); color: white; border-color: var(--teal); }
+    .btn-primary:hover { background: var(--forest-mid); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { background: var(--cream-dark); color: var(--ink-muted); }
+    .btn-secondary:hover { color: var(--ink); }
+    .btn-sm { padding: 8px 14px; font-size: 12px; }
+    .inline-row { display: flex; gap: 8px; align-items: flex-end; }
+
+    /* Stage 1 */
+    .demo-toggles { display: flex; gap: 6px; margin-bottom: 16px; }
+    .demo-toggle { padding: 6px 16px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); border-radius: 6px; background: var(--cream-dark); color: var(--ink-muted); cursor: pointer; }
+    .demo-toggle.active { border-color: var(--teal); background: var(--teal-bg); color: var(--teal-text); }
+    .metric-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin: 16px 0; }
+    .metric-item { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; text-align: center; }
+    .metric-item .m-label { font-family: 'Space Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); margin-bottom: 4px; }
+    .metric-item .m-value { font-size: 18px; font-weight: 700; font-family: 'Space Mono', monospace; }
+    .ai-read-card { background: var(--cream-dark); border-left: 3px solid var(--teal); border-radius: 0 6px 6px 0; padding: 12px 16px; font-size: 13px; color: var(--ink-mid); line-height: 1.6; font-style: italic; margin: 12px 0; }
+    .stage-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+    .cost-hint { font-size: 11px; color: var(--text-muted); }
+
+    /* Stage 2 */
+    .strategy-cards { display: flex; flex-direction: column; gap: 10px; }
+    .strat-card { background: var(--white); border: 2px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.15s; }
+    .strat-card:hover { border-color: var(--teal); }
+    .strat-card.best-fit { border-color: var(--teal); }
+    .strat-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .strat-name { font-size: 15px; font-weight: 700; }
+    .strat-pills { display: flex; gap: 6px; align-items: center; }
+    .best-fit-pill { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: var(--info-bg); color: var(--info-text); }
+    .strat-score { font-size: 22px; font-weight: 700; font-family: 'Space Mono', monospace; }
+    .strat-score.high { color: var(--pass-text); }
+    .strat-score.mid { color: var(--concern-text); }
+    .strat-score.low { color: var(--fail-text); }
+    .strat-legs { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-family: 'Space Mono', monospace; }
+    .strat-rationale { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 6px; }
+    .strat-credit { font-size: 13px; font-weight: 600; color: var(--green); }
+
+    /* Stage 3 */
+    .drill-header { margin-bottom: 16px; }
+    .drill-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .drill-sub { font-size: 12px; color: var(--text-muted); }
+    .drill-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0; }
+    .drill-metric { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; text-align: center; }
+    .drill-metric .dm-label { font-size: 10px; text-transform: uppercase; color: var(--text-muted); }
+    .drill-metric .dm-value { font-size: 15px; font-weight: 700; font-family: 'Space Mono', monospace; margin-top: 2px; }
+    .drill-metric .dm-value.green { color: var(--green); }
+    .drill-metric .dm-value.red { color: var(--red); }
+    .pnl-chart-wrap { position: relative; background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 12px 0; }
+    .pnl-chart-wrap canvas { width: 100%; height: 220px; display: block; }
+    .legs-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 12px; }
+    .legs-table th { text-align: left; color: var(--text-muted); font-weight: 500; padding: 6px 8px; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+    .legs-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+    .legs-table input { width: 50px; padding: 4px 6px; font-size: 12px; text-align: center; }
+
+    /* Stage 4 - verification */
+    .vp-header { text-align: center; margin-bottom: 20px; }
+    .vp-header h3 { font-size: 15px; font-weight: 600; color: var(--text); margin: 0 0 6px; }
+    .vp-progress-wrap { display: flex; align-items: center; gap: 10px; justify-content: center; }
+    .vp-progress-bar { width: 200px; height: 4px; background: var(--cream-dark); border-radius: 2px; overflow: hidden; }
+    .vp-progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--teal), var(--forest-mid)); border-radius: 2px; transition: width 0.5s ease; }
+    .vp-elapsed { font-size: 11px; font-family: 'Space Mono', monospace; color: var(--text-muted); min-width: 36px; }
+    .vp-pct { font-size: 11px; font-family: 'Space Mono', monospace; color: var(--teal); min-width: 30px; }
+    .vp-timeline { position: relative; padding-left: 28px; }
+    .vp-timeline::before { content: ''; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 2px; background: var(--border); border-radius: 1px; }
+    .vp-glow { position: absolute; left: 7px; top: 8px; width: 4px; height: 0%; background: linear-gradient(180deg, var(--teal), var(--forest-mid)); border-radius: 2px; transition: height 0.6s ease; z-index: 1; }
+    .vp-phase { margin-bottom: 14px; position: relative; }
+    .vp-phase-dot { position: absolute; left: -24px; top: 2px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border-mid); background: var(--white); z-index: 2; transition: all 0.3s; }
+    .vp-phase.active .vp-phase-dot { border-color: var(--teal); background: var(--teal); box-shadow: 0 0 8px rgba(13,110,86,0.4); }
+    .vp-phase.done .vp-phase-dot { border-color: var(--pass-border); background: var(--pass-border); }
+    .vp-phase-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; }
+    .vp-phase.active .vp-phase-title { color: var(--teal); }
+    .vp-phase.done .vp-phase-title { color: var(--pass-text); }
+    .vp-agents { display: flex; gap: 6px; flex-wrap: wrap; }
+    .vp-agent { flex: 1; min-width: 120px; background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; position: relative; overflow: hidden; transition: all 0.4s cubic-bezier(.4,0,.2,1); opacity: 0.35; transform: translateY(4px); }
+    .vp-agent .va-row1 { display: flex; align-items: center; gap: 6px; }
+    .vp-agent .va-icon { font-size: 16px; }
+    .vp-agent .va-name { font-size: 12px; font-weight: 600; color: var(--text); }
+    .vp-agent .va-model { font-size: 9px; font-weight: 600; margin-top: 2px; }
+    .vp-agent .va-thinking { font-size: 10px; color: var(--text-muted); margin-top: 4px; height: 14px; overflow: hidden; font-style: italic; opacity: 0; transition: opacity 0.3s; }
+    .vp-agent .va-result { font-size: 10px; color: var(--pass-text); margin-top: 4px; height: 14px; overflow: hidden; opacity: 0; transition: opacity 0.3s; font-weight: 500; }
+    .vp-agent .va-bar { position: absolute; bottom: 0; left: 0; height: 2px; border-radius: 0 0 8px 8px; width: 0%; transition: width 0.4s ease, background 0.3s; }
+    .vp-agent.waiting { opacity: 0.35; }
+    .vp-agent.processing { opacity: 1; transform: translateY(0); border-color: var(--teal); box-shadow: 0 0 20px rgba(13,110,86,0.1); }
+    .vp-agent.processing .va-thinking { opacity: 1; }
+    .vp-agent.processing .va-bar { width: 60%; background: linear-gradient(90deg, var(--teal), var(--forest-mid)); animation: barPulse 2s ease-in-out infinite; }
+    .vp-agent.done { opacity: 1; transform: translateY(0); border-color: var(--pass-border); }
+    .vp-agent.done .va-thinking { opacity: 0; height: 0; margin: 0; }
+    .vp-agent.done .va-result { opacity: 1; }
+    .vp-agent.done .va-bar { width: 100%; background: var(--pass-border); animation: none; }
+    @keyframes barPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Stage 5 - verdict */
+    .verdict-card { border-radius: 10px; border: 1px solid; padding: 24px; margin-bottom: 16px; position: relative; }
+    .verdict-card.pass { background: var(--pass-bg); border-color: var(--pass-border); }
+    .verdict-card.concern { background: var(--concern-bg); border-color: var(--concern-border); }
+    .verdict-card.fail { background: var(--fail-bg); border-color: var(--fail-border); }
+    .verdict-word { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; line-height: 1.2; }
+    .verdict-card.pass .verdict-word { color: var(--pass-text); }
+    .verdict-card.concern .verdict-word { color: var(--concern-text); }
+    .verdict-card.fail .verdict-word { color: var(--fail-text); }
+    .verdict-confidence { position: absolute; top: 24px; right: 24px; text-align: center; }
+    .verdict-conf-num { font-size: 28px; font-weight: 700; font-family: 'Space Mono', monospace; }
+    .verdict-card.pass .verdict-conf-num { color: var(--pass-text); }
+    .verdict-card.concern .verdict-conf-num { color: var(--concern-text); }
+    .verdict-card.fail .verdict-conf-num { color: var(--fail-text); }
+    .verdict-conf-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+    .verdict-summary { font-size: 14px; color: var(--text); line-height: 1.6; margin-top: 12px; opacity: 0.85; }
+
+    .mutations-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .mutation-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 14px; cursor: pointer; transition: all 0.2s; }
+    .mutation-card:hover { border-color: var(--teal); }
+    .mutation-card.reverifying { opacity: 0.6; pointer-events: none; }
+    .mutation-card.applied { border-color: var(--pass-border); opacity: 0.7; cursor: default; }
+    .mutation-label { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .mutation-change { font-size: 14px; font-family: 'Space Mono', monospace; font-weight: 700; }
+    .mutation-arrow { color: var(--pass-text); }
+
+    .debate-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .debate-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+    .debate-card.bull { border-left: 3px solid var(--pass-border); }
+    .debate-card.bear { border-left: 3px solid var(--fail-border); }
+    .debate-role { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .debate-card.bull .debate-role { color: var(--pass-text); }
+    .debate-card.bear .debate-role { color: var(--fail-text); }
+    .debate-won { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    .actions-row { display: flex; gap: 10px; margin-bottom: 16px; }
+    .actions-row button { flex: 1; }
+    .cost-summary { font-size: 12px; color: var(--text-muted); text-align: center; font-family: 'Space Mono', monospace; padding: 8px; }
+
+    /* Strike sliders */
+    .strike-sliders { margin: 16px 0 12px; padding: 14px 16px; background: var(--cream-dark); border: 1px solid var(--border); border-radius: 8px; }
+    .strike-sliders-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 12px; display: flex; justify-content: space-between; }
+    .strike-slider-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .strike-slider-row:last-child { margin-bottom: 0; }
+    .ss-label { width: 85px; flex-shrink: 0; }
+    .ss-label-name { font-size: 11px; font-weight: 600; color: var(--text); }
+    .ss-label-sub { font-size: 9px; color: var(--text-muted); text-transform: uppercase; }
+    .ss-range-wrap { flex: 1; position: relative; height: 28px; display: flex; align-items: center; }
+    .ss-range {
+      -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+      border-radius: 3px; outline: none; cursor: pointer; margin: 0;
+    }
+    .ss-range.put { background: linear-gradient(90deg, #2D5A3F, #2D5A3F); }
+    .ss-range.call { background: linear-gradient(90deg, #7A2F2F, #7A2F2F); }
+    .ss-range::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+      cursor: grab; box-shadow: 0 0 6px rgba(0,0,0,0.4);
+    }
+    .ss-range.put.long::-webkit-slider-thumb { background: var(--white); border: 3px solid var(--pass-text); }
+    .ss-range.put.short::-webkit-slider-thumb { background: var(--pass-text); border: 3px solid var(--pass-text); }
+    .ss-range.call.long::-webkit-slider-thumb { background: var(--white); border: 3px solid var(--fail-text); }
+    .ss-range.call.short::-webkit-slider-thumb { background: var(--fail-text); border: 3px solid var(--fail-text); }
+    /* Firefox */
+    .ss-range::-moz-range-thumb {
+      width: 18px; height: 18px; border-radius: 50%; cursor: grab;
+      box-shadow: 0 0 6px rgba(0,0,0,0.4); border: none;
+    }
+    .ss-range.put.long::-moz-range-thumb { background: var(--white); border: 3px solid var(--pass-text); }
+    .ss-range.put.short::-moz-range-thumb { background: var(--pass-text); }
+    .ss-range.call.long::-moz-range-thumb { background: var(--white); border: 3px solid var(--fail-text); }
+    .ss-range.call.short::-moz-range-thumb { background: var(--fail-text); }
+    .ss-value { width: 65px; text-align: right; font-size: 13px; font-weight: 600; font-family: 'Space Mono', monospace; color: var(--text); flex-shrink: 0; }
+
+    /* Leg edit controls */
+    .leg-edit { background: var(--white); color: var(--ink); border: 1px solid var(--border-mid); border-radius: 4px; padding: 4px 6px; font-size: 12px; font-family: 'Space Mono', monospace; cursor: pointer; }
+    .leg-edit:focus { border-color: var(--teal); outline: none; }
+    .leg-strike-sel { min-width: 70px; }
+
+    /* Gamma wall chart — vertical */
+    .gamma-section { margin: 16px 0; }
+    .gamma-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 8px; }
+    .gamma-canvas-wrap { position: relative; border-radius: 6px; overflow: hidden; background: var(--white); border: 1px solid var(--border); }
+    .wall-summary { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .wall-tag { font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+    .wall-tag.put { background: var(--fail-bg); color: var(--fail-text); }
+    .wall-tag.call { background: var(--pass-bg); color: var(--pass-text); }
+    .wall-tag.band { background: var(--info-bg); color: var(--info-text); }
+
+    /* Strategy method selector */
+    .strategy-method { margin-bottom: 8px; }
+    .strategy-method-header { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+    .strategy-method-header .or-divider { font-size: 11px; color: var(--text-muted); }
+    .strat-type-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    @media (max-width: 700px) { .strat-type-grid { grid-template-columns: repeat(2, 1fr); } }
+    .strat-type-card {
+      background: var(--white); border: 1px solid var(--border); border-radius: 8px;
+      padding: 12px; cursor: pointer; transition: all 0.2s; text-align: center;
+    }
+    .strat-type-card:hover { border-color: var(--teal); background: rgba(13,110,86,0.03); }
+    .strat-type-card.selected { border-color: var(--teal); background: var(--teal-bg); box-shadow: 0 0 12px rgba(13,110,86,0.1); }
+    .strat-type-card .stc-icon { height: 32px; margin-bottom: 6px; display: flex; justify-content: center; }
+    .strat-type-card .stc-icon svg { width: 80px; height: 32px; }
+    .strat-type-card .stc-name { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .strat-type-card .stc-desc { font-size: 9px; color: var(--text-muted); line-height: 1.3; }
+
+    /* Stage 5 enhancements */
+    .s5-trade-summary { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .s5-trade-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+    .s5-trade-title { font-size: 14px; font-weight: 600; color: var(--text); }
+    .s5-trade-sub { font-size: 11px; color: var(--text-muted); }
+    .s5-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+    .s5-metric { text-align: center; }
+    .s5-metric .s5m-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+    .s5-metric .s5m-value { font-size: 14px; font-weight: 600; font-family: 'Space Mono', monospace; }
+    .s5-pnl-wrap { border-radius: 6px; overflow: hidden; }
+    .s5-legs { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+
+    .s5-section { margin-bottom: 16px; }
+    .s5-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .s5-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .s5-evidence-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    @media (max-width: 800px) { .s5-evidence-grid { grid-template-columns: repeat(2, 1fr); } }
+    .s5-ev-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 10px; border-left: 3px solid var(--border); }
+    .s5-ev-card .ev-name { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted); margin-bottom: 3px; }
+    .s5-ev-card .ev-headline { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+    .s5-ev-card .ev-detail { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+    .s5-ev-card.technical { border-left-color: #f87171; }
+    .s5-ev-card.gamma { border-left-color: var(--accent); }
+    .s5-ev-card.iv { border-left-color: var(--pass-text); }
+    .s5-ev-card.sentiment { border-left-color: #a78bfa; }
+
+    .s5-expandable { cursor: pointer; user-select: none; }
+    .s5-expandable .s5-expand-toggle { font-size: 10px; color: var(--teal); margin-top: 6px; }
+    .s5-expandable .s5-expand-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+    .s5-expandable.open .s5-expand-body { max-height: 600px; }
+    .s5-expand-body { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+    .s5-round { margin-bottom: 8px; }
+    .s5-round-label { font-size: 9px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px; }
+    .s5-round-thesis { font-size: 11px; color: var(--text); line-height: 1.45; }
+    .s5-round-evidence { font-size: 10px; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
+
+    .hidden { display: none !important; }
+    .mini-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--teal); border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-left: 6px; }
+
+    @media (max-width: 600px) {
+      .metric-strip { grid-template-columns: repeat(3, 1fr); }
+      .drill-metrics { grid-template-columns: repeat(2, 1fr); }
+      .mutations-row, .debate-row { grid-template-columns: 1fr; }
+      .progress-nav { gap: 0; }
+      .pn-line { width: 30px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div style="display:flex;align-items:center;gap:24px">
+      <h1><span>NewLeaf</span> Verification Desk</h1>
+      <nav>
+        <a href="/index.html">Trade Builder</a>
+        <a href="/analyseagents.html">Trace Viewer</a>
+        <a href="/discover.html" class="active">Discover</a>
+        <a href="/position.html">Position</a>
+        <a href="/monitor.html">Monitor</a>
+        <a href="/api-docs.html">API Docs</a>
+        <a href="/docs.html">Design Doc</a>
+      </nav>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="badge" id="session-badge">$0.00 | 0 calls</span>
+    </div>
+  </header>
+
+  <!-- Auth gate — shown when user is not signed in -->
+  <div id="auth-gate" style="display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 56px);padding:40px 20px">
+    <div style="text-align:center;max-width:420px">
+      <div style="font-size:48px;margin-bottom:16px">🔒</div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:28px;font-weight:400;color:var(--forest);margin-bottom:8px">Sign in required</h2>
+      <p style="font-size:14px;color:var(--ink-muted);line-height:1.6;margin-bottom:24px">AI Discover is available to signed-in users. Sign in with your Google account to access the 5-stage verification workflow.</p>
+      <button id="auth-gate-signin" style="padding:12px 32px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;background:var(--teal);color:white;font-family:inherit;transition:background .2s" onmouseover="this.style.background='var(--forest-mid)'" onmouseout="this.style.background='var(--teal)'">Sign in with Google</button>
+      <p style="font-size:11px;color:var(--ink-faint);margin-top:16px"><a href="/" style="color:var(--teal);text-decoration:none">Back to home</a></p>
+    </div>
+  </div>
+
+  <!-- App content — hidden until authenticated -->
+  <div id="app-content" style="display:none">
+
+  <!-- Stage progress nav -->
+  <div class="progress-nav" id="progress-nav">
+    <div class="pn-col"><div class="pn-circle active" data-stage="1">1</div><div class="pn-label active">Snapshot</div></div>
+    <div class="pn-line" data-line="1"></div>
+    <div class="pn-col"><div class="pn-circle" data-stage="2">2</div><div class="pn-label">Strategies</div></div>
+    <div class="pn-line" data-line="2"></div>
+    <div class="pn-col"><div class="pn-circle" data-stage="3">3</div><div class="pn-label">Drill In</div></div>
+    <div class="pn-line" data-line="3"></div>
+    <div class="pn-col"><div class="pn-circle" data-stage="4">4</div><div class="pn-label">Verify</div></div>
+    <div class="pn-line" data-line="4"></div>
+    <div class="pn-col"><div class="pn-circle" data-stage="5">5</div><div class="pn-label">Verdict</div></div>
+  </div>
+
+  <div class="main">
+    <!-- Traces banner -->
+    <div id="traces-banner" class="traces-banner hidden" onclick="toggleTraces()">
+      <span id="traces-label">Recent verifications</span>
+      <span style="font-size:10px">&#9660;</span>
+    </div>
+    <div id="traces-list" class="traces-list"></div>
+
+    <!-- ===== STAGE 1: Snapshot ===== -->
+    <div class="stage" id="stage-1">
+      <div class="panel">
+        <div class="panel-title">Ticker Snapshot</div>
+
+        <div class="demo-toggles" id="demo-toggles" style="display:none">
+          <button class="demo-toggle active" data-ticker="SHOP" onclick="loadDemoTicker('SHOP')">SHOP</button>
+          <button class="demo-toggle" data-ticker="NET" onclick="loadDemoTicker('NET')">NET</button>
+        </div>
+
+        <label>Ticker</label>
+        <div class="inline-row" style="margin-bottom:12px">
+          <input type="text" id="ticker-input" placeholder="AAPL" style="text-transform:uppercase;flex:1" />
+          <button class="btn-sm btn-primary" id="load-btn" onclick="handleLoad()">Load</button>
+        </div>
+
+        <div id="snapshot-content" class="hidden">
+          <div class="metric-strip" id="metric-strip"></div>
+          <div class="ai-read-card" id="ai-read-card"></div>
+
+          <label>Expiration</label>
+          <select id="expiry-select"><option value="">Select expiry...</option></select>
+
+          <div class="gamma-section hidden" id="gamma-section">
+            <div class="gamma-title">Gamma Walls & Open Interest</div>
+            <div id="gamma-chart-content"></div>
+          </div>
+
+          <div class="strategy-method">
+            <div class="strategy-method-header">
+              <button class="btn-primary" id="find-strategies-btn" disabled onclick="goToStage(2)" style="white-space:nowrap">AI Find strategies &#8594;</button>
+              <span class="or-divider">or pick a structure:</span>
+            </div>
+            <div class="strat-type-grid">
+              <div class="strat-type-card" data-strat="iron_condor">
+                <div class="stc-icon"><svg viewBox="0 0 80 32"><polyline points="0,28 15,28 25,4 55,4 65,28 80,28" fill="none" stroke="var(--pass-text)" stroke-width="2"/><line x1="0" y1="16" x2="80" y2="16" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/></svg></div>
+                <div class="stc-name">Iron Condor</div>
+                <div class="stc-desc">Neutral &middot; credit &middot; range</div>
+              </div>
+              <div class="strat-type-card" data-strat="vertical_spread">
+                <div class="stc-icon"><svg viewBox="0 0 80 32"><polyline points="0,28 30,28 50,4 80,4" fill="none" stroke="var(--accent)" stroke-width="2"/><line x1="0" y1="16" x2="80" y2="16" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/></svg></div>
+                <div class="stc-name">Bull Put Spread</div>
+                <div class="stc-desc">Bullish &middot; credit</div>
+              </div>
+              <div class="strat-type-card" data-strat="bear_call_spread">
+                <div class="stc-icon"><svg viewBox="0 0 80 32"><polyline points="0,4 30,4 50,28 80,28" fill="none" stroke="var(--fail-text)" stroke-width="2"/><line x1="0" y1="16" x2="80" y2="16" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/></svg></div>
+                <div class="stc-name">Bear Call Spread</div>
+                <div class="stc-desc">Bearish &middot; credit</div>
+              </div>
+              <div class="strat-type-card" data-strat="short_strangle">
+                <div class="stc-icon"><svg viewBox="0 0 80 32"><polyline points="0,28 20,28 30,4 50,4 60,28 80,28" fill="none" stroke="var(--concern-text)" stroke-width="2"/><line x1="0" y1="16" x2="80" y2="16" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/></svg></div>
+                <div class="stc-name">Strangle</div>
+                <div class="stc-desc">Neutral &middot; credit &middot; wide</div>
+              </div>
+              <div class="strat-type-card" data-strat="broken_wing_butterfly">
+                <div class="stc-icon"><svg viewBox="0 0 80 32"><polyline points="0,22 20,28 35,4 50,28 65,22 80,22" fill="none" stroke="#a78bfa" stroke-width="2"/><line x1="0" y1="16" x2="80" y2="16" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/></svg></div>
+                <div class="stc-name">BWB</div>
+                <div class="stc-desc">Asymmetric &middot; credit</div>
+              </div>
+              <div class="strat-type-card" data-strat="calendar">
+                <div class="stc-icon"><svg viewBox="0 0 80 32"><path d="M0,28 Q20,28 30,8 Q40,-4 50,8 Q60,28 80,28" fill="none" stroke="var(--info-text)" stroke-width="2"/><line x1="0" y1="16" x2="80" y2="16" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/></svg></div>
+                <div class="stc-name">Calendar</div>
+                <div class="stc-desc">Neutral &middot; time decay</div>
+              </div>
+              <div class="strat-type-card" data-strat="diagonal">
+                <div class="stc-icon"><svg viewBox="0 0 80 32"><path d="M0,28 Q25,28 35,8 Q45,-2 55,10 Q70,28 80,22" fill="none" stroke="#f59e0b" stroke-width="2"/><line x1="0" y1="16" x2="80" y2="16" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/></svg></div>
+                <div class="stc-name">Diagonal</div>
+                <div class="stc-desc">Directional &middot; time decay</div>
+              </div>
+              <div class="strat-type-card" data-strat="iron_butterfly">
+                <div class="stc-icon"><svg viewBox="0 0 80 32"><polyline points="0,28 25,28 40,4 55,28 80,28" fill="none" stroke="var(--pass-text)" stroke-width="2"/><line x1="0" y1="16" x2="80" y2="16" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/></svg></div>
+                <div class="stc-name">Iron Butterfly</div>
+                <div class="stc-desc">Neutral &middot; high credit</div>
+              </div>
+            </div>
+          </div>
+          <div class="stage-footer">
+            <span class="cost-hint" id="stage1-cost">AI: ~$0.008 &middot; 1 model call &nbsp;|&nbsp; Manual: free</span>
+            <button class="btn-primary" id="go-drill-btn">Build trade &#8594;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== STAGE 2: Ranked Strategies ===== -->
+    <div class="stage hidden" id="stage-2">
+      <div class="panel">
+        <div class="panel-title">Ranked Strategies</div>
+        <div class="strategy-cards" id="strategy-cards"></div>
+      </div>
+    </div>
+
+    <!-- ===== STAGE 3: Drill In ===== -->
+    <div class="stage hidden" id="stage-3">
+      <div class="panel">
+        <div class="drill-header">
+          <div class="drill-title" id="drill-title"></div>
+          <div class="drill-sub" id="drill-sub"></div>
+        </div>
+        <div class="drill-metrics" id="drill-metrics"></div>
+        <div class="pnl-chart-wrap"><canvas id="pnl-canvas" height="220"></canvas></div>
+        <div class="strike-sliders" id="strike-sliders"></div>
+        <table class="legs-table">
+          <thead><tr><th>Side</th><th>Strike</th><th>Type</th><th>Mid</th><th>IV</th><th>Qty</th></tr></thead>
+          <tbody id="legs-body"></tbody>
+        </table>
+        <div class="stage-footer">
+          <span class="cost-hint">~$0.05 &middot; 7 agents &middot; ~30s</span>
+          <button class="btn-primary" id="verify-btn" onclick="goToStage(4)">Verify trade &#8594;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== STAGE 4: Live Verification ===== -->
+    <div class="stage hidden" id="stage-4">
+      <div class="panel">
+        <div class="vp-header">
+          <h3>Verification in Progress</h3>
+          <div class="vp-progress-wrap">
+            <span class="vp-elapsed" id="elapsed-timer">0.0s</span>
+            <div class="vp-progress-bar"><div class="vp-progress-fill" id="vp-fill"></div></div>
+            <span class="vp-pct" id="vp-pct">0%</span>
+          </div>
+        </div>
+        <div class="vp-timeline">
+          <div class="vp-glow" id="vp-glow"></div>
+
+          <div class="vp-phase" data-phase="1">
+            <div class="vp-phase-dot"></div>
+            <div class="vp-phase-title">Phase 1 &mdash; Analysts</div>
+            <div class="vp-agents">
+              <div class="vp-agent waiting" data-agent="technical">
+                <div class="va-row1"><span class="va-icon">&#x1F4C8;</span><span class="va-name">Technical</span></div>
+                <div class="va-model" style="color:var(--info-text)">Sonnet</div>
+                <div class="va-thinking"></div><div class="va-result"></div><div class="va-bar"></div>
+              </div>
+              <div class="vp-agent waiting" data-agent="gamma">
+                <div class="va-row1"><span class="va-icon">&#x1F6E1;</span><span class="va-name">Gamma</span></div>
+                <div class="va-model" style="color:var(--info-text)">Sonnet</div>
+                <div class="va-thinking"></div><div class="va-result"></div><div class="va-bar"></div>
+              </div>
+              <div class="vp-agent waiting" data-agent="iv">
+                <div class="va-row1"><span class="va-icon">&#x1F4CA;</span><span class="va-name">IV / Skew</span></div>
+                <div class="va-model" style="color:var(--pass-text)">Haiku</div>
+                <div class="va-thinking"></div><div class="va-result"></div><div class="va-bar"></div>
+              </div>
+              <div class="vp-agent waiting" data-agent="sentiment">
+                <div class="va-row1"><span class="va-icon">&#x1F4F0;</span><span class="va-name">Sentiment</span></div>
+                <div class="va-model" style="color:var(--pass-text)">DeepSeek</div>
+                <div class="va-thinking"></div><div class="va-result"></div><div class="va-bar"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="vp-phase" data-phase="2">
+            <div class="vp-phase-dot"></div>
+            <div class="vp-phase-title">Phase 2 &mdash; Debate</div>
+            <div class="vp-agents">
+              <div class="vp-agent waiting" data-agent="bull">
+                <div class="va-row1"><span class="va-icon">&#x1F4AA;</span><span class="va-name">Bull Researcher</span></div>
+                <div class="va-model" style="color:#a78bfa">NewLeaf-Plus</div>
+                <div class="va-thinking"></div><div class="va-result"></div><div class="va-bar"></div>
+              </div>
+              <div class="vp-agent waiting" data-agent="bear">
+                <div class="va-row1"><span class="va-icon">&#x26A0;</span><span class="va-name">Bear Researcher</span></div>
+                <div class="va-model" style="color:#a78bfa">NewLeaf-Plus</div>
+                <div class="va-thinking"></div><div class="va-result"></div><div class="va-bar"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="vp-phase" data-phase="3">
+            <div class="vp-phase-dot"></div>
+            <div class="vp-phase-title">Phase 3 &mdash; Risk &amp; Verdict</div>
+            <div class="vp-agents">
+              <div class="vp-agent waiting" data-agent="risk">
+                <div class="va-row1"><span class="va-icon">&#x1F4B0;</span><span class="va-name">Risk Manager</span></div>
+                <div class="va-model" style="color:var(--concern-text)">Sonnet</div>
+                <div class="va-thinking"></div><div class="va-result"></div><div class="va-bar"></div>
+              </div>
+              <div class="vp-agent waiting" data-agent="judge">
+                <div class="va-row1"><span class="va-icon">&#x2696;</span><span class="va-name">Judge</span></div>
+                <div class="va-model" style="color:var(--info-text)">Sonnet</div>
+                <div class="va-thinking"></div><div class="va-result"></div><div class="va-bar"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== STAGE 5: Verdict & Mutate ===== -->
+    <div class="stage hidden" id="stage-5">
+      <div id="verdict-content"></div>
+    </div>
+  </div>
+
+  <script>
+    /* ================================================================
+       DISCOVER.HTML — Guided "ticker to verified trade" journey
+       ================================================================ */
+    const $ = s => document.querySelector(s);
+    const $$ = s => document.querySelectorAll(s);
+    const show = el => el && el.classList.remove('hidden');
+    const hide = el => el && el.classList.add('hidden');
+
+    // Config
+    const _cfg = window.__CONFIG__ || { API_URL: '', API_KEY: '' };
+    const isDemo = new URLSearchParams(location.search).has('demo');
+
+    // State
+    let currentStage = 1;
+    let maxStage = 1;
+    let state = {
+      ticker: '', spot: 0, ivRank: 0, atr14: 0, rsi: 0, adx: 0,
+      trend: '', earningsDaysOut: 0, putWall: 0, callWall: 0,
+      aiRead: '', expirations: [], selectedExpiry: '',
+      strategies: [], selectedStrategy: null, selectedStrategyIndex: -1,
+      legs: [], qty: 10, chainData: [],
+      verdict: null, mutations: [], debate: null,
+      evidence: {}, riskReport: {}, debateRounds: [], verifyData: null,
+      totalCost: 0, totalTokens: 0, totalTime: 0, apiCalls: 0
+    };
+
+    // localStorage traces
+    const TRACES_KEY = 'nlvd-traces';
+    function saveTrace(trace) {
+      const all = listTraces();
+      all.unshift(trace);
+      localStorage.setItem(TRACES_KEY, JSON.stringify(all.slice(0, 20)));
+    }
+    function listTraces() {
+      try { return JSON.parse(localStorage.getItem(TRACES_KEY) || '[]'); }
+      catch { return []; }
+    }
+
+    function renderTracesBanner() {
+      const traces = listTraces();
+      if (traces.length === 0) { hide($('#traces-banner')); return; }
+      show($('#traces-banner'));
+      $('#traces-label').textContent = `Recent verifications \u00b7 ${traces.length}`;
+      $('#traces-list').innerHTML = traces.map(t => `
+        <div class="trace-item">
+          <span><span class="ticker">${t.ticker}</span> ${t.strategy} &middot; ${t.expiry} &middot; ${new Date(t.ts).toLocaleDateString()}</span>
+          <span class="verdict-pill ${t.verdictClass}">${t.verdictWord}</span>
+        </div>
+      `).join('');
+    }
+
+    function toggleTraces() {
+      $('#traces-list').classList.toggle('open');
+    }
+
+    // API helper
+    function api(path, opts = {}) {
+      opts.headers = { ...(opts.headers || {}), 'X-API-Key': _cfg.API_KEY };
+      if (opts.body && typeof opts.body === 'object' && !(opts.body instanceof FormData)) {
+        opts.headers['Content-Type'] = 'application/json';
+        opts.body = JSON.stringify(opts.body);
+      }
+      return fetch(_cfg.API_URL + path, opts);
+    }
+
+    function addCost(cost) {
+      if (!cost) return;
+      const c = typeof cost === 'number' ? cost : (cost.totalCost || 0);
+      state.totalCost += c;
+      state.apiCalls++;
+      updateBadge();
+    }
+
+    function updateBadge() {
+      $('#session-badge').textContent = `$${state.totalCost.toFixed(3)} | ${state.apiCalls} calls`;
+    }
+
+    /* ================================================================
+       DEMO DATA
+       ================================================================ */
+    const DEMO = {
+      SHOP: {
+        snapshot: { price: 99.99, change: 1.23, changePct: 1.24 },
+        expirations: ['2026-06-05','2026-06-12','2026-06-19','2026-06-26'],
+        selectedExpiry: '2026-06-05',
+        indicators: { spot: 99.99, ivRank: 72, rsi14: 29.8, adx14: 32, atr14: 4.82, smaTrend: 'bullish', bollingerWidth: 0.08 },
+        gamma: { putWall: 87, callWall: 102, spotInsideBand: true, earningsDaysOut: 38 },
+        aiRead: 'Bullish reversal (RSI 29.8, ADX 32) with rich premium environment (IV rank 72) and contained gamma between $87\u2013$102 walls. Setup favors iron condor.',
+        strategies: [
+          { strategy: 'Iron Condor', legs: '80p/90p/110c/120c', score: 82, netCredit: 1.53, maxLoss: 847, rationale: 'Neutral position with defined risk. Gamma walls contain expected range. Rich IV inflates premium.', bestFit: true,
+            legDetails: [
+              { side: 'long', strike: 80, type: 'put', mid: 0.42, iv: 0.65 },
+              { side: 'short', strike: 90, type: 'put', mid: 1.18, iv: 0.58 },
+              { side: 'short', strike: 110, type: 'call', mid: 1.35, iv: 0.52 },
+              { side: 'long', strike: 120, type: 'call', mid: 0.58, iv: 0.48 }
+            ]},
+          { strategy: 'Strangle', legs: '85p/115c', score: 68, netCredit: 2.10, maxLoss: 'unlimited', rationale: 'Higher premium but undefined risk on both sides.', bestFit: false,
+            legDetails: [
+              { side: 'short', strike: 85, type: 'put', mid: 1.25, iv: 0.62 },
+              { side: 'short', strike: 115, type: 'call', mid: 0.85, iv: 0.50 }
+            ]},
+          { strategy: 'BWB', legs: '85p/95p/100p', score: 61, netCredit: 0.45, maxLoss: 455, rationale: 'Asymmetric risk profile targeting downside protection.', bestFit: false,
+            legDetails: [
+              { side: 'long', strike: 85, type: 'put', mid: 0.40, iv: 0.65 },
+              { side: 'short', strike: 95, type: 'put', mid: 0.95, iv: 0.56 },
+              { side: 'short', strike: 95, type: 'put', mid: 0.95, iv: 0.56 },
+              { side: 'long', strike: 100, type: 'put', mid: 1.45, iv: 0.53 }
+            ]}
+        ],
+        verdict: {
+          verdictWord: 'Take it smaller', confidence: 58, verdictClass: 'concern',
+          summary: 'The iron condor collects adequate premium but RSI at 29.8 suggests a bounce is likely, which could test the call wing. Reduce position size to limit exposure during the reversal.'
+        },
+        mutations: [
+          { label: 'Cut size to 6 contracts', from: 58, to: 74 },
+          { label: 'Roll puts to 80/85', from: 58, to: 71 }
+        ],
+        debate: {
+          bull: { role: 'Bull', wonOn: 'premium richness' },
+          bear: { role: 'Bear', wonOn: 'RSI reversal risk' }
+        }
+      },
+      NET: {
+        snapshot: { price: 196.59, change: -0.87, changePct: -0.44 },
+        expirations: ['2026-06-05','2026-06-12','2026-06-19','2026-06-26'],
+        selectedExpiry: '2026-06-12',
+        indicators: { spot: 196.59, ivRank: 60, rsi14: 71, adx14: 11.3, atr14: 7.20, smaTrend: 'neutral', bollingerWidth: 0.06 },
+        gamma: { putWall: 125, callWall: 200, spotInsideBand: true, earningsDaysOut: 52 },
+        aiRead: 'Neutral drift (RSI 71, ADX 11.3) with fair premium (IV rank 60) and tight gamma ceiling at $200 call wall just 2% away. Setup favors iron condor with tight call wing.',
+        strategies: [
+          { strategy: 'Iron Condor', legs: '180p/185p/205c/210c', score: 75, netCredit: 4.27, maxLoss: 73, rationale: 'Range-bound structure. Tight call wing leverages gamma ceiling at $200.', bestFit: true,
+            legDetails: [
+              { side: 'long', strike: 180, type: 'put', mid: 1.10, iv: 0.42 },
+              { side: 'short', strike: 185, type: 'put', mid: 1.85, iv: 0.40 },
+              { side: 'short', strike: 205, type: 'call', mid: 4.62, iv: 0.38 },
+              { side: 'long', strike: 210, type: 'call', mid: 1.00, iv: 0.36 }
+            ]},
+          { strategy: 'Vertical Spread', legs: '195p/200p', score: 65, netCredit: 2.15, maxLoss: 285, rationale: 'Directional play capturing premium above put wall.', bestFit: false,
+            legDetails: [
+              { side: 'short', strike: 200, type: 'put', mid: 3.20, iv: 0.39 },
+              { side: 'long', strike: 195, type: 'put', mid: 1.05, iv: 0.41 }
+            ]},
+          { strategy: 'Calendar 200c', legs: 'Jun/Jul 200c', score: 58, netCredit: -1.80, maxLoss: 180, rationale: 'Time decay play at the call wall strike.', bestFit: false,
+            legDetails: [
+              { side: 'short', strike: 200, type: 'call', mid: 3.40, iv: 0.38 },
+              { side: 'long', strike: 200, type: 'call', mid: 5.20, iv: 0.36 }
+            ]}
+        ],
+        verdict: {
+          verdictWord: 'Take it smaller', confidence: 55, verdictClass: 'concern',
+          summary: 'The iron condor structure is sound but the call wall at $200 is only 2% from spot with low ADX suggesting range compression. Gamma flip proximity adds downside risk to the call wing.'
+        },
+        mutations: [
+          { label: 'Widen to 175/220', from: 55, to: 71 },
+          { label: 'Reduce size 40%', from: 55, to: 73 }
+        ],
+        debate: {
+          bull: { role: 'Bull', wonOn: 'range compression' },
+          bear: { role: 'Bear', wonOn: 'gamma flip proximity' }
+        }
+      }
+    };
+
+    /* ================================================================
+       DEMO API OVERRIDE
+       ================================================================ */
+    let _realApi = api;
+    if (isDemo) {
+      document.getElementById('demo-toggles').style.display = 'flex';
+      // Override api to return canned data
+      _realApi = function demoApi(path, opts = {}) {
+        return new Promise(resolve => {
+          const delay = 200 + Math.random() * 300;
+          setTimeout(() => {
+            const ticker = state.ticker || 'SHOP';
+            const demo = DEMO[ticker] || DEMO.SHOP;
+            let body = {};
+
+            if (path.startsWith('/api/snapshot/')) {
+              body = { snapshot: demo.snapshot, expirations: demo.expirations };
+            } else if (path.startsWith('/api/gamma/')) {
+              body = { walls: true, putWallStrike: demo.gamma.putWall, callWallStrike: demo.gamma.callWall, spotInsideBand: demo.gamma.spotInsideBand, spot: demo.indicators.spot };
+            } else if (path.startsWith('/api/chain/')) {
+              // Build chain from strategy leg details
+              const strat = demo.strategies[0];
+              body = { strikes: strat.legDetails.map(l => ({ strike: l.strike, [l.type]: { bid: l.mid - 0.05, ask: l.mid + 0.05, mid: l.mid, iv: l.iv, delta: 0.35 } })) };
+            } else if (path === '/api/recommend') {
+              body = { recommendation: { strategies: demo.strategies, marketRead: demo.aiRead }, snapshot: demo.snapshot, indicators: demo.indicators, gammaAnalysis: demo.gamma, cost: { totalCost: 0.002 } };
+            } else if (path === '/api/ai-read') {
+              body = { read: demo.aiRead, cost: { totalCost: 0.001 } };
+            } else if (path === '/verify') {
+              body = { verdict: demo.verdict.verdictWord, confidence: demo.verdict.confidence, summary: demo.verdict.summary, cost: { totalCost: 0.05, totalTokens: 12450 } };
+            }
+
+            resolve({ ok: true, json: () => Promise.resolve(body) });
+          }, delay);
+        });
+      };
+    }
+
+    function apiCall(path, opts = {}) {
+      if (opts.body && typeof opts.body === 'object') {
+        opts.headers = { ...(opts.headers || {}), 'Content-Type': 'application/json' };
+        opts.body = JSON.stringify(opts.body);
+      }
+      return _realApi(path, opts);
+    }
+
+    /* ================================================================
+       STAGE NAVIGATION
+       ================================================================ */
+    function goToStage(n, force) {
+      if (!force && n > maxStage + 1) return; // can't skip ahead
+      if (n > maxStage) maxStage = n;
+      currentStage = n;
+
+      // Hide all stages
+      $$('.stage').forEach(s => s.classList.add('hidden'));
+      const target = $(`#stage-${n}`);
+      if (target) target.classList.remove('hidden');
+
+      // Update progress nav
+      $$('.pn-circle').forEach(c => {
+        const s = parseInt(c.dataset.stage);
+        c.className = 'pn-circle';
+        if (s === currentStage) c.classList.add('active');
+        else if (s < maxStage || (s <= maxStage && s < currentStage)) c.classList.add('done');
+      });
+      $$('.pn-label').forEach(lbl => {
+        const circle = lbl.previousElementSibling;
+        const s = parseInt(circle.dataset.stage);
+        lbl.className = 'pn-label';
+        if (s === currentStage) lbl.classList.add('active');
+        else if (s < maxStage || (s <= maxStage && s < currentStage)) lbl.classList.add('done');
+      });
+      $$('.pn-line').forEach(line => {
+        const l = parseInt(line.dataset.line);
+        line.classList.toggle('done', l < maxStage);
+      });
+
+      // Trigger stage entry
+      if (n === 2) enterStage2();
+      if (n === 4) enterStage4();
+    }
+
+    // Clicking on progress nav circles
+    $$('.pn-circle').forEach(c => {
+      c.addEventListener('click', () => {
+        const s = parseInt(c.dataset.stage);
+        if (s <= maxStage && s !== currentStage) goToStage(s);
+      });
+    });
+
+    /* ================================================================
+       STAGE 1: SNAPSHOT
+       ================================================================ */
+    function loadDemoTicker(ticker) {
+      $$('.demo-toggle').forEach(b => b.classList.toggle('active', b.dataset.ticker === ticker));
+      $('#ticker-input').value = ticker;
+      handleLoad();
+    }
+
+    async function handleLoad() {
+      const ticker = $('#ticker-input').value.trim().toUpperCase();
+      if (!ticker) return;
+
+      // Rate limit check
+      if (!isDemo && window.checkUsageLimit) {
+        try {
+          var usage = await window.checkUsageLimit();
+          if (!usage.allowed) {
+            alert('Daily limit reached (' + usage.used + '/' + usage.limit + '). Try again tomorrow.');
+            return;
+          }
+        } catch(e) { console.warn('Usage check failed:', e); }
+      }
+
+      state.ticker = ticker;
+      const btn = $('#load-btn');
+      btn.textContent = '...'; btn.disabled = true;
+
+      // Track usage
+      if (!isDemo && window.trackUsage) window.trackUsage('snapshot', ticker).catch(function(){});
+
+      try {
+        // Snapshot
+        const snapRes = await apiCall(`/api/snapshot/${ticker}`);
+        const snapData = await snapRes.json();
+        state.spot = snapData.snapshot.price;
+        state.expirations = snapData.expirations || [];
+
+        // AI read + indicators (in demo mode, use recommend endpoint for indicators)
+        let indicators, gammaData, aiReadText;
+        if (isDemo) {
+          const demo = DEMO[ticker] || DEMO.SHOP;
+          indicators = demo.indicators;
+          gammaData = demo.gamma;
+          state.ivRank = indicators.ivRank;
+          state.rsi = indicators.rsi14;
+          state.adx = indicators.adx14;
+          state.atr14 = indicators.atr14;
+          state.trend = indicators.smaTrend;
+          state.putWall = gammaData.putWall;
+          state.callWall = gammaData.callWall;
+          state.earningsDaysOut = gammaData.earningsDaysOut;
+          aiReadText = demo.aiRead;
+        } else {
+          // Real mode: fetch indicators + gamma in parallel, then ai-read with real data
+          const firstExpiry = state.expirations[0] || '';
+          const [indRes, gammaRes] = await Promise.all([
+            apiCall(`/api/indicators/${ticker}`),
+            firstExpiry ? apiCall(`/api/gamma/${ticker}/${firstExpiry}`) : Promise.resolve({ ok: true, json: () => ({}) }),
+          ]);
+          const indData = await indRes.json();
+          const gd = await gammaRes.json();
+          const ind = indData.indicators || {};
+          state.ivRank = 0; // IV rank not in indicators — computed per-chain; leave for stage 2
+          state.rsi = ind.rsi14 || 0;
+          state.adx = ind.adx14 || 0;
+          state.atr14 = ind.atr14 || 0;
+          state.trend = ind.smaTrend || ind.priceVsSma || 'unknown';
+          state.putWall = gd.putWallStrike || 0;
+          state.callWall = gd.callWallStrike || 0;
+
+          // Fire ai-read in the background — don't block the UI
+          aiReadText = '';
+          apiCall('/api/ai-read', { method: 'POST', body: {
+            ticker, spot: state.spot, ivRank: state.ivRank, atr14: state.atr14,
+            rsi: state.rsi, adx: state.adx, trend: state.trend,
+            putWall: state.putWall, callWall: state.callWall, earningsDaysOut: null
+          }}).then(r => r.json()).then(rd => {
+            state.aiRead = rd.read || '';
+            $('#ai-read-card').textContent = state.aiRead;
+            addCost(rd.cost);
+          }).catch(() => {
+            $('#ai-read-card').textContent = 'AI read unavailable';
+          });
+        }
+
+        // Render metric strip
+        const earningsLabel = state.earningsDaysOut ? `${state.earningsDaysOut}d` : 'N/A';
+        const wallsLabel = state.putWall && state.callWall ? `$${state.putWall} / $${state.callWall}` : '---';
+        $('#metric-strip').innerHTML = [
+          { label: 'SPOT', value: `$${state.spot.toFixed(2)}` },
+          { label: 'RSI', value: state.rsi ? state.rsi.toFixed(1) : '---' },
+          { label: 'ADX', value: state.adx ? state.adx.toFixed(1) : '---' },
+          { label: 'ATR 14', value: state.atr14 ? `$${state.atr14.toFixed(2)}` : '---' },
+          { label: 'GAMMA WALLS', value: wallsLabel },
+          { label: 'EARNINGS', value: earningsLabel }
+        ].map(m => `<div class="metric-item"><div class="m-label">${m.label}</div><div class="m-value">${m.value}</div></div>`).join('');
+
+        // AI Read — shows placeholder until the background call resolves
+        $('#ai-read-card').textContent = aiReadText || 'Loading AI market read...';
+        state.aiRead = aiReadText;
+
+        // Expirations
+        const sel = $('#expiry-select');
+        sel.innerHTML = '<option value="">Select expiry...</option>';
+        state.expirations.forEach(exp => {
+          const dte = Math.round((new Date(exp + 'T16:00:00').getTime() - Date.now()) / 86400000);
+          const opt = document.createElement('option');
+          opt.value = exp;
+          opt.textContent = `${exp} (${dte}d)`;
+          sel.appendChild(opt);
+        });
+
+        // Pre-select in demo mode
+        if (isDemo) {
+          const demo = DEMO[ticker] || DEMO.SHOP;
+          sel.value = demo.selectedExpiry;
+          state.selectedExpiry = demo.selectedExpiry;
+          $('#find-strategies-btn').disabled = false;
+        }
+
+        show($('#snapshot-content'));
+      } catch (err) {
+        alert('Failed to load: ' + err.message);
+      } finally {
+        btn.textContent = 'Load'; btn.disabled = false;
+      }
+    }
+
+    // Expiry change enables "Find strategies" button
+    $('#expiry-select').addEventListener('change', () => {
+      state.selectedExpiry = $('#expiry-select').value;
+      $('#find-strategies-btn').disabled = !state.selectedExpiry;
+      $$('.manual-strat-btn').forEach(b => b.disabled = !state.selectedExpiry);
+      if (state.selectedExpiry) loadGammaChart();
+    });
+
+    async function loadGammaChart() {
+      if (!state.ticker || !state.selectedExpiry) return;
+      try {
+        const res = await apiCall(`/api/gamma/${state.ticker}/${state.selectedExpiry}`);
+        const ga = await res.json();
+        state.gammaData = ga;
+        renderGammaWalls(ga, ga.spot || state.spot);
+      } catch (_) {}
+    }
+
+    function renderGammaWalls(ga, spot) {
+      var container = document.getElementById('gamma-chart-content');
+      if (!ga.oiByStrike || !ga.oiByStrike.length) { hide($('#gamma-section')); return; }
+
+      // Build canvas + wall tags
+      container.innerHTML = '<div class="gamma-canvas-wrap"><canvas id="gamma-canvas" height="240"></canvas></div>' +
+        '<div class="wall-summary">' +
+        (ga.putWallStrike ? '<span class="wall-tag put">Put Wall: $' + ga.putWallStrike + '</span>' : '') +
+        (ga.callWallStrike ? '<span class="wall-tag call">Call Wall: $' + ga.callWallStrike + '</span>' : '') +
+        '<span class="wall-tag band">' + (ga.spotInsideBand ? 'Spot Inside Band' : 'Spot Outside Band') + '</span>' +
+        '</div>';
+      show($('#gamma-section'));
+
+      // Draw vertical bar chart on canvas
+      var canvas = document.getElementById('gamma-canvas');
+      if (!canvas) return;
+      var dpr = window.devicePixelRatio || 1;
+      var rect = canvas.parentElement.getBoundingClientRect();
+      var W = rect.width, H = 240;
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+      var ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      var data = ga.oiByStrike;
+      var n = data.length;
+      if (n === 0) return;
+
+      var maxOI = 1;
+      for (var i = 0; i < n; i++) { maxOI = Math.max(maxOI, data[i].callOI, data[i].putOI); }
+
+      var wallStrikes = {};
+      if (ga.walls) ga.walls.forEach(function(w) { wallStrikes[w.strike] = true; });
+
+      var ml = 10, mr = 10, mt = 20, mb = 40;
+      var cw = W - ml - mr, ch = H - mt - mb;
+      var barW = Math.max(2, Math.min(12, (cw / n) * 0.35));
+      var gap = cw / n;
+
+      // Find spot index for centering
+      var spotIdx = 0, spotDist = Infinity;
+      for (var j = 0; j < n; j++) {
+        var d = Math.abs(data[j].strike - spot);
+        if (d < spotDist) { spotDist = d; spotIdx = j; }
+      }
+
+      // Draw bars — put bars go down from center, call bars go up
+      var centerY = mt + ch * 0.5;
+
+      // Center line
+      ctx.beginPath();
+      ctx.moveTo(ml, centerY); ctx.lineTo(W - mr, centerY);
+      ctx.strokeStyle = 'rgba(15,61,46,0.15)'; ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]);
+
+      // Labels
+      ctx.fillStyle = '#ef4444'; ctx.font = 'bold 9px system-ui';
+      ctx.fillText('Put OI', ml + 2, centerY + 12);
+      ctx.fillStyle = '#10b981';
+      ctx.textAlign = 'right';
+      ctx.fillText('Call OI', W - mr - 2, centerY - 5);
+      ctx.textAlign = 'left';
+
+      for (var k = 0; k < n; k++) {
+        var s = data[k];
+        var x = ml + gap * k + gap * 0.5;
+        var putH = (s.putOI / maxOI) * (ch * 0.45);
+        var callH = (s.callOI / maxOI) * (ch * 0.45);
+        var isWall = wallStrikes[s.strike];
+        var isSpot = Math.abs(s.strike - spot) < (data.length > 20 ? 2 : 1);
+
+        // Put bar (below center)
+        ctx.fillStyle = isWall ? 'rgba(239,68,68,0.7)' : 'rgba(239,68,68,0.35)';
+        ctx.fillRect(x - barW * 0.5, centerY + 1, barW, putH);
+
+        // Call bar (above center)
+        ctx.fillStyle = isWall ? 'rgba(16,185,129,0.7)' : 'rgba(16,185,129,0.35)';
+        ctx.fillRect(x - barW * 0.5, centerY - callH - 1, barW, callH);
+
+        // Strike labels — show every Nth + walls + spot
+        var showLabel = isWall || isSpot || (n <= 25) || (k % Math.ceil(n / 15) === 0);
+        if (showLabel) {
+          ctx.save();
+          ctx.translate(x, H - mb + 4);
+          ctx.rotate(-Math.PI / 4);
+          ctx.fillStyle = isSpot ? '#0d6e56' : isWall ? '#e5b449' : '#6b6b60';
+          ctx.font = (isSpot || isWall ? 'bold ' : '') + '8px system-ui';
+          ctx.textAlign = 'right';
+          ctx.fillText('$' + s.strike, 0, 0);
+          ctx.restore();
+        }
+
+        // Spot marker line
+        if (isSpot) {
+          ctx.beginPath();
+          ctx.moveTo(x, mt); ctx.lineTo(x, centerY);
+          ctx.strokeStyle = 'rgba(13,110,86,0.4)'; ctx.lineWidth = 1;
+          ctx.setLineDash([2, 2]); ctx.stroke(); ctx.setLineDash([]);
+          ctx.fillStyle = '#0d6e56'; ctx.font = 'bold 10px system-ui'; ctx.textAlign = 'center';
+          ctx.fillText('$' + spot.toFixed(0), x, mt - 4);
+          ctx.textAlign = 'left';
+        }
+      }
+    }
+
+    // Strategy type selection
+    document.querySelectorAll('.strat-type-card').forEach(function(card) {
+      card.addEventListener('click', function() {
+        console.log('[Strat card] clicked:', card.getAttribute('data-strat'));
+        document.querySelectorAll('.strat-type-card').forEach(function(c) { c.classList.remove('selected'); });
+        card.classList.add('selected');
+        var btn = document.getElementById('go-drill-btn');
+        console.log('[Strat card] go-drill-btn:', btn, 'hidden:', btn?.classList.contains('hidden'));
+        if (btn) btn.classList.remove('hidden');
+      });
+    });
+
+    $('#go-drill-btn').addEventListener('click', function() {
+      console.log('[Build trade] clicked');
+      const selected = document.querySelector('.strat-type-card.selected');
+      console.log('[Build trade] selected card:', selected);
+      if (!selected) { console.log('[Build trade] no card selected'); return; }
+      const strat = selected.getAttribute('data-strat');
+      console.log('[Build trade] strategy:', strat, 'expiry:', state.selectedExpiry);
+      if (strat) manualStrategy(strat);
+    });
+
+    async function manualStrategy(strategyType) {
+      console.log('[manualStrategy] called with:', strategyType, 'expiry:', state.selectedExpiry, 'ticker:', state.ticker);
+      if (!state.selectedExpiry) { alert('Select an expiry first'); return; }
+      if (!strategyType) { alert('Select a strategy type first'); return; }
+
+      const btn = document.getElementById('go-drill-btn');
+      if (btn) { btn.textContent = 'Loading chain...'; btn.disabled = true; }
+
+      try {
+      // Fetch chain if not loaded
+      if (!state.chainData || !state.chainData.length) {
+        console.log('[manualStrategy] fetching chain for', state.ticker, state.selectedExpiry);
+        var chainUrl = _cfg.API_URL + '/api/chain/' + state.ticker + '/' + state.selectedExpiry;
+        console.log('[manualStrategy] chain URL:', chainUrl);
+        var res = await fetch(chainUrl, { headers: { 'X-API-Key': _cfg.API_KEY } });
+        console.log('[manualStrategy] chain response status:', res.status);
+        var data = await res.json();
+        console.log('[manualStrategy] chain strikes count:', (data.strikes || []).length);
+        state.chainData = data.strikes || [];
+      }
+
+      if (!state.chainData.length) { alert('No chain data available for this expiry'); btn.textContent = 'Build trade →'; btn.disabled = false; return; }
+      console.log('[manualStrategy] building legs, spot:', state.spot);
+
+      // Build default legs from chain
+      var strikes = state.chainData;
+      const atmIdx = strikes.reduce((best, s, i) =>
+        Math.abs(s.strike - state.spot) < Math.abs(strikes[best].strike - state.spot) ? i : best, 0);
+      const atm = strikes[atmIdx]?.strike || Math.round(state.spot);
+      const find = (offset) => {
+        const target = atm + offset * 5;
+        return strikes.reduce((best, s) =>
+          Math.abs(s.strike - target) < Math.abs(best.strike - target) ? s : best, strikes[0]);
+      };
+
+      let legs;
+      const names = { iron_condor: 'Iron Condor', vertical_spread: 'Vertical Spread', broken_wing_butterfly: 'BWB', short_strangle: 'Strangle', calendar: 'Calendar', diagonal: 'Diagonal' };
+      switch (strategyType) {
+        case 'iron_condor': legs = [
+          { side: 'long', type: 'put', strike: find(-4).strike },
+          { side: 'short', type: 'put', strike: find(-2).strike },
+          { side: 'short', type: 'call', strike: find(+2).strike },
+          { side: 'long', type: 'call', strike: find(+4).strike },
+        ]; break;
+        case 'vertical_spread': legs = [
+          { side: 'short', type: 'put', strike: find(-1).strike },
+          { side: 'long', type: 'put', strike: find(-3).strike },
+        ]; break;
+        case 'broken_wing_butterfly': legs = [
+          { side: 'long', type: 'put', strike: find(-4).strike },
+          { side: 'short', type: 'put', strike: find(-1).strike },
+          { side: 'short', type: 'put', strike: find(-1).strike },
+          { side: 'long', type: 'put', strike: find(+1).strike },
+        ]; break;
+        case 'short_strangle': legs = [
+          { side: 'short', type: 'put', strike: find(-3).strike },
+          { side: 'short', type: 'call', strike: find(+3).strike },
+        ]; break;
+        case 'calendar': legs = [
+          { side: 'short', type: 'call', strike: find(0).strike },
+          { side: 'long', type: 'call', strike: find(0).strike },
+        ]; break;
+        case 'bear_call_spread': legs = [
+          { side: 'short', type: 'call', strike: find(+1).strike },
+          { side: 'long', type: 'call', strike: find(+3).strike },
+        ]; break;
+        case 'iron_butterfly': legs = [
+          { side: 'long', type: 'put', strike: find(-2).strike },
+          { side: 'short', type: 'put', strike: find(0).strike },
+          { side: 'short', type: 'call', strike: find(0).strike },
+          { side: 'long', type: 'call', strike: find(+2).strike },
+        ]; break;
+        case 'diagonal': legs = [
+          { side: 'short', type: 'call', strike: find(+1).strike },
+          { side: 'long', type: 'call', strike: find(-1).strike },
+        ]; break;
+        default: legs = [
+          { side: 'short', type: 'call', strike: find(+1).strike },
+          { side: 'long', type: 'call', strike: find(-1).strike },
+        ];
+      }
+
+      // Enrich with chain mid/iv
+      console.log('[manualStrategy] enriching legs with chain data');
+      state.legs = legs.map(function(l) {
+        var ch = state.chainData.find(function(c) { return Math.abs(c.strike - l.strike) < 0.5; });
+        var contract = ch ? ch[l.type] : null;
+        return { side: l.side, strike: l.strike, type: l.type, mid: (contract && contract.mid) || 0, iv: (contract && contract.iv) || 0 };
+      });
+      console.log('[manualStrategy] legs built:', JSON.stringify(state.legs));
+
+      var nc = 0;
+      state.legs.forEach(function(l) { nc += l.side === 'short' ? l.mid : -l.mid; });
+      console.log('[manualStrategy] net credit:', nc);
+
+      var nameMap = { iron_condor: 'Iron Condor', vertical_spread: 'Bull Put Spread', bear_call_spread: 'Bear Call Spread', broken_wing_butterfly: 'BWB', short_strangle: 'Strangle', calendar: 'Calendar', diagonal: 'Diagonal', iron_butterfly: 'Iron Butterfly' };
+      state.selectedStrategy = { strategy: strategyType, name: nameMap[strategyType] || strategyType, score: 0, rationale: 'Manual selection', netCredit: nc, legDetails: state.legs };
+      state.selectedStrategyIndex = -1;
+      state.qty = 10;
+      console.log('[manualStrategy] calling goToStage(3, true)');
+      goToStage(3, true);
+      console.log('[manualStrategy] calling renderStage3()');
+      renderStage3();
+      console.log('[manualStrategy] done!');
+      } catch (err) {
+        console.error('[manualStrategy] ERROR:', err);
+        alert('Error building trade: ' + err.message);
+      } finally {
+        var btn2 = document.getElementById('go-drill-btn');
+        if (btn2) { btn2.textContent = 'Build trade \u2192'; btn2.disabled = false; }
+      }
+    }
+
+    /* ================================================================
+       STAGE 2: RANKED STRATEGIES
+       ================================================================ */
+    async function enterStage2() {
+      const container = $('#strategy-cards');
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)"><span class="mini-spinner"></span> Finding strategies...</div>';
+
+      try {
+        let strategies;
+        if (isDemo) {
+          const demo = DEMO[state.ticker] || DEMO.SHOP;
+          await new Promise(r => setTimeout(r, 600));
+          strategies = demo.strategies;
+        } else {
+          // Fetch chain data + recommendations in parallel
+          const [chainRes, recRes] = await Promise.all([
+            apiCall(`/api/chain/${state.ticker}/${state.selectedExpiry}`),
+            apiCall('/api/recommend', {
+              method: 'POST',
+              body: { ticker: state.ticker, expiry: state.selectedExpiry, modelMode: 'budget-qwq' }
+            })
+          ]);
+          const chainJson = await chainRes.json();
+          state.chainData = chainJson.strikes || [];
+          const data = await recRes.json();
+          strategies = (data.recommendation?.strategies || []).map(s => {
+            // Format legs for display and compute netCredit from chain
+            const legsArr = s.legs || [];
+            const legsStr = legsArr.map(l => `${l.strike}${l.type[0]}`).join('/');
+            let nc = 0;
+            for (const l of legsArr) {
+              const chain = state.chainData.find(c => Math.abs(c.strike - l.strike) < 0.5);
+              const mid = chain?.[l.type]?.mid || 0;
+              nc += l.side === 'short' ? mid : -mid;
+            }
+            return { ...s, legs: legsStr, legDetails: legsArr.map(l => {
+              const chain = state.chainData.find(c => Math.abs(c.strike - l.strike) < 0.5);
+              return { ...l, mid: chain?.[l.type]?.mid || 0, iv: chain?.[l.type]?.iv || 0 };
+            }), netCredit: nc, bestFit: s.score >= 75 };
+          });
+          if (data.indicators) {
+            state.ivRank = data.indicators.ivRank ?? state.ivRank;
+            state.rsi = data.indicators.rsi14 ?? state.rsi;
+            state.adx = data.indicators.adx14 ?? state.adx;
+            state.atr14 = data.indicators.atr14 ?? state.atr14;
+          }
+          addCost(data.cost);
+        }
+
+        state.strategies = strategies;
+        renderStrategyCards(strategies);
+      } catch (err) {
+        container.innerHTML = `<div style="color:var(--red);padding:16px">Error: ${err.message}</div>`;
+      }
+    }
+
+    function renderStrategyCards(strategies) {
+      const container = $('#strategy-cards');
+      container.innerHTML = strategies.map((s, i) => {
+        const scoreClass = s.score >= 75 ? 'high' : s.score >= 60 ? 'mid' : 'low';
+        return `
+          <div class="strat-card ${s.bestFit ? 'best-fit' : ''}" onclick="selectStrategy(${i})">
+            <div class="strat-card-header">
+              <div>
+                <div class="strat-name">${s.strategy}</div>
+                <div class="strat-pills">${s.bestFit ? '<span class="best-fit-pill">Best fit</span>' : ''}</div>
+              </div>
+              <div class="strat-score ${scoreClass}">${s.score}</div>
+            </div>
+            <div class="strat-legs">${s.legs}</div>
+            <div class="strat-rationale">${s.rationale}</div>
+            <div class="strat-credit">${typeof s.netCredit === 'number' && s.netCredit >= 0 ? 'Credit $' + s.netCredit.toFixed(2) : 'Debit $' + Math.abs(s.netCredit).toFixed(2)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectStrategy(index) {
+      state.selectedStrategyIndex = index;
+      state.selectedStrategy = state.strategies[index];
+
+      // Build legs: use legDetails (demo) or legs array (live API) enriched with chain data
+      if (state.selectedStrategy.legDetails && state.selectedStrategy.legDetails.length) {
+        state.legs = state.selectedStrategy.legDetails.map(l => ({ ...l, mid: l.mid || 0, iv: l.iv || 0 }));
+      } else if (Array.isArray(state.selectedStrategy.legs) && typeof state.selectedStrategy.legs[0] === 'object') {
+        // Live mode: legs from API are [{type, side, strike}], enrich with chain mid/iv
+        state.legs = state.selectedStrategy.legs.map(l => {
+          const chainEntry = state.chainData.find(c => Math.abs(c.strike - l.strike) < 0.5);
+          const contract = chainEntry?.[l.type];
+          return { side: l.side, strike: l.strike, type: l.type, mid: contract?.mid || 0, iv: contract?.iv || 0 };
+        });
+      } else {
+        state.legs = [];
+      }
+
+      state.qty = 10;
+      goToStage(3);
+      renderStage3();
+    }
+
+    /* ================================================================
+       STAGE 3: DRILL IN
+       ================================================================ */
+    function renderStage3() {
+      const s = state.selectedStrategy;
+      if (!s) return;
+
+      $('#drill-title').textContent = s.strategy;
+      $('#drill-sub').textContent = `${state.ticker} \u00b7 ${state.selectedExpiry}`;
+
+      // Compute metrics
+      const netCredit = computeNetCredit();
+      const maxLoss = computeMaxLoss(netCredit);
+      const rr = typeof maxLoss === 'number' && maxLoss > 0
+        ? (Math.abs(netCredit * 100 * state.qty) / maxLoss).toFixed(2) + ':1'
+        : 'N/A';
+
+      // Breakevens
+      const breakevens = computeBreakevens();
+      const beStr = breakevens.length ? breakevens.map(b => '$' + b.toFixed(0)).join(' / ') : 'N/A';
+
+      const totalCredit = netCredit * 100 * state.qty;
+      $('#drill-metrics').innerHTML = [
+        { label: 'NET CREDIT', value: (totalCredit >= 0 ? '+' : '-') + '$' + Math.abs(totalCredit).toLocaleString('en-US', { maximumFractionDigits: 0 }), cls: totalCredit >= 0 ? 'green' : 'red' },
+        { label: 'MAX LOSS', value: typeof maxLoss === 'number' ? '-$' + maxLoss.toLocaleString('en-US', { maximumFractionDigits: 0 }) : 'N/A', cls: 'red' },
+        { label: 'R:R', value: rr, cls: '' },
+        { label: 'BREAKEVENS', value: beStr, cls: '' }
+      ].map(m => `<div class="drill-metric"><div class="dm-label">${m.label}</div><div class="dm-value ${m.cls}">${m.value}</div></div>`).join('');
+
+      // Build strike options from chain
+      var strikeOpts = (state.chainData || []).map(function(c) { return c.strike; }).sort(function(a,b){return a-b;});
+      var strikeOptionsHtml = strikeOpts.map(function(s) { return '<option value="'+s+'">'+s+'</option>'; }).join('');
+
+      // Legs table with editable strikes, side, type
+      var tbody = $('#legs-body');
+      tbody.innerHTML = state.legs.map(function(l, i) {
+        return '<tr>' +
+          '<td><select class="leg-edit" data-i="'+i+'" data-field="side" onchange="updateLeg(this)">' +
+            '<option value="long"'+(l.side==='long'?' selected':'')+'>Long</option>' +
+            '<option value="short"'+(l.side==='short'?' selected':'')+'>Short</option>' +
+          '</select></td>' +
+          '<td><select class="leg-edit leg-strike-sel" data-i="'+i+'" data-field="strike" onchange="updateLeg(this)">' +
+            strikeOpts.map(function(s) { return '<option value="'+s+'"'+(Math.abs(s-l.strike)<0.5?' selected':'')+'>'+s+'</option>'; }).join('') +
+          '</select></td>' +
+          '<td><select class="leg-edit" data-i="'+i+'" data-field="type" onchange="updateLeg(this)">' +
+            '<option value="put"'+(l.type==='put'?' selected':'')+'>Put</option>' +
+            '<option value="call"'+(l.type==='call'?' selected':'')+'>Call</option>' +
+          '</select></td>' +
+          '<td class="leg-mid" style="font-family:\'Space Mono\',monospace">$'+(l.mid||0).toFixed(2)+'</td>' +
+          '<td class="leg-iv" style="font-family:\'Space Mono\',monospace">'+(l.iv ? (l.iv*100).toFixed(0)+'%' : '--')+'</td>' +
+          '<td><input type="number" value="'+state.qty+'" min="1" max="100" data-leg="'+i+'" onchange="updateQty(this)" style="width:60px" /></td>' +
+        '</tr>';
+      }).join('');
+
+      // Strike sliders
+      renderStrikeSliders();
+
+      drawPnLChart();
+    }
+
+    function renderStrikeSliders() {
+      var container = document.getElementById('strike-sliders');
+      if (!container || !state.legs.length || !state.chainData.length) return;
+
+      var allStrikes = state.chainData.map(function(c) { return c.strike; }).sort(function(a,b){return a-b;});
+
+      // Compute a sensible range: center on spot, extend ±30% of spot
+      var range = state.spot * 0.20;
+      var rangeMin = state.spot - range;
+      var rangeMax = state.spot + range;
+      // Ensure all current leg strikes are within range
+      state.legs.forEach(function(l) {
+        if (l.strike < rangeMin) rangeMin = l.strike - 5;
+        if (l.strike > rangeMax) rangeMax = l.strike + 5;
+      });
+      // Snap to chain bounds
+      var minStrike = allStrikes.find(function(s) { return s >= rangeMin; }) || allStrikes[0];
+      var maxStrike = allStrikes.slice().reverse().find(function(s) { return s <= rangeMax; }) || allStrikes[allStrikes.length - 1];
+      // Ensure at least 20 points of range
+      if (maxStrike - minStrike < 20) { minStrike = state.spot - 15; maxStrike = state.spot + 15; }
+
+      var html = '<div class="strike-sliders-title"><span>STRIKE CONFIGURATION</span><span style="font-weight:400;font-size:9px">Drag to adjust strikes</span></div>';
+
+      state.legs.forEach(function(leg, i) {
+        var legName = (leg.side === 'long' ? 'Long' : 'Short') + ' ' + (leg.type === 'put' ? 'Put' : 'Call');
+        var colorClass = leg.type === 'put' ? 'put' : 'call';
+        var fillClass = leg.side === 'short' ? 'short' : 'long';
+
+        html += '<div class="strike-slider-row">' +
+          '<div class="ss-label">' +
+            '<div class="ss-label-name">' + legName + '</div>' +
+            '<div class="ss-label-sub">' + (leg.side === 'long' ? 'BUY' : 'SELL') + ' · ' + leg.type.toUpperCase() + '</div>' +
+          '</div>' +
+          '<div class="ss-range-wrap">' +
+            '<input type="range" class="ss-range ' + colorClass + ' ' + fillClass + '" ' +
+              'min="' + minStrike + '" max="' + maxStrike + '" ' +
+              'step="0.5" value="' + leg.strike + '" ' +
+              'data-leg="' + i + '" oninput="onSliderMove(this)" onchange="onSliderDone(this)">' +
+          '</div>' +
+          '<div class="ss-value" id="ss-val-' + i + '">$' + leg.strike + '</div>' +
+        '</div>';
+      });
+
+      container.innerHTML = html;
+    }
+
+    function onSliderMove(el) {
+      // Live preview: update the value display as user drags
+      var i = parseInt(el.dataset.leg);
+      var val = parseFloat(el.value);
+      // Snap to nearest chain strike
+      var snapped = snapToStrike(val);
+      document.getElementById('ss-val-' + i).textContent = '$' + snapped;
+    }
+
+    function onSliderDone(el) {
+      var i = parseInt(el.dataset.leg);
+      var val = parseFloat(el.value);
+      var snapped = snapToStrike(val);
+      el.value = snapped;
+
+      // Update leg
+      var leg = state.legs[i];
+      if (!leg) return;
+      leg.strike = snapped;
+      var chain = (state.chainData || []).find(function(c) { return Math.abs(c.strike - snapped) < 0.5; });
+      var contract = chain ? chain[leg.type] : null;
+      leg.mid = (contract && contract.mid) || 0;
+      leg.iv = (contract && contract.iv) || 0;
+
+      renderStage3();
+    }
+
+    function snapToStrike(val) {
+      if (!state.chainData || !state.chainData.length) return val;
+      var best = state.chainData[0].strike;
+      var bestDist = Math.abs(val - best);
+      for (var j = 1; j < state.chainData.length; j++) {
+        var d = Math.abs(val - state.chainData[j].strike);
+        if (d < bestDist) { bestDist = d; best = state.chainData[j].strike; }
+      }
+      return best;
+    }
+
+    function updateLeg(el) {
+      var i = parseInt(el.dataset.i);
+      var field = el.dataset.field;
+      var leg = state.legs[i];
+      if (!leg) return;
+
+      if (field === 'strike') {
+        leg.strike = parseFloat(el.value);
+        // Update mid/iv from chain
+        var chain = (state.chainData || []).find(function(c) { return Math.abs(c.strike - leg.strike) < 0.5; });
+        var contract = chain ? chain[leg.type] : null;
+        leg.mid = (contract && contract.mid) || 0;
+        leg.iv = (contract && contract.iv) || 0;
+      } else if (field === 'side') {
+        leg.side = el.value;
+      } else if (field === 'type') {
+        leg.type = el.value;
+        // Update mid/iv for new type
+        var chain2 = (state.chainData || []).find(function(c) { return Math.abs(c.strike - leg.strike) < 0.5; });
+        var contract2 = chain2 ? chain2[leg.type] : null;
+        leg.mid = (contract2 && contract2.mid) || 0;
+        leg.iv = (contract2 && contract2.iv) || 0;
+      }
+
+      // Re-render (this rebuilds metrics + chart)
+      renderStage3();
+    }
+
+    function computeNetCredit() {
+      let nc = 0;
+      state.legs.forEach(l => { nc += l.side === 'short' ? l.mid : -l.mid; });
+      return nc;
+    }
+
+    function computeMaxLoss(netCredit) {
+      // Use P&L function to find actual max loss across price range
+      const legs = state.legs;
+      if (!legs.length) return 0;
+      const strikes = legs.map(l => l.strike);
+      const lo = Math.min(...strikes) - 30;
+      const hi = Math.max(...strikes) + 30;
+      const nc = netCredit ?? computeNetCredit();
+      let minPnl = Infinity;
+      for (let i = 0; i <= 500; i++) {
+        const price = lo + (hi - lo) * i / 500;
+        let pnl = nc * 100 * state.qty;
+        legs.forEach(l => {
+          const val = l.type === 'call' ? Math.max(0, price - l.strike) : Math.max(0, l.strike - price);
+          pnl += (l.side === 'long' ? val : -val) * 100 * state.qty;
+        });
+        if (pnl < minPnl) minPnl = pnl;
+      }
+      return Math.abs(minPnl);
+    }
+
+    function computeBreakevens() {
+      const legs = state.legs;
+      const strikes = legs.map(l => l.strike);
+      const lo = Math.min(...strikes) - 20;
+      const hi = Math.max(...strikes) + 20;
+      const nc = computeNetCredit();
+
+      function pnlAt(price) {
+        let pnl = nc * 100 * state.qty;
+        legs.forEach(l => {
+          let val = l.type === 'call' ? Math.max(0, price - l.strike) : Math.max(0, l.strike - price);
+          pnl += (l.side === 'long' ? val : -val) * 100 * state.qty;
+        });
+        return pnl;
+      }
+
+      const breakevens = [];
+      const steps = 500;
+      for (let i = 1; i <= steps; i++) {
+        const p0 = lo + (hi - lo) * (i - 1) / steps;
+        const p1 = lo + (hi - lo) * i / steps;
+        const v0 = pnlAt(p0), v1 = pnlAt(p1);
+        if ((v0 >= 0) !== (v1 >= 0)) {
+          breakevens.push(p0 + (0 - v0) * (p1 - p0) / (v1 - v0));
+        }
+      }
+      return breakevens;
+    }
+
+    function updateQty(input) {
+      state.qty = Math.max(1, parseInt(input.value) || 1);
+      $$('#legs-body input').forEach(inp => { inp.value = state.qty; });
+      renderStage3();
+    }
+
+    function drawPnLChart() {
+      const canvas = $('#pnl-canvas');
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const W = rect.width - 32;
+      const H = 220;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+
+      const legs = state.legs;
+      if (!legs.length) return;
+
+      const strikes = legs.map(l => l.strike);
+      const minS = Math.min(...strikes), maxS = Math.max(...strikes);
+      const width = maxS - minS;
+      const pad = Math.max(width * 0.6, 10);
+      const lo = minS - pad, hi = maxS + pad;
+      const steps = 200;
+      const nc = computeNetCredit();
+      const qty = state.qty;
+
+      function pnlAt(price) {
+        let pnl = nc * 100 * qty;
+        legs.forEach(l => {
+          let val = l.type === 'call' ? Math.max(0, price - l.strike) : Math.max(0, l.strike - price);
+          pnl += (l.side === 'long' ? val : -val) * 100 * qty;
+        });
+        return pnl;
+      }
+
+      const points = [];
+      for (let i = 0; i <= steps; i++) {
+        const price = lo + (hi - lo) * i / steps;
+        points.push({ price, pnl: pnlAt(price) });
+      }
+
+      const maxPnl = Math.max(...points.map(p => p.pnl));
+      const minPnl = Math.min(...points.map(p => p.pnl));
+      const pnlRange = Math.max(maxPnl - minPnl, 1);
+
+      const ml = 55, mr = 20, mt = 20, mb = 30;
+      const cw = W - ml - mr, ch = H - mt - mb;
+      function x(price) { return ml + (price - lo) / (hi - lo) * cw; }
+      function y(pnl) { return mt + (1 - (pnl - minPnl) / pnlRange) * ch; }
+
+      // Profit zone
+      ctx.beginPath();
+      ctx.moveTo(x(points[0].price), y(0));
+      points.forEach(p => ctx.lineTo(x(p.price), p.pnl >= 0 ? y(p.pnl) : y(0)));
+      ctx.lineTo(x(points[points.length - 1].price), y(0));
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(59,109,17,0.18)';
+      ctx.fill();
+
+      // Loss zone
+      ctx.beginPath();
+      ctx.moveTo(x(points[0].price), y(0));
+      points.forEach(p => ctx.lineTo(x(p.price), p.pnl <= 0 ? y(p.pnl) : y(0)));
+      ctx.lineTo(x(points[points.length - 1].price), y(0));
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(163,45,45,0.14)';
+      ctx.fill();
+
+      // Zero line
+      if (minPnl < 0 && maxPnl > 0) {
+        ctx.beginPath();
+        ctx.moveTo(ml, y(0)); ctx.lineTo(W - mr, y(0));
+        ctx.strokeStyle = 'rgba(15,61,46,0.15)'; ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = '#6b6b60'; ctx.font = '10px "Inter", system-ui';
+        ctx.fillText('$0', ml - 20, y(0) + 3);
+      }
+
+      // P&L line
+      ctx.beginPath();
+      points.forEach((p, i) => i === 0 ? ctx.moveTo(x(p.price), y(p.pnl)) : ctx.lineTo(x(p.price), y(p.pnl)));
+      ctx.strokeStyle = '#185FA5'; ctx.lineWidth = 2; ctx.stroke();
+
+      // Spot price line
+      if (state.spot >= lo && state.spot <= hi) {
+        ctx.beginPath();
+        ctx.moveTo(x(state.spot), mt); ctx.lineTo(x(state.spot), H - mb);
+        ctx.strokeStyle = '#0d6e56'; ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = '#0d6e56'; ctx.font = 'bold 11px "Inter", system-ui';
+        ctx.fillText('$' + state.spot.toFixed(0), x(state.spot) - 15, mt - 5);
+      }
+
+      // Breakevens — draw above x-axis so they don't clash with price labels
+      const breakevens = computeBreakevens();
+      breakevens.forEach(be => {
+        const bx = x(be);
+        ctx.beginPath();
+        ctx.moveTo(bx, mt); ctx.lineTo(bx, H - mb);
+        ctx.strokeStyle = '#9b9b8e'; ctx.lineWidth = 1;
+        ctx.setLineDash([2, 4]); ctx.stroke(); ctx.setLineDash([]);
+        // Label above the axis line with a small pill background
+        const label = 'BE $' + be.toFixed(0);
+        ctx.font = 'bold 10px "Inter", system-ui';
+        const tw = ctx.measureText(label).width;
+        const lx = bx - tw / 2;
+        const ly = H - mb + 26;
+        ctx.fillStyle = '#0B2D23';
+        ctx.fillRect(lx - 3, ly - 10, tw + 6, 13);
+        ctx.fillStyle = '#F7F5F0';
+        ctx.fillText(label, lx, ly);
+      });
+
+      // Strike markers
+      legs.forEach(l => {
+        if (l.strike >= lo && l.strike <= hi) {
+          ctx.beginPath();
+          ctx.moveTo(x(l.strike), H - mb - 8); ctx.lineTo(x(l.strike), H - mb);
+          ctx.strokeStyle = '#BA7517'; ctx.lineWidth = 2; ctx.stroke();
+          ctx.fillStyle = '#BA7517'; ctx.font = 'bold 9px "Inter", system-ui';
+          ctx.fillText(l.strike, x(l.strike) - 8, H - mb - 10);
+        }
+      });
+
+      // X-axis labels — skip any that overlap with a breakeven label
+      ctx.fillStyle = '#6b6b60'; ctx.font = '10px "Inter", system-ui';
+      for (let i = 0; i <= 6; i++) {
+        const price = lo + (hi - lo) * i / 6;
+        const tooClose = breakevens.some(be => Math.abs(x(price) - x(be)) < 40);
+        if (tooClose) continue;
+        ctx.fillText('$' + price.toFixed(0), x(price) - 12, H - mb + 15);
+      }
+
+      // Y-axis labels
+      for (let i = 0; i <= 4; i++) {
+        const pnl = minPnl + pnlRange * i / 4;
+        ctx.fillText((pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(0), 2, y(pnl) + 3);
+      }
+    }
+
+    /* ================================================================
+       STAGE 4: LIVE VERIFICATION
+       ================================================================ */
+    const THINKING_MESSAGES = {
+      technical: ['Analyzing RSI divergence...', 'Checking Bollinger squeeze...', 'Computing SMA crossovers...', 'Evaluating ADX trend strength...'],
+      gamma: ['Mapping put wall exposure...', 'Checking dealer hedging flows...', 'Computing gamma flip distance...', 'Evaluating OI concentration...'],
+      iv: ['Comparing IV percentile...', 'Analyzing term structure...', 'Checking skew steepness...', 'Evaluating premium richness...'],
+      sentiment: ['Scanning news catalysts...', 'Checking social sentiment...', 'Evaluating insider activity...', 'Parsing earnings whispers...'],
+      bull: ['Building bull thesis...', 'Citing premium advantages...', 'Arguing favorable structure...', 'Countering bear objections...'],
+      bear: ['Identifying key risks...', 'Challenging assumptions...', 'Citing historical failures...', 'Arguing position sizing...'],
+      risk: ['Computing portfolio Greeks...', 'Checking correlation risk...', 'Evaluating sizing limits...', 'Running stress scenarios...'],
+      judge: ['Weighing analyst evidence...', 'Evaluating debate merit...', 'Computing confidence score...', 'Rendering final verdict...']
+    };
+
+    const AGENT_RESULTS = {
+      technical: 'RSI oversold, bullish divergence detected',
+      gamma: 'Spot contained within gamma walls',
+      iv: 'IV rank elevated, premium rich environment',
+      sentiment: 'Neutral sentiment, no catalysts imminent',
+      bull: 'Premium richness supports credit strategy',
+      bear: 'RSI reversal risk threatens call wing',
+      risk: 'Position size within acceptable limits',
+      judge: 'Verdict rendered with evidence synthesis'
+    };
+
+    let verifyTimer = null;
+    let verifyStart = 0;
+
+    function enterStage4() {
+      // Reset all agents
+      $$('#stage-4 .vp-agent').forEach(a => { a.className = 'vp-agent waiting'; a.querySelector('.va-thinking').textContent = ''; a.querySelector('.va-result').textContent = ''; });
+      $$('#stage-4 .vp-phase').forEach(p => p.className = 'vp-phase');
+      $('#vp-fill').style.width = '0%';
+      $('#vp-pct').textContent = '0%';
+      $('#elapsed-timer').textContent = '0.0s';
+      $('#vp-glow').style.height = '0%';
+
+      verifyStart = Date.now();
+      verifyTimer = setInterval(() => {
+        const elapsed = (Date.now() - verifyStart) / 1000;
+        $('#elapsed-timer').textContent = elapsed.toFixed(1) + 's';
+      }, 100);
+
+      runVerificationAnimation();
+    }
+
+    async function runVerificationAnimation() {
+      // Rate limit check before verification
+      if (!isDemo && window.checkUsageLimit) {
+        try {
+          var usage = await window.checkUsageLimit();
+          if (!usage.allowed) {
+            alert('Daily limit reached (' + usage.used + '/' + usage.limit + '). Try again tomorrow.');
+            return;
+          }
+        } catch(e) { console.warn('Usage check failed:', e); }
+      }
+      // Track usage
+      if (!isDemo && window.trackUsage) window.trackUsage('verify', state.ticker).catch(function(){});
+
+      // Fire the /verify API call immediately (runs in parallel with the animation)
+      let verifyPromise;
+      if (!isDemo) {
+        const verifyLegs = state.legs.map(l => ({ type: l.type, side: l.side, strike: l.strike, expiry: state.selectedExpiry }));
+        verifyPromise = apiCall('/verify', {
+          method: 'POST',
+          body: {
+            ticker: state.ticker,
+            structure: state.selectedStrategy.strategy || state.selectedStrategy.id,
+            legs: verifyLegs,
+            netCredit: state.legs.reduce((s, l) => s + (l.side === 'short' ? l.mid : -l.mid), 0),
+            source: 'investor_draft',
+            modelMode: 'budget-qwq'
+          }
+        }).then(r => r.json());
+      }
+
+      const timeline = [
+        // Phase 1: Analysts (staggered start, finish 3-7s)
+        { agent: 'technical', phase: 1, startAt: 300, doneAt: 3200, result: AGENT_RESULTS.technical },
+        { agent: 'gamma', phase: 1, startAt: 500, doneAt: 4100, result: AGENT_RESULTS.gamma },
+        { agent: 'iv', phase: 1, startAt: 800, doneAt: 5500, result: AGENT_RESULTS.iv },
+        { agent: 'sentiment', phase: 1, startAt: 1100, doneAt: 6800, result: AGENT_RESULTS.sentiment },
+        // Phase 2: Debate (7-15s)
+        { agent: 'bull', phase: 2, startAt: 7200, doneAt: 12000, result: AGENT_RESULTS.bull },
+        { agent: 'bear', phase: 2, startAt: 7500, doneAt: 13500, result: AGENT_RESULTS.bear },
+        // Phase 3: Risk + Judge (15-24s)
+        { agent: 'risk', phase: 3, startAt: 15000, doneAt: 20000, result: AGENT_RESULTS.risk },
+        { agent: 'judge', phase: 3, startAt: 15500, doneAt: 23500, result: AGENT_RESULTS.judge }
+      ];
+
+      const totalDuration = 24000;
+      const startTime = Date.now();
+      let activePhase = 0;
+
+      // Rotating thinking messages
+      const thinkingIntervals = {};
+
+      for (const step of timeline) {
+        // Wait until start time
+        const waitStart = step.startAt - (Date.now() - startTime);
+        if (waitStart > 0) await sleep(waitStart);
+
+        // Set phase active
+        if (step.phase !== activePhase) {
+          if (activePhase > 0) {
+            const prevPhase = $(`#stage-4 .vp-phase[data-phase="${activePhase}"]`);
+            if (prevPhase) prevPhase.className = 'vp-phase done';
+          }
+          activePhase = step.phase;
+          const phaseEl = $(`#stage-4 .vp-phase[data-phase="${step.phase}"]`);
+          if (phaseEl) phaseEl.className = 'vp-phase active';
+        }
+
+        // Start processing
+        const agentEl = $(`#stage-4 .vp-agent[data-agent="${step.agent}"]`);
+        if (!agentEl) continue;
+        agentEl.className = 'vp-agent processing';
+
+        // Rotating thinking
+        const msgs = THINKING_MESSAGES[step.agent] || ['Thinking...'];
+        let msgIdx = 0;
+        agentEl.querySelector('.va-thinking').textContent = msgs[0];
+        thinkingIntervals[step.agent] = setInterval(() => {
+          msgIdx = (msgIdx + 1) % msgs.length;
+          agentEl.querySelector('.va-thinking').textContent = msgs[msgIdx];
+        }, 1500);
+
+        // Update progress
+        const pct = Math.min(100, Math.round(((Date.now() - startTime) / totalDuration) * 100));
+        $('#vp-fill').style.width = pct + '%';
+        $('#vp-pct').textContent = pct + '%';
+        const glowPct = Math.min(100, Math.round(((step.phase - 1) / 3) * 100 + 15));
+        $('#vp-glow').style.height = glowPct + '%';
+      }
+
+      // Now wait for each agent to finish in order
+      for (const step of timeline) {
+        const waitDone = step.doneAt - (Date.now() - startTime);
+        if (waitDone > 0) await sleep(waitDone);
+
+        const agentEl = $(`#stage-4 .vp-agent[data-agent="${step.agent}"]`);
+        if (!agentEl) continue;
+        clearInterval(thinkingIntervals[step.agent]);
+        agentEl.className = 'vp-agent done';
+        agentEl.querySelector('.va-result').textContent = step.result;
+
+        // Update progress
+        const pct = Math.min(100, Math.round(((Date.now() - startTime) / totalDuration) * 100));
+        $('#vp-fill').style.width = pct + '%';
+        $('#vp-pct').textContent = pct + '%';
+      }
+
+      // Mark final phase as done
+      const lastPhase = $(`#stage-4 .vp-phase[data-phase="3"]`);
+      if (lastPhase) lastPhase.className = 'vp-phase done';
+      $('#vp-fill').style.width = '100%';
+      $('#vp-pct').textContent = '100%';
+      $('#vp-glow').style.height = '100%';
+
+      clearInterval(verifyTimer);
+      state.totalTime = (Date.now() - verifyStart) / 1000;
+
+      // In demo, just use hardcoded verdict. In real mode, the API call was
+      // fired in parallel with the animation — await the result now.
+      if (isDemo) {
+        const demo = DEMO[state.ticker] || DEMO.SHOP;
+        state.verdict = demo.verdict;
+        state.mutations = demo.mutations;
+        state.debate = demo.debate;
+        state.totalCost += 0.05;
+        state.totalTokens = 12450;
+        state.apiCalls++;
+        updateBadge();
+      } else {
+        // Show "rendering verdict" if the API is still in-flight
+        $('#vp-pct').textContent = 'Rendering verdict...';
+        $('#vp-fill').style.background = 'linear-gradient(90deg, var(--teal), var(--forest-mid))';
+        try {
+          const vData = await verifyPromise;
+          state.verifyData = vData; // store full response for stage 5
+          const v = vData.verdict || {};
+          const conf = v.confidence || 50;
+          const vCall = v.call || 'marginal';
+          const vClass = vCall === 'pass' ? 'pass' : vCall === 'fail' ? 'fail' : 'concern';
+          const verdictWords = { pass: 'Take it', marginal: 'Take it smaller', fail: 'Skip it' };
+          state.verdict = { verdictWord: verdictWords[vCall] || 'Take it smaller', confidence: conf, verdictClass: vClass, summary: v.rationale || '' };
+          // Evidence
+          state.evidence = vData.evidence || {};
+          // Risk
+          state.riskReport = vData.riskReport || {};
+          // Debate
+          state.debateRounds = vData.debate?.rounds || [];
+          if (state.debateRounds.length) {
+            const lastRound = state.debateRounds[state.debateRounds.length - 1];
+            state.debate = { bullWonOn: lastRound?.bull?.thesis?.slice(0, 80) || 'Premium richness', bearWonOn: lastRound?.bear?.thesis?.slice(0, 80) || 'Risk factors' };
+          } else {
+            state.debate = { bullWonOn: 'Evidence cited', bearWonOn: 'Risk factors identified' };
+          }
+          // Mutations from suggestedFix
+          if (vData.suggestedFix) {
+            state.mutations = [{ label: vData.suggestedFix.rationale?.slice(0, 40) || 'Suggested adjustment', from: conf, to: Math.min(100, conf + 15) }];
+          } else {
+            state.mutations = [{ label: 'Reduce size 50%', from: conf, to: Math.min(100, conf + 12) }, { label: 'Widen strikes $5', from: conf, to: Math.min(100, conf + 8) }];
+          }
+          state.totalTokens = (vData.cost?.totalInputTokens || 0) + (vData.cost?.totalOutputTokens || 0);
+          state.totalTime = (vData.durationMs || 0) / 1000;
+          addCost(vData.cost);
+        } catch (err) {
+          state.verdict = { verdictWord: 'Error', confidence: 0, verdictClass: 'fail', summary: 'Verification failed: ' + err.message };
+        }
+      }
+
+      // Brief pause then go to verdict
+      await sleep(800);
+      goToStage(5);
+      renderStage5();
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    /* ================================================================
+       STAGE 5: VERDICT & MUTATE
+       ================================================================ */
+    function renderStage5() {
+      const v = state.verdict;
+      if (!v) {
+        $('#verdict-content').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">No verdict data available.</div>';
+        return;
+      }
+
+      const ev = state.evidence || {};
+      const nc = computeNetCredit();
+      const ml = computeMaxLoss(nc);
+      const bk = computeBreakevens();
+      const legsStr = state.legs.map(l => `${l.side === 'short' ? 'S' : 'L'} ${l.strike}${l.type[0].toUpperCase()}`).join(' / ');
+
+      // Trade summary with P&L chart
+      const tradeSummary = `
+        <div class="s5-trade-summary">
+          <div class="s5-trade-header">
+            <div>
+              <div class="s5-trade-title">${state.selectedStrategy?.strategy || 'Trade'}</div>
+              <div class="s5-trade-sub">${state.ticker} &middot; ${state.selectedExpiry} &middot; ${state.qty} contracts</div>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted)">${legsStr}</div>
+          </div>
+          <div class="s5-metrics">
+            <div class="s5-metric"><div class="s5m-label">Net Credit</div><div class="s5m-value" style="color:${nc >= 0 ? 'var(--green)' : 'var(--red)'}">${nc >= 0 ? '+' : '-'}$${Math.abs(nc * 100 * state.qty).toLocaleString('en-US', { maximumFractionDigits: 0 })}</div></div>
+            <div class="s5-metric"><div class="s5m-label">Max Loss</div><div class="s5m-value" style="color:var(--red)">-$${ml.toLocaleString('en-US', { maximumFractionDigits: 0 })}</div></div>
+            <div class="s5-metric"><div class="s5m-label">R:R</div><div class="s5m-value">${ml > 0 ? (Math.abs(nc * 100 * state.qty) / ml).toFixed(2) + ':1' : 'N/A'}</div></div>
+            <div class="s5-metric"><div class="s5m-label">Breakevens</div><div class="s5m-value">${bk.length ? bk.map(b => '$' + b.toFixed(0)).join(' / ') : 'N/A'}</div></div>
+          </div>
+          <div class="s5-pnl-wrap"><canvas id="s5-pnl-canvas" height="160"></canvas></div>
+        </div>
+      `;
+
+      // Agent evidence cards
+      const agents = [
+        { key: 'technical', name: 'Technical', cls: 'technical', headline: ev.technical ? `${ev.technical.trend} · RSI ${ev.technical.rsi?.toFixed?.(1) || '?'}` : 'N/A', detail: ev.technical?.summary || '' },
+        { key: 'gamma', name: 'Gamma', cls: 'gamma', headline: ev.gamma ? `Integrity ${(ev.gamma.wallIntegrity * 100).toFixed(0)}% · ${ev.gamma.insideBand ? 'Inside band' : 'Outside band'}` : 'N/A', detail: ev.gamma?.summary || '' },
+        { key: 'iv', name: 'IV / Skew', cls: 'iv', headline: ev.iv ? `Rank ${ev.iv.ivRank ?? '?'} · ${ev.iv.premiumFairness || '?'}` : 'N/A', detail: ev.iv?.summary || '' },
+        { key: 'sentiment', name: 'Sentiment', cls: 'sentiment', headline: ev.sentiment ? `Polarity ${ev.sentiment.polarity?.toFixed?.(2) || '?'} · ${(ev.sentiment.catalystsInWindow?.length || 0)} catalysts` : 'N/A', detail: ev.sentiment?.summary || '' },
+      ];
+      const evidenceHtml = agents.some(a => a.detail) ? `
+        <div class="s5-section">
+          <div class="s5-section-title">Agent Analysis</div>
+          <div class="s5-evidence-grid">
+            ${agents.map(a => `
+              <div class="s5-ev-card ${a.cls}">
+                <div class="ev-name">${a.name}</div>
+                <div class="ev-headline">${a.headline}</div>
+                <div class="ev-detail">${a.detail}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : '';
+
+      // Sentiment section
+      const sentHtml = ev.sentiment ? `
+        <div class="s5-section">
+          <div class="s5-section-title">Sentiment</div>
+          <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:12px;border-left:3px solid #a78bfa">
+            <div style="font-size:12px;color:var(--text);margin-bottom:4px">${ev.sentiment.summary || 'No sentiment data'}</div>
+            ${ev.sentiment.catalystsInWindow?.length ? `<div style="font-size:10px;color:var(--text-muted);margin-top:6px">Catalysts: ${ev.sentiment.catalystsInWindow.join(', ')}</div>` : ''}
+          </div>
+        </div>
+      ` : '';
+
+      // Risk report
+      const riskHtml = state.riskReport?.rationale ? `
+        <div class="s5-section">
+          <div class="s5-section-title">Risk Assessment</div>
+          <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:12px;border-left:3px solid var(--concern-border)">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:11px;font-weight:600;color:var(--concern-text);text-transform:uppercase">${state.riskReport.portfolioFit || 'N/A'}</span>
+              <span style="font-size:10px;color:var(--text-muted)">Theta: ${state.riskReport.thetaImpact?.toFixed?.(2) || '?'}/day &middot; Vega: ${state.riskReport.vegaImpact?.toFixed?.(2) || '?'}/pt</span>
+            </div>
+            <div style="font-size:11px;color:var(--text);line-height:1.45">${state.riskReport.rationale}</div>
+          </div>
+        </div>
+      ` : '';
+
+      // Expandable Bull/Bear debate
+      const rounds = state.debateRounds || [];
+      const bullWon = state.debate?.bull?.wonOn || state.debate?.bullWonOn || 'Evidence cited';
+      const bearWon = state.debate?.bear?.wonOn || state.debate?.bearWonOn || 'Risk factors';
+
+      function renderDebateCard(role, wonOn, cssClass, colorVar, rounds, key) {
+        const roundsHtml = rounds.map((r, i) => {
+          const data = r[key];
+          if (!data) return '';
+          return `
+            <div class="s5-round">
+              <div class="s5-round-label">Round ${data.round || i + 1}</div>
+              <div class="s5-round-thesis">${data.thesis || ''}</div>
+              ${data.evidence?.length ? `<div class="s5-round-evidence">${data.evidence.map(e => '&bull; ' + e).join('<br>')}</div>` : ''}
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="debate-card ${cssClass} s5-expandable" onclick="this.classList.toggle('open')">
+            <div class="debate-role">${role} Researcher</div>
+            <div class="debate-won">Won on: <strong>${wonOn}</strong></div>
+            ${roundsHtml ? `
+              <div class="s5-expand-toggle">Click to expand analysis</div>
+              <div class="s5-expand-body">${roundsHtml}</div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      const debateHtml = `
+        <div class="s5-section">
+          <div class="s5-section-title">Bull vs Bear Debate</div>
+          <div class="debate-row">
+            ${renderDebateCard('Bull', bullWon, 'bull', '--pass-text', rounds, 'bull')}
+            ${renderDebateCard('Bear', bearWon, 'bear', '--fail-text', rounds, 'bear')}
+          </div>
+        </div>
+      `;
+
+      // Mutations
+      const mutationsHtml = state.mutations?.length ? `
+        <div class="s5-section">
+          <div class="s5-section-title">One-Click Mutations</div>
+          <div class="mutations-row">
+            ${state.mutations.map((m, i) => `
+              <div class="mutation-card ${m.applied ? 'applied' : ''}" id="mutation-${i}" ${m.applied ? '' : 'onclick="handleMutation(' + i + ')"'}>
+                <div class="mutation-label">${m.label}${m.applied ? ' <span style="color:var(--pass-text);font-size:10px">Applied</span>' : ''}</div>
+                <div class="mutation-change">
+                  <span style="color:var(--text-muted)">${m.from}</span>
+                  <span class="mutation-arrow"> &#8594; <span style="color:var(--green)">${m.to}</span></span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : '';
+
+      $('#verdict-content').innerHTML = `
+        <div class="verdict-card ${v.verdictClass}">
+          <div class="verdict-confidence">
+            <div class="verdict-conf-num">${v.confidence}</div>
+            <div class="verdict-conf-label">Confidence</div>
+          </div>
+          <div class="verdict-word">${v.verdictWord}</div>
+          <div class="verdict-summary">${v.summary}</div>
+        </div>
+
+        ${tradeSummary}
+        ${mutationsHtml}
+        ${evidenceHtml}
+        ${sentHtml}
+        ${riskHtml}
+        ${debateHtml}
+
+        <div id="publish-status" class="hidden" style="padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:10px;border:1px solid var(--border)"></div>
+        <div class="actions-row">
+          <button class="btn-primary" id="publish-btn" onclick="handlePublishToPicks()">Publish to Picks &#8594;</button>
+          <button class="btn-secondary" onclick="handleSaveTrace()">Save trace + watch</button>
+        </div>
+
+        <div class="cost-summary">
+          $${state.totalCost.toFixed(3)} &middot; ${state.totalTime.toFixed(1)}s &middot; ${state.totalTokens.toLocaleString()} tokens
+        </div>
+      `;
+
+      // Draw P&L chart in verdict view
+      setTimeout(() => drawS5PnlChart(), 50);
+    }
+
+    function drawS5PnlChart() {
+      const canvas = $('#s5-pnl-canvas');
+      if (!canvas || !state.legs.length) return;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const W = rect.width; const H = 160;
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+
+      const legs = state.legs;
+      const strikes = legs.map(l => l.strike);
+      const nc = computeNetCredit();
+      const pad = Math.max((Math.max(...strikes) - Math.min(...strikes)) * 0.6, 15);
+      const lo = Math.min(...strikes) - pad, hi = Math.max(...strikes) + pad;
+
+      function pnlAt(price) {
+        let pnl = nc * 100 * state.qty;
+        legs.forEach(l => {
+          const val = l.type === 'call' ? Math.max(0, price - l.strike) : Math.max(0, l.strike - price);
+          pnl += (l.side === 'long' ? val : -val) * 100 * state.qty;
+        });
+        return pnl;
+      }
+
+      const pts = []; for (let i = 0; i <= 200; i++) pts.push({ price: lo + (hi - lo) * i / 200, pnl: pnlAt(lo + (hi - lo) * i / 200) });
+      const maxP = Math.max(...pts.map(p => p.pnl)), minP = Math.min(...pts.map(p => p.pnl));
+      const range = Math.max(maxP - minP, 1);
+      const ml = 40, mr = 10, mt = 10, mb = 18;
+      const cw = W - ml - mr, ch = H - mt - mb;
+      const x = p => ml + (p - lo) / (hi - lo) * cw;
+      const y = p => mt + (1 - (p - minP) / range) * ch;
+
+      // Profit fill
+      ctx.beginPath(); ctx.moveTo(x(pts[0].price), y(0));
+      pts.forEach(p => ctx.lineTo(x(p.price), p.pnl >= 0 ? y(p.pnl) : y(0)));
+      ctx.lineTo(x(pts[pts.length-1].price), y(0)); ctx.closePath();
+      ctx.fillStyle = 'rgba(59,109,17,0.2)'; ctx.fill();
+      // Loss fill
+      ctx.beginPath(); ctx.moveTo(x(pts[0].price), y(0));
+      pts.forEach(p => ctx.lineTo(x(p.price), p.pnl <= 0 ? y(p.pnl) : y(0)));
+      ctx.lineTo(x(pts[pts.length-1].price), y(0)); ctx.closePath();
+      ctx.fillStyle = 'rgba(163,45,45,0.15)'; ctx.fill();
+      // Zero line
+      if (minP < 0 && maxP > 0) { ctx.beginPath(); ctx.moveTo(ml, y(0)); ctx.lineTo(W-mr, y(0)); ctx.strokeStyle = 'rgba(15,61,46,0.15)'; ctx.lineWidth = 1; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]); }
+      // P&L line
+      ctx.beginPath(); pts.forEach((p,i) => i===0 ? ctx.moveTo(x(p.price), y(p.pnl)) : ctx.lineTo(x(p.price), y(p.pnl)));
+      ctx.strokeStyle = '#0d6e56'; ctx.lineWidth = 1.5; ctx.stroke();
+      // Spot marker
+      ctx.beginPath(); ctx.moveTo(x(state.spot), mt); ctx.lineTo(x(state.spot), H-mb);
+      ctx.strokeStyle = '#0d6e5680'; ctx.lineWidth = 1; ctx.setLineDash([2,3]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = '#0d6e56'; ctx.font = 'bold 9px system-ui'; ctx.fillText('$'+state.spot.toFixed(0), x(state.spot)-10, mt+10);
+    }
+
+    async function handleMutation(index) {
+      var card = document.getElementById('mutation-' + index);
+      if (!card) return;
+      card.classList.add('reverifying');
+      card.innerHTML = '<div style="text-align:center;padding:8px;color:var(--text-muted)"><span class="mini-spinner"></span> Applying mutation...</div>';
+
+      var m = state.mutations[index];
+      var label = (m.label || '').toLowerCase();
+
+      await sleep(800);
+
+      // Apply the mutation to the actual trade
+      if (label.indexOf('reduce size') >= 0 || label.indexOf('cut size') >= 0) {
+        // Reduce qty by ~50%
+        state.qty = Math.max(1, Math.round(state.qty * 0.5));
+      } else if (label.indexOf('widen') >= 0) {
+        // Widen outer strikes by $5
+        var strikes = state.legs.map(function(l) { return l.strike; });
+        var minS = Math.min.apply(null, strikes);
+        var maxS = Math.max.apply(null, strikes);
+        state.legs.forEach(function(l) {
+          if (l.strike === minS) { l.strike -= 5; }
+          else if (l.strike === maxS) { l.strike += 5; }
+          // Re-enrich from chain
+          var ch = (state.chainData || []).find(function(c) { return Math.abs(c.strike - l.strike) < 0.5; });
+          var ct = ch ? ch[l.type] : null;
+          l.mid = (ct && ct.mid) || l.mid;
+          l.iv = (ct && ct.iv) || l.iv;
+        });
+      } else if (label.indexOf('roll puts') >= 0) {
+        // Move put strikes down by $5
+        state.legs.forEach(function(l) {
+          if (l.type === 'put') {
+            l.strike -= 5;
+            var ch = (state.chainData || []).find(function(c) { return Math.abs(c.strike - l.strike) < 0.5; });
+            var ct = ch ? ch[l.type] : null;
+            l.mid = (ct && ct.mid) || l.mid;
+            l.iv = (ct && ct.iv) || l.iv;
+          }
+        });
+      }
+
+      // Update confidence
+      state.verdict.confidence = m.to;
+
+      // Update the verdict class based on new confidence
+      var conf = m.to;
+      state.verdict.verdictClass = conf >= 70 ? 'pass' : conf >= 50 ? 'concern' : 'fail';
+      var verdictWords = { pass: 'Take it', concern: 'Take it smaller', fail: 'Skip it' };
+      state.verdict.verdictWord = verdictWords[state.verdict.verdictClass] || state.verdict.verdictWord;
+
+      // Mark this mutation as applied
+      m.applied = true;
+
+      // Re-render with updated legs + confidence
+      renderStage5();
+    }
+
+    async function handlePublishToPicks() {
+      var statusEl = $('#publish-status');
+      var btn = $('#publish-btn');
+      if (!window.firebaseUser) {
+        statusEl.className = ''; statusEl.style.background = 'var(--concern-bg)'; statusEl.style.color = 'var(--concern-text)'; statusEl.style.borderColor = 'var(--concern-border)';
+        statusEl.textContent = 'Sign in first \u2014 click "Sign In" in the nav bar.';
+        return;
+      }
+
+      btn.disabled = true; btn.textContent = 'Publishing...';
+      statusEl.className = ''; statusEl.style.background = 'var(--teal-bg)'; statusEl.style.color = 'var(--teal-text)'; statusEl.style.borderColor = 'var(--teal)';
+      statusEl.textContent = 'Saving recommendation...';
+
+      try {
+        var nc = computeNetCredit();
+        var ml = computeMaxLoss(nc);
+        var bk = computeBreakevens();
+        var maxProfit = Math.abs(nc * 100 * state.qty);
+        var rr = ml > 0 ? maxProfit / ml : 0;
+        var dte = Math.round((new Date(state.selectedExpiry + 'T16:00:00').getTime() - Date.now()) / 86400000);
+        var stratName = state.selectedStrategy?.strategy || state.selectedStrategy?.name || 'Unknown';
+
+        // Determine direction
+        var direction = 'neutral';
+        var sn = stratName.toLowerCase();
+        if (sn.includes('bull') || sn.includes('cash-secured put') || sn.includes('sell put')) direction = 'bullish';
+        else if (sn.includes('bear')) direction = 'bearish';
+
+        // Map legs
+        var normLegs = state.legs.map(function(l) {
+          return {
+            action: l.side === 'short' ? 'SELL' : 'BUY',
+            type: l.type.toUpperCase(),
+            strike: l.strike,
+            premium: l.mid || 0,
+            mid: l.mid || 0,
+            iv: l.iv || 0,
+            side: l.side
+          };
+        });
+
+        // Build recommendation doc — pipeline will enrich and publish
+        var ev = state.evidence || {};
+        var recDoc = {
+          status: 'wip',
+          source: 'ai-discover',
+          publishedBy: window.firebaseUser.email,
+
+          // Trade setup
+          symbol: state.ticker,
+          strategy: stratName,
+          direction: direction,
+          expiry: state.selectedExpiry,
+          dte: dte,
+          spot: state.spot,
+          qty: state.qty,
+          legs: normLegs,
+
+          // Computed P&L
+          netCredit: nc,
+          maxProfit: maxProfit,
+          maxLoss: ml,
+          rewardRisk: parseFloat(rr.toFixed(2)),
+          breakevens: { lower: bk[0] || null, upper: bk[1] || null },
+
+          // AI verdict from discover verification
+          verdict: {
+            word: state.verdict?.verdictWord || '',
+            confidence: state.verdict?.confidence || 0,
+            verdictClass: state.verdict?.verdictClass || '',
+            summary: state.verdict?.summary || ''
+          },
+
+          // Evidence from 4-agent verification
+          evidence: {
+            technical: ev.technical || null,
+            gamma: ev.gamma || null,
+            iv: ev.iv || null,
+            sentiment: ev.sentiment || null
+          },
+          riskReport: state.riskReport || null,
+          debate: state.debateRounds || [],
+
+          // Market context at discovery time
+          marketSnapshot: {
+            spot: state.spot,
+            ivRank: state.ivRank || ev.iv?.ivRank || null,
+            rsi: state.rsi || ev.technical?.rsi || null
+          },
+
+          // Lifecycle
+          createdAt: window.fbServerTimestamp(),
+          updatedAt: window.fbServerTimestamp(),
+          tileId: null,
+          error: null
+        };
+
+        var result = await window.publishRecommendation(recDoc);
+        if (!result.success) throw new Error(result.error);
+
+        statusEl.style.background = 'var(--pass-bg)'; statusEl.style.color = 'var(--pass-text)'; statusEl.style.borderColor = 'var(--pass-border)';
+        statusEl.innerHTML = 'Recommendation saved as <strong>WIP</strong> (ID: ' + result.recId + ')<br><span style="font-size:11px;opacity:0.8">Run <code>node process-wip-picks.cjs</code> in newleaf-pipeline to enrich &amp; publish to picks.</span>';
+        btn.textContent = 'Saved to WIP'; btn.disabled = true;
+
+      } catch (err) {
+        statusEl.style.background = 'var(--fail-bg)'; statusEl.style.color = 'var(--fail-text)'; statusEl.style.borderColor = 'var(--fail-border)';
+        statusEl.textContent = 'Save failed: ' + (err.message || err);
+        btn.disabled = false; btn.textContent = 'Publish to Picks \u2192';
+      }
+    }
+
+    function handleSaveTrace() {
+      const trace = {
+        ticker: state.ticker,
+        strategy: state.selectedStrategy?.strategy || 'Unknown',
+        expiry: state.selectedExpiry,
+        verdictWord: state.verdict?.verdictWord || 'Unknown',
+        verdictClass: state.verdict?.verdictClass || 'concern',
+        confidence: state.verdict?.confidence || 0,
+        cost: state.totalCost,
+        ts: Date.now()
+      };
+      saveTrace(trace);
+      renderTracesBanner();
+      alert('Trace saved. You can see it in "Recent verifications" at the top.');
+    }
+
+    /* ================================================================
+       INIT
+       ================================================================ */
+    renderTracesBanner();
+
+    // Auto-load SHOP in demo mode
+    if (isDemo) {
+      loadDemoTicker('SHOP');
+    }
+
+    // Handle Enter key on ticker input
+    $('#ticker-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleLoad();
+    });
+  </script>
+
+  </div><!-- /app-content -->
+
+<!-- ═══════════════════════════════════════════════════════════════
+     Firebase module — publishes tiles to Firestore (same pattern
+     as strategy-builder.html). Loaded as ES module from CDN.
+     ═══════════════════════════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import { getFirestore, collection, doc, getDoc, setDoc, addDoc, updateDoc, serverTimestamp, increment }
+  from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+import { getAuth, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+
+// Reuse the app already initialised by nav-component.html, or create if missing
+const app = getApps().length ? getApp() : initializeApp({
+  apiKey: "AIzaSyBHOeCWF_Z-xATalX911Q_0isAKsJzHpwk",
+  authDomain: "newleaf-trading.firebaseapp.com",
+  projectId: "newleaf-trading",
+  storageBucket: "newleaf-trading.firebasestorage.app",
+  messagingSenderId: "240392819045",
+  appId: "1:240392819045:web:a1dc19e5dcfa29e6cdd18c"
+});
+
+const db   = getFirestore(app, 'newleafdb');
+const auth = getAuth(app);
+
+// Auth gate — show/hide app content based on sign-in state
+onAuthStateChanged(auth, user => {
+  window.firebaseUser = user || null;
+  const gate = document.getElementById('auth-gate');
+  const app  = document.getElementById('app-content');
+  if (user) {
+    gate.style.display = 'none';
+    app.style.display = '';
+  } else {
+    gate.style.display = '';
+    app.style.display = 'none';
+  }
+});
+
+// Wire up the auth-gate sign-in button
+document.getElementById('auth-gate-signin')?.addEventListener('click', async () => {
+  try {
+    const { GoogleAuthProvider, signInWithPopup } = await import("https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js");
+    await signInWithPopup(auth, new GoogleAuthProvider());
+  } catch (e) {
+    console.error('Sign-in failed:', e);
+    alert('Sign-in failed: ' + (e.message || e));
+  }
+});
+
+window.fbServerTimestamp = () => serverTimestamp();
+
+// ── Usage tracking & rate limiting ──────────────────────────────────────
+const DAILY_LIMIT = 5;
+
+function todayKey() {
+  return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+}
+
+function userDocId(email) {
+  return email.replace(/[^a-zA-Z0-9]/g, '_');
+}
+
+// Check if user has remaining requests today. Returns { allowed, used, limit }.
+window.checkUsageLimit = async function() {
+  if (!auth.currentUser) return { allowed: false, used: 0, limit: DAILY_LIMIT };
+  const email = auth.currentUser.email;
+  const day = todayKey();
+  const docRef = doc(db, 'discover_usage', userDocId(email), 'daily', day);
+  const snap = await getDoc(docRef);
+  const used = snap.exists() ? (snap.data().count || 0) : 0;
+  return { allowed: used < DAILY_LIMIT, used, limit: DAILY_LIMIT };
+};
+
+// Log a usage event and increment daily counter
+window.trackUsage = async function(action, ticker) {
+  if (!auth.currentUser) return;
+  const email = auth.currentUser.email;
+  const day = todayKey();
+  const uid = userDocId(email);
+
+  // Increment daily counter
+  const dailyRef = doc(db, 'discover_usage', uid, 'daily', day);
+  const dailySnap = await getDoc(dailyRef);
+  if (dailySnap.exists()) {
+    await updateDoc(dailyRef, { count: increment(1), lastUsedAt: serverTimestamp() });
+  } else {
+    await setDoc(dailyRef, { count: 1, email, date: day, lastUsedAt: serverTimestamp() });
+  }
+
+  // Update user profile (lifetime stats)
+  const userRef = doc(db, 'discover_usage', uid);
+  const userSnap = await getDoc(userRef);
+  if (userSnap.exists()) {
+    await updateDoc(userRef, {
+      totalRequests: increment(1),
+      lastActiveAt: serverTimestamp(),
+      lastTicker: ticker || '',
+      lastAction: action || ''
+    });
+  } else {
+    await setDoc(userRef, {
+      email,
+      displayName: auth.currentUser.displayName || '',
+      totalRequests: 1,
+      firstSeenAt: serverTimestamp(),
+      lastActiveAt: serverTimestamp(),
+      lastTicker: ticker || '',
+      lastAction: action || ''
+    });
+  }
+
+  // Log individual event
+  await addDoc(collection(db, 'discover_usage', uid, 'events'), {
+    action, ticker: ticker || '', timestamp: serverTimestamp(), date: day
+  });
+};
+
+// Strip undefined values — Firestore rejects them
+function stripUndefined(value) {
+  if (value === undefined) return null;
+  if (value === null) return null;
+  if (Array.isArray(value)) return value.map(v => stripUndefined(v));
+  if (typeof value === 'object' && value.constructor === Object) {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (v === undefined) continue;
+      out[k] = stripUndefined(v);
+    }
+    return out;
+  }
+  return value;
+}
+
+// Write recommendation to Firestore with status 'wip'
+// Pipeline will pick it up, enrich it, and publish to tiles/analyses/weeklyPicks
+window.publishRecommendation = async function(recDoc) {
+  if (!auth.currentUser) return { success: false, error: 'Not signed in' };
+  try {
+    const cleaned = stripUndefined(recDoc);
+    const docRef = await addDoc(collection(db, 'recommendations'), cleaned);
+    return { success: true, recId: docRef.id };
+  } catch (e) {
+    console.error('[publishRecommendation]', e);
+    return { success: false, error: e.message || String(e) };
+  }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf System — Architecture & Design</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --forest: #0B2D23; --forest-mid: #1a5c44; --gold: #C9A96E;
+    --cream: #F7F5F0; --cream-dark: #EDE8DC; --white: #fff;
+    --ink: #0B0F14; --ink-mid: #3d3d35; --ink-muted: #6b7280;
+    --teal: #0d6e56; --teal-bg: #e0f2ec; --teal-text: #07473a;
+    --blue: #2563eb; --blue-bg: #dbeafe; --blue-text: #1e40af;
+    --purple: #7c3aed; --purple-bg: #ede9fe; --purple-text: #5b21b6;
+    --orange: #d97706; --orange-bg: #fef3c7; --orange-text: #92400e;
+    --red: #dc2626; --red-bg: #fee2e2; --red-text: #991b1b;
+    --green: #0B7A52; --green-bg: #d1fae5; --green-text: #065f46;
+    --border: rgba(15,61,46,.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; padding: 40px 20px; }
+  .page { max-width: 1400px; margin: 0 auto; }
+  .page-title { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 400; color: var(--forest); margin-bottom: 6px; }
+  .page-sub { font-size: 13px; color: var(--ink-muted); margin-bottom: 8px; }
+  .page-date { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--gold); margin-bottom: 40px; letter-spacing: .08em; }
+
+  .section-title {
+    font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 400;
+    color: var(--forest); margin: 48px 0 8px; padding-top: 20px;
+    border-top: 2px solid var(--border);
+  }
+  .section-sub { font-size: 12px; color: var(--ink-muted); margin-bottom: 20px; }
+
+  .card {
+    background: var(--white); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; margin-bottom: 16px; position: relative; overflow: hidden;
+  }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--forest); margin-bottom: 8px; }
+  .card-desc { font-size: 12px; color: var(--ink-mid); line-height: 1.5; }
+
+  /* Grid layouts */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  /* Service cards */
+  .svc-card {
+    background: var(--white); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; position: relative; overflow: hidden; transition: box-shadow .15s;
+  }
+  .svc-card:hover { box-shadow: 0 4px 16px rgba(11,45,35,.08); }
+  .svc-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .svc-card.c-teal::before { background: var(--teal); }
+  .svc-card.c-blue::before { background: var(--blue); }
+  .svc-card.c-purple::before { background: var(--purple); }
+  .svc-card.c-orange::before { background: var(--orange); }
+  .svc-card.c-gold::before { background: var(--gold); }
+  .svc-card.c-green::before { background: var(--green); }
+
+  .svc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .svc-icon { font-size: 20px; }
+  .svc-name { font-size: 14px; font-weight: 700; color: var(--forest); }
+  .svc-port {
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    background: var(--cream-dark); color: var(--ink-mid); padding: 2px 8px;
+    border-radius: 4px; margin-left: auto;
+  }
+  .svc-desc { font-size: 11px; color: var(--ink-mid); line-height: 1.5; margin-bottom: 10px; }
+  .svc-tech {
+    display: flex; flex-wrap: wrap; gap: 4px;
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-block; font-family: 'Space Mono', monospace; font-size: 9px;
+    letter-spacing: .04em; padding: 3px 8px; border-radius: 4px; font-weight: 600;
+  }
+  .b-node { background: #d1fae5; color: #065f46; }
+  .b-python { background: #dbeafe; color: #1e40af; }
+  .b-react { background: #ede9fe; color: #5b21b6; }
+  .b-firebase { background: #fef3c7; color: #92400e; }
+  .b-r2 { background: #fee2e2; color: #991b1b; }
+  .b-ext { background: var(--cream-dark); color: var(--ink-mid); }
+  .b-auto { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+
+  /* Architecture diagram */
+  .arch { display: flex; flex-direction: column; gap: 0; }
+  .arch-layer {
+    background: var(--white); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; margin-bottom: 0;
+  }
+  .arch-layer + .arch-connector + .arch-layer { margin-top: 0; }
+  .arch-label {
+    font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-muted); margin-bottom: 12px;
+  }
+  .arch-boxes { display: flex; gap: 10px; flex-wrap: wrap; }
+  .arch-box {
+    flex: 1; min-width: 140px; padding: 12px; border-radius: 8px; font-size: 11px; text-align: center;
+  }
+  .arch-box-title { font-weight: 700; font-size: 12px; margin-bottom: 4px; }
+  .arch-box-detail { font-size: 10px; line-height: 1.4; opacity: .8; }
+  .arch-box.fe { background: var(--teal-bg); color: var(--teal-text); border: 1px solid #a7f3d0; }
+  .arch-box.api { background: var(--orange-bg); color: var(--orange-text); border: 1px solid #fde68a; }
+  .arch-box.pipe { background: var(--blue-bg); color: var(--blue-text); border: 1px solid #bfdbfe; }
+  .arch-box.store { background: var(--purple-bg); color: var(--purple-text); border: 1px solid #ddd6fe; }
+  .arch-box.ext { background: var(--cream-dark); color: var(--ink-mid); border: 1px solid var(--border); }
+  .arch-connector {
+    text-align: center; padding: 8px 0;
+    font-family: 'Space Mono', monospace; font-size: 10px; color: var(--ink-muted);
+  }
+
+  /* Flow diagram */
+  .flow {
+    display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin: 16px 0;
+  }
+  .flow-step {
+    padding: 10px 16px; border-radius: 8px; font-size: 11px; font-weight: 600;
+    text-align: center; white-space: nowrap;
+  }
+  .flow-arrow { font-size: 14px; color: var(--ink-muted); padding: 0 6px; }
+  .flow-step.s-green { background: var(--green-bg); color: var(--green-text); border: 1px solid #a7f3d0; }
+  .flow-step.s-blue { background: var(--blue-bg); color: var(--blue-text); border: 1px solid #bfdbfe; }
+  .flow-step.s-orange { background: var(--orange-bg); color: var(--orange-text); border: 1px solid #fde68a; }
+  .flow-step.s-purple { background: var(--purple-bg); color: var(--purple-text); border: 1px solid #ddd6fe; }
+  .flow-step.s-teal { background: var(--teal-bg); color: var(--teal-text); border: 1px solid #a7f3d0; }
+
+  /* Tables */
+  .dtable {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+    background: var(--white); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  }
+  .dtable thead th {
+    background: var(--forest); color: var(--white); font-family: 'Space Mono', monospace;
+    font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+    padding: 10px 14px; text-align: left; font-weight: 600;
+  }
+  .dtable tbody td { padding: 8px 14px; border-bottom: 1px solid var(--border); color: var(--ink-mid); font-size: 11px; }
+  .dtable tbody tr:last-child td { border-bottom: none; }
+  .dtable tbody tr:hover { background: var(--cream); }
+
+  code {
+    font-family: 'Space Mono', monospace; font-size: 11px;
+    background: var(--cream-dark); padding: 2px 6px; border-radius: 3px; color: var(--teal-text);
+  }
+  .filepath { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--teal-text); }
+
+  /* Scheduler timeline */
+  .schedule-row {
+    display: flex; align-items: center; gap: 12px; padding: 10px 0;
+    border-bottom: 1px solid var(--border); font-size: 12px;
+  }
+  .schedule-row:last-child { border-bottom: none; }
+  .schedule-time {
+    font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700;
+    color: var(--teal); min-width: 100px;
+  }
+  .schedule-desc { color: var(--ink-mid); flex: 1; }
+  .schedule-badge { margin-left: auto; }
+
+  @media (max-width: 900px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .arch-boxes { flex-direction: column; }
+    .flow { flex-direction: column; align-items: flex-start; }
+    .flow-arrow { transform: rotate(90deg); padding: 4px 0; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1 class="page-title">NewLeaf System &mdash; Architecture & Design</h1>
+<p class="page-sub">System design, service map, data flows, and infrastructure</p>
+<p class="page-date">May 2026 &middot; v3.0</p>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SECTION 1: SYSTEM OVERVIEW
+     ═══════════════════════════════════════════════════════════════════ -->
+<h2 class="section-title">System Overview</h2>
+<p class="section-sub">Four layers: Frontend, API, Pipeline, and External Data Sources</p>
+
+<div class="arch">
+  <div class="arch-layer">
+    <div class="arch-label">Frontend (React SPA + Workbench)</div>
+    <div class="arch-boxes">
+      <div class="arch-box fe">
+        <div class="arch-box-title">React SPA</div>
+        <div class="arch-box-detail">Vite + React Router<br>/invest, /picks, /learn</div>
+      </div>
+      <div class="arch-box fe">
+        <div class="arch-box-title">Workbench</div>
+        <div class="arch-box-detail">Static HTML apps<br>Scanner, Builder, Status</div>
+      </div>
+      <div class="arch-box fe">
+        <div class="arch-box-title">Marketing</div>
+        <div class="arch-box-detail">Landing, How It Works<br>Blog, Pricing</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arch-connector">&darr; API calls + R2 data &darr;</div>
+
+  <div class="arch-layer">
+    <div class="arch-label">API Layer</div>
+    <div class="arch-boxes">
+      <div class="arch-box api">
+        <div class="arch-box-title">Cloud Functions</div>
+        <div class="arch-box-detail">Fastify on Firebase<br>/api/verify, /api/chat<br>AI features (F1-F8)</div>
+      </div>
+      <div class="arch-box api">
+        <div class="arch-box-title">server.cjs</div>
+        <div class="arch-box-detail">Local Express server<br>:3000 &middot; Serves dist/<br>R2 proxy + API proxy</div>
+      </div>
+      <div class="arch-box api">
+        <div class="arch-box-title">Yahoo OI svc</div>
+        <div class="arch-box-detail">Python Flask<br>:5300 &middot; yfinance<br>OI fallback for pipeline</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arch-connector">&darr; Data collection + processing &darr;</div>
+
+  <div class="arch-layer">
+    <div class="arch-label">Pipeline (Scheduler + Workers)</div>
+    <div class="arch-boxes">
+      <div class="arch-box pipe">
+        <div class="arch-box-title">Scheduler</div>
+        <div class="arch-box-detail">node-cron<br>Service manager<br>Auto-restart</div>
+      </div>
+      <div class="arch-box pipe">
+        <div class="arch-box-title">Fast Pipeline</div>
+        <div class="arch-box-detail">Every 15 min<br>Alpaca prices + IV<br>111 symbols</div>
+      </div>
+      <div class="arch-box pipe">
+        <div class="arch-box-title">Daily OI</div>
+        <div class="arch-box-detail">9:32am ET<br>Nasdaq + Yahoo OI<br>Gamma walls</div>
+      </div>
+      <div class="arch-box pipe">
+        <div class="arch-box-title">Firestore Sync</div>
+        <div class="arch-box-detail">R2 &rarr; Firestore<br>gamma_analysis<br>Tile enrichment</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arch-connector">&darr; External data sources &darr;</div>
+
+  <div class="arch-layer">
+    <div class="arch-label">External Services</div>
+    <div class="arch-boxes">
+      <div class="arch-box ext">
+        <div class="arch-box-title">Alpaca</div>
+        <div class="arch-box-detail">Prices, Greeks, IV<br>Options chains</div>
+      </div>
+      <div class="arch-box ext">
+        <div class="arch-box-title">Nasdaq</div>
+        <div class="arch-box-detail">Open Interest<br>Volume per strike</div>
+      </div>
+      <div class="arch-box ext">
+        <div class="arch-box-title">Cloudflare R2</div>
+        <div class="arch-box-detail">Report storage<br>Public CDN</div>
+      </div>
+      <div class="arch-box ext">
+        <div class="arch-box-title">Firebase</div>
+        <div class="arch-box-detail">Auth, Firestore<br>Hosting, Functions</div>
+      </div>
+      <div class="arch-box ext">
+        <div class="arch-box-title">LLMs</div>
+        <div class="arch-box-detail">Claude, GPT-4o<br>Qwen, Grok, Gemini</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SECTION 2: SERVICE MAP
+     ═══════════════════════════════════════════════════════════════════ -->
+<h2 class="section-title">Service Map</h2>
+<p class="section-sub">All running services, ports, and auto-management</p>
+
+<div class="grid-3">
+  <div class="svc-card c-teal">
+    <div class="svc-header">
+      <span class="svc-icon">&#127760;</span>
+      <span class="svc-name">Web Server</span>
+      <span class="svc-port">:3000</span>
+    </div>
+    <div class="svc-desc">Express server serving the built React SPA from <code>dist/</code>. Includes R2 CDN proxy and API proxy for local dev.</div>
+    <div class="svc-tech">
+      <span class="badge b-node">Node.js</span>
+      <span class="badge b-auto">Auto-restart</span>
+    </div>
+    <div style="margin-top:8px;font-size:10px;color:var(--ink-muted)">
+      <span class="filepath">newleafsystem/server.cjs</span>
+    </div>
+  </div>
+
+  <div class="svc-card c-orange">
+    <div class="svc-header">
+      <span class="svc-icon">&#128200;</span>
+      <span class="svc-name">Yahoo OI Service</span>
+      <span class="svc-port">:5300</span>
+    </div>
+    <div class="svc-desc">Python Flask API using yfinance. Provides open interest data as fallback when Nasdaq API is rate-limited or down.</div>
+    <div class="svc-tech">
+      <span class="badge b-python">Python Flask</span>
+      <span class="badge b-auto">Auto-restart</span>
+    </div>
+    <div style="margin-top:8px;font-size:10px;color:var(--ink-muted)">
+      <span class="filepath">newleaf-pipeline/yahoo-svc/option_api.py</span>
+    </div>
+  </div>
+
+  <div class="svc-card c-blue">
+    <div class="svc-header">
+      <span class="svc-icon">&#9881;&#65039;</span>
+      <span class="svc-name">Pipeline Scheduler</span>
+      <span class="svc-port">LaunchAgent</span>
+    </div>
+    <div class="svc-desc">node-cron scheduler managing all pipeline jobs. Starts on login via macOS LaunchAgent. Auto-starts and monitors all other services.</div>
+    <div class="svc-tech">
+      <span class="badge b-node">Node.js</span>
+      <span class="badge b-auto">KeepAlive</span>
+    </div>
+    <div style="margin-top:8px;font-size:10px;color:var(--ink-muted)">
+      <span class="filepath">newleaf-pipeline/index.js</span>
+    </div>
+  </div>
+
+  <div class="svc-card c-purple">
+    <div class="svc-header">
+      <span class="svc-icon">&#9729;&#65039;</span>
+      <span class="svc-name">Cloud Functions</span>
+      <span class="svc-port">Firebase</span>
+    </div>
+    <div class="svc-desc">Fastify API on Firebase Cloud Functions v2. Handles AI features, trade verification, market data, and chat.</div>
+    <div class="svc-tech">
+      <span class="badge b-node">TypeScript</span>
+      <span class="badge b-firebase">Firebase</span>
+    </div>
+    <div style="margin-top:8px;font-size:10px;color:var(--ink-muted)">
+      <span class="filepath">newleaf-api/src/functions.ts</span>
+    </div>
+  </div>
+
+  <div class="svc-card c-gold">
+    <div class="svc-header">
+      <span class="svc-icon">&#128293;</span>
+      <span class="svc-name">Firebase Hosting</span>
+      <span class="svc-port">CDN</span>
+    </div>
+    <div class="svc-desc">Production hosting for the React SPA and workbench static pages. Deployed via <code>firebase deploy --only hosting</code>.</div>
+    <div class="svc-tech">
+      <span class="badge b-firebase">Firebase</span>
+      <span class="badge b-react">React + Vite</span>
+    </div>
+    <div style="margin-top:8px;font-size:10px;color:var(--ink-muted)">
+      <span class="filepath">newleafsystem.web.app</span>
+    </div>
+  </div>
+
+  <div class="svc-card c-green">
+    <div class="svc-header">
+      <span class="svc-icon">&#128230;</span>
+      <span class="svc-name">Cloudflare R2</span>
+      <span class="svc-port">CDN</span>
+    </div>
+    <div class="svc-desc">Object storage for pipeline reports, manifests, ATM contracts, and run status. Public read CDN with 5-min cache.</div>
+    <div class="svc-tech">
+      <span class="badge b-r2">R2</span>
+      <span class="badge b-ext">S3 API</span>
+    </div>
+    <div style="margin-top:8px;font-size:10px;color:var(--ink-muted)">
+      <span class="filepath">pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SECTION 3: SCHEDULER
+     ═══════════════════════════════════════════════════════════════════ -->
+<h2 class="section-title">Scheduler &amp; Service Management</h2>
+<p class="section-sub">Fully automated — starts on login, monitors all services, auto-restarts on failure</p>
+
+<div class="card">
+  <div class="card-title">Startup Chain</div>
+  <div class="flow">
+    <div class="flow-step s-purple">Mac Login</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step s-blue">LaunchAgent</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step s-teal">Scheduler (index.js)</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step s-green">server.cjs :3000</div>
+    <span class="flow-arrow">+</span>
+    <div class="flow-step s-orange">Yahoo svc :5300</div>
+  </div>
+  <div class="card-desc" style="margin-top:8px">
+    The scheduler is managed by a macOS LaunchAgent (<code>com.newleaf.pipeline</code>) with <code>KeepAlive: true</code>.
+    On boot it auto-starts server.cjs and Yahoo OI service. If any service dies, the 5-minute health check restarts it.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Schedule (All Times ET, Mon&ndash;Fri)</div>
+  <div class="schedule-row">
+    <span class="schedule-time">On Boot</span>
+    <span class="schedule-desc">Start server.cjs (:3000) + Yahoo svc (:5300)</span>
+    <span class="schedule-badge"><span class="badge b-auto">AUTO</span></span>
+  </div>
+  <div class="schedule-row">
+    <span class="schedule-time">*/5 min</span>
+    <span class="schedule-desc">Health check &mdash; restart any down service (server.cjs, Yahoo svc)</span>
+    <span class="schedule-badge"><span class="badge b-auto">AUTO</span></span>
+  </div>
+  <div class="schedule-row">
+    <span class="schedule-time">*/15 min</span>
+    <span class="schedule-desc">Fast pipeline &mdash; Alpaca prices + IV for 111 symbols (market hours only)</span>
+    <span class="badge b-node">INTRADAY</span>
+  </div>
+  <div class="schedule-row">
+    <span class="schedule-time">9:25am</span>
+    <span class="schedule-desc">Pre-market check &mdash; ensure all services up before OI enrichment</span>
+    <span class="schedule-badge"><span class="badge b-auto">AUTO</span></span>
+  </div>
+  <div class="schedule-row">
+    <span class="schedule-time">9:32am</span>
+    <span class="schedule-desc">Daily OI enrichment (Nasdaq + Yahoo fallback) &rarr; Firestore sync</span>
+    <span class="badge" style="background:#dbeafe;color:#1e40af">DAILY</span>
+  </div>
+  <div class="schedule-row">
+    <span class="schedule-time">6:00pm</span>
+    <span class="schedule-desc">Update pick outcomes (crontab)</span>
+    <span class="badge b-ext">CRON</span>
+  </div>
+  <div class="schedule-row">
+    <span class="schedule-time">Sun 6pm</span>
+    <span class="schedule-desc">Weekly picks email (crontab)</span>
+    <span class="badge b-ext">CRON</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SECTION 4: DATA PIPELINE
+     ═══════════════════════════════════════════════════════════════════ -->
+<h2 class="section-title">Data Pipeline</h2>
+<p class="section-sub">OI fallback chain, scoring, and report generation for 111 symbols</p>
+
+<div class="card">
+  <div class="card-title">OI Fallback Chain</div>
+  <div class="flow">
+    <div class="flow-step s-green">Alpaca API</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step s-blue">Prices + Greeks</div>
+    <span class="flow-arrow">+</span>
+    <div class="flow-step s-orange">Nasdaq API</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step s-teal">Open Interest</div>
+  </div>
+  <div style="text-align:center;font-size:11px;color:var(--ink-muted);margin:8px 0">If Nasdaq fails or returns empty &darr;</div>
+  <div class="flow" style="justify-content:center">
+    <div class="flow-step s-orange" style="opacity:.6">Nasdaq (empty)</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step s-purple">Yahoo svc :5300</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step s-teal">Open Interest (fallback)</div>
+  </div>
+  <div class="card-desc" style="margin-top:12px">
+    Per-expiry fallback: if Nasdaq returns empty OI for a specific expiry, Yahoo svc is tried.
+    If Nasdaq expiries themselves fail, all expiries come from Yahoo.
+    <code>meta.dataSource.openInterest</code> tracks which source was used: <code>nasdaq-api</code>, <code>yahoo-svc</code>, or <code>none</code>.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Report Generation Flow</div>
+  <div class="flow">
+    <div class="flow-step s-green">Fetch Data</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step s-blue">Gamma Analysis</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step s-teal">Score (0-100)</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step s-orange">Upload R2</div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step s-purple">Firestore Sync</div>
+  </div>
+  <div class="card-desc" style="margin-top:8px">
+    Each symbol produces <code>reports/{symbol}/latest.json</code> with: snapshot, gammaData (walls, confidence, topStrikes, IV), scoring, technicalData, optionChain, and metadata.
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Scoring Pillars (0&ndash;100)</div>
+  <div class="grid-3" style="margin-top:8px">
+    <div style="text-align:center">
+      <div style="font-size:24px;font-weight:700;color:var(--teal)">40</div>
+      <div style="font-size:11px;font-weight:600;color:var(--forest)">Gamma</div>
+      <div style="font-size:10px;color:var(--ink-muted)">Wall strength, band width,<br>OI concentration</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:24px;font-weight:700;color:var(--gold)">35</div>
+      <div style="font-size:11px;font-weight:600;color:var(--forest)">IV</div>
+      <div style="font-size:10px;color:var(--ink-muted)">ATM implied volatility<br>level assessment</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:24px;font-weight:700;color:var(--blue)">25</div>
+      <div style="font-size:11px;font-weight:600;color:var(--forest)">Trend</div>
+      <div style="font-size:10px;color:var(--ink-muted)">RSI, ADX, Bollinger,<br>trend engine state</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SECTION 5: AI FEATURES
+     ═══════════════════════════════════════════════════════════════════ -->
+<h2 class="section-title">AI Features</h2>
+<p class="section-sub">8 AI features across frontend hooks, Cloud Functions API, and LLM router</p>
+
+<div style="border-radius:12px;overflow:hidden;border:1px solid var(--border);margin-bottom:16px">
+<table class="dtable">
+  <thead>
+    <tr><th>ID</th><th>Feature</th><th>Endpoint</th><th>Model</th><th>Status</th><th>Page</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>F1</code></td><td style="font-weight:600">AI Adjust</td><td><code>/api/adjust</code></td><td>NewLeaf-Max</td><td><span class="badge b-auto">SHIPPED</span></td><td>AdjustTab</td></tr>
+    <tr><td><code>F2</code></td><td style="font-weight:600">Live AI Verdicts</td><td><code>/api/verdict-explain</code></td><td>NewLeaf-Plus</td><td><span class="badge b-auto">SHIPPED</span></td><td>PositionsPage</td></tr>
+    <tr><td><code>F3</code></td><td style="font-weight:600">Picks Narrative</td><td><code>/api/picks-narrative</code></td><td>NewLeaf-Plus</td><td><span class="badge b-auto">SHIPPED</span></td><td>PicksPage</td></tr>
+    <tr><td><code>F4</code></td><td style="font-weight:600">Strike Comparison</td><td><code>/api/strike-compare</code></td><td>NewLeaf-Max</td><td><span class="badge b-auto">SHIPPED</span></td><td>StrategyDetail</td></tr>
+    <tr><td><code>F5</code></td><td style="font-weight:600">AI Chat Enhancement</td><td><code>aiChat</code></td><td>Existing</td><td><span class="badge b-ext">PLANNED</span></td><td>AIChatDrawer</td></tr>
+    <tr><td><code>F6</code></td><td style="font-weight:600">Strategy Tutor</td><td><code>/api/chat</code></td><td>NewLeaf-Plus</td><td><span class="badge b-ext">PLANNED</span></td><td>Skill pages</td></tr>
+    <tr><td><code>F7</code></td><td style="font-weight:600">Event Risk Alerts</td><td><code>/api/event-risk</code></td><td>NewLeaf-Plus</td><td><span class="badge b-auto">SHIPPED</span></td><td>StrategyDetail</td></tr>
+    <tr><td><code>F8</code></td><td style="font-weight:600">Variant Ranking</td><td><code>/api/chat</code></td><td>NewLeaf-Plus</td><td><span class="badge b-ext">PLANNED</span></td><td>Builder</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="card">
+  <div class="card-title">LLM Router (Multi-Model)</div>
+  <div class="grid-2" style="margin-top:8px">
+    <div>
+      <div style="font-size:12px;font-weight:600;color:var(--teal);margin-bottom:4px">NewLeaf-Plus (Cost-efficient)</div>
+      <div style="font-size:11px;color:var(--ink-mid)">Qwen (qwq / qwen-plus)<br>Used by: F2, F3, F6, F7, F8<br>~$0.003&ndash;0.005/call</div>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:4px">NewLeaf-Max (High-complexity)</div>
+      <div style="font-size:11px;color:var(--ink-mid)">Claude Sonnet + GPT-4o<br>Used by: F1, F4<br>~$0.025&ndash;0.035/call</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SECTION 6: REPOS
+     ═══════════════════════════════════════════════════════════════════ -->
+<h2 class="section-title">Repository Map</h2>
+<p class="section-sub">Three repos powering the system</p>
+
+<div class="grid-3">
+  <div class="card">
+    <div class="card-title">newleafsystem</div>
+    <div class="card-desc">
+      Frontend React SPA + workbench static pages + marketing. Vite build, Firebase Hosting deploy.
+      <div style="margin-top:8px">
+        <span class="badge b-react">React</span>
+        <span class="badge b-firebase">Firebase Hosting</span>
+      </div>
+      <div class="filepath" style="margin-top:6px">/Users/manish/dev/newleafsystem</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">newleaf-api</div>
+    <div class="card-desc">
+      Backend API — Fastify on Firebase Cloud Functions v2. AI features, trade verification, market data, LLM router.
+      <div style="margin-top:8px">
+        <span class="badge b-node">TypeScript</span>
+        <span class="badge b-firebase">Cloud Functions</span>
+      </div>
+      <div class="filepath" style="margin-top:6px">/Users/manish/dev/newleaf-api</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">newleaf-pipeline</div>
+    <div class="card-desc">
+      Data pipeline — scheduler, Alpaca/Nasdaq/Yahoo data collection, gamma analysis, R2 upload, Firestore sync, Yahoo OI service.
+      <div style="margin-top:8px">
+        <span class="badge b-node">Node.js</span>
+        <span class="badge b-python">Python</span>
+        <span class="badge b-r2">R2</span>
+      </div>
+      <div class="filepath" style="margin-top:6px">/Users/manish/dev/newleaf-pipeline</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SECTION 7: KEY LINKS
+     ═══════════════════════════════════════════════════════════════════ -->
+<h2 class="section-title">Quick Links</h2>
+<p class="section-sub">Internal tools and status pages</p>
+
+<div class="grid-4">
+  <a href="status.html" class="card" style="text-decoration:none;text-align:center">
+    <div style="font-size:20px;margin-bottom:4px">&#128200;</div>
+    <div class="card-title">Pipeline Status</div>
+    <div class="card-desc">Service health, run history, errors</div>
+  </a>
+  <a href="/workbench/ai-test-plan.html" class="card" style="text-decoration:none;text-align:center">
+    <div style="font-size:20px;margin-bottom:4px">&#9989;</div>
+    <div class="card-title">AI Test Plan</div>
+    <div class="card-desc">Test all 5 shipped AI features</div>
+  </a>
+  <a href="/AI_FEATURES.html" class="card" style="text-decoration:none;text-align:center">
+    <div style="font-size:20px;margin-bottom:4px">&#129302;</div>
+    <div class="card-title">AI Features Doc</div>
+    <div class="card-desc">Design doc for all 8 AI features</div>
+  </a>
+  <a href="index.html" class="card" style="text-decoration:none;text-align:center">
+    <div style="font-size:20px;margin-bottom:4px">&#128269;</div>
+    <div class="card-title">Scanner</div>
+    <div class="card-desc">Options scanner workbench</div>
+  </a>
+</div>
+
+<div style="text-align:center;padding:32px 0 16px;font-size:11px;color:var(--ink-muted)">
+  NewLeaf System &mdash; Architecture & Design &mdash; May 2026 v3.0
+</div>
+
+</div>
+</body>
+</html>

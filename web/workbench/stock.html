@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-06YFVHFNYT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-06YFVHFNYT");</script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title id="pageTitle">Stock Analysis · NewLeaf System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="nl-brand.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Playfair Display:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,300&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.0/highcharts.js"></script>
+
+  <script>
+    window.R2 = window.location.hostname === 'localhost'
+      ? '/r2'
+      : 'https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev';
+  </script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      background: #F7F5F0 !important;
+      font-family: 'Inter', sans-serif;
+      color: #0B0F14;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      padding: 0 0 4rem;
+    }
+
+    a { text-decoration: none; color: inherit; }
+
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 2rem; }
+
+    /* Old header styles removed — using shared nav-component.html */
+
+    .header-nav {
+      display: flex;
+      gap: 0;
+      align-items: center;
+    }
+
+    .header-nav>a,.header-nav>.nav-item>a {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.6rem;
+      color: #64748b;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0 14px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .header-nav>a:hover,.header-nav>a.active,.header-nav>.nav-item>a:hover,.header-nav>.nav-item>a.active {
+      color: #C9A96E;
+      border-bottom-color: #C9A96E;
+    }
+
+    .nav-item {
+      position: relative;
+      height: 56px;
+      display: flex;
+      align-items: center;
+    }
+
+    .nav-item>a {
+      cursor: pointer;
+    }
+
+    .nav-dropdown {
+      position: absolute;
+      top: 56px;
+      left: 0;
+      background: #0B2D23;
+      min-width: 220px;
+      border-radius: 0 0 8px 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.2s;
+      z-index: 200;
+    }
+
+    .nav-item:hover .nav-dropdown {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .nav-dropdown-group {
+      padding: 12px 0;
+    }
+
+    .nav-dropdown-group:not(:last-child) {
+      border-bottom: 1px solid rgba(201,169,110,0.15);
+    }
+
+    .nav-dropdown-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      padding: 8px 18px 6px;
+      font-weight: 400;
+    }
+
+    .nav-dropdown a {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: rgba(255,255,255,0.75);
+      text-decoration: none;
+      padding: 8px 18px;
+      display: block;
+      transition: all 0.15s;
+    }
+
+    .nav-dropdown a:hover {
+      color: #C9A96E;
+      background: rgba(201,169,110,0.08);
+    }
+
+    .nav-dropdown a.active {
+      color: #C9A96E;
+      font-weight: 500;
+    }
+
+    /* Compact stock header */
+    .stock-header-compact {
+      background: white;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: 1.5rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 4px solid #0B2D23;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .stock-title-compact {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .stock-symbol-compact {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+
+    .stock-price-compact {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .price-change-compact {
+      font-size: 14px;
+    }
+
+    /* Sector badges */
+    .sector-badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.55rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border: 1px solid;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .badge-excellent {
+      background: rgba(76, 175, 133, 0.12);
+      color: #4caf85;
+      border-color: rgba(76, 175, 133, 0.3);
+    }
+
+    .badge-good {
+      background: rgba(15, 61, 46, 0.08);
+      color: #0B2D23;
+      border-color: rgba(15, 61, 46, 0.2);
+    }
+
+    .badge-average {
+      background: rgba(200, 168, 90, 0.12);
+      color: #C9A96E;
+      border-color: rgba(200, 168, 90, 0.3);
+    }
+
+    .badge-poor {
+      background: rgba(224, 92, 92, 0.12);
+      color: #e05c5c;
+      border-color: rgba(224, 92, 92, 0.3);
+    }
+
+    .stock-metrics-compact {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .metric-compact {
+      text-align: center;
+    }
+
+    .metric-label-compact {
+      font-size: 11px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+
+    .metric-value-compact {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    /* HERO SECTION */
+    .hero-section {
+      background: linear-gradient(135deg, rgba(15, 61, 46, 0.08), rgba(29, 158, 117, 0.08));
+      border: 1.5px solid #4ade80;
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .hero-icon { font-size: 20px; }
+
+    .hero-title {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-content {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 16px;
+    }
+
+    .hero-main {
+      flex: 1;
+    }
+
+    .strategy-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .strategy-name {
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    .direction-badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      background: #ffffff;
+      border-radius: 4px;
+      color: #666;
+    }
+
+    .expiry-info {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .legs-grid {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .leg-item {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .leg-label {
+      color: #666;
+    }
+
+    .leg-value {
+      font-weight: 500;
+    }
+
+    .leg-value.sell { color: #ef4444; }
+    .leg-value.buy { color: #4ade80; }
+
+    .strategy-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      font-size: 13px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-item-label {
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .stat-item-value {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .stat-item-value.profit { color: #4ade80; }
+    .stat-item-value.loss { color: #ef4444; }
+
+    .hero-why {
+      flex: 0 0 180px;
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .why-title {
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #666;
+    }
+
+    .why-list {
+      font-size: 12px;
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+
+    .why-confidence {
+      font-size: 11px;
+      color: #666;
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .btn-primary {
+      flex: 1;
+      background: #0B2D23;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #0a2a1e;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      padding: 10px 16px;
+      background: transparent;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      color: #1a1a1a;
+    }
+
+    .btn-secondary:hover {
+      border-color: #C9A96E;
+    }
+
+    /* Side-by-side layout */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 16px;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 1200px) {
+      .content-grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #C9A96E;
+    }
+
+    .card-icon { font-size: 16px; }
+
+    .metrics-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .metric-row-label {
+      color: #666;
+    }
+
+    .metric-row-value {
+      font-weight: 500;
+      color: #C9A96E;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 200px;
+      width: 100%;
+      margin: 12px 0;
+    }
+
+    .chart-container.large { height: 500px; }
+
+    .full-width { grid-column: 1 / -1; }
+
+    /* Tabs */
+    .tabs-container {
+      margin: 30px 0;
+    }
+
+    .tabs-nav {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: #666;
+      padding: 12px 24px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tab-btn:hover {
+      color: #1a1a1a;
+    }
+
+    .tab-btn.active {
+      color: #0B2D23;
+      border-bottom-color: #0B2D23;
+      background: rgba(15, 61, 46, 0.05);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Greeks table */
+    .greeks-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .greeks-table thead {
+      background: rgba(15, 61, 46, 0.05);
+    }
+
+    .greeks-table th {
+      padding: 10px;
+      text-align: left;
+      font-weight: 600;
+      color: #666;
+      border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .greeks-table td {
+      padding: 10px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .greeks-table tr:hover {
+      background: rgba(15, 61, 46, 0.02);
+    }
+
+    .greeks-table .strike-cell {
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    .greeks-table .positive {
+      color: #4ade80;
+    }
+
+    .greeks-table .negative {
+      color: #ef4444;
+    }
+
+    /* Strategy comparison */
+    .strategy-comparison {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .strategy-card {
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      padding: 16px;
+      transition: all 0.2s;
+    }
+
+    .strategy-card:hover {
+      border-color: #C9A96E;
+      box-shadow: 0 4px 12px rgba(200, 168, 90, 0.15);
+    }
+
+    .strategy-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .strategy-card-name {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .strategy-card-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      background: rgba(15, 61, 46, 0.1);
+      border-radius: 3px;
+      color: #0B2D23;
+      text-transform: uppercase;
+    }
+
+    .strategy-card-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+
+    .strategy-card-metric {
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.02);
+      border-radius: 4px;
+    }
+
+    .strategy-card-metric-label {
+      color: #666;
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .strategy-card-metric-value {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .strategy-card-reason {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.5;
+      margin-bottom: 12px;
+      padding: 8px;
+      background: rgba(200, 168, 90, 0.05);
+      border-radius: 4px;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .spinner {
+      width: 54px;
+      height: 54px;
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-top-color: #C9A96E;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      color: #C9A96E;
+      font-size: 0.9rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    footer {
+      margin-top: 3rem;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 1rem;
+      font-size: 0.55rem;
+      color: #64748b;
+      letter-spacing: 0.08em;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div id="nav-placeholder"></div>
+  <script src="load-nav.js" defer></script>
+  <div class="container">
+
+    <div id="loadingOverlay" class="loading-overlay">
+      <div class="spinner"></div>
+      <div class="loading-text">Loading Analysis…</div>
+    </div>
+
+    <div id="stockHeader" style="display:none"></div>
+    <div id="contentGrid" style="display:none"></div>
+
+    <footer>
+      NewLeaf System — AI-Powered Options Analysis | Not Financial Advice
+    </footer>
+  </div>
+
+  <script>
+  'use strict';
+
+  const R2 = window.R2;
+  const G = id => document.getElementById(id);
+  const fmt = (n, d = 2) => n?.toFixed?.(d) ?? '—';
+  const fmtPct = (n, d = 1) => n != null ? fmt(n, d) + '%' : '—';
+  const fmtP = n => n != null ? '$' + fmt(n, 2) : '—';
+  const fmtDate = s => { const d = new Date(s); return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
+
+  let charts = {};
+  let atmContracts = null;
+  let requestedStrategy = null; // normalized strategy code from ?strategy= URL param
+
+  // Map any external strategy code (engine bucket / scanner shorthand) to a stock.html
+  // strategy code (must match the codes in generateAlternativeStrategies + builder presets).
+  // calendar_spread / cash_secured_put / wheel don't have inline 4-leg renderers
+  // here — they hit the fallback hero (line ~1062) which routes to strategy-builder.
+  const STRATEGY_CODES = new Set([
+    'iron_butterfly', 'iron_condor',
+    'bull_put_spread', 'bear_call_spread',
+    'bull_call_spread', 'bear_put_spread',
+    'broken_wing_put', 'broken_wing_call',
+    'calendar_spread', 'cash_secured_put', 'wheel'
+  ]);
+  function normalizeStrategyCode(raw) {
+    if (!raw) return null;
+    // Lowercase, treat any run of non-alphanumerics (spaces, hyphens, etc.) as `_`.
+    const k = String(raw).trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    if (STRATEGY_CODES.has(k)) return k;
+    const aliases = {
+      iron_condor: 'iron_condor',
+      iron_butterfly: 'iron_butterfly',
+      bull_put: 'bull_put_spread', bullput: 'bull_put_spread',
+      bear_call: 'bear_call_spread', bearcall: 'bear_call_spread',
+      bull_call: 'bull_call_spread', bullcall: 'bull_call_spread',
+      bear_put: 'bear_put_spread', bearput: 'bear_put_spread',
+      broken_wing: 'broken_wing_put', brokenwing: 'broken_wing_put',
+      broken_wing_butterfly: 'broken_wing_put', bwb: 'broken_wing_put',
+      bwb_put: 'broken_wing_put', bwb_call: 'broken_wing_call',
+      // Real codes for csp/wheel/calendar — previously stubbed to spreads,
+      // which made stock.html render the wrong strategy in the hero panel.
+      csp: 'cash_secured_put',
+      cash_secured_puts: 'cash_secured_put',
+      sell_put: 'cash_secured_put', sell_puts: 'cash_secured_put',
+      the_wheel: 'wheel',
+      calendar: 'calendar_spread'
+    };
+    return aliases[k] || null;
+  }
+  const STRATEGY_LABELS = {
+    iron_butterfly:   'Iron Butterfly',
+    iron_condor:      'Iron Condor',
+    bull_put_spread:  'Bull Put Spread',
+    bear_call_spread: 'Bear Call Spread',
+    bull_call_spread: 'Bull Call Spread',
+    bear_put_spread:  'Bear Put Spread',
+    broken_wing_put:  'Broken Wing Butterfly (Put)',
+    broken_wing_call: 'Broken Wing Butterfly (Call)',
+    calendar_spread:  'Calendar Spread',
+    cash_secured_put: 'Cash-Secured Put',
+    wheel:            'The Wheel'
+  };
+  const STRATEGY_ICONS = {
+    iron_butterfly: '🦋', iron_condor: '🦅',
+    bull_put_spread: '📈', bear_call_spread: '📉',
+    bull_call_spread: '🚀', bear_put_spread: '⬇️',
+    broken_wing_put: '🦗', broken_wing_call: '🦗',
+    calendar_spread: '📅', cash_secured_put: '📉', wheel: '♻'
+  };
+
+  function initTabs() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetTab = btn.dataset.tab;
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(targetTab).classList.add('active');
+      });
+    });
+  }
+
+  let companyMetadata = {};
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    // Load company metadata first
+    try {
+      const metaRes = await fetch(R2 + '/reports/company-metadata.json?_=' + Date.now());
+      if (metaRes.ok) {
+        companyMetadata = await metaRes.json();
+      }
+    } catch(e) {
+      console.warn('Could not load company metadata:', e);
+    }
+
+    const p = new URLSearchParams(location.search);
+    const symbol = (p.get('symbol') || 'SPY').toUpperCase();
+    const date = p.get('date') || 'latest';
+    requestedStrategy = normalizeStrategyCode(p.get('strategy'));
+    document.title = symbol + ' Analysis · NewLeaf System';
+    G('pageTitle').textContent = document.title;
+    await loadReport(symbol, date);
+  });
+
+  async function loadReport(symbol, date) {
+    G('loadingOverlay').style.display = 'flex';
+    try {
+      const url = date === 'latest'
+        ? R2 + '/reports/' + symbol + '/latest.json?_=' + Date.now()
+        : R2 + '/reports/' + symbol + '/' + date + '.json?_=' + Date.now();
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const report = await res.json();
+
+      // If loading latest.json, also load today's daily snapshot for OI-rich gamma data
+      if (date === 'latest') {
+        try {
+          const today = new Date().toISOString().slice(0, 10);
+          const dailyUrl = R2 + '/reports/' + symbol + '/' + today + '.json?_=' + Date.now();
+          const dailyRes = await fetch(dailyUrl);
+          if (dailyRes.ok) {
+            const dailyReport = await dailyRes.json();
+            // Merge gamma data from daily snapshot (has OI data)
+            if (dailyReport.gammaData && dailyReport.gammaData.analysis) {
+              report.gammaData = dailyReport.gammaData;
+            }
+          }
+        } catch (err) {
+          console.warn('Daily snapshot not available for gamma analysis:', err);
+        }
+      }
+
+      try {
+        const atmUrl = R2 + '/reports/' + symbol + '/contracts/atm-latest.json?_=' + Date.now();
+        const atmRes = await fetch(atmUrl);
+        if (atmRes.ok) {
+          atmContracts = await atmRes.json();
+        }
+      } catch (err) {
+        console.warn('ATM contracts not available:', err);
+      }
+
+      render(report);
+    } catch (err) {
+      G('loadingOverlay').style.display = 'none';
+      alert('Error loading report: ' + err.message);
+    }
+  }
+
+  function render(report) {
+    window.stockData = report;
+    const { meta, snapshot, technicalData, gammaData, scoring } = report;
+    document.title = meta.symbol + ' Analysis · NewLeaf System';
+    G('pageTitle').textContent = document.title;
+
+    renderHeader(meta, snapshot, scoring, gammaData);
+    renderContent(meta, snapshot, scoring, gammaData, technicalData);
+
+    G('loadingOverlay').style.display = 'none';
+    G('stockHeader').style.display = 'block';
+    G('contentGrid').style.display = 'block';
+
+    // Load historical charts
+    loadAndRenderIVHistory(meta.symbol);
+    loadAndRenderPremiumHistory(meta.symbol);
+  }
+
+  function renderHeader(meta, snap, scoring, gammaData) {
+    const color = snap.changePercent >= 0 ? '#4ade80' : '#ef4444';
+    const chgSym = snap.changePercent >= 0 ? '▲' : '▼';
+    const iv = gammaData?.ivData?.atmIv;
+
+    // Get company metadata
+    const compMeta = companyMetadata[meta.symbol] || {};
+    const companyName = compMeta.name || '';
+    const sector = compMeta.sector || '';
+
+    // Sector badge styling
+    const sectorClass = {
+      'Technology': 'badge-good',
+      'Financials': 'badge-excellent',
+      'Healthcare': 'badge-excellent',
+      'High Beta': 'badge-poor',
+      'Volatility': 'badge-poor',
+      'Energy': 'badge-average',
+      'Industrials': 'badge-good',
+      'Consumer Staples': 'badge-excellent',
+      'Consumer Discretionary': 'badge-average',
+      'Materials': 'badge-average',
+      'Utilities': 'badge-excellent',
+      'China': 'badge-average',
+      'Index & ETF': 'badge-excellent',
+      'Commodities': 'badge-average'
+    }[sector] || 'badge-average';
+
+    G('stockHeader').innerHTML = `
+      <div class="stock-header-compact">
+        <div class="stock-title-compact">
+          <span class="stock-symbol-compact">${meta.symbol}</span>
+          ${companyName ? `<span style="font-size:0.85rem;color:#64748b;font-weight:400;margin-left:0.5rem">${companyName}</span>` : ''}
+          ${sector ? `<span class="sector-badge ${sectorClass}" style="margin-left:0.5rem;font-size:0.55rem;padding:0.15rem 0.45rem">${sector}</span>` : ''}
+          <span class="stock-price-compact" style="margin-left:auto">$${snap.price.toFixed(2)}</span>
+          <span class="price-change-compact" style="color: ${color}">
+            ${chgSym} ${Math.abs(snap.changePercent).toFixed(2)}%
+          </span>
+        </div>
+        <div class="stock-metrics-compact">
+          <div class="metric-compact">
+            <div class="metric-label-compact">Score</div>
+            <div class="metric-value-compact" style="color: #C9A96E;">${Math.round(scoring.opportunityScore)}</div>
+          </div>
+          <div class="metric-compact">
+            <div class="metric-label-compact">Direction</div>
+            <div class="metric-value-compact">${scoring.direction === 'bullish' ? '📈' : scoring.direction === 'bearish' ? '📉' : '↔️'}</div>
+          </div>
+          <div class="metric-compact">
+            <div class="metric-label-compact">IV</div>
+            <div class="metric-value-compact">${fmtPct(iv)}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function calculateStrategyLegs(symbol, spot, strategyCode, gammaData) {
+    if (!atmContracts || !atmContracts.expiries || !atmContracts.expiries.length) {
+      return null;
+    }
+
+    const expiry = atmContracts.expiries[0];
+    const strikes = [...new Set(expiry.contracts.map(c => c.strike))].sort((a, b) => a - b);
+    const atmIndex = strikes.findIndex(s => s >= spot);
+
+    let longPutIndex, shortPutIndex, shortCallIndex, longCallIndex;
+
+    if (strategyCode === 'iron_condor') {
+      longPutIndex = Math.max(0, atmIndex - 5);
+      shortPutIndex = Math.max(0, atmIndex - 2);
+      shortCallIndex = Math.min(strikes.length - 1, atmIndex + 2);
+      longCallIndex = Math.min(strikes.length - 1, atmIndex + 5);
+    } else if (strategyCode === 'iron_butterfly') {
+      longPutIndex = Math.max(0, atmIndex - 3);
+      shortPutIndex = atmIndex;
+      shortCallIndex = atmIndex;
+      longCallIndex = Math.min(strikes.length - 1, atmIndex + 3);
+    } else if (strategyCode === 'bull_put_spread') {
+      // Put credit spread: collapse call side at ATM so the iron-condor math returns
+      // pure put-side credit.
+      longPutIndex = Math.max(0, atmIndex - 5);
+      shortPutIndex = Math.max(0, atmIndex - 1);
+      shortCallIndex = atmIndex;
+      longCallIndex = atmIndex;
+    } else if (strategyCode === 'bear_call_spread') {
+      longPutIndex = atmIndex;
+      shortPutIndex = atmIndex;
+      shortCallIndex = Math.min(strikes.length - 1, atmIndex + 1);
+      longCallIndex = Math.min(strikes.length - 1, atmIndex + 5);
+    } else if (strategyCode === 'bull_call_spread' || strategyCode === 'bear_put_spread' ||
+               strategyCode === 'broken_wing_put' || strategyCode === 'broken_wing_call') {
+      // Debit verticals + BWB: the iron-condor credit/maxLoss math at the bottom of
+      // this function doesn't fit. Skip leg-level preview here — the simple hero +
+      // strategy-builder.html will render the proper P/L curve.
+      return null;
+    } else {
+      longPutIndex = Math.max(0, atmIndex - 5);
+      shortPutIndex = Math.max(0, atmIndex - 1);
+      shortCallIndex = Math.min(strikes.length - 1, atmIndex + 1);
+      longCallIndex = Math.min(strikes.length - 1, atmIndex + 5);
+    }
+
+    const legs = {
+      longPut: strikes[longPutIndex],
+      shortPut: strikes[shortPutIndex],
+      shortCall: strikes[shortCallIndex],
+      longCall: strikes[longCallIndex]
+    };
+
+    const contracts = {
+      longPut: expiry.contracts.find(c => c.strike === legs.longPut && c.type === 'put'),
+      shortPut: expiry.contracts.find(c => c.strike === legs.shortPut && c.type === 'put'),
+      shortCall: expiry.contracts.find(c => c.strike === legs.shortCall && c.type === 'call'),
+      longCall: expiry.contracts.find(c => c.strike === legs.longCall && c.type === 'call')
+    };
+
+    if (!contracts.longPut || !contracts.shortPut || !contracts.shortCall || !contracts.longCall) {
+      return null;
+    }
+
+    const credit = (contracts.shortPut.mid - contracts.longPut.mid) + (contracts.shortCall.mid - contracts.longCall.mid);
+    const maxProfit = credit * 100;
+    const maxLoss = Math.max(
+      (legs.shortPut - legs.longPut) * 100 - maxProfit,
+      (legs.longCall - legs.shortCall) * 100 - maxProfit
+    );
+
+    const breakeven1 = legs.shortPut - credit;
+    const breakeven2 = legs.shortCall + credit;
+
+    return {
+      expiry: expiry.expiry,
+      dte: expiry.dte,
+      legs: legs,
+      contracts: contracts,
+      netCredit: credit * 100,
+      maxProfit: maxProfit,
+      maxLoss: Math.abs(maxLoss),
+      breakeven1: breakeven1,
+      breakeven2: breakeven2
+    };
+  }
+
+  function generateAlternativeStrategies(meta, snap, scoring, gammaData) {
+    const strategies = [];
+    
+    const strategyTypes = [
+      { code: 'iron_butterfly', name: 'Iron Butterfly', icon: '🦋' },
+      { code: 'iron_condor', name: 'Iron Condor', icon: '🦅' },
+      { code: 'bull_put_spread', name: 'Bull Put Spread', icon: '📈' },
+      { code: 'bear_call_spread', name: 'Bear Call Spread', icon: '📉' }
+    ];
+    
+    strategyTypes.forEach(st => {
+      if (st.code === scoring.strategy.code) return;
+      
+      const stratData = calculateStrategyLegs(meta.symbol, snap.price, st.code, gammaData);
+      if (!stratData) return;
+      
+      let reason = '';
+      if (st.code === 'iron_condor') {
+        reason = 'Wider profit zone than butterfly, lower max profit but higher probability of success.';
+      } else if (st.code === 'iron_butterfly') {
+        reason = 'Tighter profit zone, higher credit collected at center strike.';
+      } else if (st.code === 'bull_put_spread') {
+        reason = 'Bullish bias, collect premium on put side only.';
+      } else if (st.code === 'bear_call_spread') {
+        reason = 'Bearish bias, collect premium on call side only.';
+      }
+      
+      strategies.push({
+        ...st,
+        ...stratData,
+        reason: reason
+      });
+    });
+    
+    return strategies;
+  }
+
+  function renderContent(meta, snap, scoring, gammaData, techData) {
+    // If the user landed here from a strategy scanner (?strategy=), prefer that
+    // strategy in the hero so the page reflects what they were looking for.
+    const heroStrategyCode = requestedStrategy || scoring.strategy.code;
+    const isUserRequested  = !!requestedStrategy;
+    const heroStrategyName = STRATEGY_LABELS[heroStrategyCode] || scoring.strategy.name;
+    const heroStrategyIcon = STRATEGY_ICONS[heroStrategyCode] || scoring.strategy.icon;
+    const strategyData = calculateStrategyLegs(meta.symbol, snap.price, heroStrategyCode, gammaData);
+
+    let heroHTML = '';
+    // Simple hero fallback for strategies whose 4-leg breakdown can't be safely
+    // previewed inline (debit verticals, broken wing butterflies). Sends the user
+    // straight to the builder where the full curve renders.
+    if (!strategyData && isUserRequested) {
+      heroHTML = `
+        <div class="hero-section">
+          <div class="hero-header">
+            <span class="hero-icon">🎯</span>
+            <span class="hero-title">Your Suggested Strategy</span>
+          </div>
+          <div class="hero-content">
+            <div class="hero-main">
+              <div class="strategy-title">
+                <span style="font-size: 18px;">${heroStrategyIcon}</span>
+                <span class="strategy-name">${heroStrategyName}</span>
+                <span class="direction-badge">${scoring.direction.toUpperCase()}</span>
+              </div>
+              <p style="margin-top:12px;color:#64748b;font-size:13px;line-height:1.5">
+                Open the strategy builder to see live legs, payoff curve, and Greeks for ${heroStrategyName} on ${meta.symbol}.
+              </p>
+            </div>
+            <div class="hero-actions">
+              <a href="strategy-builder.html?symbol=${meta.symbol}&strategy=${heroStrategyCode}" class="btn btn-primary">
+                🚀 Build this strategy
+              </a>
+              <button class="btn btn-secondary" onclick="document.querySelector('[data-tab=tab-strategies]')?.click(); document.getElementById('tab-strategies')?.scrollIntoView({behavior:'smooth'});">Compare alternatives</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    if (strategyData) {
+      heroHTML = `
+        <div class="hero-section">
+          <div class="hero-header">
+            <span class="hero-icon">🎯</span>
+            <span class="hero-title">${isUserRequested ? 'Your Suggested Strategy' : 'Recommended Action'}</span>
+          </div>
+
+          <div class="hero-content">
+            <div class="hero-main">
+              <div class="strategy-title">
+                <span style="font-size: 18px;">${heroStrategyIcon}</span>
+                <span class="strategy-name">${heroStrategyName}</span>
+                <span class="direction-badge">${scoring.direction.toUpperCase()}</span>
+              </div>
+              
+              <div class="expiry-info">Expiry: ${strategyData.expiry} (${strategyData.dte} DTE)</div>
+
+              <div class="legs-grid">
+                ${strategyData.legs.shortPut !== strategyData.legs.longPut || heroStrategyCode === 'iron_butterfly' || heroStrategyCode === 'iron_condor' ? `
+                  <div class="leg-item">
+                    <span class="leg-label">Sell PUT</span>
+                    <span class="leg-value sell">$${strategyData.legs.shortPut}</span>
+                  </div>
+                  <div class="leg-item">
+                    <span class="leg-label">Buy PUT</span>
+                    <span class="leg-value buy">$${strategyData.legs.longPut}</span>
+                  </div>` : ''}
+                ${strategyData.legs.shortCall !== strategyData.legs.longCall || heroStrategyCode === 'iron_butterfly' || heroStrategyCode === 'iron_condor' ? `
+                  <div class="leg-item">
+                    <span class="leg-label">Sell CALL</span>
+                    <span class="leg-value sell">$${strategyData.legs.shortCall}</span>
+                  </div>
+                  <div class="leg-item">
+                    <span class="leg-label">Buy CALL</span>
+                    <span class="leg-value buy">$${strategyData.legs.longCall}</span>
+                  </div>` : ''}
+              </div>
+              
+              <div class="strategy-stats">
+                <div class="stat-item">
+                  <div class="stat-item-label">Max profit</div>
+                  <div class="stat-item-value profit">$${strategyData.maxProfit.toFixed(2)}</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-item-label">Max loss</div>
+                  <div class="stat-item-value loss">$${strategyData.maxLoss.toFixed(2)}</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-item-label">Win rate</div>
+                  <div class="stat-item-value">${Math.round(gammaData.analysis.confidence_score * 100)}%</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-item-label">Break-even</div>
+                  <div class="stat-item-value" style="font-size: 14px;">$${strategyData.breakeven1.toFixed(2)}-$${strategyData.breakeven2.toFixed(2)}</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="hero-why">
+              <div class="why-title">Why this strategy?</div>
+              <div class="why-list">
+                • RSI at ${techData.rsi.toFixed(1)} indicates ${techData.rsiEngine.state.toLowerCase()}<br>
+                • Gamma walls define clear range<br>
+                • ${gammaData.analysis.band_width_pct.toFixed(1)}% band width suitable<br>
+                • High volume confidence
+              </div>
+              <div class="why-confidence">
+                Data confidence: ${Math.round(gammaData.analysis.confidence_score * 100)}%<br>
+                OI confidence: ${Math.round(gammaData.analysis.oi_confidence * 100)}%
+              </div>
+            </div>
+          </div>
+          
+          <div class="hero-actions">
+            <a href="strategy-builder.html?symbol=${meta.symbol}&strategy=${heroStrategyCode}" class="btn btn-primary">
+              🚀 Build this strategy
+            </a>
+            <button class="btn btn-secondary" onclick="document.querySelector('[data-tab=tab-strategies]')?.click(); document.getElementById('tab-strategies')?.scrollIntoView({behavior:'smooth'});">Compare alternatives</button>
+          </div>
+        </div>
+      `;
+    }
+
+    const greeksTableHTML = renderGreeksTable();
+    const altStrategiesHTML = renderAlternativeStrategies(meta, snap, scoring, gammaData);
+
+    const html = `
+      ${heroHTML}
+      
+      <div class="content-grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-icon">📊</span>
+            <span>Key metrics</span>
+          </div>
+          <div class="metrics-list">
+            <div class="metric-row">
+              <span class="metric-row-label">IV Rank</span>
+              <span class="metric-row-value">${fmtPct(gammaData.ivData.atmIv)}</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-row-label">Volume</span>
+              <span class="metric-row-value">${(snap.volume / 1e6).toFixed(1)}M</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-row-label">Position</span>
+              <span class="metric-row-value">${gammaData.analysis.position_in_band_pct.toFixed(1)}%</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-row-label">Gamma range</span>
+              <span class="metric-row-value">${gammaData.analysis.band_width_pct.toFixed(1)}%</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-row-label">Contracts</span>
+              <span class="metric-row-value">${gammaData.analysis.contracts_analyzed}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <span class="card-icon">📈</span>
+            <span>Gamma wall analysis</span>
+          </div>
+          <div class="chart-container"><div id="gammaChart" style="width: 100%; height: 100%;"></div></div>
+          <div class="metrics-list" style="margin-top: 12px;">
+            <div class="metric-row">
+              <span class="metric-row-label">Put wall</span>
+              <span class="metric-row-value">${fmtP(gammaData.analysis.put_wall)}</span>
+            </div>
+            <div class="metric-row">
+              <span class="metric-row-label">Call wall</span>
+              <span class="metric-row-value">${fmtP(gammaData.analysis.call_wall)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs-container">
+        <div class="tabs-nav">
+          <button class="tab-btn active" data-tab="tab-overview">📊 Overview</button>
+          <button class="tab-btn" data-tab="tab-strategies">💡 All strategies</button>
+          <button class="tab-btn" data-tab="tab-greeks">🎯 Greeks</button>
+          <button class="tab-btn" data-tab="tab-historical">📉 Historical</button>
+          <button class="tab-btn" data-tab="tab-technical">📈 Technical</button>
+        </div>
+
+        <div id="tab-overview" class="tab-content active">
+          <div class="card full-width">
+            <div class="card-header">
+              <span class="card-icon">📈</span>
+              <span>Price action & technical analysis</span>
+            </div>
+            <div class="chart-container large"><div id="priceChart" style="width: 100%; height: 100%;"></div></div>
+          </div>
+        </div>
+
+        <div id="tab-strategies" class="tab-content">
+          ${altStrategiesHTML}
+        </div>
+
+        <div id="tab-greeks" class="tab-content">
+          ${greeksTableHTML}
+        </div>
+
+        <div id="tab-historical" class="tab-content">
+          <div class="card full-width">
+            <div class="card-header">
+              <span class="card-icon">📊</span>
+              <span>Implied Volatility History</span>
+            </div>
+            <div id="ivHistoryChart" style="width: 100%; height: 300px;"></div>
+          </div>
+
+          <div class="card full-width" style="margin-top: 1rem;">
+            <div class="card-header">
+              <span class="card-icon">💰</span>
+              <span>Premium History (Weekly vs Monthly)</span>
+            </div>
+            <div id="premiumHistoryChart" style="width: 100%; height: 350px;"></div>
+          </div>
+        </div>
+
+        <div id="tab-technical" class="tab-content">
+          <div class="card full-width">
+            <div class="card-header">
+              <span class="card-icon">📈</span>
+              <span>Technical indicators</span>
+            </div>
+            <div class="metrics-list">
+              <div class="metric-row">
+                <span class="metric-row-label">RSI (14)</span>
+                <span class="metric-row-value">${fmt(techData.rsi, 1)}</span>
+              </div>
+              <div class="metric-row">
+                <span class="metric-row-label">RSI State</span>
+                <span class="metric-row-value">${techData.rsiEngine.state}</span>
+              </div>
+              <div class="metric-row">
+                <span class="metric-row-label">Trend</span>
+                <span class="metric-row-value">${techData.trendEngine.state}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    G('contentGrid').innerHTML = html;
+    initTabs();
+    setTimeout(() => renderCharts(snap, gammaData, techData), 100);
+  }
+
+  function renderGreeksTable() {
+    if (!atmContracts || !atmContracts.expiries || !atmContracts.expiries.length) {
+      return `
+        <div class="card full-width">
+          <div class="card-header">
+            <span class="card-icon">⚡</span>
+            <span>Greeks details</span>
+          </div>
+          <p style="padding: 20px; color: #666;">
+            Greeks data not available. ATM contracts need to be loaded.
+          </p>
+        </div>
+      `;
+    }
+
+    const expiry = atmContracts.expiries[0];
+    const strikes = [...new Set(expiry.contracts.map(c => c.strike))].sort((a, b) => a - b);
+    
+    let tableRows = '';
+    strikes.forEach(strike => {
+      const call = expiry.contracts.find(c => c.strike === strike && c.type === 'call');
+      const put = expiry.contracts.find(c => c.strike === strike && c.type === 'put');
+      
+      if (!call || !put) return;
+      
+      tableRows += `
+        <tr>
+          <td class="strike-cell">$${strike}</td>
+          <td>${(call.delta * 100).toFixed(1)}%</td>
+          <td>${call.gamma.toFixed(4)}</td>
+          <td class="${call.theta < 0 ? 'negative' : 'positive'}">$${call.theta.toFixed(2)}</td>
+          <td>${call.vega.toFixed(2)}</td>
+          <td>${(call.iv * 100).toFixed(1)}%</td>
+          <td>${(put.delta * 100).toFixed(1)}%</td>
+          <td>${put.gamma.toFixed(4)}</td>
+          <td class="${put.theta < 0 ? 'negative' : 'positive'}">$${put.theta.toFixed(2)}</td>
+          <td>${put.vega.toFixed(2)}</td>
+          <td>${(put.iv * 100).toFixed(1)}%</td>
+        </tr>
+      `;
+    });
+
+    return `
+      <div class="card full-width">
+        <div class="card-header">
+          <span class="card-icon">⚡</span>
+          <span>Greeks details — ${expiry.expiry} (${expiry.dte} DTE)</span>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="greeks-table">
+            <thead>
+              <tr>
+                <th>Strike</th>
+                <th colspan="5" style="text-align: center; background: rgba(74, 222, 128, 0.1);">CALL</th>
+                <th colspan="5" style="text-align: center; background: rgba(239, 68, 68, 0.1);">PUT</th>
+              </tr>
+              <tr>
+                <th></th>
+                <th>Delta</th>
+                <th>Gamma</th>
+                <th>Theta</th>
+                <th>Vega</th>
+                <th>IV</th>
+                <th>Delta</th>
+                <th>Gamma</th>
+                <th>Theta</th>
+                <th>Vega</th>
+                <th>IV</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderAlternativeStrategies(meta, snap, scoring, gammaData) {
+    const altStrategies = generateAlternativeStrategies(meta, snap, scoring, gammaData);
+    
+    if (!altStrategies.length) {
+      return `
+        <div class="card full-width">
+          <div class="card-header">
+            <span class="card-icon">💡</span>
+            <span>Alternative strategies</span>
+          </div>
+          <p style="padding: 20px; color: #666;">
+            No alternative strategies available at this time.
+          </p>
+        </div>
+      `;
+    }
+
+    const cardsHTML = altStrategies.map(strat => `
+      <div class="strategy-card">
+        <div class="strategy-card-header">
+          <span style="font-size: 18px;">${strat.icon}</span>
+          <span class="strategy-card-name">${strat.name}</span>
+          <span class="strategy-card-badge">Alternative</span>
+        </div>
+        
+        <div class="strategy-card-metrics">
+          <div class="strategy-card-metric">
+            <div class="strategy-card-metric-label">Max Profit</div>
+            <div class="strategy-card-metric-value" style="color: #4ade80;">$${strat.maxProfit.toFixed(2)}</div>
+          </div>
+          <div class="strategy-card-metric">
+            <div class="strategy-card-metric-label">Max Loss</div>
+            <div class="strategy-card-metric-value" style="color: #ef4444;">$${strat.maxLoss.toFixed(2)}</div>
+          </div>
+          <div class="strategy-card-metric">
+            <div class="strategy-card-metric-label">Net Credit</div>
+            <div class="strategy-card-metric-value">$${strat.netCredit.toFixed(2)}</div>
+          </div>
+          <div class="strategy-card-metric">
+            <div class="strategy-card-metric-label">Break-even Range</div>
+            <div class="strategy-card-metric-value" style="font-size: 12px;">$${strat.breakeven1.toFixed(2)}-$${strat.breakeven2.toFixed(2)}</div>
+          </div>
+        </div>
+        
+        <div class="strategy-card-reason">
+          <strong>Why consider this:</strong> ${strat.reason}
+        </div>
+        
+        <a href="strategy-builder.html?symbol=${meta.symbol}&strategy=${strat.code}" class="btn btn-primary" style="width: 100%;">
+          Build ${strat.name}
+        </a>
+      </div>
+    `).join('');
+
+    return `
+      <div class="card full-width">
+        <div class="card-header">
+          <span class="card-icon">💡</span>
+          <span>Alternative strategies</span>
+        </div>
+        <p style="padding: 0 0 16px 0; color: #666; font-size: 14px;">
+          Based on current market conditions, here are alternative strategies to consider:
+        </p>
+        <div class="strategy-comparison">
+          ${cardsHTML}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderCharts(snap, gammaData, techData) {
+    renderGammaChart(snap.price, gammaData);
+    renderPriceChart(snap.price, techData);
+  }
+
+  function renderGammaChart(spot, gammaData) {
+    const top = gammaData.analysis.topStrikes || [];
+    const sorted = [...top].sort((a, b) => a.strike - b.strike);
+    const categories = sorted.map(s => '$' + s.strike);
+
+    if (!G('gammaChart')) return;
+    if (charts.gamma) charts.gamma.destroy();
+
+    const hasGex = sorted.some(s => Math.abs(s.gamma_exposure) > 0);
+    const hasOI = sorted.some(s => (s.call_oi + s.put_oi) > 0);
+
+    if (hasGex) {
+      const vals = sorted.map(s => s.gamma_exposure);
+      charts.gamma = Highcharts.chart('gammaChart', {
+        chart: {
+          type: 'column',
+          backgroundColor: '#ffffff',
+          style: { fontFamily: 'Space Mono, monospace' }
+        },
+        title: { text: null },
+        credits: { enabled: false },
+        xAxis: {
+          categories: categories,
+          title: { text: 'Strike Price', style: { color: '#64748b', fontSize: '10px' } },
+          labels: { style: { color: '#64748b', fontSize: '10px' } }
+        },
+        yAxis: {
+          title: { text: 'Net Gamma Exposure', style: { color: '#64748b', fontSize: '10px' } },
+          labels: { style: { color: '#64748b', fontSize: '10px' } },
+          gridLineColor: 'rgba(0,0,0,0.05)'
+        },
+        legend: { enabled: false },
+        plotOptions: {
+          column: {
+            borderWidth: 1,
+            colorByPoint: true,
+            colors: vals.map(v => v >= 0 ? '#4ade80' : '#ef4444')
+          }
+        },
+        series: [{
+          name: 'Net Gamma Exposure',
+          data: vals.map((v, i) => ({
+            y: v,
+            color: v >= 0 ? 'rgba(74, 222, 128, 0.6)' : 'rgba(239, 68, 68, 0.6)',
+            borderColor: v >= 0 ? '#4ade80' : '#ef4444'
+          }))
+        }]
+      });
+    } else if (hasOI) {
+      const callOI = sorted.map(s => s.call_oi || 0);
+      const putOI = sorted.map(s => -(s.put_oi || 0));
+      charts.gamma = Highcharts.chart('gammaChart', {
+        chart: {
+          type: 'column',
+          backgroundColor: '#ffffff',
+          style: { fontFamily: 'Space Mono, monospace' }
+        },
+        title: { text: null },
+        credits: { enabled: false },
+        xAxis: {
+          categories: categories,
+          title: { text: 'Strike Price', style: { color: '#64748b', fontSize: '10px' } },
+          labels: { style: { color: '#64748b', fontSize: '10px' } }
+        },
+        yAxis: {
+          title: { text: 'Open Interest', style: { color: '#64748b', fontSize: '10px' } },
+          labels: { style: { color: '#64748b', fontSize: '10px' } },
+          gridLineColor: 'rgba(0,0,0,0.05)'
+        },
+        legend: {
+          enabled: true,
+          itemStyle: { fontSize: '10px', color: '#64748b' }
+        },
+        plotOptions: {
+          column: { borderWidth: 1 }
+        },
+        series: [
+          {
+            name: 'Call OI',
+            data: callOI,
+            color: 'rgba(74, 222, 128, 0.6)',
+            borderColor: '#4ade80'
+          },
+          {
+            name: 'Put OI',
+            data: putOI,
+            color: 'rgba(239, 68, 68, 0.6)',
+            borderColor: '#ef4444'
+          }
+        ]
+      });
+    } else {
+      // No gamma or OI data available - show message
+      G('gammaChart').innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;font-size:0.75rem;text-align:center;padding:2rem;">
+          <div>
+            <div style="font-size:2rem;margin-bottom:0.5rem">📊</div>
+            <div style="margin-bottom:0.5rem">Gamma wall chart not available</div>
+            <div style="font-size:0.65rem;line-height:1.6">
+              Open interest data is required to generate the gamma wall visualization.<br>
+              Put wall and call wall values are shown above.
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  function renderPriceChart(spot, td) {
+    const { priceHistory, bbSeries } = td;
+    if (!priceHistory?.length) return;
+
+    if (!G('priceChart')) return;
+    if (charts.price) charts.price.destroy();
+
+    const bbMap = new Map((bbSeries || []).map(b => [fmtDate(b.t), b]));
+
+    // Convert to Highcharts data format (timestamp, value)
+    const priceData = priceHistory.map(b => [new Date(b.t).getTime(), b.c]);
+    const upperData = priceHistory.map(b => {
+      const bb = bbMap.get(fmtDate(b.t));
+      return [new Date(b.t).getTime(), bb?.upper ?? null];
+    });
+    const middleData = priceHistory.map(b => {
+      const bb = bbMap.get(fmtDate(b.t));
+      return [new Date(b.t).getTime(), bb?.middle ?? null];
+    });
+    const lowerData = priceHistory.map(b => {
+      const bb = bbMap.get(fmtDate(b.t));
+      return [new Date(b.t).getTime(), bb?.lower ?? null];
+    });
+
+    charts.price = Highcharts.chart('priceChart', {
+      chart: {
+        backgroundColor: '#ffffff',
+        style: { fontFamily: 'Space Mono, monospace' }
+      },
+      title: { text: null },
+      credits: { enabled: false },
+      xAxis: {
+        type: 'datetime',
+        title: { text: 'Date', style: { color: '#64748b', fontSize: '10px' } },
+        labels: {
+          style: { color: '#64748b', fontSize: '10px' },
+          rotation: -45
+        },
+        gridLineColor: 'rgba(0,0,0,0.05)'
+      },
+      yAxis: {
+        title: { text: 'Price ($)', style: { color: '#64748b', fontSize: '10px' } },
+        labels: { style: { color: '#64748b', fontSize: '10px' } },
+        gridLineColor: 'rgba(0,0,0,0.05)'
+      },
+      legend: {
+        enabled: true,
+        itemStyle: { fontSize: '10px', color: '#64748b' }
+      },
+      tooltip: {
+        shared: true,
+        crosshairs: true,
+        valueDecimals: 2,
+        valuePrefix: '$'
+      },
+      series: [
+        {
+          type: 'line',
+          name: 'Price',
+          data: priceData,
+          color: '#1a1a1a',
+          lineWidth: 2,
+          marker: { enabled: false }
+        },
+        {
+          type: 'line',
+          name: 'Upper BB',
+          data: upperData,
+          color: 'rgba(201,169,110,0.4)',
+          lineWidth: 1,
+          dashStyle: 'Dash',
+          marker: { enabled: false }
+        },
+        {
+          type: 'line',
+          name: 'Middle BB',
+          data: middleData,
+          color: 'rgba(201,169,110,0.7)',
+          lineWidth: 1,
+          marker: { enabled: false }
+        },
+        {
+          type: 'line',
+          name: 'Lower BB',
+          data: lowerData,
+          color: 'rgba(201,169,110,0.4)',
+          lineWidth: 1,
+          dashStyle: 'Dash',
+          marker: { enabled: false }
+        }
+      ]
+    });
+  }
+
+  // Historical IV Chart
+  async function loadAndRenderIVHistory(symbol) {
+    try {
+      const url = R2 + '/reports/' + symbol + '/history/iv.json?_=' + Date.now();
+      const res = await fetch(url);
+      if (!res.ok) {
+        console.warn('IV history not available');
+        return;
+      }
+      const ivHistory = await res.json();
+
+      if (!ivHistory || ivHistory.length === 0) {
+        console.warn('No IV history data');
+        return;
+      }
+
+      // Sort by date
+      ivHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      const data = ivHistory.map(d => [new Date(d.date).getTime(), d.atmIv]);
+
+      Highcharts.chart('ivHistoryChart', {
+        chart: {
+          backgroundColor: '#ffffff',
+          style: { fontFamily: 'Space Mono, monospace' }
+        },
+        title: { text: null },
+        credits: { enabled: false },
+        xAxis: {
+          type: 'datetime',
+          title: { text: 'Date', style: { color: '#64748b' } },
+          labels: { style: { color: '#64748b' } }
+        },
+        yAxis: {
+          title: { text: 'ATM IV (%)', style: { color: '#64748b' } },
+          labels: {
+            style: { color: '#64748b' },
+            formatter: function() { return this.value.toFixed(1); }
+          }
+        },
+        tooltip: {
+          xDateFormat: '%Y-%m-%d',
+          valueSuffix: '%',
+          valueDecimals: 2
+        },
+        series: [{
+          type: 'line',
+          name: 'ATM IV',
+          data: data,
+          color: '#4caf85',
+          lineWidth: 2,
+          marker: { radius: 4 }
+        }]
+      });
+    } catch (err) {
+      console.error('Failed to load IV history:', err);
+    }
+  }
+
+  // Historical Premium Chart
+  async function loadAndRenderPremiumHistory(symbol) {
+    try {
+      const url = R2 + '/reports/' + symbol + '/history/premium.json?_=' + Date.now();
+      const res = await fetch(url);
+      if (!res.ok) {
+        console.warn('Premium history not available');
+        return;
+      }
+      const premiumHistory = await res.json();
+
+      if (!premiumHistory || premiumHistory.length === 0) {
+        console.warn('No premium history data');
+        return;
+      }
+
+      // Sort by date
+      premiumHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      // Separate weekly and monthly
+      const weeklyData = premiumHistory.filter(d => d.expiryType === 'weekly');
+      const monthlyData = premiumHistory.filter(d => d.expiryType === 'monthly');
+
+      const weeklyCallPct = weeklyData.map(d => [new Date(d.date).getTime(), d.callPct]);
+      const weeklyPutPct = weeklyData.map(d => [new Date(d.date).getTime(), d.putPct]);
+      const monthlyCallPct = monthlyData.map(d => [new Date(d.date).getTime(), d.callPct]);
+      const monthlyPutPct = monthlyData.map(d => [new Date(d.date).getTime(), d.putPct]);
+
+      Highcharts.chart('premiumHistoryChart', {
+        chart: {
+          backgroundColor: '#ffffff',
+          style: { fontFamily: 'Space Mono, monospace' }
+        },
+        title: { text: null },
+        credits: { enabled: false },
+        xAxis: {
+          type: 'datetime',
+          title: { text: 'Date', style: { color: '#64748b' } },
+          labels: { style: { color: '#64748b' } }
+        },
+        yAxis: {
+          title: { text: 'Premium (%)', style: { color: '#64748b' } },
+          labels: {
+            style: { color: '#64748b' },
+            formatter: function() { return this.value.toFixed(2) + '%'; }
+          }
+        },
+        tooltip: {
+          xDateFormat: '%Y-%m-%d',
+          valueSuffix: '%',
+          valueDecimals: 2,
+          shared: true
+        },
+        series: [
+          {
+            type: 'line',
+            name: 'Weekly Call',
+            data: weeklyCallPct,
+            color: '#4caf85',
+            lineWidth: 2,
+            dashStyle: 'Solid',
+            marker: { radius: 4, symbol: 'circle' }
+          },
+          {
+            type: 'line',
+            name: 'Weekly Put',
+            data: weeklyPutPct,
+            color: '#4caf85',
+            lineWidth: 2,
+            dashStyle: 'Dash',
+            marker: { radius: 4, symbol: 'square' }
+          },
+          {
+            type: 'line',
+            name: 'Monthly Call',
+            data: monthlyCallPct,
+            color: '#C9A96E',
+            lineWidth: 2,
+            dashStyle: 'Solid',
+            marker: { radius: 4, symbol: 'circle' }
+          },
+          {
+            type: 'line',
+            name: 'Monthly Put',
+            data: monthlyPutPct,
+            color: '#C9A96E',
+            lineWidth: 2,
+            dashStyle: 'Dash',
+            marker: { radius: 4, symbol: 'square' }
+          }
+        ]
+      });
+    } catch (err) {
+      console.error('Failed to load premium history:', err);
+    }
+  }
+
+  </script>
+</body>
+</html>

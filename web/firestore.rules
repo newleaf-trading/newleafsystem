@@ -1,0 +1,78 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Strategies (tiles) — scanner output, public read ───
+    match /tiles/{tileId} {
+      allow read: if true;
+      allow create, update: if request.auth != null;
+    }
+
+    // ─── Analyses — paired to tiles, public read ───
+    match /analyses/{tileId} {
+      allow read: if true;
+      allow create, update: if request.auth != null;
+    }
+
+    // ─── Weekly Picks — public read ───
+    match /weeklyPicks/{weekId} {
+      allow read: if true;
+      allow create, update: if request.auth != null;
+    }
+
+    // ─── Recommendations — authenticated read/write ───
+    match /recommendations/{recId} {
+      allow read, create, update: if request.auth != null;
+    }
+
+    // ─── Pick outcomes + market state — public read ───
+    match /pick_outcomes/{docId} {
+      allow read: if true;
+    }
+    match /marketState/{docId} {
+      allow read: if true;
+    }
+
+    // ─── User data — owner only ───
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // Positions (self-contained, replaces portfolio)
+      match /positions/{posId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+
+        // Verdict history + adjustments
+        match /{sub}/{docId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+      }
+
+      // Legacy portfolio (keep for migration, remove later)
+      match /portfolio/{posId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        match /{sub}/{docId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+      }
+
+      // Shortlist, settings, snapshots, orders, alerts
+      match /{subcollection}/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // ─── Discover usage ───
+    match /discover_usage/{userId} {
+      allow read, create, update: if request.auth != null;
+      match /{sub}/{docId} {
+        allow read, create: if request.auth != null;
+      }
+    }
+
+    // ─── Catch-all read for any other collections ───
+    match /{document=**} {
+      allow read: if true;
+    }
+  }
+}

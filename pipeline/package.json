@@ -1,0 +1,22 @@
+{
+  "name": "newleaf-pipeline",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node index.js",
+    "fast": "node pipeline-fast.js --watchlist",
+    "daily": "node newleaf-pipeline.js --watchlist --daily",
+    "intraday": "node newleaf-pipeline.js --watchlist --intraday",
+    "oi": "node pipeline-oi-enrichment.js --watchlist",
+    "watchlist": "node pipeline-watchlist.js",
+    "sync": "node sync-r2-to-firestore-fixed.mjs",
+    "health": "bash check-scheduler-health.sh"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "axios": "^1.13.6",
+    "dotenv": "^16.4.5",
+    "firebase-admin": "^12.0.0",
+    "node-cron": "^3.0.3"
+  }
+}

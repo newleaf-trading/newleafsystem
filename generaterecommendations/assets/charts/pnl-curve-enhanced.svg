@@ -1,0 +1,114 @@
+<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto;">
+  <defs>
+    <!-- Gradients for professional look -->
+    <linearGradient id="profitGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#86efac;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#16a34a;stop-opacity:0.2" />
+    </linearGradient>
+    
+    <linearGradient id="curveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0F3D2E;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#16a34a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0F3D2E;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Drop shadow filter -->
+    <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+      <feOffset dx="2" dy="2" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background grid -->
+  <g opacity="0.15">
+    <!-- Vertical grid lines -->
+    <line x1="120" y1="60" x2="120" y2="340" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="240" y1="60" x2="240" y2="340" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="360" y1="60" x2="360" y2="340" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="480" y1="60" x2="480" y2="340" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="600" y1="60" x2="600" y2="340" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="720" y1="60" x2="720" y2="340" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,3"/>
+    
+    <!-- Horizontal grid lines -->
+    <line x1="80" y1="100" x2="760" y2="100" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="80" y1="200" x2="760" y2="200" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="80" y1="300" x2="760" y2="300" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,3"/>
+  </g>
+  
+  <!-- Main axes -->
+  <line x1="80" y1="200" x2="760" y2="200" stroke="#374151" stroke-width="2"/>
+  <line x1="80" y1="60" x2="80" y2="340" stroke="#374151" stroke-width="2"/>
+  
+  <!-- Profit zone fill with gradient -->
+  <path d="M 290 200 L 290 70 L 510 70 L 510 200 Z" 
+        fill="url(#profitGradient)" 
+        stroke="#C8A85A" 
+        stroke-width="2" 
+        stroke-dasharray="5,5"
+        opacity="0.4"/>
+  
+  <!-- P&L curve with smooth Bezier paths -->
+  <path d="M 100,70 
+           C 140,70 160,70 180,70
+           L 225,70
+           C 255,90 275,150 290,200
+           L 510,200
+           C 525,150 545,90 575,70
+           L 620,70
+           C 640,70 660,70 700,70" 
+        fill="none" 
+        stroke="url(#curveGradient)" 
+        stroke-width="5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        filter="url(#dropShadow)"/>
+  
+  <!-- Strike indicator lines (dashed) -->
+  <line x1="225" y1="70" x2="225" y2="350" stroke="#16a34a" stroke-width="2" stroke-dasharray="5,3" opacity="0.6"/>
+  <line x1="290" y1="70" x2="290" y2="350" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,3" opacity="0.6"/>
+  <line x1="510" y1="70" x2="510" y2="350" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,3" opacity="0.6"/>
+  <line x1="575" y1="70" x2="575" y2="350" stroke="#16a34a" stroke-width="2" stroke-dasharray="5,3" opacity="0.6"/>
+  
+  <!-- Data point markers at key strikes -->
+  <circle cx="225" cy="70" r="6" fill="#16a34a" stroke="white" stroke-width="2" filter="url(#glow)"/>
+  <circle cx="290" cy="70" r="6" fill="#dc2626" stroke="white" stroke-width="2" filter="url(#glow)"/>
+  <circle cx="290" cy="200" r="6" fill="#f59e0b" stroke="white" stroke-width="2" filter="url(#glow)"/>
+  <circle cx="510" cy="200" r="6" fill="#f59e0b" stroke="white" stroke-width="2" filter="url(#glow)"/>
+  <circle cx="510" cy="70" r="6" fill="#dc2626" stroke="white" stroke-width="2" filter="url(#glow)"/>
+  <circle cx="575" cy="70" r="6" fill="#16a34a" stroke="white" stroke-width="2" filter="url(#glow)"/>
+  
+  <!-- Strike labels below x-axis -->
+  <text x="225" y="370" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#16a34a">$61</text>
+  <text x="290" y="370" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#dc2626">$66</text>
+  <text x="510" y="370" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#dc2626">$67.50</text>
+  <text x="575" y="370" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#16a34a">$74.50</text>
+  
+  <!-- P&L labels on y-axis -->
+  <text x="65" y="75" text-anchor="end" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#16a34a">$120</text>
+  <text x="65" y="205" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#6b7280">$0</text>
+  <text x="65" y="310" text-anchor="end" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#dc2626">-$30</text>
+  
+  <!-- Profit zone label -->
+  <text x="400" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#92400e">PROFIT ZONE</text>
+  <text x="400" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#92400e">$64.80 - $67.20</text>
+  
+  <!-- Axis labels -->
+  <text x="420" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="600" fill="#6b7280">Underlying Price at Expiration</text>
+  <text x="40" y="200" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="600" fill="#6b7280" transform="rotate(-90 40 200)">Profit / Loss</text>
+</svg>

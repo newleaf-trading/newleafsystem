@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{SYMBOL}} {{STRATEGY_NAME}} - NewLeaf System</title>
+<style>
+/* ============================================================
+   NewLeaf System - Trade Recommendation Report v2
+   WeasyPrint-optimized, 6-page A4 layout
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,700&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@page {
+    size: A4;
+    margin: 16mm 15mm 18mm 15mm;
+
+    @top-left {
+        content: element(page-header-left);
+    }
+    @top-right {
+        content: element(page-header-right);
+    }
+    @bottom-left {
+        content: "NewLeaf System";
+        font-family: 'Playfair Display', serif;
+        font-size: 7pt;
+        font-weight: 700;
+        color: #0B2D23;
+    }
+    @bottom-center {
+        content: "Not financial advice. See disclosures on final page.";
+        font-family: 'Inter', sans-serif;
+        font-size: 6pt;
+        color: #E6E8EB;
+    }
+    @bottom-right {
+        content: "Page " counter(page) " of " counter(pages);
+        font-family: 'Inter', sans-serif;
+        font-size: 7pt;
+        font-weight: 600;
+        color: #0B0F14;
+    }
+}
+
+/* Running header elements */
+.running-header-left {
+    position: running(page-header-left);
+    display: flex;
+    align-items: center;
+    gap: 8pt;
+}
+.running-header-right {
+    position: running(page-header-right);
+    text-align: right;
+    font-size: 7pt;
+    color: #6B7280;
+    line-height: 1.4;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 9pt;
+    line-height: 1.5;
+    color: #0B0F14;
+    background: #fff;
+}
+
+/* ---- HEADER BANNER (dark green strip on every page) ---- */
+.page-banner {
+    background: #0B2D23;
+    color: white;
+    padding: 8pt 14pt;
+    margin: -16mm -15mm 10pt -15mm;
+    width: calc(100% + 30mm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.banner-left {
+    display: flex;
+    align-items: center;
+    gap: 10pt;
+}
+.banner-logo {
+    width: 30pt;
+    height: 30pt;
+    border-radius: 5pt;
+    border: 1.5pt solid #C9A96E;
+}
+.banner-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.banner-brand {
+    font-family: 'Playfair Display', serif;
+    font-size: 14pt;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.2pt;
+    line-height: 1.2;
+}
+.banner-system {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 400;
+    color: #C9A96E;
+    font-size: 14pt;
+    letter-spacing: 0.3pt;
+}
+.banner-right {
+    text-align: right;
+    font-size: 7.5pt;
+    line-height: 1.5;
+}
+.banner-date {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    color: #E6E8EB;
+}
+.banner-section {
+    font-family: 'Inter', sans-serif;
+    color: #94d2bd;
+    letter-spacing: 1.5pt;
+    text-transform: uppercase;
+    font-size: 6pt;
+    font-weight: 600;
+}
+.banner-tagline {
+    font-family: 'Inter', sans-serif;
+    color: #C9A96E;
+    font-size: 6.5pt;
+    letter-spacing: 2.5pt;
+    text-transform: uppercase;
+    font-weight: 600;
+    white-space: nowrap;
+    margin-top: 2pt;
+}
+
+/* ---- SECTION LABEL (spaced caps under header) ---- */
+.section-label {
+    font-size: 6.5pt;
+    letter-spacing: 2.5pt;
+    text-transform: uppercase;
+    color: #9CA3AF;
+    font-weight: 600;
+    margin-bottom: 10pt;
+}
+
+/* ---- TYPOGRAPHY ---- */
+h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 20pt;
+    font-weight: 800;
+    color: #0B0F14;
+    margin-bottom: 3pt;
+    letter-spacing: -0.5pt;
+}
+h1 .symbol { color: #0B2D23; }
+h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 11pt;
+    font-weight: 700;
+    color: #0B2D23;
+    margin: 10pt 0 6pt 0;
+    padding-bottom: 4pt;
+    border-bottom: 1.5pt solid #E6E8EB;
+}
+h3 {
+    font-size: 9pt;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 8pt 0 4pt 0;
+}
+p { margin-bottom: 4pt; color: #0B0F14; }
+
+/* ---- KEY METRICS GRID ---- */
+.metrics-grid {
+    display: flex;
+    gap: 0;
+    margin: 8pt 0;
+    border: 1.5pt solid #E6E8EB;
+    border-radius: 4pt;
+    overflow: hidden;
+}
+.metric-cell {
+    flex: 1;
+    padding: 8pt 8pt;
+    text-align: center;
+    border-right: 1pt solid #E6E8EB;
+}
+.metric-cell:last-child { border-right: none; }
+.metric-cell.highlight {
+    background: #fffbeb;
+    border-right-color: #C9A96E;
+}
+.metric-value {
+    font-size: 18pt;
+    font-weight: 800;
+    color: #0b0f14;
+    margin-bottom: 2pt;
+}
+.metric-value.green { color: #059669; }
+.metric-value.red { color: #dc2626; }
+.metric-value.gold { color: #C9A96E; }
+.metric-label {
+    font-size: 6.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.8pt;
+    color: #9CA3AF;
+    font-weight: 600;
+}
+.metric-sub {
+    font-size: 7pt;
+    color: #9CA3AF;
+    margin-top: 2pt;
+}
+
+/* ---- SYSTEM INSIGHT BOX ---- */
+.insight-box {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    border-left: 3pt solid #059669;
+    padding: 10pt 12pt;
+    margin: 8pt 0;
+}
+.insight-box h3 {
+    color: #065f46;
+    margin-top: 0;
+    margin-bottom: 6pt;
+    font-size: 9pt;
+}
+.insight-box .config-line {
+    font-weight: 600;
+    color: #0B2D23;
+    margin-bottom: 4pt;
+    font-size: 8.5pt;
+}
+.insight-box .env-line {
+    color: #4B5563;
+    margin-bottom: 6pt;
+    font-size: 8.5pt;
+}
+.insight-box ul {
+    margin: 6pt 0 0 0;
+    padding-left: 16pt;
+}
+.insight-box li {
+    margin: 3pt 0;
+    font-size: 8.5pt;
+    color: #4B5563;
+}
+
+/* ---- FOOTER BAR (dark green at bottom) ---- */
+.page-footer-bar {
+    background: #0B2D23;
+    color: #94d2bd;
+    padding: 6pt 16pt;
+    margin: auto -18mm -22mm -18mm;
+    width: calc(100% + 36mm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 6.5pt;
+    position: fixed;
+    bottom: 0;
+}
+
+/* ---- STRIKE RAIL ---- */
+.strike-rail {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 8pt 0;
+    padding: 8pt;
+    background: #fafafa;
+    border: 1pt solid #E6E8EB;
+    border-radius: 4pt;
+}
+.strike-box {
+    padding: 6pt 8pt;
+    border: 2pt solid;
+    border-radius: 3pt;
+    font-weight: 700;
+    font-size: 8pt;
+    text-align: center;
+    min-width: 60pt;
+    background: white;
+}
+.strike-box.buy {
+    border-color: #059669;
+    color: #059669;
+}
+.strike-box.sell {
+    border-color: #dc2626;
+    color: #dc2626;
+}
+.strike-box .strike-label {
+    font-size: 6.5pt;
+    letter-spacing: 1pt;
+    text-transform: uppercase;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 3pt;
+}
+.strike-box .strike-price {
+    font-size: 12pt;
+    font-weight: 800;
+    display: block;
+}
+.strike-box .strike-detail {
+    font-size: 7pt;
+    font-weight: 400;
+    color: #6B7280;
+    display: block;
+    margin-top: 2pt;
+}
+.profit-zone-box {
+    background: #fffbeb;
+    border: 2pt solid #C9A96E;
+    padding: 6pt 10pt;
+    border-radius: 3pt;
+    text-align: center;
+    color: #854d0e;
+    font-weight: 700;
+    font-size: 8pt;
+}
+.profit-zone-box .pz-label {
+    font-size: 6pt;
+    letter-spacing: 1pt;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 2pt;
+    font-weight: 600;
+}
+.profit-zone-box .pz-range {
+    font-size: 10pt;
+    font-weight: 800;
+    display: block;
+}
+.profit-zone-box .pz-note {
+    font-size: 6.5pt;
+    font-weight: 400;
+    display: block;
+    margin-top: 2pt;
+}
+.strike-arrow {
+    font-size: 14pt;
+    color: #cbd5e1;
+}
+
+/* ---- CHECKLIST ---- */
+ul.checklist {
+    list-style: none;
+    padding-left: 0;
+    margin: 8pt 0;
+}
+ul.checklist li {
+    padding: 3pt 0 3pt 16pt;
+    position: relative;
+    font-size: 8pt;
+    color: #4B5563;
+    line-height: 1.4;
+}
+ul.checklist li::before {
+    content: "\2713";
+    position: absolute;
+    left: 0;
+    color: #059669;
+    font-weight: 700;
+    font-size: 10pt;
+}
+
+/* ---- TABLES ---- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 6pt 0;
+    font-size: 7.5pt;
+}
+thead {
+    background: #0B2D23;
+    color: white;
+}
+th {
+    padding: 5pt 6pt;
+    text-align: left;
+    font-weight: 600;
+    font-size: 7pt;
+    letter-spacing: 0.3pt;
+}
+td {
+    padding: 4pt 6pt;
+    border-bottom: 0.5pt solid #E6E8EB;
+    color: #4B5563;
+}
+tr:nth-child(even) { background: #fafafa; }
+.highlight-row {
+    background: #fffbeb !important;
+    font-weight: 600;
+}
+.highlight-row td { color: #0B2D23; }
+.selected-row {
+    background: #f0fdf4 !important;
+    font-weight: 600;
+}
+.selected-row td { color: #065f46; }
+.selected-badge {
+    color: #059669;
+    font-weight: 700;
+}
+.avoid-badge {
+    color: #dc2626;
+    font-weight: 700;
+}
+td.number {
+    text-align: right;
+    font-feature-settings: 'tnum';
+}
+
+/* ---- EXIT CARDS ---- */
+.exit-card {
+    border: 1.5pt solid #E6E8EB;
+    border-radius: 4pt;
+    margin: 5pt 0;
+    padding: 7pt 10pt;
+    page-break-inside: avoid;
+}
+.exit-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4pt;
+}
+.exit-card-title {
+    font-weight: 700;
+    font-size: 9pt;
+    color: #0b0f14;
+}
+.exit-badge {
+    font-size: 7pt;
+    font-weight: 700;
+    padding: 2pt 8pt;
+    border-radius: 2pt;
+    letter-spacing: 0.5pt;
+    text-transform: uppercase;
+}
+.exit-badge.profit { background: #dcfce7; color: #065f46; }
+.exit-badge.stop { background: #fee2e2; color: #991b1b; }
+.exit-badge.time { background: #e0f2fe; color: #0c4a6e; }
+.exit-badge.adjust { background: #fef3c7; color: #713f12; }
+.exit-trigger {
+    font-size: 7.5pt;
+    font-weight: 600;
+    color: #0B2D23;
+    margin-bottom: 3pt;
+}
+.exit-detail {
+    font-size: 7.5pt;
+    color: #6B7280;
+    line-height: 1.4;
+}
+
+/* ---- TWO-COL GRID ---- */
+.two-col {
+    display: flex;
+    gap: 14pt;
+    margin: 10pt 0;
+}
+.two-col > div { flex: 1; }
+
+/* ---- GREEK BOXES ---- */
+.greek-box {
+    background: #f8fafc;
+    border: 1pt solid #E6E8EB;
+    padding: 8pt 10pt;
+    border-radius: 4pt;
+}
+.greek-header {
+    font-size: 6pt;
+    letter-spacing: 1.5pt;
+    text-transform: uppercase;
+    color: #9CA3AF;
+    font-weight: 600;
+    margin-bottom: 3pt;
+}
+.greek-value {
+    font-size: 16pt;
+    font-weight: 800;
+    color: #0B2D23;
+    margin-bottom: 4pt;
+}
+.greek-desc {
+    font-size: 7.5pt;
+    color: #6B7280;
+    line-height: 1.4;
+}
+
+/* ---- CONFIDENCE INDEX ---- */
+.confidence-section {
+    text-align: center;
+    margin: 6pt 0;
+}
+.confidence-score-big {
+    font-size: 30pt;
+    font-weight: 800;
+    color: #C9A96E;
+    margin-bottom: 3pt;
+}
+.confidence-level-label {
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: 1pt;
+    text-transform: uppercase;
+    color: #6B7280;
+    margin-bottom: 8pt;
+}
+.confidence-bar-track {
+    background: #f1f5f9;
+    height: 10pt;
+    border-radius: 3pt;
+    position: relative;
+    margin: 6pt 0;
+}
+.confidence-bar-fill {
+    height: 100%;
+    background: linear-gradient(to right, #dc2626, #C9A96E, #059669);
+    border-radius: 3pt;
+    width: 100%;
+}
+.confidence-tiers {
+    display: flex;
+    justify-content: space-between;
+    margin: 4pt 0;
+    font-size: 6.5pt;
+    color: #9CA3AF;
+}
+.confidence-tiers .tier {
+    text-align: center;
+    padding: 4pt 8pt;
+    border-radius: 2pt;
+}
+.confidence-tiers .tier.active {
+    background: #fef3c7;
+    color: #92400e;
+    font-weight: 700;
+}
+
+/* ---- WARNING BOX ---- */
+.warning-box {
+    background: #fffbeb;
+    border-left: 3pt solid #f59e0b;
+    padding: 8pt 10pt;
+    margin: 8pt 0;
+}
+.warning-box h3 {
+    color: #92400e;
+    font-size: 8pt;
+    margin-bottom: 4pt;
+}
+.warning-box ul {
+    margin: 3pt 0;
+    padding-left: 14pt;
+}
+.warning-box li {
+    font-size: 7.5pt;
+    color: #78350f;
+    margin: 2pt 0;
+}
+
+/* ---- SPEC TABLE ---- */
+.spec-table td {
+    padding: 3pt 5pt;
+    font-size: 7pt;
+}
+.spec-table td:first-child {
+    font-weight: 600;
+    color: #0B2D23;
+    width: 30%;
+}
+
+/* ---- DISCLOSURES ---- */
+.disclosures {
+    background: #f8fafc;
+    border-top: 1.5pt solid #E6E8EB;
+    padding: 8pt;
+    margin-top: 10pt;
+    font-size: 6.5pt;
+    color: #9CA3AF;
+    line-height: 1.5;
+}
+.disclosures h3 {
+    font-size: 7.5pt;
+    color: #6B7280;
+    margin-bottom: 4pt;
+}
+.disclosures p { font-size: 6.5pt; color: #9CA3AF; margin-bottom: 3pt; }
+.disclosures strong { color: #6B7280; }
+
+/* ---- BOTTOM BRAND ---- */
+.final-brand {
+    text-align: center;
+    margin-top: 10pt;
+    font-size: 7pt;
+    color: #9CA3AF;
+}
+.final-brand .brand-name {
+    font-weight: 700;
+    color: #0B2D23;
+}
+
+/* ---- MACRO CARDS ---- */
+.three-col { display: flex; gap: 10pt; margin: 8pt 0; }
+.three-col > div { flex: 1; }
+.macro-card { background: #F7F5F0; border: 1pt solid #E6E8EB; border-radius: 6pt; padding: 10pt; }
+.macro-card h3 { font-size: 8pt; font-weight: 700; color: #0B2D23; letter-spacing: 0.5pt; margin-bottom: 4pt; }
+.macro-card p { font-size: 7.5pt; color: #0B0F14; line-height: 1.5; }
+
+/* ---- ANALYST BAR ---- */
+.analyst-bar { display: flex; height: 14pt; border-radius: 3pt; overflow: hidden; margin: 6pt 0; }
+.analyst-bar .buy { background: #1A7A4A; }
+.analyst-bar .hold { background: #C9A96E; }
+.analyst-bar .sell { background: #C0392B; }
+.analyst-bar span { display: flex; align-items: center; justify-content: center; font-size: 6.5pt; font-weight: 700; color: white; }
+
+/* ---- HEADWIND/TAILWIND ---- */
+.hw-tw { display: flex; gap: 10pt; margin: 6pt 0; }
+.hw-tw > div { flex: 1; padding: 8pt; border-radius: 4pt; }
+.hw-tw .headwinds { background: #FEF0EE; border-left: 3pt solid #C0392B; }
+.hw-tw .tailwinds { background: #EEF7F2; border-left: 3pt solid #1A7A4A; }
+.hw-tw h3 { font-size: 8pt; margin-bottom: 4pt; }
+.hw-tw li { font-size: 7.5pt; margin: 2pt 0; }
+
+/* ---- PAGE BREAKS ---- */
+.page-break { page-break-after: always; }
+
+/* ---- GAMMA BAR CHART ---- */
+.gamma-chart {
+    margin: 10pt 0;
+    padding: 8pt;
+    background: #fafafa;
+    border: 1pt solid #E6E8EB;
+    border-radius: 4pt;
+}
+.gamma-chart-title {
+    font-size: 8pt;
+    font-weight: 600;
+    color: #0B2D23;
+    text-align: center;
+    margin-bottom: 8pt;
+}
+
+/* ---- P&L CHART ---- */
+.pnl-chart {
+    margin: 10pt 0;
+    background: #fafafa;
+    border: 1pt solid #E6E8EB;
+    border-radius: 4pt;
+    padding: 8pt;
+}
+.pnl-title {
+    font-size: 8pt;
+    font-weight: 600;
+    color: #0B2D23;
+    text-align: center;
+    margin-bottom: 4pt;
+}
+
+/* ---- RECOMMENDATION/ENTRY GRID ---- */
+.entry-grid {
+    display: flex;
+    gap: 8pt;
+    margin: 6pt 0;
+}
+.entry-box {
+    flex: 1;
+    background: #f8fafc;
+    border: 1pt solid #E6E8EB;
+    border-radius: 4pt;
+    padding: 7pt;
+}
+.entry-box.entry-rec { border-left: 3pt solid #0B2D23; }
+.entry-box.entry-broker { border-left: 3pt solid #185FA5; }
+.entry-box h3 {
+    font-size: 7.5pt;
+    margin-bottom: 5pt;
+    color: #0B2D23;
+}
+.entry-box table { margin: 0; }
+.entry-box td {
+    padding: 3pt 5pt;
+    font-size: 7pt;
+    border-bottom: 0.5pt solid #E6E8EB;
+}
+.entry-box td:first-child {
+    font-weight: 600;
+    color: #4B5563;
+    width: 50%;
+}
+.entry-box td:last-child {
+    color: #0b0f14;
+    font-weight: 500;
+}
+
+/* ---- SUBTITLE ---- */
+.report-subtitle {
+    font-size: 11pt;
+    color: #6B7280;
+    margin-bottom: 2pt;
+}
+.report-meta {
+    font-size: 8pt;
+    color: #9CA3AF;
+    margin-bottom: 14pt;
+}
+
+/* ---- CURRENT PRICE LINE ---- */
+.price-line {
+    font-size: 8.5pt;
+    color: #4B5563;
+    margin: 6pt 0;
+    padding: 6pt 0;
+    border-top: 0.5pt solid #E6E8EB;
+}
+.price-line strong { color: #0b0f14; }
+
+/* print optimization */
+@media print {
+    body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     PAGE 1: EXECUTIVE SUMMARY
+     ================================================================ -->
+<div class="page-banner">
+    <div class="banner-left">
+        <img class="banner-logo" src="">
+        <div class="banner-text">
+            <div class="banner-brand">NewLeaf <span class="banner-system">System</span></div>
+            <div class="banner-tagline">DEFINED-RISK TRADING OS</div>
+        </div>
+    </div>
+    <div class="banner-right">
+        <div class="banner-date">{{REPORT_DATE}}</div>
+        <div class="banner-section">QUANTITATIVE TRADING INTELLIGENCE</div>
+    </div>
+</div>
+
+<div class="section-label">{{SYMBOL}} &middot; {{COMPANY_NAME}} &middot; Options Strategy</div>
+
+<h1><span class="symbol">{{SYMBOL}}</span> {{STRATEGY_NAME}}</h1>
+<div class="report-subtitle">Strategic Trade Recommendation</div>
+<div class="report-meta">Expiration: {{EXPIRATION_DATE}} ({{DAYS_TO_EXPIRY}} Days) &nbsp;|&nbsp; Generated: {{REPORT_TIME}} &nbsp;|&nbsp; Entry Price: {{CURRENT_PRICE}}</div>
+
+<!-- Key Metrics -->
+<div class="metrics-grid">
+    <div class="metric-cell">
+        <div class="metric-label">MAX PROFIT</div>
+        <div class="metric-value green">{{MAX_PROFIT}}</div>
+        <div class="metric-sub">{{MAX_PROFIT_DESC}}</div>
+    </div>
+    <div class="metric-cell">
+        <div class="metric-label">MAX LOSS</div>
+        <div class="metric-value red">{{MAX_LOSS}}</div>
+        <div class="metric-sub">{{MAX_LOSS_DESC}}</div>
+    </div>
+    <div class="metric-cell">
+        <div class="metric-label">WIN PROBABILITY</div>
+        <div class="metric-value">{{WIN_RATE}}%</div>
+        <div class="metric-sub">{{WIN_RATE_DESC}}</div>
+    </div>
+</div>
+
+<div class="metrics-grid">
+    <div class="metric-cell">
+        <div class="metric-label">RISK / REWARD</div>
+        <div class="metric-value">{{RISK_REWARD}}</div>
+        <div class="metric-sub">{{RISK_REWARD_DESC}}</div>
+    </div>
+    <div class="metric-cell">
+        <div class="metric-label">BREAK-EVEN RANGE</div>
+        <div class="metric-value" style="font-size:16pt;">{{BREAKEVEN_RANGE}}</div>
+        <div class="metric-sub">{{BREAKEVEN_RANGE_DESC}}</div>
+    </div>
+    <div class="metric-cell highlight">
+        <div class="metric-label">CONFIDENCE INDEX&trade;</div>
+        <div class="metric-value gold">{{TRADE_SCORE}}</div>
+        <div class="metric-sub">{{CONFIDENCE_LEVEL}}</div>
+    </div>
+</div>
+
+<!-- System Insight -->
+<div class="insight-box">
+    <h3>System Insight</h3>
+    <div class="config-line">Trade Configuration: {{TRADE_CONFIG}}</div>
+    <div class="env-line">Market Environment: {{MARKET_ENVIRONMENT}}</div>
+    <ul>
+        {{THESIS_POINTS}}
+    </ul>
+</div>
+
+<!-- Technical Framework (fills page 1 bottom) -->
+<h3 style="margin-top:10pt;">Technical Framework</h3>
+<table>
+    <thead><tr><th>Indicator</th><th>Value</th><th>Signal</th></tr></thead>
+    <tbody>
+        <tr><td>Implied Volatility</td><td>{{IV_VALUE}}</td><td>Premium collection opportunity</td></tr>
+        <tr><td>Put Gamma Wall</td><td>{{PUT_GAMMA_WALL}}</td><td>Dealer support below</td></tr>
+        <tr><td>Call Gamma Wall</td><td>{{CALL_GAMMA_WALL}}</td><td>Dealer resistance above</td></tr>
+        <tr><td>Days to Expiry</td><td>{{DAYS_TO_EXPIRY}}</td><td>Theta acceleration zone</td></tr>
+    </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- IF_MACRO -->
+<!-- ================================================================
+     PAGE 2: MACRO ENVIRONMENT
+     ================================================================ -->
+<div class="page-banner">
+    <div class="banner-left">
+        <img class="banner-logo" src="">
+        <div class="banner-text">
+            <div class="banner-brand">NewLeaf <span class="banner-system">System</span></div>
+            <div class="banner-tagline">DEFINED-RISK TRADING OS</div>
+        </div>
+    </div>
+    <div class="banner-right">
+        <div class="banner-date">{{REPORT_DATE}}</div>
+        <div class="banner-section">{{SYMBOL}} {{STRATEGY_NAME}} &middot; MACRO ENVIRONMENT</div>
+    </div>
+</div>
+
+<h2>Macro Environment</h2>
+
+<div class="three-col">
+    <div class="macro-card">
+        <h3>{{MACRO_BOX_1_TITLE}}</h3>
+        <p>{{MACRO_BOX_1_TEXT}}</p>
+    </div>
+    <div class="macro-card">
+        <h3>{{MACRO_BOX_2_TITLE}}</h3>
+        <p>{{MACRO_BOX_2_TEXT}}</p>
+    </div>
+    <div class="macro-card">
+        <h3>{{MACRO_BOX_3_TITLE}}</h3>
+        <p>{{MACRO_BOX_3_TEXT}}</p>
+    </div>
+</div>
+
+<div class="insight-box" style="margin-top:8pt;">
+    <h3>Why This Matters for Our Trade</h3>
+    <p style="font-size:8pt;">Range-bound conditions are ideal for iron condors. We collect premium from time decay while the underlying stays within our profit zone. The macro environment supports this thesis: enough volatility to generate premium, but not enough to break through key levels.</p>
+</div>
+
+<div class="page-break"></div>
+<!-- /IF_MACRO -->
+
+<!-- IF_COMPANY -->
+<!-- ================================================================
+     PAGE 3: COMPANY NEWS
+     ================================================================ -->
+<div class="page-banner">
+    <div class="banner-left">
+        <img class="banner-logo" src="">
+        <div class="banner-text">
+            <div class="banner-brand">NewLeaf <span class="banner-system">System</span></div>
+            <div class="banner-tagline">DEFINED-RISK TRADING OS</div>
+        </div>
+    </div>
+    <div class="banner-right">
+        <div class="banner-date">{{REPORT_DATE}}</div>
+        <div class="banner-section">{{SYMBOL}} {{STRATEGY_NAME}} &middot; COMPANY NEWS</div>
+    </div>
+</div>
+
+<h2>{{COMPANY_HEADLINE}}</h2>
+
+<h3>Key Milestones</h3>
+<table>
+    <thead><tr><th>Milestone</th><th>Value</th></tr></thead>
+    <tbody>{{PRICE_JOURNEY_HTML}}</tbody>
+</table>
+
+<h3>Recent News</h3>
+<ul style="padding-left:16pt;font-size:8pt;">{{COMPANY_NEWS_BULLETS}}</ul>
+
+<div class="hw-tw">
+    <div class="headwinds">
+        <h3 style="color:#C0392B;">Headwinds</h3>
+        <ul style="padding-left:14pt;">{{COMPANY_HEADWINDS}}</ul>
+    </div>
+    <div class="tailwinds">
+        <h3 style="color:#1A7A4A;">Tailwinds</h3>
+        <ul style="padding-left:14pt;">{{COMPANY_TAILWINDS}}</ul>
+    </div>
+</div>
+
+<div class="page-break"></div>
+<!-- /IF_COMPANY -->
+
+<!-- IF_ANALYST -->
+<!-- ================================================================
+     PAGE 4: ANALYST CONSENSUS
+     ================================================================ -->
+<div class="page-banner">
+    <div class="banner-left">
+        <img class="banner-logo" src="">
+        <div class="banner-text">
+            <div class="banner-brand">NewLeaf <span class="banner-system">System</span></div>
+            <div class="banner-tagline">DEFINED-RISK TRADING OS</div>
+        </div>
+    </div>
+    <div class="banner-right">
+        <div class="banner-date">{{REPORT_DATE}}</div>
+        <div class="banner-section">{{SYMBOL}} {{STRATEGY_NAME}} &middot; ANALYST CONSENSUS</div>
+    </div>
+</div>
+
+<h2>Analyst Consensus &mdash; Wall Street Ratings</h2>
+
+<div style="text-align:center;margin:8pt 0;">
+    <div style="font-size:24pt;font-weight:800;color:#0B2D23;">{{ANALYST_COUNT}}</div>
+    <div style="font-size:7pt;color:#6B7280;text-transform:uppercase;letter-spacing:1pt;">Analysts Covering {{SYMBOL}}</div>
+</div>
+
+<div style="text-align:center;margin:6pt 0;">
+    <div style="font-size:11pt;font-weight:700;color:#C9A96E;text-transform:uppercase;">{{ANALYST_CONSENSUS}}</div>
+    <div style="font-size:7pt;color:#6B7280;">Consensus Rating</div>
+</div>
+
+<div class="analyst-bar">
+    <span class="buy" style="width:{{ANALYST_BUY_PCT}}%;">{{ANALYST_BUY_PCT}}% Buy</span>
+    <span class="hold" style="width:{{ANALYST_HOLD_PCT}}%;">{{ANALYST_HOLD_PCT}}% Hold</span>
+    <span class="sell" style="width:{{ANALYST_SELL_PCT}}%;">{{ANALYST_SELL_PCT}}% Sell</span>
+</div>
+
+<table style="margin-top:6pt;">
+    <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+    <tbody>
+        <tr><td>Average Price Target</td><td>{{ANALYST_TARGET_LOW}} &ndash; {{ANALYST_TARGET_HIGH}}</td></tr>
+        <tr><td>Current Price</td><td>{{CURRENT_PRICE}}</td></tr>
+    </tbody>
+</table>
+
+<div class="insight-box" style="margin-top:8pt;">
+    <h3>Analyst Nuance</h3>
+    <p style="font-size:8pt;">{{ANALYST_NUANCE}}</p>
+</div>
+
+<div class="page-break"></div>
+<!-- /IF_ANALYST -->
+
+<!-- ================================================================
+     PAGE 5: POSITION STRUCTURE
+     ================================================================ -->
+<div class="page-banner">
+    <div class="banner-left">
+        <img class="banner-logo" src="">
+        <div class="banner-text">
+            <div class="banner-brand">NewLeaf <span class="banner-system">System</span></div>
+            <div class="banner-tagline">DEFINED-RISK TRADING OS</div>
+        </div>
+    </div>
+    <div class="banner-right">
+        <div class="banner-date">{{REPORT_DATE}}</div>
+        <div class="banner-section">{{SYMBOL}} {{STRATEGY_NAME}} &middot; POSITION STRUCTURE</div>
+    </div>
+</div>
+
+<h2>Position Structure &amp; Profit/Loss Profile</h2>
+
+<h3>Strategic Rationale</h3>
+<ul class="checklist">
+    {{RATIONALE_POINTS}}
+</ul>
+
+<!-- Strike Rail -->
+<div class="strike-rail">
+    <div class="strike-box buy">
+        <span class="strike-label">LONG PUT</span>
+        <span class="strike-price">{{LONG_PUT_STRIKE}}</span>
+        <span class="strike-detail">Protection leg<br>Buy @ {{LONG_PUT_PREMIUM}}</span>
+    </div>
+    <span class="strike-arrow">&#9654;</span>
+    <div class="strike-box sell">
+        <span class="strike-label">SHORT PUT</span>
+        <span class="strike-price">{{SHORT_PUT_STRIKE}}</span>
+        <span class="strike-detail">Premium sold<br>Sell @ {{SHORT_PUT_PREMIUM}}</span>
+    </div>
+    <div class="profit-zone-box">
+        <span class="pz-label">PROFIT ZONE</span>
+        <span class="pz-range">{{SHORT_PUT_STRIKE}} &ndash; {{SHORT_CALL_STRIKE}}</span>
+        <span class="pz-note">Price must stay here<br>at expiration for full profit</span>
+    </div>
+    <div class="strike-box sell">
+        <span class="strike-label">SHORT CALL</span>
+        <span class="strike-price">{{SHORT_CALL_STRIKE}}</span>
+        <span class="strike-detail">Premium sold<br>Sell @ {{SHORT_CALL_PREMIUM}}</span>
+    </div>
+    <span class="strike-arrow">&#9654;</span>
+    <div class="strike-box buy">
+        <span class="strike-label">LONG CALL</span>
+        <span class="strike-price">{{LONG_CALL_STRIKE}}</span>
+        <span class="strike-detail">Protection leg<br>Buy @ {{LONG_CALL_PREMIUM}}</span>
+    </div>
+</div>
+
+<!-- P&L Chart (SVG) -->
+<div class="pnl-chart">
+    <div class="pnl-title">Profit / Loss Profile at Expiration</div>
+    <svg viewBox="0 0 520 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:160pt;">
+        <!-- Grid -->
+        <line x1="40" y1="30" x2="40" y2="160" stroke="#E6E8EB" stroke-width="1"/>
+        <line x1="40" y1="100" x2="500" y2="100" stroke="#94a3b8" stroke-width="0.5" stroke-dasharray="3,3"/>
+
+        <!-- Profit zone fill -->
+        <rect x="170" y="30" width="180" height="70" fill="#f0fdf4" opacity="0.5"/>
+
+        <!-- P&L line -->
+        <polyline points="60,160 170,160 200,40 350,40 380,160 480,160"
+                  fill="none" stroke="#0B2D23" stroke-width="2.5" stroke-linejoin="round"/>
+
+        <!-- Zero line -->
+        <line x1="40" y1="100" x2="500" y2="100" stroke="#475569" stroke-width="0.5"/>
+
+        <!-- Breakeven markers -->
+        <line x1="183" y1="95" x2="183" y2="165" stroke="#dc2626" stroke-width="1" stroke-dasharray="3,2"/>
+        <line x1="367" y1="95" x2="367" y2="165" stroke="#dc2626" stroke-width="1" stroke-dasharray="3,2"/>
+
+        <!-- Current price marker -->
+        <line x1="270" y1="25" x2="270" y2="165" stroke="#C9A96E" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <text x="270" y="20" text-anchor="middle" font-size="7" fill="#C9A96E" font-weight="600">Current</text>
+
+        <!-- Row 1: Breakeven labels (above axis) -->
+        <text x="183" y="168" text-anchor="middle" font-size="6" fill="#dc2626" font-weight="600">BE {{BREAKEVEN_LOW}}</text>
+        <text x="367" y="168" text-anchor="middle" font-size="6" fill="#dc2626" font-weight="600">BE {{BREAKEVEN_HIGH}}</text>
+        <!-- Row 2: Strike prices (below axis) -->
+        <text x="60" y="180" text-anchor="middle" font-size="7" fill="#4B5563">{{LONG_PUT_STRIKE}}</text>
+        <text x="200" y="180" text-anchor="middle" font-size="7" fill="#4B5563">{{SHORT_PUT_STRIKE}}</text>
+        <text x="270" y="180" text-anchor="middle" font-size="7" fill="#C9A96E" font-weight="600">{{CURRENT_PRICE}}</text>
+        <text x="350" y="180" text-anchor="middle" font-size="7" fill="#4B5563">{{SHORT_CALL_STRIKE}}</text>
+        <text x="480" y="180" text-anchor="middle" font-size="7" fill="#4B5563">{{LONG_CALL_STRIKE}}</text>
+
+        <!-- Profit / Loss annotations -->
+        <text x="275" y="55" text-anchor="middle" font-size="8" fill="#059669" font-weight="700">+{{MAX_PROFIT}}</text>
+        <text x="275" y="68" text-anchor="middle" font-size="6.5" fill="#059669">PROFIT ZONE</text>
+        <text x="275" y="78" text-anchor="middle" font-size="6" fill="#6B7280">{{SHORT_PUT_STRIKE}} &ndash; {{SHORT_CALL_STRIKE}}</text>
+
+        <text x="50" y="95" text-anchor="middle" font-size="7" fill="#4B5563">$0</text>
+        <text x="120" y="155" text-anchor="middle" font-size="7" fill="#dc2626" font-weight="600">-{{MAX_LOSS}}</text>
+        <text x="430" y="155" text-anchor="middle" font-size="7" fill="#dc2626" font-weight="600">-{{MAX_LOSS}}</text>
+
+        <!-- X-axis label -->
+        <text x="270" y="195" text-anchor="middle" font-size="7" fill="#9CA3AF">Underlying Price at Expiration</text>
+    </svg>
+</div>
+
+<div class="price-line">
+    Current {{SYMBOL}}: <strong>{{CURRENT_PRICE}} {{PRICE_CHANGE}}</strong>{{MA_SEGMENT}}
+</div>
+
+<div class="page-break"></div>
+
+<!-- ================================================================
+     PAGE 3: EXECUTION GUIDE
+     ================================================================ -->
+<div class="page-banner">
+    <div class="banner-left">
+        <img class="banner-logo" src="">
+        <div class="banner-text">
+            <div class="banner-brand">NewLeaf <span class="banner-system">System</span></div>
+            <div class="banner-tagline">DEFINED-RISK TRADING OS</div>
+        </div>
+    </div>
+    <div class="banner-right">
+        <div class="banner-date">{{REPORT_DATE}}</div>
+        <div class="banner-section">{{SYMBOL}} {{STRATEGY_NAME}} &middot; EXECUTION GUIDE</div>
+    </div>
+</div>
+
+<h2>Execution Guide &amp; Liquidity Analysis</h2>
+<p style="color:#64748b;font-size:8pt;">Understanding bid-ask spreads and expected slippage is crucial for realistic profit expectations.</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Leg</th>
+            <th>Strike</th>
+            <th>Bid &times; Ask</th>
+            <th>Last Trade</th>
+            <th>VWAP</th>
+            <th>Spread</th>
+            <th>Open Interest</th>
+            <th>Trades</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{EXECUTION_TABLE_ROWS}}
+    </tbody>
+</table>
+
+<p style="font-size:8pt;color:#475569;">Estimated total slippage: {{ESTIMATED_SLIPPAGE}}. Mid-market entry price: {{MID_MARKET_PRICE}}.</p>
+
+<!-- Recommended Entry + Broker Requirements -->
+<div class="entry-grid">
+    <div class="entry-box entry-rec">
+        <h3>RECOMMENDED ENTRY</h3>
+        <table>
+            <tr><td>Order Type</td><td>Limit &mdash; All-or-None</td></tr>
+            <tr><td>Limit Price</td><td>{{MID_MARKET_PRICE}}</td></tr>
+            <tr><td>Best Entry Window</td><td>10:30 AM &ndash; 2:00 PM ET</td></tr>
+            <tr><td>Position Sizing</td><td>Start 1&ndash;2 contracts</td></tr>
+            <tr><td>Scale Up If</td><td>Filled at target price</td></tr>
+        </table>
+    </div>
+    <div class="entry-box entry-broker">
+        <h3>BROKER REQUIREMENTS</h3>
+        <table>
+            <tr><td>Options Level</td><td>Level 3 (spreads) min.</td></tr>
+            <tr><td>Margin per Contract</td><td>{{MARGIN_PER_CONTRACT}}</td></tr>
+            <tr><td>Commission Estimate</td><td>$1&ndash;5 per leg</td></tr>
+            <tr><td>Max Buying Power Used</td><td>$600 per contract</td></tr>
+        </table>
+    </div>
+</div>
+
+<h2>Dealer Positioning &amp; Gamma Wall Analysis</h2>
+
+<p style="font-size:8.5pt;color:#475569;">{{GAMMA_WALL_EXPLANATION}}</p>
+
+<!-- Gamma Exposure Chart (dynamic SVG) -->
+<div class="gamma-chart">
+    <div class="gamma-chart-title">Gamma Exposure Profile by Strike (Open Interest)</div>
+    {{GAMMA_CHART_SVG}}
+</div>
+
+<h3>Position Alignment to Gamma Walls</h3>
+<ul class="checklist">
+    {{GAMMA_ALIGNMENT_POINTS}}
+</ul>
+
+<div class="page-break"></div>
+
+<!-- ================================================================
+     PAGE 4: GREEKS & EXIT PROTOCOL
+     ================================================================ -->
+<div class="page-banner">
+    <div class="banner-left">
+        <img class="banner-logo" src="">
+        <div class="banner-text">
+            <div class="banner-brand">NewLeaf <span class="banner-system">System</span></div>
+            <div class="banner-tagline">DEFINED-RISK TRADING OS</div>
+        </div>
+    </div>
+    <div class="banner-right">
+        <div class="banner-date">{{REPORT_DATE}}</div>
+        <div class="banner-section">{{SYMBOL}} {{STRATEGY_NAME}} &middot; DEALER POSITIONING &amp; GREEKS</div>
+    </div>
+</div>
+
+<h2>Greeks &amp; Portfolio Dynamics</h2>
+
+<div class="two-col">
+    <div class="greek-box">
+        <div class="greek-header">THETA (TIME DECAY)</div>
+        <div class="greek-value">{{THETA_VALUE}}</div>
+        <div class="greek-desc">{{THETA_EXPLANATION}}</div>
+    </div>
+    <div class="greek-box">
+        <div class="greek-header">VEGA (VOLATILITY SENSITIVITY)</div>
+        <div class="greek-value">{{VEGA_VALUE}}</div>
+        <div class="greek-desc">{{VEGA_EXPLANATION}}</div>
+    </div>
+</div>
+
+<h2>Event Risk Calendar</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Event</th>
+            <th>Potential Impact</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{EVENT_RISK_ROWS}}
+    </tbody>
+</table>
+
+<h2>Exit Protocol &amp; Adjustment Framework</h2>
+
+<!-- Exit Card 1: Profit Target -->
+<div class="exit-card">
+    <div class="exit-card-header">
+        <div class="exit-card-title">Profit Target Exit</div>
+        <span class="exit-badge profit">TAKE PROFIT</span>
+    </div>
+    <div class="exit-trigger">Trigger: {{EXIT_PROFIT_TRIGGER}}</div>
+    <div class="exit-detail">{{EXIT_PROFIT_DETAIL}}</div>
+</div>
+
+<!-- Exit Card 2: Stop Loss -->
+<div class="exit-card">
+    <div class="exit-card-header">
+        <div class="exit-card-title">Stop Loss Exit</div>
+        <span class="exit-badge stop">STOP LOSS</span>
+    </div>
+    <div class="exit-trigger">Trigger: {{EXIT_STOP_TRIGGER}}</div>
+    <div class="exit-detail">{{EXIT_STOP_DETAIL}}</div>
+</div>
+
+<!-- Exit Card 3: Time-Based -->
+<div class="exit-card">
+    <div class="exit-card-header">
+        <div class="exit-card-title">Time-Based Exit</div>
+        <span class="exit-badge time">TIME EXIT</span>
+    </div>
+    <div class="exit-trigger">Trigger: {{EXIT_TIME_TRIGGER}}</div>
+    <div class="exit-detail">{{EXIT_TIME_DETAIL}}</div>
+</div>
+
+<!-- Exit Card 4: Adjustment -->
+<div class="exit-card">
+    <div class="exit-card-header">
+        <div class="exit-card-title">Adjustment: Roll Up/Down</div>
+        <span class="exit-badge adjust">ADJUST</span>
+    </div>
+    <div class="exit-trigger">Trigger: {{EXIT_ADJUST_TRIGGER}}</div>
+    <div class="exit-detail">{{EXIT_ADJUST_DETAIL}}</div>
+</div>
+
+<!-- Theta Decay Schedule (fills page 4 bottom) -->
+<h3 style="margin-top:10pt;">Theta Decay Schedule (Estimated)</h3>
+<table>
+    <thead><tr><th>Period</th><th>Days</th><th>Est. Daily Decay</th><th>Cumulative</th></tr></thead>
+    <tbody>
+        {{THETA_SCHEDULE_ROWS}}
+    </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ================================================================
+     PAGE 5: CAPITAL ALLOCATION & STRATEGY SELECTION
+     ================================================================ -->
+<div class="page-banner">
+    <div class="banner-left">
+        <img class="banner-logo" src="">
+        <div class="banner-text">
+            <div class="banner-brand">NewLeaf <span class="banner-system">System</span></div>
+            <div class="banner-tagline">DEFINED-RISK TRADING OS</div>
+        </div>
+    </div>
+    <div class="banner-right">
+        <div class="banner-date">{{REPORT_DATE}}</div>
+        <div class="banner-section">{{SYMBOL}} {{STRATEGY_NAME}} &middot; POSITION GOVERNANCE</div>
+    </div>
+</div>
+
+<h2>Capital Allocation Framework</h2>
+<p style="font-size:8pt;color:#475569;">Maximum recommended exposure: 2% of total portfolio capital per position.</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Portfolio Size</th>
+            <th>Max Risk (2%)</th>
+            <th>Max Contracts</th>
+            <th>Max Margin Used</th>
+            <th>Recommendation</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{CAPITAL_TABLE_ROWS}}
+    </tbody>
+</table>
+
+<h2>Strategy Selection Framework</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Strategy</th>
+            <th>Max Profit</th>
+            <th>Max Loss</th>
+            <th>Win Prob.</th>
+            <th>Capital Req.</th>
+            <th>Selected</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{STRATEGY_TABLE_ROWS}}
+    </tbody>
+</table>
+
+<h3 style="margin-top:14pt;">Conditional Alternative</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Strategy</th>
+            <th>Max Profit</th>
+            <th>Max Loss</th>
+            <th>Win Prob.</th>
+            <th>Capital Req.</th>
+            <th>Selected</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{ALT_STRATEGY_TABLE_ROWS}}
+    </tbody>
+</table>
+
+<!-- Confidence Index (on page 5, after strategy tables) -->
+<h2>NewLeaf Confidence Index&trade;</h2>
+
+<div class="confidence-section">
+    <div class="confidence-score-big">{{TRADE_SCORE}}/100</div>
+    <div class="confidence-level-label">{{CONFIDENCE_LEVEL}} &middot; {{CONFIDENCE_THRESHOLD_LABEL}}</div>
+
+    <div class="confidence-bar-track">
+        <div class="confidence-bar-fill"></div>
+    </div>
+
+    <div class="confidence-tiers">
+        <div class="tier active">{{TRADE_SCORE}} &larr;<br>This Trade</div>
+        <div class="tier">60+<br>Recommended</div>
+        <div class="tier">70+<br>High Conviction</div>
+        <div class="tier">80+<br>Exceptional Setup</div>
+    </div>
+</div>
+
+<div class="warning-box">
+    <h3>Confidence Index Interpretation</h3>
+    <p style="font-size:8pt;color:#78350f;">{{SCORE_INTERPRETATION}}</p>
+    <ul>
+        {{SCORE_FACTORS}}
+    </ul>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ================================================================
+     PAGE 6: TRADE SPECIFICATION & DISCLOSURES
+     ================================================================ -->
+<div class="page-banner">
+    <div class="banner-left">
+        <img class="banner-logo" src="">
+        <div class="banner-text">
+            <div class="banner-brand">NewLeaf <span class="banner-system">System</span></div>
+            <div class="banner-tagline">DEFINED-RISK TRADING OS</div>
+        </div>
+    </div>
+    <div class="banner-right">
+        <div class="banner-date">{{REPORT_DATE}}</div>
+        <div class="banner-section">{{SYMBOL}} {{STRATEGY_NAME}} &middot; TRADE SPECIFICATION</div>
+    </div>
+</div>
+
+<h2>Complete Trade Specification</h2>
+<table class="spec-table">
+    <thead>
+        <tr>
+            <th>Parameter</th>
+            <th>Detail</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{TRADE_SPEC_ROWS}}
+    </tbody>
+</table>
+
+<!-- Disclosures -->
+<div class="disclosures">
+    <h3>Important Disclosures</h3>
+    <p><strong>Educational Purpose:</strong> This report is provided for educational and informational purposes only. It does not constitute investment advice, financial advice, trading advice, or any other type of professional advice.</p>
+    <p><strong>Risk Warning:</strong> Options trading involves substantial risk of loss and may not be suitable for all investors. The maximum loss on this position is {{MAX_LOSS}} per contract and could result in the total loss of invested capital.</p>
+    <p><strong>No Guarantees:</strong> Past performance is not indicative of future results. Market conditions can change rapidly, and the analysis herein reflects conditions at the time of generation only.</p>
+    <p><strong>Professional Consultation:</strong> Before making any investment decisions, consult with qualified financial, tax, and legal advisors.</p>
+    <p style="margin-top:6pt;text-align:center;color:#64748b;font-weight:600;">NewLeaf System &middot; Defined-Risk Trading OS &middot; support@newleafsystem.com<br>&copy; 2026 NewLeaf System. All rights reserved. Proprietary and confidential.</p>
+</div>
+
+</body>
+</html>

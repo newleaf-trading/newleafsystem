@@ -1,0 +1,637 @@
+/**
+ * UI Component Styles for NewLeaf System
+ * Institutional-grade design system
+ */
+
+/* ===============================
+   KPI Card
+   =============================== */
+.nl-kpi-card {
+  background: #fff;
+  border: 1px solid var(--nl-border, rgba(17, 24, 39, 0.10));
+  border-radius: var(--nl-radius-xl, 22px);
+  box-shadow: var(--nl-shadow-card, 0 10px 20px rgba(17, 24, 39, 0.06));
+  padding: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.nl-kpi-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 900;
+  color: var(--nl-muted-text-2, rgba(17, 24, 39, 0.55));
+  margin-bottom: 8px;
+}
+
+.nl-kpi-value {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+  color: var(--nl-text, #111827);
+  margin-bottom: 6px;
+}
+
+.nl-kpi-subtitle {
+  font-size: 12px;
+  color: var(--nl-muted-text, rgba(17, 24, 39, 0.68));
+  font-weight: 650;
+}
+
+/* ===============================
+   Segmented Tabs
+   =============================== */
+.nl-segmented-tabs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.nl-seg-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--nl-border, rgba(17, 24, 39, 0.10));
+  background: var(--nl-card-bg, #fff);
+  padding: 9px 14px;
+  border-radius: var(--nl-radius-pill, 999px);
+  font-weight: 800;
+  font-size: 12px;
+  color: rgba(17, 24, 39, 0.72);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.nl-seg-tab:hover {
+  background: rgba(11, 45, 35, 0.04);
+}
+
+.nl-seg-tab.active {
+  background: rgba(11, 45, 35, 0.08);
+  border-color: rgba(11, 45, 35, 0.18);
+  color: rgba(11, 45, 35, 0.95);
+}
+
+.nl-tab-count {
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+/* ===============================
+   Strategy Card
+   =============================== */
+.nl-strategy-card {
+  background: #fff;
+  border: 1px solid var(--nl-border, rgba(17, 24, 39, 0.10));
+  border-radius: var(--nl-radius-xl, 22px);
+  box-shadow: var(--nl-shadow-card, 0 10px 20px rgba(17, 24, 39, 0.06));
+  padding: 14px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.nl-strategy-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(17, 24, 39, 0.10);
+}
+
+.nl-strat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.nl-strat-ticker-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex: 1;
+}
+
+.nl-ticker-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--nl-border, rgba(17, 24, 39, 0.10));
+  background: rgba(11, 45, 35, 0.06);
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 11px;
+  color: rgba(17, 24, 39, 0.70);
+  flex-shrink: 0;
+}
+
+.nl-ticker-info h4 {
+  font-weight: 900;
+  letter-spacing: -0.2px;
+  margin: 0 0 3px 0;
+  font-size: 14px;
+}
+
+.nl-ticker-info span {
+  font-size: 12px;
+  color: var(--nl-muted-text-2, rgba(17, 24, 39, 0.55));
+  font-weight: 700;
+}
+
+.nl-strat-tag {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border-radius: var(--nl-radius-pill, 999px);
+  border: 1px solid rgba(201, 169, 110, 0.35);
+  background: rgba(201, 169, 110, 0.14);
+  color: rgba(17, 24, 39, 0.82);
+  white-space: nowrap;
+}
+
+.nl-strat-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 768px) {
+  .nl-strat-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.nl-metric-box {
+  border: 1px solid var(--nl-border, rgba(17, 24, 39, 0.10));
+  background: rgba(247, 248, 250, 0.65);
+  border-radius: 14px;
+  padding: 10px;
+}
+
+/* Primary metric (Reward:Risk) gets prominent styling */
+.nl-metric-box.primary {
+  background: linear-gradient(135deg, rgba(11, 45, 35, 0.10), rgba(201, 169, 110, 0.12));
+  border-color: rgba(11, 45, 35, 0.22);
+  border-width: 1.5px;
+}
+
+.nl-metric-label {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--nl-muted-text-2, rgba(17, 24, 39, 0.55));
+  margin-bottom: 6px;
+}
+
+.nl-metric-value {
+  font-weight: 900;
+  letter-spacing: -0.2px;
+  font-size: 14px;
+}
+
+/* Primary metric value is larger and darker */
+.nl-metric-value.primary {
+  font-size: 17px;
+  color: var(--nl-primary-green, #0B2D23);
+  font-weight: 900;
+}
+
+.nl-metric-value.positive {
+  color: rgba(11, 122, 82, 0.95);
+}
+
+.nl-metric-value.negative {
+  color: rgba(201, 79, 79, 0.95);
+}
+
+.nl-risk-bar-wrap {
+  margin-bottom: 12px;
+}
+
+.nl-risk-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.nl-risk-label {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--nl-muted-text-2, rgba(17, 24, 39, 0.55));
+}
+
+.nl-confidence {
+  font-size: 11px;
+  color: var(--nl-muted-text, rgba(17, 24, 39, 0.68));
+  font-weight: 800;
+}
+
+.nl-confidence strong {
+  color: var(--nl-primary-green, #0B2D23);
+  font-weight: 900;
+}
+
+.nl-risk-track {
+  height: 8px;
+  border-radius: var(--nl-radius-pill, 999px);
+  background: rgba(17, 24, 39, 0.08);
+  overflow: hidden;
+  border: 1px solid var(--nl-border, rgba(17, 24, 39, 0.10));
+}
+
+.nl-risk-fill {
+  height: 100%;
+  border-radius: var(--nl-radius-pill, 999px);
+  transition: width 0.3s ease;
+}
+
+.nl-strat-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ===============================
+   Strategy Hero Component
+   =============================== */
+.nl-strategy-hero {
+  background: linear-gradient(135deg, rgba(11, 45, 35, 0.95), rgba(11, 45, 35, 0.88)),
+              radial-gradient(circle at 80% 20%, rgba(201, 169, 110, 0.18), transparent 50%);
+  border-radius: var(--nl-radius-xl, 22px);
+  padding: 24px;
+  margin-bottom: 24px;
+  color: #fff;
+  box-shadow: var(--nl-shadow-md, 0 10px 24px rgba(17, 24, 39, 0.08));
+}
+
+.nl-hero-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.nl-hero-back {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: var(--nl-radius-pill, 999px);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nl-hero-back:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.nl-hero-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.nl-hero-tag {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: var(--nl-radius-pill, 999px);
+  border: 1px solid rgba(201, 169, 110, 0.50);
+  background: rgba(201, 169, 110, 0.22);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.nl-hero-spot,
+.nl-hero-dte,
+.nl-hero-published {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.80);
+}
+
+.nl-hero-title {
+  margin-bottom: 24px;
+}
+
+.nl-hero-title h1 {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.nl-hero-ticker {
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: -0.6px;
+  color: #fff;
+}
+
+.nl-hero-company {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.nl-hero-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 768px) {
+  .nl-hero-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.nl-hero-stat {
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.nl-hero-stat.primary {
+  background: linear-gradient(135deg, rgba(201, 169, 110, 0.28), rgba(255, 255, 255, 0.12));
+  border-color: rgba(201, 169, 110, 0.40);
+}
+
+.nl-hero-stat-label {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.70);
+  margin-bottom: 8px;
+}
+
+.nl-hero-stat-value {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+  color: #fff;
+}
+
+.nl-hero-stat.primary .nl-hero-stat-value {
+  font-size: 24px;
+  color: var(--nl-soft-gold, #C9A96E);
+}
+
+.nl-hero-stat-value.positive {
+  color: rgba(162, 242, 208, 0.95);
+}
+
+.nl-hero-stat-value.negative {
+  color: rgba(255, 182, 182, 0.95);
+}
+
+/* ===============================
+   StatTile Component
+   =============================== */
+.nl-stat-tile {
+  background: #fff;
+  border: 1px solid var(--nl-border, rgba(17, 24, 39, 0.10));
+  border-radius: var(--nl-radius-md, 16px);
+  padding: 12px;
+}
+
+.nl-stat-tile-label {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--nl-muted-text-2, rgba(17, 24, 39, 0.55));
+  margin-bottom: 6px;
+}
+
+.nl-stat-tile-value {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.2px;
+  color: var(--nl-text, #111827);
+}
+
+.nl-add-btn {
+  padding: 9px 14px;
+  border-radius: 14px;
+  font-weight: 900;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid rgba(11, 45, 35, 0.22);
+}
+
+.nl-add-btn.primary {
+  background: var(--nl-primary-green, #0B2D23);
+  color: #fff;
+  box-shadow: 0 14px 26px rgba(11, 45, 35, 0.14);
+}
+
+.nl-add-btn.primary:hover {
+  background: #0a2b1f;
+  transform: translateY(-1px);
+}
+
+.nl-add-btn.added {
+  background: rgba(11, 45, 35, 0.06);
+  color: rgba(11, 45, 35, 0.95);
+  border-color: rgba(11, 45, 35, 0.22);
+}
+
+/* ===============================
+   Status Pill
+   =============================== */
+.nl-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--nl-radius-pill, 999px);
+  font-weight: 900;
+  font-size: 12px;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
+.nl-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
+}
+
+/* ===============================
+   App Table
+   =============================== */
+.nl-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--nl-radius-xl, 22px);
+  border: 1px solid var(--nl-border, rgba(17, 24, 39, 0.10));
+}
+
+.nl-app-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+}
+
+.nl-app-table th {
+  padding: 12px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 900;
+  color: var(--nl-muted-text-2, rgba(17, 24, 39, 0.55));
+  background: rgba(247, 248, 250, 0.75);
+  text-align: left;
+  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.nl-app-table td {
+  padding: 12px;
+  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.nl-app-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.nl-app-table tbody tr:hover {
+  background: rgba(247, 248, 250, 0.5);
+}
+
+/* ===============================
+   Banner
+   =============================== */
+.nl-banner {
+  padding: 16px;
+  border-radius: var(--nl-radius-xl, 22px);
+  border: 1px solid rgba(11, 45, 35, 0.18);
+  background: radial-gradient(900px 360px at 20% 0%, rgba(201, 169, 110, 0.20), transparent 60%),
+              linear-gradient(90deg, rgba(11, 45, 35, 0.95), rgba(11, 45, 35, 0.80));
+  color: #fff;
+  box-shadow: var(--nl-shadow-lg, 0 18px 44px rgba(17, 24, 39, 0.10));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nl-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.nl-banner-icon {
+  font-size: 24px;
+}
+
+.nl-banner-text h3 {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  letter-spacing: -0.2px;
+  font-weight: 900;
+}
+
+.nl-banner-text p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.nl-banner-badge {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  border-radius: var(--nl-radius-pill, 999px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.12);
+  white-space: nowrap;
+}
+
+/* ===============================
+   Button
+   =============================== */
+.nl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.08s ease;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.nl-btn:active {
+  transform: translateY(1px);
+}
+
+.nl-btn-sm {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.nl-btn-md {
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
+.nl-btn-lg {
+  padding: 12px 18px;
+  font-size: 14px;
+}
+
+.nl-btn-primary {
+  background: var(--nl-primary-green, #0B2D23);
+  color: #fff;
+  border-color: rgba(11, 45, 35, 0.22);
+  box-shadow: 0 14px 26px rgba(11, 45, 35, 0.14);
+}
+
+.nl-btn-primary:hover {
+  background: #0a2b1f;
+}
+
+.nl-btn-ghost {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--nl-border, rgba(17, 24, 39, 0.10));
+  color: rgba(17, 24, 39, 0.84);
+}
+
+.nl-btn-ghost:hover {
+  background: #fff;
+}

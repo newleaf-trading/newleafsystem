@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-06YFVHFNYT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-06YFVHFNYT");</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NewLeaf System — Bear Call Spread Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,700&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="nl-brand.css">
+<style>
+:root{--forest: #0B2D23;--gold: #C9A96E;--cream: #F7F5F0;--ink: #0B0F14;--ink-mid:#3d3d35;--ink-muted:#6b6b60;--ink-faint:#9b9b8e;--white:#fff;--border:rgba(15,61,46,.12);--accent:#b83c20;}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter', sans-serif;background:var(--cream);color:var(--ink)}
+
+/* Navigation - Unified */
+nav{background:var(--forest);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-text{font-family:'Playfair Display', serif;font-size:18px;font-weight:400;color:var(--gold);letter-spacing:.01em}
+.logo-text span{color:rgba(201,169,110,.5);font-style:italic}
+.nav{display:flex;gap:0;list-style:none;align-items:center}
+.nav>a,.nav>.nav-item>a{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(201,169,110,.6);text-decoration:none;padding:0 14px;height:56px;display:flex;align-items:center;border-bottom:2px solid transparent;transition:all .2s}
+.nav>a:hover,.nav>a.active,.nav>.nav-item>a:hover,.nav>.nav-item>a.active{color:var(--gold);border-bottom-color:var(--gold)}
+.nav-item{position:relative;height:56px;display:flex;align-items:center}
+.nav-item>a{cursor:pointer}
+.nav-dropdown{position:absolute;top:56px;left:0;background:var(--forest);min-width:220px;border-radius:0 0 8px 8px;box-shadow:0 4px 12px rgba(0,0,0,.2);opacity:0;visibility:hidden;transform:translateY(-10px);transition:all .2s;z-index:200}
+.nav-item:hover .nav-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dropdown-group{padding:12px 0}
+.nav-dropdown-group:not(:last-child){border-bottom:1px solid rgba(201,169,110,.15)}
+.nav-dropdown-label{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);padding:8px 18px 6px;font-weight:400}
+.nav-dropdown a{font-family:'Inter', sans-serif;font-size:13px;color:rgba(255,255,255,.75);text-decoration:none;padding:8px 18px;display:block;transition:all .15s}
+.nav-dropdown a:hover{color:var(--gold);background:rgba(201,169,110,.08)}
+.nav-dropdown a.active{color:var(--gold);font-weight:500}
+.scan-time{font-family:'Space Mono',monospace;font-size:9px;color:rgba(201,169,110,.4);letter-spacing:.06em}
+
+.wrap{max-width:1280px;margin:0 auto;padding:0 2rem}
+.page-hdr{padding:32px 0 20px}
+.page-hdr h1{font-family:'Playfair Display', serif;font-size:36px;font-weight:300;color:var(--forest);margin-bottom:8px}
+.page-hdr .sub{font-size:13px;color:var(--ink-muted);max-width:600px}
+.summary-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.sc{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.sc-label{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:5px}
+.sc-val{font-family:'Playfair Display', serif;font-size:28px;font-weight:400;color:var(--forest)}
+.table-wrap{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:40px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr{border-bottom:1px solid var(--border)}
+th{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-muted);padding:10px 12px;text-align:left}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:last-child{border-bottom:none}
+td{padding:11px 12px;color:var(--ink-mid);font-family:'Space Mono',monospace;font-size:11px}
+td.sym{font-size:13px;font-weight:700;color:var(--ink);font-family:'Inter', sans-serif}
+.loading{text-align:center;padding:40px;color:var(--ink-faint)}
+.score-help{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid rgba(160,98,12,.45);color:#a0620c;font-size:8px;font-weight:700;text-decoration:none;margin-left:4px;vertical-align:middle;line-height:1}
+.score-help:hover{background:rgba(160,98,12,.08)}
+
+/* Strategy Hero Component */
+.strategy-hero{background:linear-gradient(135deg,rgba(15,61,46,.03) 0%,rgba(201,169,110,.05) 100%);border-bottom:3px solid var(--accent);margin-bottom:32px}
+.hero-container{max-width:1280px;margin:0 auto;padding:48px 2rem 40px}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+.hero-content{display:flex;flex-direction:column;gap:20px}
+.hero-eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.hero-title{font-family:'Playfair Display', serif;font-size:clamp(32px,5vw,48px);font-weight:300;font-style:italic;color:var(--forest);line-height:1.1;letter-spacing:-.02em}
+.hero-subtitle{font-size:15px;color:var(--ink-mid);line-height:1.6;max-width:540px}
+.hero-benefits{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:8px}
+.benefit-card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:14px 16px;display:flex;align-items:start;gap:10px;transition:all .2s}
+.benefit-card:hover{box-shadow:0 4px 12px rgba(15,61,46,.08);transform:translateY(-2px)}
+.benefit-icon{font-size:20px;line-height:1;flex-shrink:0}
+.benefit-text{display:flex;flex-direction:column;gap:2px}
+.benefit-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.benefit-desc{font-size:11px;color:var(--ink-muted);line-height:1.4}
+.hero-video-container{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(15,61,46,.08);transition:all .3s}
+.hero-video-container:hover{box-shadow:0 8px 24px rgba(15,61,46,.15)}
+.video-wrapper{position:relative;padding-bottom:56.25%;height:0;background:linear-gradient(135deg,#1a5c44 0%,#0B2D23 100%);display:flex;align-items:center;justify-content:center}
+.video-wrapper video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
+.video-caption{padding:14px 18px;background:rgba(15,61,46,.02);border-top:1px solid var(--border)}
+.video-caption-title{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:4px}
+.video-caption-text{font-size:11px;color:var(--ink-muted);line-height:1.5}
+
+/* Utility */
+.sdot{width:6px;height:6px;border-radius:50%;background:#5dba8e;display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+
+@media(max-width:768px){
+  .hero-grid{grid-template-columns:1fr;gap:24px}
+}
+</style>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<script src="load-nav.js" defer></script>
+
+<!-- Strategy Hero Component -->
+<section class="strategy-hero">
+  <div class="hero-container">
+    <div class="hero-grid">
+      <!-- Left: Strategy Info -->
+      <div class="hero-content">
+        <p class="hero-eyebrow">📉 OPTIONS STRATEGY GUIDE</p>
+        <h1 class="hero-title">Bear Call Spread: Bearish Credit Strategy</h1>
+        <p class="hero-subtitle">
+          Sell a call at a lower strike and buy a call at a higher strike to create a credit spread. Profit when the stock stays below your short strike. Limited risk with defined max loss and bearish directional bias.
+        </p>
+
+        <div class="hero-benefits">
+          <div class="benefit-card">
+            <div class="benefit-icon">💰</div>
+            <div class="benefit-text">
+              <span class="benefit-label">Upfront Credit</span>
+              <span class="benefit-desc">Receive premium when opening the position</span>
+            </div>
+          </div>
+
+          <div class="benefit-card">
+            <div class="benefit-icon">🛡️</div>
+            <div class="benefit-text">
+              <span class="benefit-label">Capped Risk</span>
+              <span class="benefit-desc">Max loss is width of strikes minus credit</span>
+            </div>
+          </div>
+
+          <div class="benefit-card">
+            <div class="benefit-icon">📉</div>
+            <div class="benefit-text">
+              <span class="benefit-label">Bearish Profit</span>
+              <span class="benefit-desc">Make money when stock declines or stays flat</span>
+            </div>
+          </div>
+
+          <div class="benefit-card">
+            <div class="benefit-icon">⏱️</div>
+            <div class="benefit-text">
+              <span class="benefit-label">Time Advantage</span>
+              <span class="benefit-desc">Theta decay helps your position daily</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Video -->
+      <div class="hero-video-container">
+        <div class="video-wrapper">
+          <video controls poster="https://pub-554c552d94e74e32822dd23be2656ba0.r2.dev/thumbnails/bull-call-spread.jpg">
+            <source src="https://pub-554c552d94e74e32822dd23be2656ba0.r2.dev/strategy-guides/bull-call-spread.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+        <div class="video-caption">
+          <div class="video-caption-title">📹 Call Spread Strategies (3 min)</div>
+          <div class="video-caption-text">
+            Understand call spread mechanics including bear call and bull call variations. Learn strike selection, risk management, and when to use each strategy type.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+
+  <div class="summary-row">
+    <div class="sc"><p class="sc-label">Eligible</p><p class="sc-val" id="s-count">--</p></div>
+    <div class="sc"><p class="sc-label">Avg Score</p><p class="sc-val" id="s-score">--</p></div>
+    <div class="sc"><p class="sc-label">Top Pick</p><p class="sc-val" style="font-size:20px" id="s-top">--</p></div>
+    <div class="sc"><p class="sc-label">Min Score</p><p class="sc-val" style="font-size:20px">30</p></div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Symbol</th><th>Price</th><th>Score <a href="strategy-logic.html?s=BEAR_CALL&tab=logic" class="score-help" onclick="event.stopPropagation()">?</a></th><th>Reason</th><th>Setup</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="5" class="loading">Loading BEAR_CALL opportunities...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="public/js/pipelineAdapter.browser.js"></script>
+<script src="public/js/strategyEngine.browser.js"></script>
+<script src="public/js/dataLoader.js"></script>
+<script>
+// Clock
+setInterval(() => {
+  const t = new Date();
+  const et = t.toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour:'2-digit', minute:'2-digit', hour12: false });
+  document.getElementById('scan-time').textContent = et + ' ET';
+}, 1000);
+
+function formatSetup(setup) {
+  if (!setup) return '--';
+  try {
+    const action = setup.action || '';
+    if (action === 'SELL PUT') return `SELL $${setup.strike?.toFixed(0)} PUT @ $${setup.premium?.toFixed(2)} (${setup.dte}d)`;
+    if (action.includes('SPREAD')) return `${action}: ${setup.dte}d DTE`;
+    if (action.includes('CALENDAR')) return `CALENDAR: ${setup.shortDTE}d / ${setup.longDTE}d`;
+    return `${action}${setup.dte ? ` (${setup.dte}d)` : ''}`;
+  } catch (e) {
+    return '--';
+  }
+}
+async function loadData() {
+  try {
+    const loader = new DataLoader();
+    const opps = await loader.loadStrategyData('BEAR_CALL', { minScore: 30, limit: 50 });
+    document.getElementById('s-count').textContent = opps.length;
+    document.getElementById('s-score').textContent = opps.length > 0 ? Math.round(opps.reduce((s, o) => s + o.score, 0) / opps.length) : 0;
+    document.getElementById('s-top').textContent = opps.length > 0 ? opps[0].symbol : '--';
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = opps.length === 0 ? '<tr><td colspan="5" class="loading">No opportunities found</td></tr>' : 
+      opps.map(o => `<tr><td class="sym"><a href="stock.html?symbol=${o.symbol}&strategy=bear_call_spread" style="color:inherit;text-decoration:none">${o.symbol}</a></td><td>$${o.price?.toFixed(2)||'--'}</td><td style="font-weight:700;color:var(--accent)">${o.score}</td><td>${o.reason||'--'}</td><td style="font-size:10px">${formatSetup(o.setup)}</td></tr>`).join('');
+  } catch (error) {
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="5" class="loading">Error: ' + error.message + '</td></tr>';
+  }
+}
+loadData();
+</script>
+</body>
+</html>

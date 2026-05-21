@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NewLeaf Recommendations — System Flow</title>
+<style>
+:root {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --border: #334155;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --dim: #64748b;
+  --green: #22c55e;
+  --blue: #3b82f6;
+  --purple: #8b5cf6;
+  --orange: #f59e0b;
+  --red: #ef4444;
+  --pink: #ec4899;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  padding: 48px;
+  line-height: 1.6;
+}
+
+h1 {
+  font-size: 36px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #22c55e, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  font-size: 18px;
+  color: var(--muted);
+  margin-bottom: 48px;
+}
+
+/* Flow section */
+.flow {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.phase {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  position: relative;
+}
+
+.phase::before {
+  content: attr(data-step);
+  position: absolute;
+  top: -14px;
+  left: 24px;
+  background: var(--bg);
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--dim);
+}
+
+.phase-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.phase-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.phase-title {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.phase-desc {
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.phase-command {
+  background: #0f172a;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 14px;
+  color: var(--green);
+  margin-top: 16px;
+  display: inline-block;
+}
+
+/* Steps within a phase */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.step {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.step-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.step-detail {
+  font-size: 13px;
+  color: var(--dim);
+}
+
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-green { background: var(--green); }
+.dot-blue { background: var(--blue); }
+.dot-purple { background: var(--purple); }
+.dot-orange { background: var(--orange); }
+.dot-red { background: var(--red); }
+.dot-pink { background: var(--pink); }
+
+/* Arrow connector */
+.connector {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.arrow {
+  width: 2px;
+  height: 32px;
+  background: linear-gradient(180deg, var(--green), var(--blue));
+  position: relative;
+}
+
+.arrow::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: -4px;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--blue);
+  border-bottom: 2px solid var(--blue);
+  transform: rotate(45deg);
+}
+
+/* Outputs section */
+.outputs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.output-card {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.output-card .icon {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+.output-card .title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.output-card .desc {
+  font-size: 13px;
+  color: var(--dim);
+}
+
+.output-card .format {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--muted);
+  background: rgba(99, 102, 241, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+/* Channel badges */
+.channels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.channel {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.channel-linkedin { background: rgba(0, 119, 181, 0.15); color: #0077b5; border: 1px solid rgba(0, 119, 181, 0.3); }
+.channel-twitter { background: rgba(29, 161, 242, 0.15); color: #1da1f2; border: 1px solid rgba(29, 161, 242, 0.3); }
+.channel-instagram { background: rgba(225, 48, 108, 0.15); color: #e1306c; border: 1px solid rgba(225, 48, 108, 0.3); }
+.channel-email { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
+.channel-firebase { background: rgba(255, 152, 0, 0.15); color: #ff9800; border: 1px solid rgba(255, 152, 0, 0.3); }
+.channel-pdf { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+/* Data sources */
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.source {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+
+<h1>NewLeaf Recommendations Engine</h1>
+<p class="subtitle">End-to-end flow: Research → Generate → Publish → Distribute</p>
+
+<div class="flow">
+
+  <!-- Phase 1: Research & Data Collection -->
+  <div class="phase" data-step="Phase 1 — Research">
+    <div class="phase-header">
+      <div class="phase-icon" style="background: rgba(34, 197, 94, 0.15); color: var(--green);">&#128269;</div>
+      <div>
+        <div class="phase-title">Market Research & Data Collection</div>
+        <div class="phase-desc">Live market data + AI sentiment analysis from 4 engines</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-title"><span class="dot dot-green"></span>Alpaca Snapshot</div>
+        <div class="step-detail">Live spot price, daily change, volume for the symbol</div>
+      </div>
+      <div class="step">
+        <div class="step-title"><span class="dot dot-green"></span>Option Chain</div>
+        <div class="step-detail">Full chain for target expiry: strikes, bids, asks, Greeks, IV</div>
+      </div>
+      <div class="step">
+        <div class="step-title"><span class="dot dot-blue"></span>Gamma Wall Analysis</div>
+        <div class="step-detail">Put/call walls, dealer positioning from R2 CDN (scanner data)</div>
+      </div>
+      <div class="step">
+        <div class="step-title"><span class="dot dot-purple"></span>AI Sentiment</div>
+        <div class="step-detail">4-engine composite: Claude (30%), Grok (25%), Gemini (25%), Reddit (20%)</div>
+      </div>
+    </div>
+
+    <div class="sources">
+      <span class="source">Alpaca Markets API</span>
+      <span class="source">Cloudflare R2 CDN</span>
+      <span class="source">Claude CLI (web search)</span>
+      <span class="source">Grok/xAI API</span>
+      <span class="source">Google Gemini API</span>
+      <span class="source">Reddit/StockTwits</span>
+    </div>
+  </div>
+
+  <div class="connector"><div class="arrow"></div></div>
+
+  <!-- Phase 2: Strategy Generation -->
+  <div class="phase" data-step="Phase 2 — Generate Strategy">
+    <div class="phase-header">
+      <div class="phase-icon" style="background: rgba(59, 130, 246, 0.15); color: var(--blue);">&#9881;&#65039;</div>
+      <div>
+        <div class="phase-title">Strategy Construction & Analysis</div>
+        <div class="phase-desc">Auto-select strikes, build legs, run deep AI analysis</div>
+      </div>
+    </div>
+
+    <div class="phase-command">npm run publish -- BABA --strategy "iron condor" --expiry 2026-05-29</div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-title"><span class="dot dot-blue"></span>Strike Selection</div>
+        <div class="step-detail">Algorithm picks optimal strikes based on gamma walls, IV, spot price distance</div>
+      </div>
+      <div class="step">
+        <div class="step-title"><span class="dot dot-blue"></span>Leg Construction</div>
+        <div class="step-detail">Build 2-4 legs with calculated P&L, Greeks, breakevens, PoP</div>
+      </div>
+      <div class="step">
+        <div class="step-title"><span class="dot dot-purple"></span>Claude Deep Analysis</div>
+        <div class="step-detail">30-60s AI analysis: rationale, technicals (RSI, MACD, BB), theta schedule, risk</div>
+      </div>
+      <div class="step">
+        <div class="step-title"><span class="dot dot-green"></span>Firestore Write</div>
+        <div class="step-detail">tiles/{id} + analyses/{id} + weeklyPicks/{weekId} → React app serves live</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="arrow"></div></div>
+
+  <!-- Phase 3: Content Generation -->
+  <div class="phase" data-step="Phase 3 — Generate Content">
+    <div class="phase-header">
+      <div class="phase-icon" style="background: rgba(139, 92, 246, 0.15); color: var(--purple);">&#127912;</div>
+      <div>
+        <div class="phase-title">Multi-Format Content Generation</div>
+        <div class="phase-desc">One command generates all assets from enriched pick data</div>
+      </div>
+    </div>
+
+    <div class="phase-command">npm run content</div>
+
+    <div class="outputs-grid">
+      <div class="output-card">
+        <div class="icon">&#128196;</div>
+        <div class="title">PDF Report</div>
+        <div class="desc">Professional 3-page trade report with strategy rationale, technicals, risk analysis, theta schedule</div>
+        <div class="format">WeasyPrint → A4 landscape PDF</div>
+      </div>
+      <div class="output-card">
+        <div class="icon">&#127912;</div>
+        <div class="title">Social Media Cards</div>
+        <div class="desc">Platform-optimized images: LinkedIn (1200x627), Twitter (1200x675), Instagram (1080x1080)</div>
+        <div class="format">Puppeteer → PNG @2x</div>
+      </div>
+      <div class="output-card">
+        <div class="icon">&#9997;&#65039;</div>
+        <div class="title">Social Copy</div>
+        <div class="desc">AI-generated captions: LinkedIn (professional), Twitter (thread), Instagram (engaging + hashtags)</div>
+        <div class="format">Claude CLI → JSON</div>
+      </div>
+      <div class="output-card">
+        <div class="icon">&#127909;</div>
+        <div class="title">Video Script</div>
+        <div class="desc">Narration-ready Markdown: opening hook, per-pick segments, risk callouts, closing CTA</div>
+        <div class="format">Template → Markdown</div>
+      </div>
+      <div class="output-card">
+        <div class="icon">&#128230;</div>
+        <div class="title">Picks Archive</div>
+        <div class="desc">Structured JSON with all picks, metrics, analyses — single source of truth for the week</div>
+        <div class="format">picks.json (week archive)</div>
+      </div>
+      <div class="output-card">
+        <div class="icon">&#127916;</div>
+        <div class="title">Video Rendition (planned)</div>
+        <div class="desc">Automated MP4 per strategy: vertical (Shorts/Reels), horizontal (YouTube/LinkedIn), square (Feed)</div>
+        <div class="format">Remotion → MP4 H.264</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="arrow"></div></div>
+
+  <!-- Phase 4: Distribution -->
+  <div class="phase" data-step="Phase 4 — Distribute">
+    <div class="phase-header">
+      <div class="phase-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--orange);">&#128640;</div>
+      <div>
+        <div class="phase-title">Multi-Channel Distribution</div>
+        <div class="phase-desc">One-click publish to all channels with platform-specific content</div>
+      </div>
+    </div>
+
+    <div class="phase-command">npm run distribute</div>
+
+    <div class="channels">
+      <div class="channel channel-firebase">&#128293; Firebase / React App</div>
+      <div class="channel channel-linkedin">&#128188; LinkedIn</div>
+      <div class="channel channel-twitter">&#128038; Twitter / X</div>
+      <div class="channel channel-instagram">&#128247; Instagram</div>
+      <div class="channel channel-email">&#9993;&#65039; Email Newsletter</div>
+      <div class="channel channel-pdf">&#128196; PDF Reports</div>
+    </div>
+
+    <div class="steps" style="margin-top: 24px;">
+      <div class="step">
+        <div class="step-title"><span class="dot dot-orange"></span>Firebase (Live)</div>
+        <div class="step-detail">Already published during Phase 2. React app serves /picks/ immediately.</div>
+      </div>
+      <div class="step">
+        <div class="step-title"><span class="dot dot-blue"></span>LinkedIn Post</div>
+        <div class="step-detail">Professional copy + card image + optional video. Posts API with OAuth.</div>
+      </div>
+      <div class="step">
+        <div class="step-title"><span class="dot dot-blue"></span>Twitter Thread</div>
+        <div class="step-detail">3-tweet thread with card image. twitter-api-v2 package.</div>
+      </div>
+      <div class="step">
+        <div class="step-title"><span class="dot dot-pink"></span>Instagram</div>
+        <div class="step-detail">Square card/video + engaging caption with hashtags. Graph API.</div>
+      </div>
+      <div class="step">
+        <div class="step-title"><span class="dot dot-green"></span>Email</div>
+        <div class="step-detail">Weekly newsletter to 11+ subscribers. BCC for privacy. Gmail SMTP.</div>
+      </div>
+      <div class="step">
+        <div class="step-title"><span class="dot dot-red"></span>PDF Delivery</div>
+        <div class="step-detail">Attached to emails or served via R2 CDN download links.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector"><div class="arrow"></div></div>
+
+  <!-- Phase 5: Lifecycle -->
+  <div class="phase" data-step="Phase 5 — Lifecycle">
+    <div class="phase-header">
+      <div class="phase-icon" style="background: rgba(236, 72, 153, 0.15); color: var(--pink);">&#128200;</div>
+      <div>
+        <div class="phase-title">Week Close & Performance Tracking</div>
+        <div class="phase-desc">Calculate actual P&L, archive results, track win rate over time</div>
+      </div>
+    </div>
+
+    <div class="phase-command">npm run close</div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-title"><span class="dot dot-green"></span>P&L Calculation</div>
+        <div class="step-detail">Compare entry credit vs. actual close price. WIN / LOSS / PARTIAL result.</div>
+      </div>
+      <div class="step">
+        <div class="step-title"><span class="dot dot-blue"></span>Week Archive</div>
+        <div class="step-detail">Mark week as "past", update weeklyPicks with review data and win rate.</div>
+      </div>
+      <div class="step">
+        <div class="step-title"><span class="dot dot-purple"></span>Tile Deactivation</div>
+        <div class="step-detail">Set isActive: false on closed tiles. Remove from active picks display.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Full command reference -->
+<div style="max-width: 1200px; margin: 64px auto 0;">
+  <h2 style="font-size: 24px; margin-bottom: 24px; color: var(--muted);">Command Reference</h2>
+  <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+    <thead>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <th style="text-align: left; padding: 12px; color: var(--dim);">Command</th>
+        <th style="text-align: left; padding: 12px; color: var(--dim);">What It Does</th>
+        <th style="text-align: left; padding: 12px; color: var(--dim);">Outputs</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 12px;"><code style="color: var(--green);">npm run publish -- SYM --strategy "..." --expiry DATE</code></td>
+        <td style="padding: 12px; color: var(--muted);">Fetch data, build strategy, write to Firebase, run Claude analysis</td>
+        <td style="padding: 12px; color: var(--dim);">Firestore tile + analysis + enriched JSON</td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 12px;"><code style="color: var(--green);">npm run content</code></td>
+        <td style="padding: 12px; color: var(--muted);">Generate all content assets (PDF + cards + copy + video script)</td>
+        <td style="padding: 12px; color: var(--dim);">PDF, PNG cards, JSON copy, Markdown script</td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 12px;"><code style="color: var(--green);">npm run content:cards</code></td>
+        <td style="padding: 12px; color: var(--muted);">Generate social media card images only</td>
+        <td style="padding: 12px; color: var(--dim);">LinkedIn + Twitter + Instagram PNGs</td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 12px;"><code style="color: var(--green);">npm run content:copy</code></td>
+        <td style="padding: 12px; color: var(--muted);">Generate AI social media captions</td>
+        <td style="padding: 12px; color: var(--dim);">Platform-specific copy JSON</td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 12px;"><code style="color: var(--green);">npm run email:send</code></td>
+        <td style="padding: 12px; color: var(--muted);">Send weekly newsletter to subscribers</td>
+        <td style="padding: 12px; color: var(--dim);">Email to 11+ subscribers</td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 12px;"><code style="color: var(--green);">npm run distribute</code></td>
+        <td style="padding: 12px; color: var(--muted);">Publish to all social channels (planned)</td>
+        <td style="padding: 12px; color: var(--dim);">LinkedIn + Twitter + Instagram posts</td>
+      </tr>
+      <tr>
+        <td style="padding: 12px;"><code style="color: var(--green);">npm run close</code></td>
+        <td style="padding: 12px; color: var(--muted);">Close week, calculate P&L, archive results</td>
+        <td style="padding: 12px; color: var(--dim);">Updated Firestore with outcomes</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Prerequisites & Dependencies -->
+<div style="max-width: 1200px; margin: 64px auto 0;">
+  <h2 style="font-size: 24px; margin-bottom: 24px; color: var(--muted);">Prerequisites & Dependencies</h2>
+  <p style="color: var(--dim); margin-bottom: 24px; font-size: 15px;">
+    Everything needed to run this system on a fresh machine (e.g. if you copy/paste this folder).
+  </p>
+
+  <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+    <thead>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <th style="text-align: left; padding: 12px; color: var(--dim);">Dependency</th>
+        <th style="text-align: left; padding: 12px; color: var(--dim);">Required For</th>
+        <th style="text-align: left; padding: 12px; color: var(--dim);">Install Command</th>
+        <th style="text-align: left; padding: 12px; color: var(--dim);">Required?</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 12px; font-weight: 600;">Node.js 20+</td>
+        <td style="padding: 12px; color: var(--muted);">Everything — runtime for all scripts</td>
+        <td style="padding: 12px;"><code style="color: var(--green);">nvm install 20</code></td>
+        <td style="padding: 12px;"><span style="color: var(--red); font-weight: 700;">Required</span></td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 12px; font-weight: 600;">npm install</td>
+        <td style="padding: 12px; color: var(--muted);">Install node_modules (firebase-admin, puppeteer, nodemailer, etc.)</td>
+        <td style="padding: 12px;"><code style="color: var(--green);">npm install</code></td>
+        <td style="padding: 12px;"><span style="color: var(--red); font-weight: 700;">Required</span></td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 12px; font-weight: 600;">Claude CLI</td>
+        <td style="padding: 12px; color: var(--muted);">Deep strategy analysis (publish-pick) + social copy generation</td>
+        <td style="padding: 12px;"><code style="color: var(--green);">npm install -g @anthropic-ai/claude-code</code></td>
+        <td style="padding: 12px;"><span style="color: var(--red); font-weight: 700;">Required</span></td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 12px; font-weight: 600;">Firebase Service Account</td>
+        <td style="padding: 12px; color: var(--muted);">All Firestore reads/writes (tiles, analyses, weeklyPicks, users)</td>
+        <td style="padding: 12px;"><code style="color: var(--green);">Download from Firebase Console → serviceAccountKey.json</code></td>
+        <td style="padding: 12px;"><span style="color: var(--red); font-weight: 700;">Required</span></td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 12px; font-weight: 600;">Alpaca API Keys</td>
+        <td style="padding: 12px; color: var(--muted);">Live stock prices + option chain data</td>
+        <td style="padding: 12px;"><code style="color: var(--green);">Sign up at alpaca.markets → set in .env</code></td>
+        <td style="padding: 12px;"><span style="color: var(--red); font-weight: 700;">Required</span></td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 12px; font-weight: 600;">.env file</td>
+        <td style="padding: 12px; color: var(--muted);">All credentials (Alpaca, SMTP, sentiment keys, Firebase paths)</td>
+        <td style="padding: 12px;"><code style="color: var(--green);">cp .env.template .env && edit .env</code></td>
+        <td style="padding: 12px;"><span style="color: var(--red); font-weight: 700;">Required</span></td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 12px; font-weight: 600;">Python 3 + WeasyPrint</td>
+        <td style="padding: 12px; color: var(--muted);">PDF report generation only</td>
+        <td style="padding: 12px;"><code style="color: var(--green);">pip install weasyprint pypdf reportlab</code></td>
+        <td style="padding: 12px;"><span style="color: var(--orange);">Optional</span></td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 12px; font-weight: 600;">Grok API Key (xAI)</td>
+        <td style="padding: 12px; color: var(--muted);">Sentiment engine — X/Twitter social sentiment (25% weight)</td>
+        <td style="padding: 12px;"><code style="color: var(--green);">Get from console.x.ai → set SENTIMENT_GROK_API_KEY</code></td>
+        <td style="padding: 12px;"><span style="color: var(--orange);">Optional</span></td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 12px; font-weight: 600;">Gemini API Key (Google)</td>
+        <td style="padding: 12px; color: var(--muted);">Sentiment engine — Google News + sector trends (25% weight)</td>
+        <td style="padding: 12px;"><code style="color: var(--green);">Get from aistudio.google.com → set SENTIMENT_GEMINI_API_KEY</code></td>
+        <td style="padding: 12px;"><span style="color: var(--orange);">Optional</span></td>
+      </tr>
+      <tr>
+        <td style="padding: 12px; font-weight: 600;">Gmail App Password</td>
+        <td style="padding: 12px; color: var(--muted);">Weekly email newsletter sending (SMTP)</td>
+        <td style="padding: 12px;"><code style="color: var(--green);">Google Account → Security → App Passwords → set SMTP_PASS</code></td>
+        <td style="padding: 12px;"><span style="color: var(--orange);">For email only</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Claude CLI Details -->
+<div style="max-width: 1200px; margin: 48px auto 0;">
+  <h2 style="font-size: 24px; margin-bottom: 24px; color: var(--muted);">Claude CLI — Why It's Required</h2>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px;">
+      <h3 style="font-size: 16px; margin-bottom: 12px; color: var(--text);">1. Deep Strategy Analysis</h3>
+      <p style="font-size: 14px; color: var(--dim); margin-bottom: 12px;">
+        Used in <code style="color: var(--green);">publish-pick.cjs</code> and <code style="color: var(--green);">analyse-tiles.cjs</code>
+      </p>
+      <p style="font-size: 13px; color: var(--muted);">
+        Generates 4-section analysis per pick: strategy rationale, technical indicators (RSI, MACD, Bollinger Bands, moving averages), theta decay schedule with daily projections, and risk analysis with management plan.
+      </p>
+      <div style="margin-top: 12px; background: #0f172a; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 12px; color: var(--green);">
+        claude --print -p "Analyze this Iron Condor trade on BABA..."
+      </div>
+    </div>
+
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px;">
+      <h3 style="font-size: 16px; margin-bottom: 12px; color: var(--text);">2. Social Media Copy</h3>
+      <p style="font-size: 14px; color: var(--dim); margin-bottom: 12px;">
+        Used in <code style="color: var(--green);">generate-social-copy.js</code>
+      </p>
+      <p style="font-size: 13px; color: var(--muted);">
+        Generates platform-specific captions: LinkedIn (professional, 150-200 words), Twitter (3-tweet thread, 280 chars each), Instagram (engaging caption + 15 hashtags). Each tailored to the platform's tone and audience.
+      </p>
+      <div style="margin-top: 12px; background: #0f172a; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 12px; color: var(--green);">
+        claude --print -p "Generate social media posts for $BABA Iron Condor..."
+      </div>
+    </div>
+
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px;">
+      <h3 style="font-size: 16px; margin-bottom: 12px; color: var(--text);">3. Sentiment Analysis (Claude Engine)</h3>
+      <p style="font-size: 14px; color: var(--dim); margin-bottom: 12px;">
+        Used in <code style="color: var(--green);">sentiment-engine.cjs</code> (30% weight)
+      </p>
+      <p style="font-size: 13px; color: var(--muted);">
+        Performs web search for recent financial news, analyst reports, and market commentary. Returns sentiment score (0-100), key drivers with impact assessment, and material events. Uses <code>--allowedTools WebFetch,WebSearch</code>.
+      </p>
+      <div style="margin-top: 12px; background: #0f172a; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 12px; color: var(--green);">
+        claude --print --allowedTools WebFetch,WebSearch -p "Analyze sentiment for BABA..."
+      </div>
+    </div>
+
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px;">
+      <h3 style="font-size: 16px; margin-bottom: 12px; color: var(--text);">Install Claude CLI</h3>
+      <p style="font-size: 13px; color: var(--muted); margin-bottom: 16px;">
+        Claude CLI requires an Anthropic account. Once installed, authenticate with your API key.
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="background: #0f172a; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 12px; color: var(--green);">
+          npm install -g @anthropic-ai/claude-code
+        </div>
+        <div style="background: #0f172a; border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 12px; color: var(--green);">
+          # or via Homebrew (macOS):<br>brew install claude
+        </div>
+      </div>
+      <p style="font-size: 12px; color: var(--dim); margin-top: 12px;">
+        After install, run <code style="color: var(--muted);">claude</code> once to authenticate.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Start -->
+<div style="max-width: 1200px; margin: 48px auto 0;">
+  <h2 style="font-size: 24px; margin-bottom: 24px; color: var(--muted);">Quick Start (Fresh Machine)</h2>
+
+  <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; font-family: 'SF Mono', monospace; font-size: 14px; line-height: 2.2;">
+    <span style="color: var(--dim);"># 1. Install Node.js</span><br>
+    <span style="color: var(--green);">nvm install 20</span><br><br>
+    <span style="color: var(--dim);"># 2. Install Claude CLI</span><br>
+    <span style="color: var(--green);">npm install -g @anthropic-ai/claude-code</span><br>
+    <span style="color: var(--green);">claude</span> <span style="color: var(--dim);"># authenticate</span><br><br>
+    <span style="color: var(--dim);"># 3. Install dependencies</span><br>
+    <span style="color: var(--green);">cd newleaf-generaterecommendations</span><br>
+    <span style="color: var(--green);">npm install</span><br><br>
+    <span style="color: var(--dim);"># 4. Configure environment</span><br>
+    <span style="color: var(--green);">cp .env.template .env</span><br>
+    <span style="color: var(--dim);"># Edit .env with your API keys</span><br><br>
+    <span style="color: var(--dim);"># 5. Add Firebase credentials</span><br>
+    <span style="color: var(--dim);"># Download serviceAccountKey.json from Firebase Console</span><br>
+    <span style="color: var(--dim);"># Place in project root</span><br><br>
+    <span style="color: var(--dim);"># 6. (Optional) Install Python for PDF generation</span><br>
+    <span style="color: var(--green);">pip install weasyprint pypdf reportlab</span><br><br>
+    <span style="color: var(--dim);"># 7. Publish your first pick!</span><br>
+    <span style="color: var(--green);">npm run publish -- NVDA --strategy "iron condor" --expiry 2026-06-06 --dry-run</span>
+  </div>
+</div>
+
+<div style="max-width: 1200px; margin: 48px auto; padding: 24px; text-align: center; color: var(--dim); font-size: 13px;">
+  NewLeaf Recommendations Engine &mdash; Built with Node.js, Firebase, Claude AI, Puppeteer, WeasyPrint
+</div>
+
+</body>
+</html>

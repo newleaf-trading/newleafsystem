@@ -1,0 +1,3152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-06YFVHFNYT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-06YFVHFNYT");</script>
+<meta charset="UTF-8">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf · Strategy Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="nl-brand.css">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="load-nav.js" defer></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* ── NewLeaf System brand palette (per brand guide) ── */
+  --forest:#0B2D23;--forest-mid:#1a5c44;--forest-deep:#08201a;
+  --gold:#C9A96E;--gold-mid:#b89556;--gold-pale:#f3e9d0;
+  --charcoal:#0B0F14;
+  --cream:#F7F4EE;--warm-white:#FDFAF5;
+  --light-gray:#E6E8EB;
+  --ink:#0B0F14;--ink-mid:#3d3c33;--ink-muted:#6b6e74;--ink-faint:#9ea1a8;
+  --border:#e5e1d4;--border-strong:#ccc9b8;
+  --green:#2d7d4f;--red:#b03030;--amber:#a0620c;--teal:#1a7070;--purple:#5a3a8a;
+  /* Typography per brand: Playfair Display (serif headlines) + Inter (body & data) */
+  --fd:'Playfair Display',Georgia,serif;
+  --fb:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  --fm:'Inter',-apple-system,sans-serif;
+}
+html{font-size:14px}
+body{background:var(--cream);color:var(--ink);font-family:var(--fb);-webkit-font-smoothing:antialiased;min-height:100vh}
+/* Tabular figures for numeric strips so columns align cleanly without a separate mono font */
+.tnum,.pnl-val,.pnl-sub,.si-val,.spot-box,.sp-pop,.sp-cr,.be-chip-val,.legs-table td:not(:first-child){font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+/* ── SHELL ── */
+.shell{display:grid;grid-template-columns:284px 1fr;min-height:calc(100vh - 64px)}
+
+/* ── LEFT PANEL ── */
+.left{background:var(--warm-white);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;position:sticky;top:64px;height:calc(100vh - 64px)}
+.lhead{padding:1.5rem 1.4rem 1.2rem;border-bottom:1px solid var(--border)}
+.ley{font-size:.66rem;text-transform:uppercase;letter-spacing:.14em;color:var(--ink-muted);margin-bottom:6px;font-weight:600}
+.ltitle{font-family:var(--fd);font-size:1.7rem;font-weight:500;letter-spacing:-.02em;line-height:1.05;color:var(--ink)}
+.ltitle em{font-style:italic;color:var(--forest);font-weight:600}
+
+.lsec{padding:1.1rem 1.4rem;border-bottom:1px solid var(--border)}
+.flabel{font-size:.66rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-muted);margin-bottom:6px;display:block;font-weight:600}
+.fsel{appearance:none;-webkit-appearance:none;background:var(--cream) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%236b6e74'/%3E%3C/svg%3E") no-repeat right 11px center;border:1px solid var(--border-strong);padding:9px 28px 9px 12px;border-radius:4px;font-family:var(--fb);font-size:.92rem;color:var(--ink);width:100%;cursor:pointer;font-weight:500}
+.fsel:focus{outline:none;border-color:var(--forest);box-shadow:0 0 0 2px rgba(11,45,35,.08)}
+.fsel:disabled{opacity:.5;cursor:not-allowed}
+.fcols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.spot-box{background:var(--gold-pale);border:1px solid rgba(201,169,110,.4);border-radius:4px;padding:9px 12px;font-size:1rem;font-weight:700;color:var(--amber);min-height:38px;display:flex;align-items:center}
+
+/* Strategy grid */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.sbtn{background:var(--cream);border:1px solid var(--border);border-radius:5px;padding:10px 10px 8px;cursor:pointer;text-align:left;transition:all .15s;position:relative;overflow:hidden;font-family:var(--fb)}
+.sbtn:hover{background:#fff;border-color:var(--border-strong);transform:translateY(-1px);box-shadow:0 2px 6px rgba(11,45,35,.06)}
+.sbtn.on{border-color:var(--forest);background:#fff;box-shadow:0 2px 6px rgba(11,45,35,.08)}
+.sbtn.on::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold)}
+.sname{font-size:.82rem;font-weight:600;color:var(--ink);margin-bottom:6px;line-height:1.2}
+.stag{font-size:.66rem;color:var(--ink-muted);margin-top:4px;font-weight:500;letter-spacing:.01em}
+.sbtn svg{display:block;width:100%;height:32px}
+
+/* Bottom actions */
+.lbottom{padding:1.1rem 1.4rem;margin-top:auto;display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--border);background:var(--warm-white)}
+.btn-p{background:var(--forest);color:var(--gold);border:none;padding:13px;font-size:.78rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;border-radius:4px;cursor:pointer;font-family:var(--fb);transition:all .15s;width:100%}
+.btn-p:hover{background:var(--forest-mid);transform:translateY(-1px);box-shadow:0 4px 10px rgba(11,45,35,.18)}
+.btn-p:disabled{background:#cfcec5;color:#7a7868;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-s{background:transparent;color:var(--ink-muted);border:1px solid var(--border-strong);padding:10px;font-size:.74rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;cursor:pointer;font-family:var(--fb);width:100%}
+.btn-s:hover{border-color:var(--ink-mid);color:var(--ink)}
+.btn-publish{background:#C9A96E;color:#0B2D23}
+.btn-publish:hover{background:#e0c47c;transform:translateY(-1px);box-shadow:0 4px 10px rgba(201,169,110,.3)}
+.fb-auth{font-family:'Space Mono',monospace;font-size:.6rem;color:var(--ink-muted);text-align:center;letter-spacing:.04em;padding:4px 0}
+.fb-auth a{color:#0d6e56;text-decoration:underline;cursor:pointer}
+
+/* Info popup buttons in sbar */
+.sbar-info-btn{padding:6px 14px !important;min-width:auto;opacity:.7;transition:opacity .15s}
+.sbar-info-btn:hover{opacity:1}
+.sbar-info-btn .sp-name{font-size:11px;letter-spacing:.04em}
+
+/* Info popup overlay + modal */
+.info-popup-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(11,15,20,.45);z-index:900;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.info-popup{background:#fff;border-radius:12px;width:1100px;max-width:96vw;max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.info-popup-hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid #e8e4d8}
+.info-popup-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:#0B2D23}
+.info-popup-close{background:none;border:none;font-size:24px;color:#999;cursor:pointer;padding:0 4px;line-height:1}
+.info-popup-close:hover{color:#333}
+.info-popup-body{padding:20px 22px 24px}
+
+/* Popup grid layout */
+.ip-section{margin-bottom:18px}
+.ip-section:last-child{margin-bottom:0}
+.ip-section-title{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#9b9b8e;margin-bottom:2px;padding-bottom:4px;border-bottom:1px solid #f0ece0}
+.ip-section-desc{font-size:11px;color:#999;line-height:1.45;margin-bottom:10px;font-style:italic}
+.ip-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ip-grid.cols-2{grid-template-columns:repeat(2,1fr)}
+.ip-grid.cols-4{grid-template-columns:repeat(4,1fr)}
+.ip-cell{display:flex;flex-direction:column;gap:1px}
+.ip-cell-lbl{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:#9b9b8e}
+.ip-cell-val{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:#0B0F14}
+.ip-cell-val.green{color:#2d7d4f}
+.ip-cell-val.red{color:#c0392b}
+.ip-cell-val.gold{color:#a0620c}
+.ip-cell-sub{font-size:10px;color:#9b9b8e}
+.ip-bar{height:6px;background:#f0ece0;border-radius:3px;overflow:hidden;margin-top:4px}
+.ip-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.ip-strike-row{display:grid;grid-template-columns:60px 1fr 80px 80px;gap:8px;align-items:center;padding:4px 0;font-size:11px;border-bottom:1px solid #f8f5ef}
+.ip-strike-row:last-child{border-bottom:none}
+.ip-strike-lbl{font-family:'Space Mono',monospace;font-weight:700}
+.ip-strike-bar{height:5px;background:#f0ece0;border-radius:3px;overflow:hidden}
+.ip-strike-fill{height:100%;border-radius:3px;background:#0d6e56}
+
+/* Popup tab bar */
+.ip-tabs{display:flex;gap:0;border-bottom:2px solid #e8e4d8;margin-bottom:16px}
+.ip-tab{padding:8px 18px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#9b9b8e;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none}
+.ip-tab:hover{color:#0B0F14}
+.ip-tab.active{color:#0B2D23;border-bottom-color:#0B2D23;font-weight:700}
+.ip-tab-content{display:none}
+.ip-tab-content.active{display:block}
+.fb-status{font-family:'Space Mono',monospace;font-size:.62rem;text-align:center;padding:6px 8px;border-radius:3px;letter-spacing:.04em}
+.fb-status.ok{background:#e8f4eb;color:#2d7d4f;border:1px solid rgba(45,125,79,.3)}
+.fb-status.err{background:#faeae6;color:#8a2c14;border:1px solid rgba(184,60,32,.3)}
+.fb-status.pending{background:#f5edd6;color:#7a4a07;border:1px solid rgba(200,168,90,.3)}
+
+/* ── RIGHT PANEL ── */
+.right{overflow-y:auto;display:flex;flex-direction:column}
+
+/* ── TOP SETUPS BAR ──
+   Light cream-on-warm-white background so it reads as a section header,
+   NOT as an extension of the dark forest nav. Pills sit on white with
+   forest text + gold credit. */
+.sbar{background:linear-gradient(180deg,var(--warm-white) 0%,var(--cream) 100%);padding:0 1.5rem;min-height:64px;display:flex;align-items:center;gap:14px;border-top:1px solid var(--border);border-bottom:1px solid var(--border-strong);flex-wrap:wrap;padding-top:12px;padding-bottom:12px}
+.sbar-lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.14em;color:var(--ink-muted);margin-right:6px;white-space:nowrap;font-weight:700}
+.spill{border:1px solid var(--border-strong);border-radius:5px;padding:9px 16px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:16px;background:#fff;font-family:var(--fb);min-height:46px;box-shadow:0 1px 2px rgba(11,15,20,.04)}
+.spill:hover{border-color:var(--gold);background:var(--gold-pale);box-shadow:0 2px 6px rgba(201,169,110,.18)}
+.spill.on{border-color:var(--gold);background:var(--gold-pale);box-shadow:0 0 0 1px var(--gold),0 2px 6px rgba(201,169,110,.22)}
+.spill:disabled{opacity:.45;cursor:not-allowed;background:var(--cream)}
+.spill:disabled:hover{background:var(--cream);border-color:var(--border-strong);box-shadow:0 1px 2px rgba(11,15,20,.04)}
+.sp-name{font-size:.86rem;font-weight:700;color:var(--forest);line-height:1.1;letter-spacing:.01em}
+.sp-pop{font-size:.72rem;color:var(--ink-muted);font-weight:600;line-height:1.1}
+.sp-cr{font-size:.92rem;color:var(--amber);font-weight:700;line-height:1.1}
+.sbar-sep{width:1px;height:24px;background:var(--border-strong)}
+.sbar-note{font-size:.68rem;color:var(--ink-faint);margin-left:auto;font-style:italic;letter-spacing:.02em;font-weight:500}
+
+/* ── STRIKE RULER ── */
+.ruler-zone{background:var(--warm-white);border-bottom:1px solid var(--border);padding:1.5rem 1.75rem}
+.ruler-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem}
+.ruler-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;color:var(--ink-muted);font-weight:600}
+.ruler-hint{font-size:.72rem;color:var(--ink-faint)}
+.ruler-canvas{position:relative;height:90px;user-select:none}
+canvas#ruler{display:block;width:100%;height:90px}
+.strike-inputs{display:grid;gap:8px;margin-top:1rem}
+.si-row{display:grid;grid-template-columns:140px 1fr 100px;gap:12px;align-items:center}
+.si-name{font-size:.82rem;font-weight:600;color:var(--ink)}
+.si-type{font-size:.66rem;color:var(--ink-faint);font-weight:500;letter-spacing:.04em;text-transform:uppercase}
+.si-slider{width:100%;accent-color:var(--forest);cursor:pointer;height:3px}
+.si-slider.call{accent-color:var(--red)}
+.si-val{font-size:.86rem;font-weight:700;color:var(--ink);background:var(--cream);border:1px solid var(--border-strong);border-radius:4px;padding:5px 10px;text-align:right}
+
+/* ── P&L STRIP ── */
+.pnl-strip{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border)}
+.pnl-cell{padding:1rem 1.25rem;display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--border);background:#fff}
+.pnl-cell:last-child{border-right:none}
+.pnl-lbl{font-size:.66rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-muted);font-weight:600}
+.pnl-val{font-size:1.35rem;font-weight:700;line-height:1.1;letter-spacing:-.01em}
+.pnl-cell.profit{background:rgba(45,125,79,.06)}
+.pnl-cell.profit .pnl-val{color:var(--green)}
+.pnl-cell.loss{background:rgba(176,48,48,.06)}
+.pnl-cell.loss .pnl-val{color:var(--red)}
+.pnl-cell.be{background:rgba(26,112,112,.06)}
+.pnl-cell.be .pnl-val{color:var(--teal)}
+.pnl-cell.credit{background:var(--gold-pale)}
+.pnl-cell.credit .pnl-val{color:var(--amber)}
+.pnl-sub{font-size:.66rem;color:var(--ink-faint);margin-top:2px;font-weight:500}
+
+/* ── VALIDATION ── */
+.vbanner{padding:12px 1.75rem;font-size:.84rem;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);font-weight:500}
+.vbanner.ok{background:#e8f4eb;color:#1a5c34}
+.vbanner.err{background:#fbeaea;color:#8b2020}
+.vdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.vbanner.ok .vdot{background:var(--green)}
+.vbanner.err .vdot{background:var(--red)}
+
+/* ── CHART ── */
+.chart-zone{padding:1.5rem 1.75rem 1.25rem;background:#fff}
+.chart-hdr{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:12px}
+.chart-title-main{font-family:var(--fd);font-size:1.35rem;font-weight:500;color:var(--ink);letter-spacing:-.01em}
+.chart-title-main em{font-style:italic;color:var(--forest);font-weight:600}
+.chart-legend{display:flex;gap:18px}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:.74rem;color:var(--ink-muted);font-weight:500}
+.leg-line{width:18px;height:3px;border-radius:2px}
+.chart-wrap{border:1px solid var(--border);border-radius:6px;padding:1.25rem 1.5rem 1rem;background:var(--warm-white)}
+canvas#payoff{display:block;width:100%;height:260px}
+.chart-xlabel{text-align:center;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-muted);margin-top:.65rem;font-weight:600}
+
+/* Breakeven row */
+.be-row{display:flex;gap:10px;margin-top:1rem;flex-wrap:wrap}
+.be-chip{background:var(--cream);border:1px solid var(--border-strong);border-radius:4px;padding:7px 14px;font-size:.78rem}
+.be-chip-lbl{font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-muted);margin-bottom:3px;font-weight:600}
+.be-chip-val{font-weight:700;color:var(--ink);font-size:.86rem}
+.be-chip.spot{margin-left:auto}
+.be-chip.spot .be-chip-val{color:var(--amber)}
+
+/* ── LEGS TABLE ── */
+.table-zone{padding:1.5rem 1.75rem 2.5rem;background:#fff}
+.table-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.table-lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;color:var(--ink-muted);font-weight:600}
+.table-cnt{font-size:.7rem;color:var(--ink-muted);background:var(--cream);border:1px solid var(--border);padding:4px 10px;border-radius:4px;font-weight:500}
+.legs-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.legs-table th{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-muted);font-weight:600;padding:0 8px 10px;text-align:right;border-bottom:2px solid var(--forest)}
+.legs-table th:first-child{text-align:left;padding-left:0;width:140px}
+.legs-table th:nth-child(2){width:60px}
+.legs-table th:nth-child(3){width:84px}
+.legs-table td{padding:11px 8px;text-align:right;font-size:.84rem;border-bottom:.5px solid var(--border);color:var(--ink);font-weight:500}
+.legs-table td:first-child{text-align:left;font-weight:600;padding-left:0;font-size:.86rem;color:var(--ink)}
+.legs-table tbody tr:hover{background:rgba(11,45,35,.03)}
+.legs-table tbody tr:last-child td{border-bottom:none}
+.tbadge{display:inline-flex;padding:2px 6px;border-radius:2px;font-size:.58rem;font-weight:500;font-family:var(--fb)}
+.tbadge.p{background:#fbeaea;color:var(--red)}
+.tbadge.c{background:#e8f4eb;color:var(--green)}
+.tpos{color:var(--green);font-weight:700}
+.tneg{color:var(--red);font-weight:700}
+.tmut{color:var(--ink-faint)}
+.tgold{color:var(--amber);font-weight:700}
+
+/* Loading state */
+.loading-overlay{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:1px solid var(--border);border-radius:5px;padding:24px 32px;box-shadow:0 4px 20px rgba(0,0,0,.08);display:none;z-index:500;font-family:var(--fb);font-size:.8rem;color:var(--ink-mid)}
+.loading-overlay.show{display:block}
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--forest);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;vertical-align:middle;margin-right:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Mobile */
+@media (max-width: 1024px) {
+  .shell{grid-template-columns:1fr}
+  .left{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}
+  .pnl-strip{grid-template-columns:repeat(2,1fr)}
+  .pnl-cell{border-bottom:1px solid var(--border)}
+}
+</style>
+</head>
+<body>
+
+<div id="nav-placeholder"></div>
+
+<div class="loading-overlay" id="loadingOverlay"><span class="spinner"></span>Loading contracts…</div>
+
+<div class="shell">
+
+  <!-- ═══ LEFT: SELECTION ONLY ═══ -->
+  <aside class="left">
+    <div class="lhead">
+      <div class="ley">Options workbench</div>
+      <div class="ltitle"><em>Strategy</em> Builder</div>
+    </div>
+
+    <!-- Symbol + Expiry + Spot -->
+    <div class="lsec">
+      <label class="flabel" for="symbolSelect">Symbol</label>
+      <select class="fsel" id="symbolSelect">
+        <option value="">Loading…</option>
+      </select>
+      <div class="fcols">
+        <div>
+          <label class="flabel" for="expirySelect" style="margin-top:8px">Expiry</label>
+          <select class="fsel" id="expirySelect" disabled>
+            <option>—</option>
+          </select>
+        </div>
+        <div>
+          <label class="flabel" style="margin-top:8px">Spot price</label>
+          <div class="spot-box" id="spotPrice">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Strategy selector -->
+    <div class="lsec" style="flex:1">
+      <label class="flabel" style="margin-bottom:.75rem">Strategy type</label>
+      <div class="sgrid">
+        <button class="sbtn" data-strategy="iron_butterfly" type="button">
+          <div class="sname">Iron Butterfly</div>
+          <svg viewBox="0 0 110 30"><polyline points="0,24 30,24 55,4 80,24 110,24" fill="none" stroke="#1a7070" stroke-width="1.5" stroke-linejoin="round"/><polygon points="0,24 30,24 55,4 80,24 110,24 110,26 0,26" fill="#1a7070" fill-opacity=".1"/></svg>
+          <div class="stag">Neutral · high credit</div>
+        </button>
+        <button class="sbtn on" data-strategy="iron_condor" type="button">
+          <div class="sname">Iron Condor</div>
+          <svg viewBox="0 0 110 30"><polyline points="0,22 20,22 36,7 74,7 90,22 110,22" fill="none" stroke="#1a7070" stroke-width="1.5" stroke-linejoin="round"/><polygon points="0,22 20,22 36,7 74,7 90,22 110,22 110,26 0,26" fill="#1a7070" fill-opacity=".1"/></svg>
+          <div class="stag">Neutral · range</div>
+        </button>
+        <button class="sbtn" data-strategy="bull_put_spread" type="button">
+          <div class="sname">Bull Put Spread</div>
+          <svg viewBox="0 0 110 30"><polyline points="0,24 38,24 74,6 110,6" fill="none" stroke="#2d7d4f" stroke-width="1.5" stroke-linejoin="round"/><polygon points="0,24 38,24 74,6 110,6 110,26 0,26" fill="#2d7d4f" fill-opacity=".1"/></svg>
+          <div class="stag">Bullish · credit</div>
+        </button>
+        <button class="sbtn" data-strategy="bear_call_spread" type="button">
+          <div class="sname">Bear Call Spread</div>
+          <svg viewBox="0 0 110 30"><polyline points="0,6 38,6 74,24 110,24" fill="none" stroke="#b03030" stroke-width="1.5" stroke-linejoin="round"/><polygon points="0,6 38,6 74,24 110,24 110,26 0,26" fill="#b03030" fill-opacity=".08"/></svg>
+          <div class="stag">Bearish · credit</div>
+        </button>
+        <button class="sbtn" data-strategy="bull_call_spread" type="button">
+          <div class="sname">Bull Call Spread</div>
+          <svg viewBox="0 0 110 30"><polyline points="0,22 36,22 72,6 110,6" fill="none" stroke="#2d7d4f" stroke-width="1.5" stroke-linejoin="round"/><polygon points="0,22 36,22 72,6 110,6 110,26 0,26" fill="#2d7d4f" fill-opacity=".08"/></svg>
+          <div class="stag">Bullish · debit</div>
+        </button>
+        <button class="sbtn" data-strategy="bear_put_spread" type="button">
+          <div class="sname">Bear Put Spread</div>
+          <svg viewBox="0 0 110 30"><polyline points="0,6 36,6 72,22 110,22" fill="none" stroke="#b03030" stroke-width="1.5" stroke-linejoin="round"/><polygon points="0,6 36,6 72,22 110,22 110,26 0,26" fill="#b03030" fill-opacity=".08"/></svg>
+          <div class="stag">Bearish · debit</div>
+        </button>
+        <button class="sbtn" data-strategy="broken_wing_put" type="button">
+          <div class="sname">BWB (Put)</div>
+          <svg viewBox="0 0 110 30"><polyline points="0,22 26,22 52,5 78,18 110,16" fill="none" stroke="#5a3a8a" stroke-width="1.5" stroke-linejoin="round"/><polygon points="0,22 26,22 52,5 78,18 110,16 110,26 0,26" fill="#5a3a8a" fill-opacity=".09"/></svg>
+          <div class="stag">Asymmetric · credit</div>
+        </button>
+        <button class="sbtn" data-strategy="broken_wing_call" type="button">
+          <div class="sname">BWB (Call)</div>
+          <svg viewBox="0 0 110 30"><polyline points="0,16 32,16 58,5 84,22 110,22" fill="none" stroke="#5a3a8a" stroke-width="1.5" stroke-linejoin="round"/><polygon points="0,16 32,16 58,5 84,22 110,22 110,26 0,26" fill="#5a3a8a" fill-opacity=".09"/></svg>
+          <div class="stag">Asymmetric · credit</div>
+        </button>
+        <button class="sbtn" data-strategy="cash_secured_put" type="button">
+          <div class="sname">Cash-Secured Put</div>
+          <svg viewBox="0 0 110 30"><polyline points="0,24 50,8 110,8" fill="none" stroke="#0d6e56" stroke-width="1.5" stroke-linejoin="round"/><polygon points="0,24 50,8 110,8 110,26 0,26" fill="#0d6e56" fill-opacity=".1"/></svg>
+          <div class="stag">Income · single short put</div>
+        </button>
+        <button class="sbtn" data-strategy="wheel" type="button">
+          <div class="sname">The Wheel</div>
+          <svg viewBox="0 0 110 30"><polyline points="0,24 50,8 110,8" fill="none" stroke="#a0620c" stroke-width="1.5" stroke-linejoin="round"/><polygon points="0,24 50,8 110,8 110,26 0,26" fill="#a0620c" fill-opacity=".1"/></svg>
+          <div class="stag">Income · CSP entry</div>
+        </button>
+        <button class="sbtn" data-strategy="calendar_spread" type="button">
+          <div class="sname">Calendar Spread</div>
+          <svg viewBox="0 0 110 30"><polyline points="0,24 30,18 55,4 80,18 110,24" fill="none" stroke="#5a3ab5" stroke-width="1.5" stroke-linejoin="round"/><polygon points="0,24 30,18 55,4 80,18 110,24 110,26 0,26" fill="#5a3ab5" fill-opacity=".1"/></svg>
+          <div class="stag">Time decay · multi-expiry</div>
+        </button>
+      </div>
+    </div>
+
+    <div class="lbottom">
+      <button class="btn-p btn-publish" id="publishToFirebase" type="button" disabled>🚀 Publish to Firebase</button>
+      <div class="fb-status" id="fbStatus" style="display:none"></div>
+      <div class="fb-auth" id="fbAuth">Not signed in · <a id="fbSignInLink">Sign in with Google</a></div>
+      <button class="btn-p" id="sendToDesk" type="button">⚡ Send to NewLeaf Desk</button>
+      <button class="btn-p" id="aiRankBtn" type="button" style="background:#0d6e56;color:#fff">⚡ AI Rank Variants</button>
+      <div id="aiRankResult" style="display:none;margin-top:8px;padding:12px;background:#F7F5F0;border:1px solid rgba(11,45,35,.12);border-radius:8px;font-size:12px;line-height:1.6;color:#0B0F14"></div>
+      <button class="btn-s" id="resetBtn" type="button">↺ Reset strikes</button>
+    </div>
+  </aside>
+
+  <!-- ═══ RIGHT: CONFIGURE + VISUALISE ═══ -->
+  <main class="right">
+
+    <!-- Top-3 optimised setups -->
+    <div class="sbar">
+      <div class="sbar-lbl">Optimised setups</div>
+      <button class="spill" data-setup-idx="0" type="button" disabled>
+        <span class="sp-name">Conservative</span>
+        <span class="sp-pop">PoP —</span>
+        <span class="sp-cr">— cr</span>
+      </button>
+      <button class="spill" data-setup-idx="1" type="button" disabled>
+        <span class="sp-name">Balanced</span>
+        <span class="sp-pop">PoP —</span>
+        <span class="sp-cr">— cr</span>
+      </button>
+      <button class="spill" data-setup-idx="2" type="button" disabled>
+        <span class="sp-name">Aggressive</span>
+        <span class="sp-pop">PoP —</span>
+        <span class="sp-cr">— cr</span>
+      </button>
+      <div class="sbar-sep"></div>
+      <div class="sbar-note">Δ-based · IV-sized wings · auto-validated</div>
+      <div class="sbar-sep"></div>
+      <button class="spill sbar-info-btn" type="button" id="btnGammaPopup" title="Gamma wall analysis">
+        <span class="sp-name">📊 Gamma</span>
+      </button>
+      <button class="spill sbar-info-btn" type="button" id="btnTechPopup" title="Technical analysis">
+        <span class="sp-name">📈 Technicals</span>
+      </button>
+    </div>
+
+    <!-- ═══ GAMMA WALL POPUP ═══ -->
+    <div class="info-popup-overlay" id="gammaPopupOverlay" style="display:none">
+      <div class="info-popup">
+        <div class="info-popup-hdr">
+          <div class="info-popup-title">📊 Gamma Wall Analysis</div>
+          <button class="info-popup-close" onclick="document.getElementById('gammaPopupOverlay').style.display='none'">&times;</button>
+        </div>
+        <div style="padding:12px 22px 0;font-size:12px;color:#666;line-height:1.5;border-bottom:1px solid #f0ece0;padding-bottom:12px">Gamma walls reveal where market makers must hedge their options exposure. These strikes act as invisible magnets — the stock tends to gravitate toward them and bounce between the put wall (floor) and call wall (ceiling). Use these levels to position your short strikes where dealers provide natural support.</div>
+        <div class="info-popup-body" id="gammaPopupBody">Loading...</div>
+      </div>
+    </div>
+
+    <!-- ═══ TECHNICALS POPUP ═══ -->
+    <div class="info-popup-overlay" id="techPopupOverlay" style="display:none">
+      <div class="info-popup">
+        <div class="info-popup-hdr">
+          <div class="info-popup-title">📈 Technical Analysis</div>
+          <button class="info-popup-close" onclick="document.getElementById('techPopupOverlay').style.display='none'">&times;</button>
+        </div>
+        <div style="padding:12px 22px 0;font-size:12px;color:#666;line-height:1.5;border-bottom:1px solid #f0ece0;padding-bottom:12px">Technical indicators help you time your entry and confirm the direction bias for your strategy. Use RSI to spot overextended moves, Bollinger Bands to gauge the expected range, MACD for momentum shifts, and moving average crossovers for trend confirmation.</div>
+        <div class="info-popup-body" id="techPopupBody">Loading...</div>
+      </div>
+    </div>
+
+    <!-- VISUAL STRIKE RULER -->
+    <div class="ruler-zone">
+      <div class="ruler-header">
+        <div class="ruler-title">Strike configuration</div>
+        <div class="ruler-hint" id="ruler-hint">Drag handles or adjust sliders below</div>
+      </div>
+      <div class="ruler-canvas">
+        <canvas id="ruler"></canvas>
+      </div>
+      <div class="strike-inputs" id="strike-inputs"></div>
+    </div>
+
+    <!-- P&L STRIP -->
+    <div class="pnl-strip">
+      <div class="pnl-cell profit">
+        <div class="pnl-lbl">Max profit</div>
+        <div class="pnl-val" id="pm-profit">—</div>
+        <div class="pnl-sub">at expiration</div>
+      </div>
+      <div class="pnl-cell loss">
+        <div class="pnl-lbl">Max loss</div>
+        <div class="pnl-val" id="pm-loss">—</div>
+        <div class="pnl-sub">defined risk</div>
+      </div>
+      <div class="pnl-cell be">
+        <div class="pnl-lbl">Breakeven low</div>
+        <div class="pnl-val" id="pm-belo">—</div>
+        <div class="pnl-sub" id="pm-belo-pct">—</div>
+      </div>
+      <div class="pnl-cell be">
+        <div class="pnl-lbl">Breakeven high</div>
+        <div class="pnl-val" id="pm-behi">—</div>
+        <div class="pnl-sub" id="pm-behi-pct">—</div>
+      </div>
+      <div class="pnl-cell credit">
+        <div class="pnl-lbl">Total credit</div>
+        <div class="pnl-val" id="pm-credit">—</div>
+        <div class="pnl-sub">collected upfront</div>
+      </div>
+    </div>
+
+    <!-- Validation banner -->
+    <div class="vbanner ok" id="vbanner">
+      <div class="vdot"></div>
+      <span id="vtext">Loading…</span>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-zone">
+      <div class="chart-hdr">
+        <div class="chart-title-main">P&amp;L at expiration — <em id="ct-name">Iron Condor</em></div>
+        <div class="chart-legend">
+          <div class="leg-item"><div class="leg-line" style="background:#0B2D23"></div>Profit</div>
+          <div class="leg-item"><div class="leg-line" style="background:#b03030"></div>Loss</div>
+          <div class="leg-item"><div class="leg-line" style="background:#C9A96E;opacity:.7"></div>Spot · BE</div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="payoff"></canvas>
+        <div class="chart-xlabel">Stock price at expiration</div>
+      </div>
+      <div class="be-row">
+        <div class="be-chip"><div class="be-chip-lbl">Breakeven low</div><div class="be-chip-val" id="bc-lo">—</div></div>
+        <div class="be-chip"><div class="be-chip-lbl">Breakeven high</div><div class="be-chip-val" id="bc-hi">—</div></div>
+        <div class="be-chip spot"><div class="be-chip-lbl">Current price</div><div class="be-chip-val" id="bc-spot">—</div></div>
+      </div>
+    </div>
+
+    <!-- Legs table -->
+    <div class="table-zone">
+      <div class="table-hdr">
+        <div class="table-lbl">Legs breakdown</div>
+        <div class="table-cnt" id="tcnt">— legs · 1 contract</div>
+      </div>
+      <table class="legs-table">
+        <thead>
+          <tr>
+            <th>Leg</th>
+            <th>Type</th>
+            <th>Strike</th>
+            <th>Bid</th>
+            <th>Ask</th>
+            <th>Mid</th>
+            <th>IV</th>
+            <th>Delta</th>
+            <th>Gamma</th>
+            <th>OI</th>
+          </tr>
+        </thead>
+        <tbody id="legs-body"></tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<script>
+'use strict';
+
+// ════════════════════════════════════════════════════════════════════════════
+// CONFIG + STATE
+// ════════════════════════════════════════════════════════════════════════════
+const R2_BASE = 'https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev';
+
+let atmData = null;          // contracts JSON for current symbol
+let reportData = null;       // gammaData / scoring report for current symbol
+let selectedExpiry = null;   // currently selected expiry object (front for calendar)
+let selectedBackExpiry = null; // back-month expiry for calendar spread (null otherwise)
+let currentStrategy = 'iron_condor';
+let strikes = [];            // current dollar strike values for each leg
+let legsMeta = [];           // [{name, type, dir, qty}, ...] for current strategy
+let topSetups = [];          // top-3 candidates for the pill bar
+let pendingStrategyParam = null; // ?strategy= URL param awaiting first load
+let suppressPillReset = false;
+
+// ════════════════════════════════════════════════════════════════════════════
+// STRATEGY METADATA
+// ════════════════════════════════════════════════════════════════════════════
+// Each strategy describes its leg slots (in left-to-right strike order) and
+// which side of spot they live on. PUT/CALL refers to option type; long/short
+// to direction. Used by the leg builder + ruler.
+const STRATEGIES = {
+  iron_butterfly: {
+    label: 'Iron Butterfly', color: '#1a7070', kind: 'neutral',
+    legs: [
+      { name: 'Long Put',   type: 'PUT',  dir: 'long',  qty: 1, slot: 'longPut'   },
+      { name: 'Short Put',  type: 'PUT',  dir: 'short', qty: 1, slot: 'shortPut'  },
+      { name: 'Short Call', type: 'CALL', dir: 'short', qty: 1, slot: 'shortCall' },
+      { name: 'Long Call',  type: 'CALL', dir: 'long',  qty: 1, slot: 'longCall'  }
+    ]
+  },
+  iron_condor: {
+    label: 'Iron Condor', color: '#1a7070', kind: 'neutral',
+    legs: [
+      { name: 'Long Put',   type: 'PUT',  dir: 'long',  qty: 1, slot: 'longPut'   },
+      { name: 'Short Put',  type: 'PUT',  dir: 'short', qty: 1, slot: 'shortPut'  },
+      { name: 'Short Call', type: 'CALL', dir: 'short', qty: 1, slot: 'shortCall' },
+      { name: 'Long Call',  type: 'CALL', dir: 'long',  qty: 1, slot: 'longCall'  }
+    ]
+  },
+  bull_put_spread: {
+    label: 'Bull Put Spread', color: '#2d7d4f', kind: 'bullish',
+    legs: [
+      { name: 'Long Put',  type: 'PUT', dir: 'long',  qty: 1, slot: 'longPut'  },
+      { name: 'Short Put', type: 'PUT', dir: 'short', qty: 1, slot: 'shortPut' }
+    ]
+  },
+  bear_call_spread: {
+    label: 'Bear Call Spread', color: '#b03030', kind: 'bearish',
+    legs: [
+      { name: 'Short Call', type: 'CALL', dir: 'short', qty: 1, slot: 'shortCall' },
+      { name: 'Long Call',  type: 'CALL', dir: 'long',  qty: 1, slot: 'longCall'  }
+    ]
+  },
+  bull_call_spread: {
+    label: 'Bull Call Spread', color: '#2d7d4f', kind: 'bullish', debit: true,
+    legs: [
+      { name: 'Long Call',  type: 'CALL', dir: 'long',  qty: 1, slot: 'longCall'  },
+      { name: 'Short Call', type: 'CALL', dir: 'short', qty: 1, slot: 'shortCall' }
+    ]
+  },
+  bear_put_spread: {
+    label: 'Bear Put Spread', color: '#b03030', kind: 'bearish', debit: true,
+    legs: [
+      { name: 'Short Put', type: 'PUT', dir: 'short', qty: 1, slot: 'shortPut' },
+      { name: 'Long Put',  type: 'PUT', dir: 'long',  qty: 1, slot: 'longPut'  }
+    ]
+  },
+  broken_wing_put: {
+    label: 'BWB (Put)', color: '#5a3a8a', kind: 'asymmetric',
+    legs: [
+      { name: 'Long Put (broken)',  type: 'PUT',  dir: 'long',  qty: 1, slot: 'longPut'   },
+      { name: 'Short Puts ×2',      type: 'PUT',  dir: 'short', qty: 2, slot: 'shortPut'  },
+      { name: 'Short Call',         type: 'CALL', dir: 'short', qty: 1, slot: 'shortCall' },
+      { name: 'Long Call',          type: 'CALL', dir: 'long',  qty: 1, slot: 'longCall'  }
+    ]
+  },
+  broken_wing_call: {
+    label: 'BWB (Call)', color: '#5a3a8a', kind: 'asymmetric',
+    legs: [
+      { name: 'Long Put',           type: 'PUT',  dir: 'long',  qty: 1, slot: 'longPut'   },
+      { name: 'Short Put',          type: 'PUT',  dir: 'short', qty: 1, slot: 'shortPut'  },
+      { name: 'Short Calls ×2',     type: 'CALL', dir: 'short', qty: 2, slot: 'shortCall' },
+      { name: 'Long Call (broken)', type: 'CALL', dir: 'long',  qty: 1, slot: 'longCall'  }
+    ]
+  },
+  cash_secured_put: {
+    label: 'Cash-Secured Put', color: '#0d6e56', kind: 'income',
+    legs: [
+      { name: 'Short Put', type: 'PUT', dir: 'short', qty: 1, slot: 'shortPut' }
+    ]
+  },
+  wheel: {
+    // Wheel = CSP entry leg (assignment + covered-call phases happen post-fill)
+    label: 'Wheel (CSP entry)', color: '#a0620c', kind: 'income',
+    legs: [
+      { name: 'Short Put', type: 'PUT', dir: 'short', qty: 1, slot: 'shortPut' }
+    ]
+  },
+  calendar_spread: {
+    // ATM put calendar — sell front-month, buy back-month at the same strike.
+    // Both legs share one strike, but live in different expiries; the front
+    // leg expires worthless at front DTE while the back leg keeps time value.
+    label: 'Calendar Spread', color: '#5a3ab5', kind: 'time',
+    multiExpiry: true,
+    legs: [
+      { name: 'Short Put (front)', type: 'PUT', dir: 'short', qty: 1, slot: 'shortPut', expiry: 'front' },
+      { name: 'Long Put (back)',   type: 'PUT', dir: 'long',  qty: 1, slot: 'longPut',  expiry: 'back'  }
+    ]
+  }
+};
+
+// Pick a sensible back-month for a calendar given the front expiry. Prefers
+// ~30 days after the front; falls back to the next available expiry that is
+// at least a week longer. Returns null if no suitable expiry exists.
+function pickBackExpiryFor(frontExpiry) {
+  if (!atmData?.expiries || atmData.expiries.length < 2 || !frontExpiry) return null;
+  const frontDte = frontExpiry.dte;
+  const targetDte = frontDte + 30;
+  let best = null, bestDiff = Infinity;
+  for (const e of atmData.expiries) {
+    if (e === frontExpiry) continue;
+    if (e.dte <= frontDte + 7) continue;
+    const diff = Math.abs(e.dte - targetDte);
+    if (diff < bestDiff) { bestDiff = diff; best = e; }
+  }
+  if (best) return best;
+  // Last-ditch fallback: any expiry strictly longer than the front
+  let fallback = null;
+  for (const e of atmData.expiries) {
+    if (e.dte > frontDte && (!fallback || e.dte < fallback.dte)) fallback = e;
+  }
+  return fallback;
+}
+
+// Map of synonyms / engine bucket codes the URL param may carry to internal keys.
+function normalizeStrategyParam(raw) {
+  if (!raw) return null;
+  const k = String(raw).trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  if (STRATEGIES[k]) return k;
+  const aliases = {
+    iron_condor: 'iron_condor', iron_butterfly: 'iron_butterfly',
+    bull_put: 'bull_put_spread', bullput: 'bull_put_spread',
+    bear_call: 'bear_call_spread', bearcall: 'bear_call_spread',
+    bull_call: 'bull_call_spread', bullcall: 'bull_call_spread',
+    bear_put: 'bear_put_spread', bearput: 'bear_put_spread',
+    broken_wing: 'broken_wing_put', brokenwing: 'broken_wing_put',
+    broken_wing_butterfly: 'broken_wing_put', bwb: 'broken_wing_put',
+    bwb_put: 'broken_wing_put', bwb_call: 'broken_wing_call',
+    csp: 'cash_secured_put', cash_secured_puts: 'cash_secured_put',
+    sell_put: 'cash_secured_put', sell_puts: 'cash_secured_put',
+    the_wheel: 'wheel',
+    calendar: 'calendar_spread'
+  };
+  return aliases[k] || null;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// MATH / GREEK HELPERS
+// ════════════════════════════════════════════════════════════════════════════
+
+// Standard normal CDF — Abramowitz & Stegun 7.1.26.
+function normCdf(x) {
+  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+  const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+  const sign = x < 0 ? -1 : 1;
+  const ax = Math.abs(x) / Math.SQRT2;
+  const t = 1 / (1 + p * ax);
+  const y = 1 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t * Math.exp(-ax*ax);
+  return 0.5 * (1 + sign * y);
+}
+
+// Black-Scholes delta (no dividend, no rate). Used as a fallback when the
+// upstream chain doesn't carry per-contract Greeks.
+function bsDelta(spot, strike, dteDays, iv, type) {
+  if (!spot || !strike || !dteDays || !iv || iv <= 0) return null;
+  const T = Math.max(dteDays, 1) / 365;
+  const d1 = (Math.log(spot/strike) + (0.5 * iv * iv) * T) / (iv * Math.sqrt(T));
+  return type === 'call' ? normCdf(d1) : normCdf(d1) - 1;
+}
+
+// Black-Scholes price (no dividend, no rate). Used to value the back-month
+// leg of a calendar spread at the front-month expiration date.
+function bsPrice(spot, strike, dteDays, iv, type) {
+  if (!spot || !strike || !iv || iv <= 0) return 0;
+  if (dteDays <= 0) {
+    return type === 'put' ? Math.max(strike - spot, 0) : Math.max(spot - strike, 0);
+  }
+  const T = Math.max(dteDays, 1) / 365;
+  const sigT = iv * Math.sqrt(T);
+  const d1 = (Math.log(spot/strike) + (0.5 * iv * iv) * T) / sigT;
+  const d2 = d1 - sigT;
+  if (type === 'call') return spot * normCdf(d1) - strike * normCdf(d2);
+  return strike * normCdf(-d2) - spot * normCdf(-d1);
+}
+
+// Resolve a contract's delta — prefer upstream value, fall back to BS.
+function resolveContractDelta(contract, spot, dte) {
+  if (contract.delta != null && Math.abs(contract.delta) > 0.001) return contract.delta;
+  if (contract.iv && contract.iv > 0) {
+    return bsDelta(spot, contract.strike, dte, contract.iv, contract.type);
+  }
+  return null;
+}
+
+// 1SD expected move at expiry given annualised IV.
+function expectedMove(spot, atmIvDecimal, dteDays) {
+  if (!spot || !atmIvDecimal || !dteDays) return null;
+  return spot * atmIvDecimal * Math.sqrt(dteDays / 365);
+}
+
+// Resolve atm IV (decimal) for a given expiry. Tries gammaData publish first,
+// then averages the chain near ATM.
+function resolveAtmIv(expiry, spot) {
+  const ivByExpiry = reportData?.gammaData?.ivData?.ivByExpiry;
+  if (ivByExpiry && ivByExpiry[expiry.expiry] != null) {
+    const v = ivByExpiry[expiry.expiry];
+    return v > 1 ? v / 100 : v;
+  }
+  const near = expiry.contracts.filter(c => c.iv > 0 && Math.abs(c.strike - spot) / spot < 0.05);
+  if (near.length === 0) {
+    const any = expiry.contracts.find(c => c.iv > 0);
+    if (!any) return null;
+    return any.iv > 1 ? any.iv / 100 : any.iv;
+  }
+  const avg = near.reduce((s, c) => s + c.iv, 0) / near.length;
+  return avg > 1 ? avg / 100 : avg;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CHAIN ENRICHMENT — fill in delta on every contract using BS as a fallback,
+// so the rest of the leg-picker can rely on a delta being present.
+// ════════════════════════════════════════════════════════════════════════════
+function enrichChain(expiry, spot) {
+  const atmIv = resolveAtmIv(expiry, spot);
+  expiry.contracts.forEach(c => {
+    if (c.delta != null && Math.abs(c.delta) > 0.001) return;
+    const iv = (c.iv && c.iv > 0) ? (c.iv > 1 ? c.iv / 100 : c.iv) : atmIv;
+    if (!iv) return;
+    const d = bsDelta(spot, c.strike, expiry.dte, iv, c.type);
+    if (d != null) c._delta = d;
+  });
+}
+function getDelta(c) { return (c.delta != null && Math.abs(c.delta) > 0.001) ? c.delta : (c._delta ?? null); }
+
+// ════════════════════════════════════════════════════════════════════════════
+// PART 2 — LEG SELECTION ALGORITHM
+// ════════════════════════════════════════════════════════════════════════════
+
+// Find the contract whose absolute delta is closest to a target. Filters out
+// illiquid strikes (OI < 50) and respects the directional side of spot.
+// Has a 3-tier fallback so it never returns null on a sparse / Greek-less chain:
+//   1. Liquid (OI ≥ 50) + has-delta
+//   2. Any-OI + has-delta
+//   3. Price-offset proxy when no contract on the chain has a delta at all
+//
+//   type: 'put' | 'call'
+//   side: 'below' | 'above' | null  (relative to spot)
+//   em:   expected move ($) — required only for the tier-3 price-offset fallback
+function findStrikeByTargetDelta(chain, targetDelta, type, spot, side, em) {
+  const sideFilter = o => {
+    if (side === 'below') return o.strike < spot;
+    if (side === 'above') return o.strike > spot;
+    return true;
+  };
+
+  // Tier 1: liquid + has-delta
+  const tier1 = chain
+    .filter(o => o.type === type && (o.oi == null || o.oi >= 50))
+    .filter(sideFilter)
+    .map(o => ({ ...o, _d: getDelta(o) }))
+    .filter(o => o._d != null)
+    .map(o => ({ ...o, _diff: Math.abs(Math.abs(o._d) - targetDelta) }))
+    .sort((a, b) => a._diff - b._diff);
+  if (tier1.length > 0) return tier1[0];
+
+  // Tier 2: any-OI + has-delta (drop the liquidity filter)
+  const tier2 = chain
+    .filter(o => o.type === type)
+    .filter(sideFilter)
+    .map(o => ({ ...o, _d: getDelta(o) }))
+    .filter(o => o._d != null)
+    .map(o => ({ ...o, _diff: Math.abs(Math.abs(o._d) - targetDelta) }))
+    .sort((a, b) => a._diff - b._diff);
+  if (tier2.length > 0) return tier2[0];
+
+  // Tier 3: NO delta info anywhere on the chain. Fall back to a price-offset
+  // proxy. Empirical mapping for typical equity chains:
+  //   Δ 0.50 ≈ 0×EM offset (ATM)
+  //   Δ 0.30 ≈ 0.6×EM offset
+  //   Δ 0.16 ≈ 1.0×EM offset (1 SD)
+  //   → offset ≈ (0.5 − Δ) × EM × 2.94
+  const move = (em && em > 0) ? em : (spot * 0.05);
+  const offsetMult = Math.max(0.05, (0.5 - targetDelta) * 2.94);
+  const dirSign =
+    side === 'below' ? -1 :
+    side === 'above' ? +1 :
+    (type === 'put' ? -1 : +1);
+  const targetDollar = spot + dirSign * move * offsetMult;
+  return findContractByStrike(chain, targetDollar, type);
+}
+
+// Find the contract closest to a target dollar strike on a given option type.
+// Optional `constraint` enforces strict ordering against neighbouring legs:
+//   { below: X } → only consider strikes strictly less than X
+//   { above: Y } → only consider strikes strictly greater than Y
+function findContractByStrike(chain, targetDollar, type, constraint) {
+  let filtered = chain.filter(o => o.type === type);
+  if (constraint && constraint.below != null) filtered = filtered.filter(o => o.strike < constraint.below);
+  if (constraint && constraint.above != null) filtered = filtered.filter(o => o.strike > constraint.above);
+  if (!filtered.length) return null;
+  let best = filtered[0];
+  let bestDiff = Math.abs(best.strike - targetDollar);
+  for (let i = 1; i < filtered.length; i++) {
+    const d = Math.abs(filtered[i].strike - targetDollar);
+    if (d < bestDiff) { bestDiff = d; best = filtered[i]; }
+  }
+  return best;
+}
+
+// Compute net credit per contract (positive = credit collected) given an array
+// of {contract, dir, qty}.
+function calcNetCredit(legs) {
+  let credit = 0;
+  legs.forEach(l => {
+    const sign = l.dir === 'short' ? 1 : -1;
+    credit += sign * (l.contract.mid ?? ((l.contract.bid + l.contract.ask) / 2)) * (l.qty || 1);
+  });
+  return credit * 100; // per contract
+}
+
+// Compute max profit given a credit and the strike layout. Uses sampled payoff
+// because some strategies (BWB) have non-trivial wing geometry.
+// Detect a calendar (multi-expiry) leg array. Used to dispatch payoff/validation
+// to the BS-aware path instead of the intrinsic-only path.
+function isCalendarLegs(legs) {
+  if (!legs || legs.length < 2) return false;
+  const dtes = legs.map(l => l._dte).filter(v => v != null);
+  return dtes.length === legs.length && new Set(dtes).size > 1;
+}
+
+function calcMaxProfit(legs, credit) {
+  // Calendar: payoff is non-monotonic with time-value on the back leg.
+  // Use the sampled BS payoff and take its true min/max.
+  if (isCalendarLegs(legs)) {
+    const sample = samplePayoff(legs, atmData?.spot || legs[0].contract.strike);
+    let best = -Infinity, worst = Infinity;
+    for (const s of sample) {
+      if (s.pnl > best)  best  = s.pnl;
+      if (s.pnl < worst) worst = s.pnl;
+    }
+    return { maxProfit: best, maxLoss: worst };
+  }
+  const strikesArr = legs.map(l => l.contract.strike);
+  const minK = Math.min(...strikesArr);
+  const maxK = Math.max(...strikesArr);
+  // For single-strike strategies (CSP, wheel) min===max so the spread is 0;
+  // fall back to ±50% of the strike so we sample a meaningful loss curve.
+  const rawSpan = maxK - minK;
+  const span = rawSpan > 0 ? rawSpan : Math.max(minK * 0.5, 1);
+  let best = -Infinity, worst = Infinity;
+  for (let p = minK - span; p <= maxK + span; p += span / 50 || 0.5) {
+    let pnl = 0;
+    legs.forEach(l => {
+      const intr = l.contract.type === 'put'
+        ? Math.max(l.contract.strike - p, 0)
+        : Math.max(p - l.contract.strike, 0);
+      const sign = l.dir === 'long' ? 1 : -1;
+      pnl += sign * (l.qty || 1) * intr;
+    });
+    pnl = pnl * 100 + credit;
+    if (pnl > best) best = pnl;
+    if (pnl < worst) worst = pnl;
+  }
+  return { maxProfit: best, maxLoss: worst };
+}
+
+// validateSetup — leg order, inner-strike-bracket, credit, max-profit checks.
+function validateSetup(legs, spot) {
+  // Calendar spreads have their own rules: must be a net DEBIT (not credit),
+  // and max-profit comes from the BS-priced back leg at front expiration.
+  if (isCalendarLegs(legs)) {
+    const credit = calcNetCredit(legs);
+    if (credit >= 0) {
+      return { valid: false, error: 'Calendar must be a net debit — back month must cost more than the front. Pick a longer back-month.' };
+    }
+    const { maxProfit, maxLoss } = calcMaxProfit(legs, credit);
+    if (maxProfit <= 0) {
+      return { valid: false, error: 'No profit zone — try a different strike or back-month.' };
+    }
+    return { valid: true, credit, maxProfit, maxLoss };
+  }
+
+  const sorted = [...legs].sort((a, b) => a.contract.strike - b.contract.strike);
+  const strikesArr = sorted.map(l => l.contract.strike);
+
+  // 1. For 4-leg strategies: check spot relative to the inner strikes.
+  if (legs.length === 4) {
+    const outerLow  = strikesArr[0];
+    const innerLow  = strikesArr[1];
+    const innerHigh = strikesArr[2];
+    const outerHigh = strikesArr[3];
+
+    if (innerLow === innerHigh) {
+      // Collapsed-body strategies (Iron Butterfly): the two short strikes
+      // coincide at the body. Spot will almost never land EXACTLY on the body
+      // strike, so the rule "spot strictly between inner strikes" degenerates
+      // and rejects every legitimate butterfly. Use a tolerance equal to 60%
+      // of the wing-to-body distance instead, which keeps the trade
+      // meaningful (spot must still be reasonably close to the body) without
+      // demanding precise alignment.
+      const wingDist = Math.min(innerLow - outerLow, outerHigh - innerHigh) || 1;
+      const tolerance = Math.max(wingDist * 0.6, spot * 0.015);
+      if (spot < innerLow - tolerance || spot > innerHigh + tolerance) {
+        return { valid: false, error: `Spot $${spot.toFixed(2)} is too far from body $${innerLow}` };
+      }
+    } else {
+      // Distinct inner strikes (Iron Condor, BWB): spot must sit between them.
+      if (spot < innerLow || spot > innerHigh) {
+        return { valid: false, error: `Spot $${spot.toFixed(2)} is outside the inner strikes ($${innerLow}–$${innerHigh}) — setup may be ITM` };
+      }
+    }
+
+    // Strict outer ordering: longs must sit strictly outside the shorts.
+    if (outerLow >= innerLow || outerHigh <= innerHigh) {
+      return { valid: false, error: 'Long wings must sit strictly outside the short strikes' };
+    }
+  }
+
+  // 2. Net credit check (only for credit strategies — skip for debit-by-design
+  //    strategies like bull_call_spread, bear_put_spread)
+  const credit = calcNetCredit(legs);
+  const hasShort = legs.some(l => l.dir === 'short');
+  const allDebit = legs.every(l => l.dir === 'long');
+  const isDebitStrategy = STRATEGIES[currentStrategy]?.debit;
+  if (hasShort && !allDebit && !isDebitStrategy && credit <= 0) {
+    return { valid: false, error: `Net debit $${(-credit/100).toFixed(2)} — adjust strikes to collect a credit` };
+  }
+
+  // 3. Max profit sanity
+  const { maxProfit, maxLoss } = calcMaxProfit(legs, credit);
+  if (maxProfit <= 0) {
+    return { valid: false, error: 'Max profit ≤ 0 — check strike placement' };
+  }
+
+  return { valid: true, credit, maxProfit, maxLoss };
+}
+
+// Build the legs for a given strategy at a given config (target deltas + wing ratio).
+//   chain: expiry.contracts (array)
+//   iv: atm IV (decimal)
+//   dte: days to expiry
+//   strategyType: key into STRATEGIES
+//   cfg: { shortDelta, wingRatio }
+// Returns an array of { contract, dir, qty, name, type } in the slot order
+// defined by STRATEGIES[strategyType].legs.
+function buildLegs(spot, chain, iv, dte, strategyType, cfg) {
+  const meta = STRATEGIES[strategyType];
+  if (!meta) return null;
+  const em = expectedMove(spot, iv, dte) || (spot * 0.05);
+  const wing = Math.max(em * 0.5, 1);
+  const legs = [];
+
+  if (strategyType === 'iron_condor') {
+    const shortPut  = findStrikeByTargetDelta(chain, cfg.shortDelta, 'put',  spot, 'below', em);
+    const shortCall = findStrikeByTargetDelta(chain, cfg.shortDelta, 'call', spot, 'above', em);
+    if (!shortPut || !shortCall) return null;
+    // Wings must sit STRICTLY outside the shorts.
+    const longPut  = findContractByStrike(chain, shortPut.strike  - wing * cfg.wingRatio, 'put',  { below: shortPut.strike  });
+    const longCall = findContractByStrike(chain, shortCall.strike + wing * cfg.wingRatio, 'call', { above: shortCall.strike });
+    if (!longPut || !longCall) return null;
+    legs.push(
+      { contract: longPut,   dir: 'long',  qty: 1, name: 'Long Put',  type: 'put'  },
+      { contract: shortPut,  dir: 'short', qty: 1, name: 'Short Put', type: 'put'  },
+      { contract: shortCall, dir: 'short', qty: 1, name: 'Short Call',type: 'call' },
+      { contract: longCall,  dir: 'long',  qty: 1, name: 'Long Call', type: 'call' }
+    );
+  }
+  else if (strategyType === 'iron_butterfly') {
+    // Body sells at the strike nearest spot
+    const bodyPut  = findContractByStrike(chain, spot, 'put');
+    const bodyCall = findContractByStrike(chain, spot, 'call');
+    if (!bodyPut || !bodyCall) return null;
+    // Wings must sit STRICTLY outside the body — without this, sparse chains
+    // can snap the long wing to the body strike, collapsing the trade.
+    const longPut  = findContractByStrike(chain, bodyPut.strike  - wing * cfg.wingRatio, 'put',  { below: bodyPut.strike  });
+    const longCall = findContractByStrike(chain, bodyCall.strike + wing * cfg.wingRatio, 'call', { above: bodyCall.strike });
+    if (!longPut || !longCall) return null;
+    legs.push(
+      { contract: longPut,  dir: 'long',  qty: 1, name: 'Long Put',   type: 'put'  },
+      { contract: bodyPut,  dir: 'short', qty: 1, name: 'Short Put',  type: 'put'  },
+      { contract: bodyCall, dir: 'short', qty: 1, name: 'Short Call', type: 'call' },
+      { contract: longCall, dir: 'long',  qty: 1, name: 'Long Call',  type: 'call' }
+    );
+  }
+  else if (strategyType === 'bull_put_spread') {
+    const shortPut = findStrikeByTargetDelta(chain, cfg.shortDelta, 'put', spot, 'below', em);
+    if (!shortPut) return null;
+    const longPut  = findContractByStrike(chain, shortPut.strike - wing * cfg.wingRatio, 'put', { below: shortPut.strike });
+    if (!longPut) return null;
+    legs.push(
+      { contract: longPut,  dir: 'long',  qty: 1, name: 'Long Put',  type: 'put' },
+      { contract: shortPut, dir: 'short', qty: 1, name: 'Short Put', type: 'put' }
+    );
+  }
+  else if (strategyType === 'bear_call_spread') {
+    const shortCall = findStrikeByTargetDelta(chain, cfg.shortDelta, 'call', spot, 'above', em);
+    if (!shortCall) return null;
+    const longCall  = findContractByStrike(chain, shortCall.strike + wing * cfg.wingRatio, 'call', { above: shortCall.strike });
+    if (!longCall) return null;
+    legs.push(
+      { contract: shortCall, dir: 'short', qty: 1, name: 'Short Call', type: 'call' },
+      { contract: longCall,  dir: 'long',  qty: 1, name: 'Long Call',  type: 'call' }
+    );
+  }
+  else if (strategyType === 'bull_call_spread') {
+    // Debit: buy ATM-ish call, sell higher OTM call.
+    const longCall = findStrikeByTargetDelta(chain, 0.50, 'call', spot, null, em)
+                  || findContractByStrike(chain, spot, 'call');
+    if (!longCall) return null;
+    const shortCall = findContractByStrike(chain, longCall.strike + wing * cfg.wingRatio, 'call', { above: longCall.strike });
+    if (!shortCall) return null;
+    legs.push(
+      { contract: longCall,  dir: 'long',  qty: 1, name: 'Long Call',  type: 'call' },
+      { contract: shortCall, dir: 'short', qty: 1, name: 'Short Call', type: 'call' }
+    );
+  }
+  else if (strategyType === 'bear_put_spread') {
+    const longPut = findStrikeByTargetDelta(chain, 0.50, 'put', spot, null, em)
+                 || findContractByStrike(chain, spot, 'put');
+    if (!longPut) return null;
+    const shortPut = findContractByStrike(chain, longPut.strike - wing * cfg.wingRatio, 'put', { below: longPut.strike });
+    if (!shortPut) return null;
+    legs.push(
+      { contract: shortPut, dir: 'short', qty: 1, name: 'Short Put', type: 'put' },
+      { contract: longPut,  dir: 'long',  qty: 1, name: 'Long Put',  type: 'put' }
+    );
+  }
+  else if (strategyType === 'broken_wing_put') {
+    // CRITICAL BWB FIX:
+    // - Short PUTs ×2 below spot (~0.30Δ)
+    // - Long PUT well below shortPut (broken wider wing)
+    // - Short CALL above spot (~0.22Δ)
+    // - Long CALL above shortCall (narrow call wing)
+    const shortPut = findStrikeByTargetDelta(chain, Math.max(cfg.shortDelta + 0.05, 0.28), 'put', spot, 'below', em);
+    if (!shortPut) return null;
+    const putSpread = Math.max(spot - shortPut.strike, wing);
+    const longPut   = findContractByStrike(chain, shortPut.strike - putSpread * 1.5, 'put', { below: shortPut.strike });
+    const shortCall = findStrikeByTargetDelta(chain, Math.max(cfg.shortDelta - 0.04, 0.18), 'call', spot, 'above', em);
+    if (!longPut || !shortCall) return null;
+    const callSpread = Math.max(shortCall.strike - spot, wing);
+    const longCall   = findContractByStrike(chain, shortCall.strike + callSpread, 'call', { above: shortCall.strike });
+    if (!longCall) return null;
+    // Order check: longPut < shortPut < spot < shortCall < longCall
+    if (!(longPut.strike < shortPut.strike && shortPut.strike < spot && spot < shortCall.strike && shortCall.strike < longCall.strike)) {
+      return null;
+    }
+    legs.push(
+      { contract: longPut,   dir: 'long',  qty: 1, name: 'Long Put (broken)',  type: 'put'  },
+      { contract: shortPut,  dir: 'short', qty: 2, name: 'Short Puts ×2',      type: 'put'  },
+      { contract: shortCall, dir: 'short', qty: 1, name: 'Short Call',         type: 'call' },
+      { contract: longCall,  dir: 'long',  qty: 1, name: 'Long Call',          type: 'call' }
+    );
+  }
+  else if (strategyType === 'cash_secured_put' || strategyType === 'wheel') {
+    // Single short put — pick a strike at the target delta below spot.
+    const shortPut = findStrikeByTargetDelta(chain, cfg.shortDelta, 'put', spot, 'below', em);
+    if (!shortPut) return null;
+    legs.push(
+      { contract: shortPut, dir: 'short', qty: 1, name: 'Short Put', type: 'put' }
+    );
+  }
+  else if (strategyType === 'calendar_spread') {
+    // Calendar requires a back-month expiry. The strike must exist in BOTH
+    // chains, so build the intersection of put strikes and pick the one
+    // closest to spot.
+    if (!selectedBackExpiry) return null;
+    enrichChain(selectedBackExpiry, spot);
+    const frontPuts = chain.filter(c => c.type === 'put');
+    const backPuts  = selectedBackExpiry.contracts.filter(c => c.type === 'put');
+    if (!frontPuts.length || !backPuts.length) return null;
+    const backStrikeSet = new Set(backPuts.map(c => c.strike));
+    const commonFront   = frontPuts.filter(c => backStrikeSet.has(c.strike));
+    if (!commonFront.length) return null;
+    // Pick the front-leg contract whose strike is closest to spot
+    let front = commonFront[0];
+    let bestDiff = Math.abs(front.strike - spot);
+    for (const c of commonFront) {
+      const d = Math.abs(c.strike - spot);
+      if (d < bestDiff) { bestDiff = d; front = c; }
+    }
+    const back = backPuts.find(c => c.strike === front.strike);
+    if (!back) return null;
+    legs.push(
+      { contract: front, dir: 'short', qty: 1, name: 'Short Put (front)', type: 'put',
+        _dte: dte, _expiry: selectedExpiry.expiry },
+      { contract: back,  dir: 'long',  qty: 1, name: 'Long Put (back)',   type: 'put',
+        _dte: selectedBackExpiry.dte, _expiry: selectedBackExpiry.expiry }
+    );
+  }
+  else if (strategyType === 'broken_wing_call') {
+    // CRITICAL BWB FIX:
+    // - Long PUT below spot (~0.22Δ)
+    // - Short PUT below spot, closer to spot than long put
+    // - Short CALLs ×2 above spot (~0.30Δ)
+    // - Long CALL above shortCall (broken wider wing)
+    const shortCall = findStrikeByTargetDelta(chain, Math.max(cfg.shortDelta + 0.05, 0.28), 'call', spot, 'above', em);
+    if (!shortCall) return null;
+    const callSpread = Math.max(shortCall.strike - spot, wing);
+    const longCall   = findContractByStrike(chain, shortCall.strike + callSpread * 1.5, 'call', { above: shortCall.strike });
+    const shortPut   = findStrikeByTargetDelta(chain, Math.max(cfg.shortDelta - 0.04, 0.18), 'put', spot, 'below', em);
+    if (!longCall || !shortPut) return null;
+    const putSpread = Math.max(spot - shortPut.strike, wing);
+    const longPut   = findContractByStrike(chain, shortPut.strike - putSpread, 'put', { below: shortPut.strike });
+    if (!longPut) return null;
+    if (!(longPut.strike < shortPut.strike && shortPut.strike < spot && spot < shortCall.strike && shortCall.strike < longCall.strike)) {
+      return null;
+    }
+    legs.push(
+      { contract: longPut,   dir: 'long',  qty: 1, name: 'Long Put',           type: 'put'  },
+      { contract: shortPut,  dir: 'short', qty: 1, name: 'Short Put',          type: 'put'  },
+      { contract: shortCall, dir: 'short', qty: 2, name: 'Short Calls ×2',     type: 'call' },
+      { contract: longCall,  dir: 'long',  qty: 1, name: 'Long Call (broken)', type: 'call' }
+    );
+  }
+
+  return legs;
+}
+
+// scoreSetup — composite ranking of (PoP, credit ratio, liquidity).
+function scoreSetup(legs, validation) {
+  if (!validation || !validation.valid) return -1;
+  const shortLegs = legs.filter(l => l.dir === 'short');
+  const avgShortDelta = shortLegs
+    .map(l => Math.abs(getDelta(l.contract) || 0.2))
+    .reduce((s, d) => s + d, 0) / Math.max(shortLegs.length, 1);
+  const pop = (1 - avgShortDelta) * 100;
+  const strikesArr = legs.map(l => l.contract.strike);
+  const wingWidth = Math.abs(Math.max(...strikesArr) - Math.min(...strikesArr));
+  const creditRatio = validation.credit / Math.max(wingWidth * 100, 1);
+  const minOI = Math.min(...legs.map(l => l.contract.oi || 0));
+  const liquidityScore = Math.min(minOI / 500, 1);
+  return (pop / 100) * 0.40 + Math.min(creditRatio, 1) * 0.35 + liquidityScore * 0.25;
+}
+
+// buildStrategyWithRetry — try a sweep of configs and return the first valid one.
+function buildStrategyWithRetry(spot, chain, iv, dte, strategyType, configList) {
+  const configs = configList || [
+    { shortDelta: 0.20, wingRatio: 1.5, label: 'Conservative' },
+    { shortDelta: 0.25, wingRatio: 1.2, label: 'Balanced'    },
+    { shortDelta: 0.30, wingRatio: 1.0, label: 'Aggressive'  },
+    { shortDelta: 0.16, wingRatio: 2.0, label: 'Wide'        },
+    { shortDelta: 0.35, wingRatio: 0.8, label: 'Tight'       }
+  ];
+  for (const cfg of configs) {
+    const legs = buildLegs(spot, chain, iv, dte, strategyType, cfg);
+    if (!legs) continue;
+    const validation = validateSetup(legs, spot);
+    if (validation.valid) return { legs, validation, cfg };
+  }
+  return null;
+}
+
+// Build top-3 ranked setups for the pill bar.
+function enumerateTopSetups(spot, chain, iv, dte, strategyType) {
+  const configs = [
+    { shortDelta: 0.18, wingRatio: 2.0, label: 'Conservative', sub: '~18Δ shorts · wide wings' },
+    { shortDelta: 0.25, wingRatio: 1.3, label: 'Balanced',     sub: '~25Δ shorts · standard'    },
+    { shortDelta: 0.32, wingRatio: 1.0, label: 'Aggressive',   sub: '~32Δ shorts · tight wings' }
+  ];
+  const out = [];
+  configs.forEach(cfg => {
+    const legs = buildLegs(spot, chain, iv, dte, strategyType, cfg);
+    if (!legs) return;
+    const validation = validateSetup(legs, spot);
+    if (!validation.valid) return;
+    out.push({
+      label: cfg.label,
+      sub: cfg.sub,
+      legs,
+      cfg,
+      validation,
+      score: scoreSetup(legs, validation)
+    });
+  });
+  // Always present 3 slots (filled or empty) so the UI is stable
+  return out;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// DATA LOAD
+// ════════════════════════════════════════════════════════════════════════════
+async function loadSymbolList() {
+  try {
+    const r = await fetch(`${R2_BASE}/reports/manifest.json?_=${Date.now()}`);
+    if (!r.ok) throw 0;
+    const m = await r.json();
+    return (m.reports || []).map(x => x.symbol).filter(Boolean).sort();
+  } catch {
+    return ['NVDA','TSLA','AAPL','MSFT','AMZN','GOOG','META','AMD','COIN','PLTR','SPY','QQQ'];
+  }
+}
+
+async function loadSymbol(symbol) {
+  if (!symbol) return;
+  showLoading(true);
+  try {
+    const atmRes = await fetch(`${R2_BASE}/reports/${symbol}/contracts/atm-latest.json?_=${Date.now()}`);
+    if (!atmRes.ok) throw new Error(`No atm data for ${symbol}`);
+    atmData = await atmRes.json();
+
+    // Per-symbol report (gammaData / scoring) — non-fatal if missing
+    try {
+      const repRes = await fetch(`${R2_BASE}/reports/${symbol}/latest.json?_=${Date.now()}`);
+      reportData = repRes.ok ? await repRes.json() : null;
+      if (reportData) {
+        try {
+          const today = new Date().toISOString().slice(0, 10);
+          const dRes = await fetch(`${R2_BASE}/reports/${symbol}/${today}.json?_=${Date.now()}`);
+          if (dRes.ok) {
+            const d = await dRes.json();
+            // Only override if daily data has real OI (not proxy fallback with 0 contracts)
+            if (d?.gammaData?.analysis && d.gammaData.analysis.contracts_analyzed > 0) {
+              reportData.gammaData = d.gammaData;
+            }
+          }
+        } catch {}
+      }
+    } catch (e) {
+      reportData = null;
+    }
+
+    document.getElementById('spotPrice').textContent = '$' + atmData.spot.toFixed(2);
+    document.getElementById('bc-spot').textContent   = '$' + atmData.spot.toFixed(2);
+
+    // Populate expiries
+    const expirySelect = document.getElementById('expirySelect');
+    expirySelect.innerHTML = atmData.expiries.map((e, i) =>
+      `<option value="${i}">${e.expiry} (${e.dte} DTE)</option>`
+    ).join('');
+    expirySelect.disabled = false;
+    selectExpiry(0);
+  } catch (err) {
+    console.error('loadSymbol failed:', err);
+    setBanner(false, `Could not load ${symbol}: ${err.message}`);
+  } finally {
+    showLoading(false);
+  }
+}
+
+function selectExpiry(idx) {
+  selectedExpiry = atmData.expiries[idx];
+  enrichChain(selectedExpiry, atmData.spot);
+  // If a strategy was requested via URL, honour it on the first expiry load.
+  if (pendingStrategyParam) {
+    const norm = normalizeStrategyParam(pendingStrategyParam);
+    if (norm) currentStrategy = norm;
+    pendingStrategyParam = null;
+    document.querySelectorAll('.sbtn').forEach(b =>
+      b.classList.toggle('on', b.dataset.strategy === currentStrategy)
+    );
+  }
+  // For calendar spreads, also pick a back-month expiry whenever the front
+  // changes. The back must be longer-dated than the new front.
+  if (currentStrategy === 'calendar_spread') {
+    selectedBackExpiry = pickBackExpiryFor(selectedExpiry);
+    if (selectedBackExpiry) enrichChain(selectedBackExpiry, atmData.spot);
+  } else {
+    selectedBackExpiry = null;
+  }
+  rebuildForCurrentStrategy();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// STRATEGY APPLICATION
+// ════════════════════════════════════════════════════════════════════════════
+function rebuildForCurrentStrategy() {
+  if (!selectedExpiry) return;
+  const meta = STRATEGIES[currentStrategy];
+  legsMeta = meta.legs;
+  document.getElementById('ct-name').textContent = STRATEGIES[currentStrategy].label;
+
+  // Strip any leftover calendar redirect link from a previous selection
+  const banner = document.getElementById('vbanner');
+  const stale = banner && banner.querySelector('a.calendar-redirect');
+  if (stale) stale.remove();
+
+  // Calendar needs a back-month expiry — auto-pick one if missing. If no
+  // suitable back exists in the chain, surface a clear message and bail out.
+  if (meta.multiExpiry) {
+    if (!selectedBackExpiry) {
+      selectedBackExpiry = pickBackExpiryFor(selectedExpiry);
+      if (selectedBackExpiry) enrichChain(selectedBackExpiry, atmData.spot);
+    }
+    if (!selectedBackExpiry) {
+      setBanner(false, `No back-month expiry available for a calendar on this symbol — only one expiry in chain.`);
+      strikes = [];
+      document.getElementById('strike-inputs').innerHTML = '';
+      renderPnlStrip(null);
+      renderLegsTable([]);
+      topSetups = [];
+      renderPillBar();
+      return;
+    }
+  }
+
+  const iv  = resolveAtmIv(selectedExpiry, atmData.spot) || 0.30;
+  const dte = selectedExpiry.dte;
+  const chain = selectedExpiry.contracts;
+
+  // Top 3 ranked setups for the pill bar
+  topSetups = enumerateTopSetups(atmData.spot, chain, iv, dte, currentStrategy);
+  renderPillBar();
+
+  // Tier 1: highest-scoring valid candidate from the top-3 enumeration
+  let initial = [...topSetups].sort((a, b) => b.score - a.score)[0];
+
+  // Tier 2: wider retry sweep
+  if (!initial) {
+    const fallback = buildStrategyWithRetry(atmData.spot, chain, iv, dte, currentStrategy);
+    if (fallback) {
+      initial = { legs: fallback.legs, validation: fallback.validation, cfg: fallback.cfg, label: fallback.cfg.label, sub: '', score: 0 };
+    }
+  }
+
+  // Tier 3: best-effort raw build (no validation) — gives the user concrete
+  // strikes to start tweaking from, with the validation banner explaining
+  // what's wrong. Better than a blank UI.
+  if (!initial) {
+    const raw = buildLegs(atmData.spot, chain, iv, dte, currentStrategy, { shortDelta: 0.25, wingRatio: 1.5 })
+             || buildLegs(atmData.spot, chain, iv, dte, currentStrategy, { shortDelta: 0.30, wingRatio: 1.0 })
+             || buildLegs(atmData.spot, chain, iv, dte, currentStrategy, { shortDelta: 0.16, wingRatio: 2.5 });
+    if (raw) {
+      // Run validateSetup to surface the actual reason in the banner
+      const v = validateSetup(raw, atmData.spot);
+      applyLegs(raw); // recalc() will re-validate and show the specific error
+      return;
+    }
+  }
+
+  if (initial) {
+    applyLegs(initial.legs);
+    document.querySelectorAll('.spill:not(.sbar-info-btn)').forEach((p, i) => {
+      p.classList.toggle('on', topSetups[i] && topSetups[i].cfg === initial.cfg);
+    });
+    return;
+  }
+
+  // True fallback: chain too sparse — no contracts at all match. Place sliders
+  // at sensible default offsets so the user can drag to explore.
+  setBanner(false, `No ${STRATEGIES[currentStrategy].label} setup possible at ${selectedExpiry.expiry} for this symbol — chain may be too sparse. Try a longer DTE.`);
+  strikes = [];
+  const em = expectedMove(atmData.spot, iv, dte) || (atmData.spot * 0.05);
+  const wing = Math.max(em * 0.5, 1);
+  legsMeta.forEach((leg, i) => {
+    // Sensible default offsets so the sliders aren't all stacked at spot
+    let offset = 0;
+    if (leg.type === 'PUT')  offset = leg.dir === 'long' ? -wing * 2 : -wing * 0.5;
+    if (leg.type === 'CALL') offset = leg.dir === 'long' ? +wing * 2 : +wing * 0.5;
+    strikes.push(atmData.spot + offset);
+  });
+  buildStrikeSliders();
+  drawRuler();
+  drawPayoff();
+  renderLegsTable([]);
+  renderPnlStrip(null);
+}
+
+function applyLegs(legs) {
+  // Convert legs to a strike array aligned with legsMeta slot order
+  strikes = legs.map(l => l.contract.strike);
+  buildStrikeSliders();
+  recalc();
+}
+
+// Pick a strategy from the left grid
+function pickStrategy(strategyKey) {
+  if (!STRATEGIES[strategyKey]) return;
+  currentStrategy = strategyKey;
+  document.querySelectorAll('.sbtn').forEach(b =>
+    b.classList.toggle('on', b.dataset.strategy === strategyKey)
+  );
+  // Calendar needs a back-month; clear the back expiry when switching away.
+  if (strategyKey === 'calendar_spread') {
+    if (selectedExpiry) {
+      selectedBackExpiry = pickBackExpiryFor(selectedExpiry);
+      if (selectedBackExpiry) enrichChain(selectedBackExpiry, atmData.spot);
+    }
+  } else {
+    selectedBackExpiry = null;
+  }
+  rebuildForCurrentStrategy();
+}
+
+// Pick a setup from the top pill bar
+function pickSetup(idx) {
+  const setup = topSetups[idx];
+  if (!setup) return;
+  document.querySelectorAll('.spill:not(.sbar-info-btn)').forEach((p, i) => p.classList.toggle('on', i === idx));
+  applyLegs(setup.legs);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// STRIKE INPUT BUILDING (slider rows below the ruler)
+// ════════════════════════════════════════════════════════════════════════════
+function buildStrikeSliders() {
+  const container = document.getElementById('strike-inputs');
+  container.innerHTML = '';
+  const isCalendar = currentStrategy === 'calendar_spread';
+
+  if (isCalendar) {
+    // Calendar = single strike, two legs (front + back at same strike). Only
+    // strikes that exist in BOTH chains are valid candidates.
+    const type = legsMeta[0].type.toLowerCase();
+    const frontStrikes = selectedExpiry.contracts.filter(c => c.type === type).map(c => c.strike);
+    const backStrikes  = selectedBackExpiry.contracts.filter(c => c.type === type).map(c => c.strike);
+    const backSet = new Set(backStrikes);
+    const common = [...new Set(frontStrikes)].filter(s => backSet.has(s)).sort((a, b) => a - b);
+    if (!common.length) return;
+    const minK = common[0], maxK = common[common.length - 1];
+    const step = common.length > 1
+      ? Math.min(...common.slice(1).map((s, i) => s - common[i]))
+      : 0.5;
+    const row = document.createElement('div');
+    row.className = 'si-row';
+    row.innerHTML = `
+      <div>
+        <div class="si-name">Calendar strike</div>
+        <div class="si-type">${selectedExpiry.dte}d front · ${selectedBackExpiry.dte}d back · ${legsMeta[0].type}</div>
+      </div>
+      <input type="range" class="si-slider"
+             min="${minK}" max="${maxK}" step="${step}" value="${strikes[0]}"
+             data-leg="0" id="slider-0">
+      <div class="si-val" id="siv-0">$${(strikes[0] || 0).toFixed(1)}</div>
+    `;
+    container.appendChild(row);
+    container.querySelector('input[type="range"]').addEventListener('input', e => onSlideCalendar(parseFloat(e.target.value)));
+    return;
+  }
+
+  const allStrikes = [...new Set(selectedExpiry.contracts.map(c => c.strike))].sort((a, b) => a - b);
+  const minK = allStrikes[0], maxK = allStrikes[allStrikes.length - 1];
+  const step = allStrikes.length > 1 ? Math.min(...allStrikes.slice(1).map((s, i) => s - allStrikes[i])) : 0.5;
+
+  legsMeta.forEach((leg, i) => {
+    const isCall = leg.type === 'CALL';
+    const row = document.createElement('div');
+    row.className = 'si-row';
+    row.innerHTML = `
+      <div>
+        <div class="si-name">${leg.name}</div>
+        <div class="si-type">${leg.dir === 'long' ? 'Buy' : 'Sell'} · ${leg.type}</div>
+      </div>
+      <input type="range" class="si-slider${isCall ? ' call' : ''}"
+             min="${minK}" max="${maxK}" step="${step}" value="${strikes[i]}"
+             data-leg="${i}" id="slider-${i}">
+      <div class="si-val" id="siv-${i}">$${(strikes[i] || 0).toFixed(1)}</div>
+    `;
+    container.appendChild(row);
+  });
+
+  container.querySelectorAll('input[type="range"]').forEach(slider => {
+    slider.addEventListener('input', e => onSlide(parseInt(e.target.dataset.leg, 10), parseFloat(e.target.value)));
+  });
+}
+
+// Single-slider handler for calendar: both legs share the strike, snapped to
+// strikes that exist in BOTH expiries.
+function onSlideCalendar(newStrike) {
+  const type = legsMeta[0].type.toLowerCase();
+  const frontStrikes = new Set(selectedExpiry.contracts.filter(c => c.type === type).map(c => c.strike));
+  const backStrikes  = new Set(selectedBackExpiry.contracts.filter(c => c.type === type).map(c => c.strike));
+  const common = [...frontStrikes].filter(s => backStrikes.has(s));
+  if (!common.length) return;
+  let snapped = common[0], bestDiff = Math.abs(snapped - newStrike);
+  for (const s of common) {
+    const d = Math.abs(s - newStrike);
+    if (d < bestDiff) { snapped = s; bestDiff = d; }
+  }
+  strikes[0] = snapped;
+  strikes[1] = snapped;
+  document.getElementById('siv-0').textContent = '$' + snapped.toFixed(1);
+  document.getElementById('slider-0').value = snapped;
+  document.querySelectorAll('.spill:not(.sbar-info-btn)').forEach(p => p.classList.remove('on'));
+  recalc();
+}
+
+function onSlide(legIdx, newStrike) {
+  // Snap to the nearest available strike on the right type
+  const type = legsMeta[legIdx].type === 'CALL' ? 'call' : 'put';
+  const candidates = selectedExpiry.contracts
+    .filter(c => c.type === type)
+    .map(c => c.strike);
+  let snapped = candidates[0] || newStrike;
+  let bestDiff = Math.abs(snapped - newStrike);
+  for (const s of candidates) {
+    const d = Math.abs(s - newStrike);
+    if (d < bestDiff) { snapped = s; bestDiff = d; }
+  }
+  strikes[legIdx] = snapped;
+  document.getElementById(`siv-${legIdx}`).textContent = '$' + snapped.toFixed(1);
+  document.getElementById(`slider-${legIdx}`).value = snapped;
+  // Manual edit clears the active pill so the user knows they've gone off-preset
+  document.querySelectorAll('.spill:not(.sbar-info-btn)').forEach(p => p.classList.remove('on'));
+  recalc();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// MAIN RECALC — recompute current legs from sliders, run validation, update UI
+// ════════════════════════════════════════════════════════════════════════════
+function buildCurrentLegs() {
+  const out = [];
+  const isCalendar = currentStrategy === 'calendar_spread';
+  legsMeta.forEach((leg, i) => {
+    const type = leg.type.toLowerCase();
+    // Calendar back-leg lives in selectedBackExpiry; everything else uses
+    // the front (= selectedExpiry).
+    const useBack = isCalendar && leg.expiry === 'back' && selectedBackExpiry;
+    const expiry  = useBack ? selectedBackExpiry : selectedExpiry;
+    const c = expiry.contracts.find(ct => ct.strike === strikes[i] && ct.type === type);
+    if (!c) return;
+    out.push({
+      contract: c, dir: leg.dir, qty: leg.qty || 1, name: leg.name, type,
+      _dte:    expiry.dte,
+      _expiry: expiry.expiry
+    });
+  });
+  return out;
+}
+
+function recalc() {
+  if (!selectedExpiry || !strikes.length) return;
+  const legs = buildCurrentLegs();
+  if (legs.length !== legsMeta.length) {
+    setBanner(false, 'Some leg strikes are not available in the chain at this expiry.');
+    drawRuler();
+    return;
+  }
+  const validation = validateSetup(legs, atmData.spot);
+  renderPnlStrip(legs, validation);
+  // Calendar = debit position, no closed-form PoP, payoff peaks at strike;
+  // craft a calendar-specific success message rather than the credit/PoP one.
+  let okMsg;
+  if (validation.valid && isCalendarLegs(legs)) {
+    const debit = (-validation.credit / 100).toFixed(2);
+    const ratio = validation.maxLoss !== 0
+      ? (validation.maxProfit / Math.abs(validation.maxLoss)).toFixed(2)
+      : '∞';
+    okMsg = `Valid calendar — net debit $${debit} · max profit $${(validation.maxProfit).toFixed(0)} · reward/risk ${ratio}×`;
+  } else if (validation.valid && STRATEGIES[currentStrategy]?.debit) {
+    const debit = (-validation.credit / 100).toFixed(2);
+    okMsg = `Valid setup — net debit $${debit} · max profit $${validation.maxProfit.toFixed(0)} · max loss $${Math.abs(validation.maxLoss).toFixed(0)}`;
+  } else if (validation.valid) {
+    okMsg = `Valid setup — net credit $${(validation.credit/100).toFixed(2)} · legs in order · estimated PoP ~${Math.round(scoreSetup(legs, validation) * 100)}%`;
+  }
+  setBanner(validation.valid, validation.valid ? okMsg : (validation.error || 'Invalid setup'));
+  drawRuler();
+  drawPayoff(legs, validation);
+  renderLegsTable(legs);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// P&L STRIP
+// ════════════════════════════════════════════════════════════════════════════
+function renderPnlStrip(legs, validation) {
+  const $ = id => document.getElementById(id);
+  if (!legs || !validation) {
+    ['pm-profit','pm-loss','pm-belo','pm-behi','pm-credit'].forEach(k => $(k).textContent = '—');
+    ['pm-belo-pct','pm-behi-pct'].forEach(k => $(k).textContent = '—');
+    return;
+  }
+  const credit = validation.credit;
+  const profit = validation.maxProfit;
+  const loss   = validation.maxLoss;
+  // Sample for breakevens
+  const sample = samplePayoff(legs, atmData.spot);
+  let beL = null, beH = null;
+  for (let i = 1; i < sample.length; i++) {
+    const a = sample[i-1].pnl, b = sample[i].pnl;
+    if (a * b <= 0 && a !== b) {
+      const x = sample[i-1].price + (sample[i].price - sample[i-1].price) * Math.abs(a) / (Math.abs(a) + Math.abs(b));
+      if (beL === null) beL = x; else beH = x;
+    }
+  }
+
+  $('pm-profit').textContent = '$' + Math.round(profit);
+  $('pm-loss').textContent   = (loss < 0 ? '-$' : '$') + Math.round(Math.abs(loss));
+  $('pm-credit').textContent = '$' + (credit / 100).toFixed(2);
+
+  const fmtPct = v => ((v - atmData.spot) / atmData.spot * 100).toFixed(1) + '% from spot';
+  $('pm-belo').textContent = beL != null ? '$' + beL.toFixed(2) : '—';
+  $('pm-behi').textContent = beH != null ? '$' + beH.toFixed(2) : '—';
+  $('pm-belo-pct').textContent = beL != null ? fmtPct(beL) : '—';
+  $('pm-behi-pct').textContent = beH != null ? '+' + fmtPct(beH).replace('+','') : '—';
+  $('bc-lo').textContent = beL != null ? '$' + beL.toFixed(2) : '—';
+  $('bc-hi').textContent = beH != null ? '$' + beH.toFixed(2) : '—';
+}
+
+function samplePayoff(legs, spot) {
+  const strikesArr = legs.map(l => l.contract.strike);
+  const minK = Math.min(...strikesArr, spot);
+  const maxK = Math.max(...strikesArr, spot);
+  const isCalendar = isCalendarLegs(legs);
+  // Calendars have a single strike, so widen the sweep range to ±25% of spot
+  // (otherwise minK===maxK and the range collapses to a point).
+  const span = isCalendar
+    ? Math.max(spot * 0.25, 5)
+    : ((maxK - minK) || (spot * 0.1));
+  const lo = Math.max(0.01, minK - span * 0.6);
+  const hi = maxK + span * 0.6;
+  const step = (hi - lo) / 200;
+  const credit = calcNetCredit(legs);
+  const out = [];
+
+  if (isCalendar) {
+    // Payoff measured at FRONT expiration: front legs use intrinsic value,
+    // back legs are priced via Black-Scholes with their remaining DTE.
+    const frontDTE = Math.min(...legs.map(l => l._dte));
+    for (let p = lo; p <= hi; p += step) {
+      let valuePnl = 0; // change in option market value vs entry, ×100/contract
+      legs.forEach(l => {
+        const sign = l.dir === 'long' ? 1 : -1;
+        let value;
+        if (l._dte === frontDTE) {
+          // Front leg expires
+          value = l.contract.type === 'put'
+            ? Math.max(l.contract.strike - p, 0)
+            : Math.max(p - l.contract.strike, 0);
+        } else {
+          // Back leg keeps time value
+          const remDTE = Math.max(1, l._dte - frontDTE);
+          let iv = l.contract.iv || 0;
+          if (iv > 1) iv = iv / 100;
+          if (!iv || iv <= 0) iv = 0.30;
+          value = bsPrice(p, l.contract.strike, remDTE, iv, l.contract.type);
+        }
+        valuePnl += sign * (l.qty || 1) * value;
+      });
+      out.push({ price: p, pnl: valuePnl * 100 + credit });
+    }
+    return out;
+  }
+
+  for (let p = lo; p <= hi; p += step) {
+    let pnl = 0;
+    legs.forEach(l => {
+      const intr = l.contract.type === 'put'
+        ? Math.max(l.contract.strike - p, 0)
+        : Math.max(p - l.contract.strike, 0);
+      const sign = l.dir === 'long' ? 1 : -1;
+      pnl += sign * (l.qty || 1) * intr;
+    });
+    out.push({ price: p, pnl: pnl * 100 + credit });
+  }
+  return out;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// VALIDATION BANNER
+// ════════════════════════════════════════════════════════════════════════════
+function setBanner(ok, text) {
+  const banner = document.getElementById('vbanner');
+  banner.className = 'vbanner ' + (ok ? 'ok' : 'err');
+  document.getElementById('vtext').textContent = (ok ? '✓ ' : '⚠ ') + text;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PILL BAR (top-3 setups)
+// ════════════════════════════════════════════════════════════════════════════
+function renderPillBar() {
+  document.querySelectorAll('.spill:not(.sbar-info-btn)').forEach((pill, i) => {
+    const setup = topSetups[i];
+    if (setup) {
+      const pop = Math.round(scoreSetup(setup.legs, setup.validation) * 100);
+      const creditDollars = Math.round(setup.validation.credit);
+      pill.disabled = false;
+      pill.querySelector('.sp-name').textContent = setup.label;
+      pill.querySelector('.sp-pop').textContent  = `PoP ~${pop}%`;
+      pill.querySelector('.sp-cr').textContent   = `$${creditDollars} cr`;
+      pill.onclick = () => pickSetup(i);
+    } else {
+      pill.disabled = true;
+      pill.classList.remove('on');
+      pill.querySelector('.sp-name').textContent = ['Conservative','Balanced','Aggressive'][i];
+      pill.querySelector('.sp-pop').textContent  = 'PoP —';
+      pill.querySelector('.sp-cr').textContent   = '— cr';
+      pill.onclick = null;
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CANVAS — VISUAL STRIKE RULER
+// ════════════════════════════════════════════════════════════════════════════
+function drawRuler() {
+  const canvas = document.getElementById('ruler');
+  if (!canvas || !selectedExpiry) return;
+  const DPR = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth, H = 90;
+  canvas.width  = W * DPR;
+  canvas.height = H * DPR;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+  ctx.clearRect(0, 0, W, H);
+
+  const spot = atmData.spot;
+  const allPrices = [...strikes.filter(s => s != null), spot];
+  const minP = Math.min(...allPrices) - Math.max(spot * 0.04, 4);
+  const maxP = Math.max(...allPrices) + Math.max(spot * 0.04, 4);
+  const range = maxP - minP || 1;
+  const px = p => 36 + (p - minP) / range * (W - 72);
+
+  const AXIS_Y = 52;
+
+  // Axis line
+  ctx.strokeStyle = '#e5e1d4';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(32, AXIS_Y);
+  ctx.lineTo(W - 32, AXIS_Y);
+  ctx.stroke();
+
+  // Ticks every ~5pt, labels every 10
+  const tickStep = range > 80 ? 10 : range > 40 ? 5 : 2;
+  const labelStep = tickStep * 2;
+  const start = Math.ceil(minP / tickStep) * tickStep;
+  for (let p = start; p <= maxP; p += tickStep) {
+    const x = px(p);
+    ctx.strokeStyle = '#d9d4c0';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(x, AXIS_Y - 3);
+    ctx.lineTo(x, AXIS_Y + 3);
+    ctx.stroke();
+    if (Math.round(p) % labelStep === 0) {
+      ctx.fillStyle = '#9ea1a8';
+      ctx.font = '600 11px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('$' + Math.round(p), x, AXIS_Y + 18);
+    }
+  }
+
+  // Connecting line through strikes
+  if (strikes.length > 1) {
+    const stratColor = STRATEGIES[currentStrategy].color;
+    ctx.strokeStyle = stratColor + '55';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([]);
+    const sorted = [...strikes].sort((a, b) => a - b);
+    ctx.beginPath();
+    ctx.moveTo(px(sorted[0]), AXIS_Y);
+    sorted.forEach(s => ctx.lineTo(px(s), AXIS_Y));
+    ctx.stroke();
+  }
+
+  // Spot dashed line
+  const sx = px(spot);
+  ctx.fillStyle = 'rgba(201,169,110,0.15)';
+  ctx.fillRect(sx - 1, AXIS_Y - 22, 2, 44);
+  ctx.strokeStyle = '#C9A96E';
+  ctx.lineWidth = 1.75;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  ctx.moveTo(sx, AXIS_Y - 28);
+  ctx.lineTo(sx, AXIS_Y + 22);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#C9A96E';
+  ctx.font = '700 12px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('$' + spot.toFixed(0), sx, AXIS_Y - 32);
+
+  // Strike dots + labels
+  strikes.forEach((s, i) => {
+    const leg = legsMeta[i];
+    if (!leg) return;
+    const isCall = leg.type === 'CALL';
+    const isShort = leg.dir === 'short';
+    const col = isCall ? '#b03030' : '#2d7d4f';
+    const x = px(s);
+    // Dot
+    ctx.beginPath();
+    ctx.arc(x, AXIS_Y, isShort ? 8 : 6.5, 0, Math.PI * 2);
+    if (isShort) {
+      ctx.fillStyle = col;
+      ctx.fill();
+    } else {
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+    }
+    // Label above
+    ctx.fillStyle = '#6b6e74';
+    ctx.font = '600 11px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    const nameTok = leg.name.replace(' ×2','').split(' ').slice(-1)[0].slice(0, 4);
+    ctx.fillText(leg.type[0] + ' ' + nameTok, x, AXIS_Y - 14);
+    // Price below (skip if overlapping spot label)
+    if (Math.abs(x - sx) > 22) {
+      ctx.fillStyle = '#0B0F14';
+      ctx.font = '700 12px Inter, sans-serif';
+      ctx.fillText('$' + s.toFixed(1), x, AXIS_Y + 30);
+    }
+  });
+
+  // Legend
+  ctx.beginPath();
+  ctx.arc(22, 14, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.strokeStyle = '#2d7d4f';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = '#6b6e74';
+  ctx.font = '500 11px Inter, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Long (buy)', 32, 18);
+  ctx.beginPath();
+  ctx.arc(120, 14, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#b03030';
+  ctx.fill();
+  ctx.fillStyle = '#6b6e74';
+  ctx.fillText('Short (sell) — filled', 130, 18);
+  ctx.fillText('puts = green  ·  calls = red', 280, 18);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CANVAS — PAYOFF CHART
+// ════════════════════════════════════════════════════════════════════════════
+function drawPayoff(legs, validation) {
+  const canvas = document.getElementById('payoff');
+  if (!canvas) return;
+  const DPR = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth || 800, H = 260;
+  canvas.width  = W * DPR;
+  canvas.height = H * DPR;
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+  ctx.clearRect(0, 0, W, H);
+
+  if (!legs || !legs.length) return;
+  const sample = samplePayoff(legs, atmData.spot);
+  const prices = sample.map(s => s.price);
+  const payoffs = sample.map(s => s.pnl);
+  const PAD = { t: 18, r: 20, b: 42, l: 72 };
+  const cW = W - PAD.l - PAD.r, cH = H - PAD.t - PAD.b;
+  const maxV = Math.max(...payoffs, 0) + 40, minV = Math.min(...payoffs, 0) - 40;
+  const rng = maxV - minV || 1;
+  const xf = p => PAD.l + (p - prices[0]) / (prices[prices.length - 1] - prices[0]) * cW;
+  const yf = v => PAD.t + (1 - (v - minV) / rng) * cH;
+  const col = STRATEGIES[currentStrategy].color;
+
+  // Y grid + labels — dynamic level generator that always covers the full range
+  // Picks a "nice" step (1, 2, 2.5, 5, 10 × 10^k) so the chart shows ~6 lines.
+  function niceStep(rangeAbs) {
+    if (rangeAbs <= 0) return 1;
+    const target = rangeAbs / 6;
+    const mag = Math.pow(10, Math.floor(Math.log10(target)));
+    const norm = target / mag;
+    if (norm < 1.5) return 1 * mag;
+    if (norm < 3)   return 2 * mag;
+    if (norm < 7)   return 5 * mag;
+    return 10 * mag;
+  }
+  const step = niceStep(maxV - minV);
+  const firstLevel = Math.ceil(minV / step) * step;
+  for (let v = firstLevel; v <= maxV; v += step) {
+    ctx.strokeStyle = 'rgba(229,225,212,.6)';
+    ctx.lineWidth = 0.5;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(PAD.l, yf(v));
+    ctx.lineTo(PAD.l + cW, yf(v));
+    ctx.stroke();
+    ctx.fillStyle = '#9ea1a8';
+    ctx.font = '600 11px Inter, sans-serif';
+    ctx.textAlign = 'right';
+    // Compact label: $1.2k for >= $1000, $X otherwise
+    const label = Math.abs(v) >= 1000
+      ? (v >= 0 ? '+$' : '-$') + (Math.abs(v) / 1000).toFixed(Math.abs(v) >= 10000 ? 0 : 1) + 'k'
+      : '$' + (v >= 0 ? '+' : '') + Math.round(v);
+    ctx.fillText(label, PAD.l - 8, yf(v) + 4);
+  }
+
+  // Zero line (dashed)
+  ctx.strokeStyle = 'rgba(120,120,120,.5)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  ctx.moveTo(PAD.l, yf(0));
+  ctx.lineTo(PAD.l + cW, yf(0));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // X labels
+  ctx.fillStyle = '#9ea1a8';
+  ctx.font = '600 11px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  const xLabelStep = Math.max(1, Math.floor(prices.length / 8));
+  prices.forEach((p, i) => {
+    if (i % xLabelStep === 0) {
+      ctx.fillText('$' + Math.round(p), xf(p), H - PAD.b + 16);
+    }
+  });
+
+  // Loss fill
+  ctx.beginPath();
+  ctx.moveTo(xf(prices[0]), yf(0));
+  prices.forEach((p, i) => ctx.lineTo(xf(p), yf(Math.min(payoffs[i], 0))));
+  ctx.lineTo(xf(prices[prices.length - 1]), yf(0));
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(176,48,48,.09)';
+  ctx.fill();
+
+  // Profit fill
+  ctx.beginPath();
+  ctx.moveTo(xf(prices[0]), yf(0));
+  prices.forEach((p, i) => ctx.lineTo(xf(p), yf(Math.max(payoffs[i], 0))));
+  ctx.lineTo(xf(prices[prices.length - 1]), yf(0));
+  ctx.closePath();
+  ctx.fillStyle = col + '18';
+  ctx.fill();
+
+  // Main P&L line
+  ctx.beginPath();
+  prices.forEach((p, i) => i === 0 ? ctx.moveTo(xf(p), yf(payoffs[i])) : ctx.lineTo(xf(p), yf(payoffs[i])));
+  ctx.strokeStyle = col;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // Spot line (gold dashed)
+  const spot = atmData.spot;
+  if (spot >= prices[0] && spot <= prices[prices.length - 1]) {
+    ctx.strokeStyle = 'rgba(200,168,90,.85)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.moveTo(xf(spot), PAD.t);
+    ctx.lineTo(xf(spot), PAD.t + cH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#C9A96E';
+    ctx.font = '700 12px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('$' + spot.toFixed(0), xf(spot), PAD.t - 4);
+  }
+
+  // Breakevens
+  let beL = null, beH = null;
+  for (let i = 1; i < payoffs.length; i++) {
+    const a = payoffs[i-1], b = payoffs[i];
+    if (a * b <= 0 && a !== b) {
+      const x = prices[i-1] + (prices[i] - prices[i-1]) * Math.abs(a) / (Math.abs(a) + Math.abs(b));
+      if (beL === null) beL = x; else beH = x;
+    }
+  }
+  [beL, beH].forEach(be => {
+    if (be == null) return;
+    ctx.strokeStyle = 'rgba(180,175,165,.55)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(xf(be), PAD.t + cH * 0.5);
+    ctx.lineTo(xf(be), PAD.t + cH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#6b6e74';
+    ctx.font = '600 11px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('BE $' + be.toFixed(0), xf(be), PAD.t + cH * 0.5 - 5);
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// LEGS TABLE — real chain data
+// ════════════════════════════════════════════════════════════════════════════
+function renderLegsTable(legs) {
+  const tbody = document.getElementById('legs-body');
+  tbody.innerHTML = '';
+  if (!legs || !legs.length) {
+    document.getElementById('tcnt').textContent = '0 legs';
+    return;
+  }
+  legs.forEach(l => {
+    const c = l.contract;
+    const isShort = l.dir === 'short';
+    const isCall = c.type === 'call';
+    const delta = getDelta(c);
+    const deltaTxt = delta != null ? (Math.abs(delta).toFixed(3)) : '—';
+    const tr = document.createElement('tr');
+    const qtyTag = (l.qty || 1) > 1 ? ` ×${l.qty}` : '';
+    tr.innerHTML = `
+      <td>${l.name}${qtyTag}</td>
+      <td><span class="tbadge ${isCall ? 'c' : 'p'}">${c.type.toUpperCase()}</span></td>
+      <td><strong>$${c.strike.toFixed(1)}</strong></td>
+      <td class="tmut">${c.bid != null ? '$' + c.bid.toFixed(2) : '—'}</td>
+      <td class="tmut">${c.ask != null ? '$' + c.ask.toFixed(2) : '—'}</td>
+      <td>${c.mid != null ? '$' + c.mid.toFixed(2) : '—'}</td>
+      <td class="tmut">${c.iv ? (c.iv * 100).toFixed(1) + '%' : '—'}</td>
+      <td class="${isShort ? 'tneg' : 'tpos'}">${isShort ? '-' : '+'}${deltaTxt}</td>
+      <td class="tmut">${c.gamma != null ? c.gamma.toFixed(4) : '—'}</td>
+      <td class="tmut">${c.oi != null ? c.oi.toLocaleString() : '—'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('tcnt').textContent = legs.length + ' legs · 1 contract';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// MISC UI
+// ════════════════════════════════════════════════════════════════════════════
+function showLoading(b) {
+  document.getElementById('loadingOverlay').classList.toggle('show', b);
+}
+
+function resetStrikes() {
+  rebuildForCurrentStrategy();
+}
+
+function sendToDesk() {
+  if (!strikes.length) return;
+  const legs = buildCurrentLegs();
+  const summary = legs.map(l => {
+    const expSuffix = l._expiry ? ` (${l._expiry})` : '';
+    return `${l.dir.toUpperCase()} ${l.qty || 1} ${l.contract.type.toUpperCase()} $${l.contract.strike}${expSuffix}`;
+  }).join('\n');
+  const expiryLabel = currentStrategy === 'calendar_spread' && selectedBackExpiry
+    ? `Front: ${selectedExpiry.expiry} · Back: ${selectedBackExpiry.expiry}`
+    : `Expiry: ${selectedExpiry.expiry}`;
+  alert(`Send to NewLeaf Desk — coming soon!\n\n${STRATEGIES[currentStrategy].label}\n${expiryLabel}\n\n${summary}`);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════════════════════
+async function init() {
+  // URL params
+  const params = new URLSearchParams(location.search);
+  const symbolParam = (params.get('symbol') || 'NVDA').toUpperCase();
+  pendingStrategyParam = params.get('strategy');
+
+  // Populate symbol dropdown
+  const symbols = await loadSymbolList();
+  const select = document.getElementById('symbolSelect');
+  select.innerHTML = symbols.map(s =>
+    `<option value="${s}" ${s === symbolParam ? 'selected' : ''}>${s}</option>`
+  ).join('');
+  select.addEventListener('change', e => loadSymbol(e.target.value));
+
+  // Strategy buttons
+  document.querySelectorAll('.sbtn').forEach(btn => {
+    btn.addEventListener('click', () => pickStrategy(btn.dataset.strategy));
+  });
+
+  // Expiry select
+  document.getElementById('expirySelect').addEventListener('change', e => selectExpiry(parseInt(e.target.value, 10)));
+
+  // Bottom buttons
+  document.getElementById('resetBtn').addEventListener('click', resetStrikes);
+  document.getElementById('sendToDesk').addEventListener('click', sendToDesk);
+
+  // Resize handler — redraw both canvases
+  window.addEventListener('resize', () => {
+    drawRuler();
+    if (selectedExpiry) {
+      const legs = buildCurrentLegs();
+      if (legs.length === legsMeta.length) {
+        const v = validateSetup(legs, atmData.spot);
+        drawPayoff(legs, v);
+      }
+    }
+  });
+
+  // Load the requested symbol
+  await loadSymbol(symbolParam);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// GAMMA + TECHNICALS POPUPS
+// ════════════════════════════════════════════════════════════════════════════
+function showGammaPopup() {
+  const el = document.getElementById('gammaPopupBody');
+  const g = reportData?.gammaData;
+  const a = g?.analysis;
+  const iv = g?.ivData;
+  if (!a || a.contracts_analyzed === 0) { el.innerHTML = '<p style="color:#999">No gamma data available for this symbol. Run the daily OI pipeline first.</p>'; }
+  else {
+    const conf = (v, lbl) => `<div class="ip-cell"><span class="ip-cell-lbl">${lbl}</span><span class="ip-cell-val">${Math.round((v||0)*100)}%</span><div class="ip-bar"><div class="ip-bar-fill" style="width:${Math.round((v||0)*100)}%;background:${v>=0.6?'#2d7d4f':v>=0.3?'#a0620c':'#c0392b'}"></div></div></div>`;
+    const topStrikes = (a.topStrikes || []).slice(0, 6);
+    const maxGex = Math.max(...topStrikes.map(s => Math.abs(s.gamma_exposure || 0)), 1);
+    el.innerHTML = `
+      <div class="ip-section">
+        <div class="ip-section-title">Gamma Walls</div>
+        <div class="ip-section-desc">Where market makers hold their largest hedging positions. The stock tends to stay between these walls — they act as magnetic support and resistance levels driven by options dealer positioning.</div>
+        <div class="ip-grid cols-4">
+          <div class="ip-cell"><span class="ip-cell-lbl">Put Wall</span><span class="ip-cell-val green">$${a.put_wall != null ? Number(a.put_wall).toFixed(2) : '—'}</span></div>
+          <div class="ip-cell"><span class="ip-cell-lbl">Call Wall</span><span class="ip-cell-val red">$${a.call_wall != null ? Number(a.call_wall).toFixed(2) : '—'}</span></div>
+          <div class="ip-cell"><span class="ip-cell-lbl">Band Width</span><span class="ip-cell-val">${(a.band_width_pct||0).toFixed(1)}%</span></div>
+          <div class="ip-cell"><span class="ip-cell-lbl">Position in Band</span><span class="ip-cell-val">${a.position_in_band_pct ?? '—'}%</span></div>
+        </div>
+      </div>
+      <div class="ip-section">
+        <div class="ip-section-title">Confidence Breakdown</div>
+        <div class="ip-section-desc">How reliable is this gamma wall reading? Higher OI confidence means more open interest data backs the walls. Volume confirms active trading at those strikes.</div>
+        <div class="ip-grid cols-4">
+          ${conf(a.confidence_score, 'Overall')}
+          ${conf(a.oi_confidence, 'Open Interest')}
+          ${conf(a.delta_confidence, 'Delta')}
+          ${conf(a.volume_confidence, 'Volume')}
+        </div>
+      </div>
+      <div class="ip-section">
+        <div class="ip-section-title">IV Data</div>
+        <div class="ip-section-desc">Implied volatility reflects how expensive options are right now. Higher IV = richer premiums for sellers, but also more expected movement. "Normal" IV means options are fairly priced relative to history.</div>
+        <div class="ip-grid">
+          <div class="ip-cell"><span class="ip-cell-lbl">ATM IV</span><span class="ip-cell-val gold">${iv?.atmIv != null ? iv.atmIv.toFixed(1) + '%' : '—'}</span></div>
+          <div class="ip-cell"><span class="ip-cell-lbl">IV Level</span><span class="ip-cell-val">${iv?.ivLevel || '—'}</span></div>
+          <div class="ip-cell"><span class="ip-cell-lbl">Contracts Analyzed</span><span class="ip-cell-val">${a.contracts_analyzed ?? '—'}</span></div>
+        </div>
+      </div>
+      <div class="ip-section">
+        <div class="ip-section-title">Gamma Exposure by Strike</div>
+        <div class="ip-section-desc">Each bar shows gamma exposure (GEX) at a strike — the bigger the bar, the more dealers must hedge there. Green = call-dominant (dealers sell when price rises), Red = put-dominant (dealers buy when price falls). Your short strikes ideally sit between the walls.</div>
+        <canvas id="gammaChart" style="width:100%;height:220px;display:block"></canvas>
+        <div style="display:flex;gap:16px;margin-top:8px;justify-content:center">
+          <span style="font-size:10px;color:#2d7d4f">■ Call-dominant</span>
+          <span style="font-size:10px;color:#c0392b">■ Put-dominant</span>
+          <span style="font-size:10px;color:#C9A96E">┆ Spot</span>
+          <span style="font-size:10px;color:#0d6e56">│ Put wall</span>
+          <span style="font-size:10px;color:#b03030">│ Call wall</span>
+        </div>
+      </div>
+      ${topStrikes.length ? `<div class="ip-section">
+        <div class="ip-section-title">Top Gamma Strikes</div>
+        ${topStrikes.map(s => `<div class="ip-strike-row">
+          <span class="ip-strike-lbl">$${s.strike}</span>
+          <div class="ip-strike-bar"><div class="ip-strike-fill" style="width:${Math.round(Math.abs(s.gamma_exposure)/maxGex*100)}%"></div></div>
+          <span style="font-size:10px;color:#666">C:${(s.call_oi/1000).toFixed(0)}k</span>
+          <span style="font-size:10px;color:#666">P:${(s.put_oi/1000).toFixed(0)}k</span>
+        </div>`).join('')}
+      </div>` : ''}
+    `;
+    // Draw the gamma chart after DOM is updated
+    requestAnimationFrame(() => drawGammaChart(a, iv, atmData?.spot));
+  }
+  document.getElementById('gammaPopupOverlay').style.display = 'flex';
+}
+
+function drawGammaChart(analysis, ivData, spot) {
+  const canvas = document.getElementById('gammaChart');
+  if (!canvas || !analysis?.topStrikes?.length) return;
+  const DPR = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth || 500;
+  const H = 220;
+  canvas.width = W * DPR;
+  canvas.height = H * DPR;
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+  ctx.clearRect(0, 0, W, H);
+
+  // Sort strikes by price
+  const strikes = [...analysis.topStrikes].sort((a, b) => a.strike - b.strike);
+  if (!strikes.length) return;
+
+  const PAD_L = 50, PAD_R = 16, PAD_T = 16, PAD_B = 36;
+  const chartW = W - PAD_L - PAD_R;
+  const chartH = H - PAD_T - PAD_B;
+
+  const maxGex = Math.max(...strikes.map(s => Math.abs(s.gamma_exposure || 0)), 1);
+  const minStrike = strikes[0].strike;
+  const maxStrike = strikes[strikes.length - 1].strike;
+  const strikeRange = maxStrike - minStrike || 1;
+
+  // Bar width
+  const barW = Math.max(4, Math.min(18, (chartW / strikes.length) * 0.7));
+
+  const xPos = s => PAD_L + ((s - minStrike) / strikeRange) * chartW;
+  const yPos = v => PAD_T + chartH - (Math.abs(v) / maxGex) * chartH;
+
+  // Grid lines
+  ctx.strokeStyle = '#f0ece0';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = PAD_T + (chartH / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(PAD_L, y);
+    ctx.lineTo(W - PAD_R, y);
+    ctx.stroke();
+  }
+
+  // Y-axis labels
+  ctx.fillStyle = '#999';
+  ctx.font = '500 9px Inter, sans-serif';
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const y = PAD_T + (chartH / 4) * i;
+    const val = maxGex * (1 - i / 4);
+    const label = val >= 1e6 ? (val / 1e6).toFixed(0) + 'M' : val >= 1e3 ? (val / 1e3).toFixed(0) + 'K' : val.toFixed(0);
+    ctx.fillText(label, PAD_L - 6, y + 3);
+  }
+
+  // Baseline
+  ctx.strokeStyle = '#d9d4c0';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD_L, PAD_T + chartH);
+  ctx.lineTo(W - PAD_R, PAD_T + chartH);
+  ctx.stroke();
+
+  // Bars
+  strikes.forEach(s => {
+    const x = xPos(s.strike);
+    const barH = (Math.abs(s.gamma_exposure || 0) / maxGex) * chartH;
+    const isCallDom = (s.call_oi || 0) >= (s.put_oi || 0);
+    ctx.fillStyle = isCallDom ? 'rgba(45,125,79,0.75)' : 'rgba(192,57,43,0.75)';
+    ctx.fillRect(x - barW / 2, PAD_T + chartH - barH, barW, barH);
+
+    // Strike label (rotate for space)
+    ctx.fillStyle = '#666';
+    ctx.font = '600 9px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('$' + s.strike, x, PAD_T + chartH + 14);
+  });
+
+  // Put wall line
+  if (analysis.put_wall) {
+    const x = xPos(analysis.put_wall);
+    if (x >= PAD_L && x <= W - PAD_R) {
+      ctx.strokeStyle = '#0d6e56';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(x, PAD_T);
+      ctx.lineTo(x, PAD_T + chartH);
+      ctx.stroke();
+      ctx.fillStyle = '#0d6e56';
+      ctx.font = '700 10px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('PUT $' + analysis.put_wall, x, PAD_T + chartH + 28);
+    }
+  }
+
+  // Call wall line
+  if (analysis.call_wall) {
+    const x = xPos(analysis.call_wall);
+    if (x >= PAD_L && x <= W - PAD_R) {
+      ctx.strokeStyle = '#b03030';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(x, PAD_T);
+      ctx.lineTo(x, PAD_T + chartH);
+      ctx.stroke();
+      ctx.fillStyle = '#b03030';
+      ctx.font = '700 10px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('CALL $' + analysis.call_wall, x, PAD_T + chartH + 28);
+    }
+  }
+
+  // Spot line
+  if (spot && spot >= minStrike && spot <= maxStrike) {
+    const x = xPos(spot);
+    ctx.strokeStyle = '#C9A96E';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(x, PAD_T);
+    ctx.lineTo(x, PAD_T + chartH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#C9A96E';
+    ctx.font = '700 10px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('$' + spot.toFixed(0), x, PAD_T - 4);
+  }
+}
+
+// ── EMA helper for MACD computation ──────────────────────────────────────────
+function computeEMA(data, period) {
+  const k = 2 / (period + 1);
+  const ema = [data[0]];
+  for (let i = 1; i < data.length; i++) ema.push(data[i] * k + ema[i - 1] * (1 - k));
+  return ema;
+}
+
+// ── Generic line/area chart helper on <canvas> ──────────────────────────────
+function drawLineChart(canvasId, config) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const DPR = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth || 880;
+  const H = parseInt(canvas.style.height) || 260;
+  canvas.width = W * DPR; canvas.height = H * DPR;
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+  ctx.clearRect(0, 0, W, H);
+
+  const P = { l: 55, r: 14, t: 14, b: 30 };
+  const cW = W - P.l - P.r, cH = H - P.t - P.b;
+  const n = config.labels.length;
+  if (n < 2) return;
+
+  // Y range
+  let yMin = Infinity, yMax = -Infinity;
+  config.series.forEach(s => s.data.forEach(v => { if (v != null) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; } }));
+  if (config.yZones) config.yZones.forEach(z => { yMin = Math.min(yMin, z.y); yMax = Math.max(yMax, z.y); });
+  const yPad = (yMax - yMin) * 0.08 || 1;
+  yMin -= yPad; yMax += yPad;
+
+  const xPos = i => P.l + (i / (n - 1)) * cW;
+  const yPos = v => P.t + (1 - (v - yMin) / (yMax - yMin)) * cH;
+
+  // Grid
+  ctx.strokeStyle = '#f0ece0'; ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = P.t + (cH / 4) * i;
+    ctx.beginPath(); ctx.moveTo(P.l, y); ctx.lineTo(W - P.r, y); ctx.stroke();
+    ctx.fillStyle = '#999'; ctx.font = '500 9px Inter,sans-serif'; ctx.textAlign = 'right';
+    const val = yMax - ((yMax - yMin) / 4) * i;
+    ctx.fillText(config.yFmt ? config.yFmt(val) : val.toFixed(1), P.l - 6, y + 3);
+  }
+
+  // Horizontal zone lines (e.g. RSI 30/70)
+  if (config.yZones) config.yZones.forEach(z => {
+    ctx.strokeStyle = z.color || '#ccc'; ctx.lineWidth = 1; ctx.setLineDash(z.dash || [4, 3]);
+    ctx.beginPath(); ctx.moveTo(P.l, yPos(z.y)); ctx.lineTo(W - P.r, yPos(z.y)); ctx.stroke();
+    ctx.setLineDash([]);
+    if (z.label) { ctx.fillStyle = z.color || '#999'; ctx.font = '600 9px Inter,sans-serif'; ctx.textAlign = 'left'; ctx.fillText(z.label, P.l + 4, yPos(z.y) - 4); }
+  });
+
+  // Fill areas
+  (config.fills || []).forEach(f => {
+    const d1 = config.series.find(s => s.id === f.upper)?.data;
+    const d2 = config.series.find(s => s.id === f.lower)?.data;
+    if (!d1 || !d2) return;
+    ctx.fillStyle = f.color || 'rgba(0,0,0,.05)';
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) { const y = d1[i] != null ? yPos(d1[i]) : null; if (y != null) { i === 0 ? ctx.moveTo(xPos(i), y) : ctx.lineTo(xPos(i), y); } }
+    for (let i = n - 1; i >= 0; i--) { const y = d2[i] != null ? yPos(d2[i]) : null; if (y != null) ctx.lineTo(xPos(i), y); }
+    ctx.closePath(); ctx.fill();
+  });
+
+  // Histogram bars
+  (config.histograms || []).forEach(h => {
+    const data = h.data;
+    const barW = Math.max(1, cW / n * 0.6);
+    const zeroY = yPos(0);
+    data.forEach((v, i) => {
+      if (v == null) return;
+      ctx.fillStyle = v >= 0 ? (h.posColor || '#2d7d4f') : (h.negColor || '#c0392b');
+      const y = yPos(v);
+      ctx.fillRect(xPos(i) - barW / 2, Math.min(y, zeroY), barW, Math.abs(y - zeroY));
+    });
+  });
+
+  // Lines
+  config.series.forEach(s => {
+    if (s.hidden) return;
+    ctx.strokeStyle = s.color || '#0B2D23'; ctx.lineWidth = s.width || 1.5;
+    ctx.setLineDash(s.dash || []);
+    ctx.beginPath();
+    let started = false;
+    s.data.forEach((v, i) => {
+      if (v == null) return;
+      const x = xPos(i), y = yPos(v);
+      started ? ctx.lineTo(x, y) : (ctx.moveTo(x, y), started = true);
+    });
+    ctx.stroke(); ctx.setLineDash([]);
+  });
+
+  // X-axis labels (every ~30 bars)
+  ctx.fillStyle = '#999'; ctx.font = '500 9px Inter,sans-serif'; ctx.textAlign = 'center';
+  const step = Math.max(1, Math.floor(n / 8));
+  for (let i = 0; i < n; i += step) {
+    const lbl = config.labels[i];
+    if (lbl) ctx.fillText(lbl, xPos(i), P.t + cH + 16);
+  }
+
+  // Legend
+  let lx = P.l + 4;
+  [...config.series.filter(s => !s.hidden && s.label), ...(config.histograms || []).filter(h => h.label)].forEach(s => {
+    ctx.fillStyle = s.color || s.posColor || '#0B2D23';
+    ctx.fillRect(lx, P.t + cH + 22, 10, 3);
+    ctx.fillStyle = '#666'; ctx.font = '500 9px Inter,sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText(s.label, lx + 14, P.t + cH + 26);
+    lx += ctx.measureText(s.label).width + 28;
+  });
+}
+
+function showTechPopup() {
+  const el = document.getElementById('techPopupBody');
+  const t = reportData?.technicalData;
+  if (!t) { el.innerHTML = '<p style="color:#999">No technical data available for this symbol. Run the pipeline first.</p>'; document.getElementById('techPopupOverlay').style.display = 'flex'; return; }
+
+  const rsiColor = (t.rsi||50) > 70 ? 'red' : (t.rsi||50) < 30 ? 'green' : '';
+  const trendColor = t.trendEngine?.state === 'Bullish' ? 'green' : t.trendEngine?.state === 'Bearish' ? 'red' : '';
+  const bb = t.bb || {};
+  const sr = t.sr || {};
+
+  el.innerHTML = `
+    <div class="ip-tabs">
+      <button class="ip-tab active" data-tech-tab="overview">Overview</button>
+      <button class="ip-tab" data-tech-tab="rsi">RSI</button>
+      <button class="ip-tab" data-tech-tab="bollinger">Bollinger</button>
+      <button class="ip-tab" data-tech-tab="macd">MACD</button>
+      <button class="ip-tab" data-tech-tab="sma">Moving Avg</button>
+    </div>
+
+    <div class="ip-tab-content active" id="techTab-overview">
+      <div class="ip-section">
+        <div class="ip-section-title">Momentum</div>
+        <div class="ip-section-desc">Key indicators showing whether the stock is overbought, oversold, or in a trend. RSI above 70 = overbought (may pull back), below 30 = oversold (may bounce).</div>
+        <div class="ip-grid">
+          <div class="ip-cell"><span class="ip-cell-lbl">RSI (14)</span><span class="ip-cell-val ${rsiColor}">${t.rsi != null ? t.rsi.toFixed(1) : '—'}</span><span class="ip-cell-sub">${t.rsiEngine?.state || '—'}</span></div>
+          <div class="ip-cell"><span class="ip-cell-lbl">Trend</span><span class="ip-cell-val ${trendColor}">${t.trendEngine?.state || '—'}</span><span class="ip-cell-sub">Score ${t.trendEngine?.score != null ? t.trendEngine.score.toFixed(2) : '—'}</span></div>
+          <div class="ip-cell"><span class="ip-cell-lbl">Volatility</span><span class="ip-cell-val">${t.volatilityEngine?.state || '—'}</span><span class="ip-cell-sub">${t.volatilityEngine?.squeeze ? 'Squeeze active' : 'No squeeze'}</span></div>
+        </div>
+      </div>
+      <div class="ip-section">
+        <div class="ip-section-title">Bollinger Bands (20, 2)</div>
+        <div class="ip-section-desc">Price envelope around the 20-day average. When price touches the upper band it may be stretched too far up; lower band means it's stretched down. Width shows how volatile the stock has been recently.</div>
+        <div class="ip-grid cols-4">
+          <div class="ip-cell"><span class="ip-cell-lbl">Upper</span><span class="ip-cell-val red">$${bb.upper?.toFixed(2) || '—'}</span></div>
+          <div class="ip-cell"><span class="ip-cell-lbl">Middle</span><span class="ip-cell-val">$${bb.middle?.toFixed(2) || '—'}</span></div>
+          <div class="ip-cell"><span class="ip-cell-lbl">Lower</span><span class="ip-cell-val green">$${bb.lower?.toFixed(2) || '—'}</span></div>
+          <div class="ip-cell"><span class="ip-cell-lbl">Width</span><span class="ip-cell-val">${bb.width?.toFixed(1) || '—'}%</span></div>
+        </div>
+      </div>
+      <div class="ip-section">
+        <div class="ip-section-title">Moving Averages & Volatility</div>
+        <div class="ip-section-desc">SMA 50 and SMA 100 smooth out price noise. Stock trading above both SMAs = bullish trend. Realized Vol shows how much the stock actually moved vs how much options priced in.</div>
+        <div class="ip-grid cols-4">
+          <div class="ip-cell"><span class="ip-cell-lbl">SMA 50</span><span class="ip-cell-val ${t.aboveSMA50 ? 'green' : 'red'}">$${t.sma50?.toFixed(2) || '—'}</span><span class="ip-cell-sub">${t.aboveSMA50 ? 'Above ✓' : 'Below ✗'}</span></div>
+          <div class="ip-cell"><span class="ip-cell-lbl">SMA 100</span><span class="ip-cell-val ${t.aboveSMA100 ? 'green' : 'red'}">$${t.sma100?.toFixed(2) || '—'}</span><span class="ip-cell-sub">${t.aboveSMA100 ? 'Above ✓' : 'Below ✗'}</span></div>
+          <div class="ip-cell"><span class="ip-cell-lbl">Realized Vol 30d</span><span class="ip-cell-val">${t.realizedVol30d != null ? (t.realizedVol30d * 100).toFixed(1) + '%' : '—'}</span></div>
+          <div class="ip-cell"><span class="ip-cell-lbl">ATR %</span><span class="ip-cell-val">${t.atrPct != null ? (t.atrPct * 100).toFixed(2) + '%' : '—'}</span></div>
+        </div>
+      </div>
+      <div class="ip-section">
+        <div class="ip-section-title">Support & Resistance</div>
+        <div class="ip-section-desc">Key price levels where the stock has historically bounced (support) or stalled (resistance). Useful for picking your short strikes — sell options outside these levels for higher probability.</div>
+        <div class="ip-grid cols-2">
+          <div class="ip-cell"><span class="ip-cell-lbl">Support 1</span><span class="ip-cell-val green">$${sr.support1?.toFixed(2) || '—'}</span></div>
+          <div class="ip-cell"><span class="ip-cell-lbl">Resistance 1</span><span class="ip-cell-val red">$${sr.resistance1?.toFixed(2) || '—'}</span></div>
+        </div>
+      </div>
+      ${(function(){
+        // Golden cross / death cross status
+        const ph = t.priceHistory || [];
+        if (ph.length < 50) return '';
+        const closes = ph.map(p => p.c);
+        const sma20 = closes.length >= 20 ? closes.slice(-20).reduce((a,b)=>a+b,0)/20 : null;
+        const sma50 = closes.length >= 50 ? closes.slice(-50).reduce((a,b)=>a+b,0)/50 : null;
+        const sma200 = closes.length >= 200 ? closes.slice(-200).reduce((a,b)=>a+b,0)/200 : null;
+        // Detect cross status from SMA20/50
+        const crossStatus20_50 = sma20 && sma50 ? (sma20 > sma50 ? 'golden' : 'death') : null;
+        // Detect cross status from SMA50/200 (if available)
+        const crossStatus50_200 = sma50 && sma200 ? (sma50 > sma200 ? 'golden' : 'death') : null;
+        const badges = [];
+        if (crossStatus20_50) badges.push({
+          label: 'SMA 20/50',
+          status: crossStatus20_50,
+          smaShort: '$' + sma20.toFixed(2),
+          smaLong: '$' + sma50.toFixed(2)
+        });
+        if (crossStatus50_200) badges.push({
+          label: 'SMA 50/200',
+          status: crossStatus50_200,
+          smaShort: '$' + sma50.toFixed(2),
+          smaLong: '$' + sma200.toFixed(2)
+        });
+        if (!badges.length) return '';
+        return '<div class="ip-section"><div class="ip-section-title">Crossover Status</div><div class="ip-grid cols-2">' +
+          badges.map(b => {
+            const isGold = b.status === 'golden';
+            const bg = isGold ? '#e8f4eb' : '#faeae6';
+            const border = isGold ? 'rgba(45,125,79,.3)' : 'rgba(192,57,43,.3)';
+            const color = isGold ? '#2d7d4f' : '#c0392b';
+            const icon = isGold ? '✦' : '✗';
+            const name = isGold ? 'Golden Cross' : 'Death Cross';
+            return '<div style="background:'+bg+';border:1px solid '+border+';border-radius:6px;padding:10px 14px">' +
+              '<div style="font-family:Space Mono,monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#999;margin-bottom:4px">'+b.label+'</div>' +
+              '<div style="font-size:15px;font-weight:700;color:'+color+'">'+icon+' '+name+'</div>' +
+              '<div style="font-size:10px;color:#999;margin-top:3px">Short '+b.smaShort+' vs Long '+b.smaLong+'</div>' +
+            '</div>';
+          }).join('') +
+        '</div></div>';
+      })()}
+    </div>
+
+    <div class="ip-tab-content" id="techTab-rsi">
+      <div class="ip-section-desc" style="margin-bottom:12px">Relative Strength Index measures momentum on a 0–100 scale. Above 70 = overbought (stock may be due for a pullback — good for bearish spreads). Below 30 = oversold (potential bounce — look for bullish setups). Between 30–70 = neutral range.</div>
+      <canvas id="techChartRSI" style="width:100%;height:280px;display:block"></canvas>
+    </div>
+    <div class="ip-tab-content" id="techTab-bollinger">
+      <div class="ip-section-desc" style="margin-bottom:12px">Bollinger Bands show a price channel 2 standard deviations around the 20-day SMA. When the bands squeeze tight, a big move is coming. Price touching the upper band = extended, lower band = compressed. The gold shaded area is the "normal" range — keep your short strikes inside it.</div>
+      <canvas id="techChartBB" style="width:100%;height:280px;display:block"></canvas>
+    </div>
+    <div class="ip-tab-content" id="techTab-macd">
+      <div class="ip-section-desc" style="margin-bottom:12px">MACD (12, 26, 9) shows momentum direction. When the dark MACD line crosses above the red signal line = bullish momentum. Below = bearish. The histogram bars show the strength of the crossover — tall green bars mean strong bullish momentum, tall red bars mean strong selling pressure.</div>
+      <canvas id="techChartMACD" style="width:100%;height:280px;display:block"></canvas>
+    </div>
+    <div class="ip-tab-content" id="techTab-sma">
+      <div class="ip-section-desc" style="margin-bottom:12px">Golden Cross = short-term SMA (20) crosses above long-term SMA (50) — signals the start of an uptrend. Death Cross = the opposite, signals a downtrend. These crossovers are widely watched by institutional traders and often trigger significant moves. Diamond markers show where crosses happened.</div>
+      <canvas id="techChartSMA" style="width:100%;height:280px;display:block"></canvas>
+      <div id="smaCrossEvents" style="margin-top:10px"></div>
+    </div>
+  `;
+
+  // Tab switching
+  el.querySelectorAll('.ip-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      el.querySelectorAll('.ip-tab').forEach(t2 => t2.classList.remove('active'));
+      el.querySelectorAll('.ip-tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('techTab-' + tab.dataset.techTab).classList.add('active');
+      // Draw chart on first view
+      requestAnimationFrame(() => drawTechChart(tab.dataset.techTab, t));
+    });
+  });
+
+  document.getElementById('techPopupOverlay').style.display = 'flex';
+}
+
+function drawTechChart(tabId, techData) {
+  const prices  = (techData.priceHistory || []).map(p => p.c);
+  const dates   = (techData.priceHistory || []).map(p => { const d = new Date(p.t); return (d.getMonth()+1) + '/' + d.getDate(); });
+  const rsiData = techData.rsiSeries || [];
+  const bbData  = techData.bbSeries  || [];
+
+  if (tabId === 'rsi' && rsiData.length > 0) {
+    const labels = rsiData.map(r => { const d = new Date(r.t); return (d.getMonth()+1) + '/' + d.getDate(); });
+    drawLineChart('techChartRSI', {
+      labels,
+      series: [{ data: rsiData.map(r => r.rsi), color: '#5a3ab5', width: 2, label: 'RSI (14)' }],
+      yZones: [
+        { y: 70, color: '#c0392b', dash: [4, 3], label: 'Overbought (70)' },
+        { y: 30, color: '#2d7d4f', dash: [4, 3], label: 'Oversold (30)' },
+        { y: 50, color: '#ccc', dash: [2, 4] }
+      ]
+    });
+  }
+
+  if (tabId === 'bollinger' && bbData.length > 0) {
+    // Align price history to BB dates
+    const bbDateSet = new Set(bbData.map(b => b.t));
+    const alignedPrices = techData.priceHistory.filter(p => bbDateSet.has(p.t)).map(p => p.c);
+    const labels = bbData.map(b => { const d = new Date(b.t); return (d.getMonth()+1) + '/' + d.getDate(); });
+    drawLineChart('techChartBB', {
+      labels,
+      series: [
+        { id: 'upper', data: bbData.map(b => b.upper), color: '#c0392b', width: 1, dash: [3, 3], label: 'Upper' },
+        { id: 'middle', data: bbData.map(b => b.middle), color: '#999', width: 1, label: 'SMA 20' },
+        { id: 'lower', data: bbData.map(b => b.lower), color: '#2d7d4f', width: 1, dash: [3, 3], label: 'Lower' },
+        { data: alignedPrices, color: '#0B2D23', width: 2, label: 'Close' }
+      ],
+      fills: [{ upper: 'upper', lower: 'lower', color: 'rgba(201,169,110,.1)' }],
+      yFmt: v => '$' + v.toFixed(0)
+    });
+  }
+
+  if (tabId === 'sma' && prices.length >= 50) {
+    // Compute SMA 20, SMA 50 series
+    function computeSMA(data, period) {
+      return data.map((_, i) => i < period - 1 ? null : data.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0) / period);
+    }
+    const sma20 = computeSMA(prices, 20);
+    const sma50 = computeSMA(prices, 50);
+
+    // Detect crossover events (golden = sma20 crosses above sma50, death = below)
+    const crossEvents = [];
+    for (let i = 50; i < prices.length; i++) {
+      if (sma20[i] == null || sma50[i] == null || sma20[i - 1] == null || sma50[i - 1] == null) continue;
+      const prevAbove = sma20[i - 1] > sma50[i - 1];
+      const currAbove = sma20[i] > sma50[i];
+      if (!prevAbove && currAbove) crossEvents.push({ idx: i, type: 'golden', date: dates[i], price: prices[i] });
+      if (prevAbove && !currAbove) crossEvents.push({ idx: i, type: 'death', date: dates[i], price: prices[i] });
+    }
+
+    drawLineChart('techChartSMA', {
+      labels: dates,
+      series: [
+        { data: prices, color: '#0B2D23', width: 1.5, label: 'Close' },
+        { data: sma20, color: '#C9A96E', width: 1.5, label: 'SMA 20' },
+        { data: sma50, color: '#5a3ab5', width: 1.5, label: 'SMA 50' }
+      ],
+      yFmt: v => '$' + v.toFixed(0)
+    });
+
+    // Draw crossover markers on the canvas
+    const canvas = document.getElementById('techChartSMA');
+    if (canvas && crossEvents.length) {
+      const ctx = canvas.getContext('2d');
+      const DPR = window.devicePixelRatio || 1;
+      const W = canvas.offsetWidth;
+      const H = 280;
+      const P = { l: 55, r: 14, t: 14, b: 30 };
+      const cW = W - P.l - P.r;
+      const n = dates.length;
+      let yMin = Infinity, yMax = -Infinity;
+      prices.forEach(v => { if (v < yMin) yMin = v; if (v > yMax) yMax = v; });
+      sma20.forEach(v => { if (v != null) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; }});
+      sma50.forEach(v => { if (v != null) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; }});
+      const yPad = (yMax - yMin) * 0.08 || 1;
+      yMin -= yPad; yMax += yPad;
+      const xPos = i => (P.l + (i / (n - 1)) * cW) * DPR;
+      const yPos = v => (P.t + (1 - (v - yMin) / (yMax - yMin)) * (H - P.t - P.b)) * DPR;
+
+      crossEvents.forEach(ev => {
+        const x = xPos(ev.idx) / DPR;
+        const y = yPos(ev.price) / DPR;
+        const isGold = ev.type === 'golden';
+
+        // Vertical dashed line at cross point
+        ctx.save();
+        ctx.scale(1 / DPR, 1 / DPR);
+        ctx.strokeStyle = isGold ? '#2d7d4f' : '#c0392b';
+        ctx.lineWidth = 1 * DPR;
+        ctx.setLineDash([3 * DPR, 3 * DPR]);
+        ctx.beginPath();
+        ctx.moveTo(x * DPR, P.t * DPR);
+        ctx.lineTo(x * DPR, (H - P.b) * DPR);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Diamond marker
+        const sz = 6 * DPR;
+        ctx.fillStyle = isGold ? '#2d7d4f' : '#c0392b';
+        ctx.beginPath();
+        ctx.moveTo(x * DPR, y * DPR - sz);
+        ctx.lineTo(x * DPR + sz, y * DPR);
+        ctx.lineTo(x * DPR, y * DPR + sz);
+        ctx.lineTo(x * DPR - sz, y * DPR);
+        ctx.closePath();
+        ctx.fill();
+
+        // Label
+        ctx.fillStyle = isGold ? '#2d7d4f' : '#c0392b';
+        ctx.font = `700 ${9 * DPR}px Inter,sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(isGold ? '✦ Golden' : '✗ Death', x * DPR, (P.t - 2) * DPR);
+        ctx.restore();
+      });
+    }
+
+    // Show events list below chart
+    const evEl = document.getElementById('smaCrossEvents');
+    if (evEl) {
+      if (crossEvents.length === 0) {
+        evEl.innerHTML = '<div style="text-align:center;color:#999;font-size:11px;padding:8px">No SMA 20/50 crossover in this period</div>';
+      } else {
+        evEl.innerHTML = '<div class="ip-section-title">Crossover Events (8 months)</div>' +
+          crossEvents.map(ev => {
+            const isGold = ev.type === 'golden';
+            const color = isGold ? '#2d7d4f' : '#c0392b';
+            const icon = isGold ? '✦' : '✗';
+            const name = isGold ? 'Golden Cross' : 'Death Cross';
+            return `<div style="display:inline-flex;align-items:center;gap:6px;margin:4px 8px 4px 0;background:${isGold?'#e8f4eb':'#faeae6'};border:1px solid ${isGold?'rgba(45,125,79,.25)':'rgba(192,57,43,.25)'};border-radius:4px;padding:5px 10px;font-size:11px">
+              <span style="color:${color};font-weight:700">${icon} ${name}</span>
+              <span style="color:#999">${ev.date} at $${ev.price.toFixed(2)}</span>
+            </div>`;
+          }).join('');
+      }
+    }
+  }
+
+  if (tabId === 'macd' && prices.length > 26) {
+    const ema12 = computeEMA(prices, 12);
+    const ema26 = computeEMA(prices, 26);
+    const macdLine = prices.map((_, i) => i >= 25 ? ema12[i] - ema26[i] : null);
+    const macdValid = macdLine.filter(v => v != null);
+    const signal = computeEMA(macdValid, 9);
+    // Align signal back to full array
+    const signalFull = prices.map((_, i) => {
+      const offset = i - 25;
+      return offset >= 8 ? signal[offset - 8] : null;
+    });
+    // Histogram
+    const histogram = prices.map((_, i) => {
+      if (macdLine[i] == null || signalFull[i] == null) return null;
+      return macdLine[i] - signalFull[i];
+    });
+    drawLineChart('techChartMACD', {
+      labels: dates,
+      series: [
+        { data: macdLine, color: '#0B2D23', width: 2, label: 'MACD' },
+        { data: signalFull, color: '#c0392b', width: 1.5, label: 'Signal (9)' }
+      ],
+      histograms: [{ data: histogram, posColor: 'rgba(45,125,79,.5)', negColor: 'rgba(192,57,43,.5)', label: 'Histogram' }],
+      yZones: [{ y: 0, color: '#ccc', dash: [2, 4] }]
+    });
+  }
+}
+
+// Close popups on overlay click (outside modal)
+['gammaPopupOverlay', 'techPopupOverlay'].forEach(id => {
+  document.addEventListener('click', e => {
+    const overlay = document.getElementById(id);
+    if (e.target === overlay) overlay.style.display = 'none';
+  });
+});
+// Close on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('gammaPopupOverlay').style.display = 'none';
+    document.getElementById('techPopupOverlay').style.display = 'none';
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// PUBLISH TO FIREBASE
+// ════════════════════════════════════════════════════════════════════════════
+// Builds a Firestore-tile-shaped payload from the current strategy-builder
+// state and hands it to window.publishTile (defined in the firebase module
+// block below). Same schema as newleaf-workbench's analystApi.buildTile so
+// the existing investor app reads it without changes.
+function buildTilePayload() {
+  if (!atmData || !selectedExpiry || !strikes.length) return null;
+  const legs = buildCurrentLegs();
+  if (legs.length !== legsMeta.length) return null;
+  const validation = validateSetup(legs, atmData.spot);
+  if (!validation.valid) return { error: validation.error || 'Invalid setup' };
+
+  // Map strategy-builder leg shape → workbench leg shape
+  //   { dir: 'long' | 'short' }  →  { action: 'buy' | 'sell' }
+  //   { type: 'put'  | 'call'  } stays the same
+  const legPayload = legs.map(l => ({
+    action:  l.dir === 'long' ? 'buy' : 'sell',
+    type:    l.type, // already lowercase 'put' / 'call'
+    strike:  l.contract.strike,
+    bid:     l.contract.bid  || 0,
+    ask:     l.contract.ask  || 0,
+    mid:     l.contract.mid ?? ((l.contract.bid + l.contract.ask) / 2),
+    delta:   l.contract.delta || l.contract._delta || 0,
+    gamma:   l.contract.gamma || 0,
+    theta:   l.contract.theta || 0,
+    vega:    l.contract.vega  || 0,
+    iv:      l.contract.iv    || 0,
+    expiry:  l._expiry || selectedExpiry.expiry
+  }));
+
+  // PoP (decimal 0..1) — for credit spreads, 1 - avg(|short delta|).
+  // For debit spreads / calendars, leave 0 and let the workbench display "—".
+  let pop = 0;
+  const shortLegs = legs.filter(l => l.dir === 'short');
+  if (shortLegs.length) {
+    const avgShortDelta = shortLegs
+      .map(l => Math.abs(l.contract.delta || l.contract._delta || 0.2))
+      .reduce((s, d) => s + d, 0) / shortLegs.length;
+    pop = Math.max(0, Math.min(1, 1 - avgShortDelta));
+  }
+
+  // R/R = max profit / |max loss|
+  const maxLossAbs = Math.abs(validation.maxLoss || 0);
+  const rr = maxLossAbs > 0 ? validation.maxProfit / maxLossAbs : 0;
+
+  // Calendar: surface back-month expiry too
+  const isCal = currentStrategy === 'calendar_spread' && selectedBackExpiry;
+
+  return {
+    ticker:    atmData.symbol || (new URLSearchParams(location.search).get('symbol') || '').toUpperCase(),
+    spot:      atmData.spot,
+    expiry:    selectedExpiry.expiry,
+    dte:       selectedExpiry.dte,
+    backExpiry: isCal ? selectedBackExpiry.expiry : null,
+    backDte:    isCal ? selectedBackExpiry.dte    : null,
+    strategy:  STRATEGIES[currentStrategy].label,
+    strategyCode: currentStrategy,
+    direction: reportData?.scoring?.direction
+            || STRATEGIES[currentStrategy].kind
+            || 'neutral',
+    legs: legPayload,
+    metrics: {
+      maxProfit: validation.maxProfit,
+      maxLoss:   validation.maxLoss,
+      netCredit: validation.credit,   // already in $/contract (×100)
+      rr,
+      pop
+    },
+    gammaData: reportData?.gammaData?.analysis
+      ? {
+          put_wall:         reportData.gammaData.analysis.put_wall         ?? null,
+          call_wall:        reportData.gammaData.analysis.call_wall        ?? null,
+          gamma_flip:       reportData.gammaData.analysis.gamma_flip       ?? null,
+          confidence_score: reportData.gammaData.analysis.confidence_score ?? null,
+          band_width_pct:   reportData.gammaData.analysis.band_width_pct   ?? null,
+          condor_allowed:   reportData.gammaData.analysis.condor_allowed   ?? null
+        }
+      : null,
+    technicalData: reportData?.technicalData
+      ? {
+          trendEngine:    reportData.technicalData.trend || reportData.technicalData.trendEngine || null,
+          recommendation: reportData.technicalData.recommendation || ''
+        }
+      : null
+  };
+}
+
+function showFbStatus(kind, msg) {
+  const el = document.getElementById('fbStatus');
+  if (!el) return;
+  el.className = 'fb-status ' + kind;
+  el.textContent = msg;
+  el.style.display = 'block';
+  if (kind === 'ok') {
+    setTimeout(() => { el.style.display = 'none'; }, 6000);
+  }
+}
+
+async function onPublishClick() {
+  const payload = buildTilePayload();
+  if (!payload) {
+    showFbStatus('err', 'Load a symbol and pick a valid setup first');
+    return;
+  }
+  if (payload.error) {
+    showFbStatus('err', 'Cannot publish — ' + payload.error);
+    return;
+  }
+  const btn = document.getElementById('publishToFirebase');
+  btn.disabled = true;
+  showFbStatus('pending', 'Publishing tile…');
+  try {
+    if (!window.publishTile) throw new Error('Firebase module not loaded');
+    const res = await window.publishTile(payload);
+    if (res && res.success) {
+      showFbStatus('ok', `✓ Published — tile ${res.tileId.slice(0, 8)}…`);
+    } else {
+      throw new Error(res?.error || 'Unknown error');
+    }
+  } catch (e) {
+    console.error('publish failed:', e);
+    showFbStatus('err', '✗ ' + (e.message || 'Publish failed'));
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Enable the publish button only when the current setup is valid AND the user
+// is signed in. Called after every recalc and on auth state change.
+function refreshPublishButton() {
+  const btn = document.getElementById('publishToFirebase');
+  if (!btn) return;
+  const signedIn = !!window.firebaseUser;
+  let canPublish = false;
+  if (selectedExpiry && strikes.length) {
+    const legs = buildCurrentLegs();
+    if (legs.length === legsMeta.length) {
+      const v = validateSetup(legs, atmData.spot);
+      canPublish = !!v.valid;
+    }
+  }
+  btn.disabled = !(signedIn && canPublish);
+  btn.title = !signedIn ? 'Sign in with Google to publish'
+            : !canPublish ? 'Pick a valid setup first'
+            : 'Publish this tile to Firestore';
+}
+window.refreshPublishButton = refreshPublishButton;
+
+// Wrap recalc so the publish button updates whenever the setup changes
+const __recalcOriginal = recalc;
+recalc = function() {
+  __recalcOriginal.apply(this, arguments);
+  refreshPublishButton();
+};
+
+// ── AI Rank Variants ────────────────────────────────────────────────────
+async function onAIRankClick() {
+  var btn = document.getElementById('aiRankBtn');
+  var resultEl = document.getElementById('aiRankResult');
+  btn.disabled = true; btn.textContent = '⏳ Analyzing...';
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = '<span style="color:#6b6b60">Asking NewLeaf-Plus to rank your variants...</span>';
+
+  try {
+    // Collect the 3 optimised setups from the setup pills
+    var pills = document.querySelectorAll('.spill[data-setup-idx]');
+    var variants = [];
+    pills.forEach(function(pill) {
+      var name = pill.querySelector('.sp-name')?.textContent || '';
+      var pop = pill.querySelector('.sp-pop')?.textContent || '';
+      var cr = pill.querySelector('.sp-cr')?.textContent || '';
+      if (name && !pill.disabled) variants.push({ name: name, pop: pop, credit: cr });
+    });
+
+    // Also get current setup from buildTilePayload if available
+    try {
+      var payload = buildTilePayload();
+      if (payload) {
+        variants.push({
+          name: 'Current Setup',
+          legs: payload.legs.map(function(l){ return l.action + ' ' + l.type + ' $' + l.strike; }).join(', '),
+          maxProfit: payload.metrics.maxProfit,
+          maxLoss: payload.metrics.maxLoss,
+          pop: (payload.metrics.pop * 100).toFixed(0) + '%',
+          credit: '$' + (payload.metrics.netCredit / 100).toFixed(2),
+          rr: payload.metrics.rr.toFixed(2) + 'x'
+        });
+      }
+    } catch(e) {}
+
+    var ticker = document.getElementById('tickerInput')?.value || 'Unknown';
+    var stratType = document.querySelector('.strat-type-sel .sel')?.textContent || 'Iron Condor';
+
+    var res = await fetch(window.__CONFIG__?.API_URL || 'https://us-central1-newleaf-trading.cloudfunctions.net/api' + '/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': 'nl_31ee32be43bd4f07a3520ae15c4b3162' },
+      body: JSON.stringify({
+        message: 'Rank these ' + stratType + ' variants for ' + ticker + ' by risk-adjusted return. Explain which is best and why in 3-4 sentences.',
+        context: { mode: 'variant_ranking', ticker: ticker, strategy: stratType, variants: variants },
+        modelMode: 'budget-qwq'
+      })
+    });
+    var data = await res.json();
+    resultEl.innerHTML = '<div style="font-weight:600;color:#0d6e56;margin-bottom:4px;font-family:\'Space Mono\',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em">AI Ranking — NewLeaf-Plus</div>' +
+      '<div>' + (data.response || data.text || 'No ranking available.').replace(/\n/g, '<br>') + '</div>';
+  } catch(err) {
+    resultEl.innerHTML = '<span style="color:#991b1b">AI ranking unavailable: ' + (err.message || err) + '</span>';
+  } finally {
+    btn.disabled = false; btn.textContent = '⚡ AI Rank Variants';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  document.getElementById('publishToFirebase')?.addEventListener('click', onPublishClick);
+  document.getElementById('aiRankBtn')?.addEventListener('click', onAIRankClick);
+  document.getElementById('fbSignInLink')?.addEventListener('click', () => window.firebaseSignIn?.());
+  document.getElementById('btnGammaPopup')?.addEventListener('click', showGammaPopup);
+  document.getElementById('btnTechPopup')?.addEventListener('click', showTechPopup);
+});
+</script>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     FIREBASE MODULE — same project as newleaf-workbench (newleaf-trading /
+     newleafdb). Loaded from CDN as an ES module so we don't need a bundler.
+     Pushes tiles to the same `tiles` collection workbench writes to.
+     ════════════════════════════════════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+
+// Public Firebase web config (same as newleaf-workbench/src/firebase.js).
+// The apiKey here is a public identifier — security comes from Firestore
+// rules, not from hiding this value.
+const firebaseConfig = {
+  apiKey: "AIzaSyBHOeCWF_Z-xATalX911Q_0isAKsJzHpwk",
+  authDomain: "newleaf-trading.firebaseapp.com",
+  projectId: "newleaf-trading",
+  storageBucket: "newleaf-trading.firebasestorage.app",
+  messagingSenderId: "240392819045",
+  appId: "1:240392819045:web:a1dc19e5dcfa29e6cdd18c"
+};
+
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app, 'newleafdb');
+const auth = getAuth(app);
+
+// Auth state — kept in sync with the inline script via window.firebaseUser.
+onAuthStateChanged(auth, user => {
+  window.firebaseUser = user || null;
+  const authEl = document.getElementById('fbAuth');
+  if (authEl) {
+    authEl.innerHTML = user
+      ? `Signed in as <strong>${user.email}</strong> · <a id="fbSignOutLink">sign out</a>`
+      : `Not signed in · <a id="fbSignInLink">Sign in with Google</a>`;
+    document.getElementById('fbSignInLink')?.addEventListener('click', () => window.firebaseSignIn());
+    document.getElementById('fbSignOutLink')?.addEventListener('click', () => window.firebaseSignOut());
+  }
+  if (window.refreshPublishButton) window.refreshPublishButton();
+});
+
+window.firebaseSignIn = async function() {
+  try {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  } catch (e) {
+    console.error('sign-in failed:', e);
+    alert('Sign-in failed: ' + (e.message || e));
+  }
+};
+
+window.firebaseSignOut = async function() {
+  try { await signOut(auth); } catch (e) { console.error(e); }
+};
+
+// Recursively strip `undefined` field values — Firestore rejects them with
+// "Unsupported field value: undefined". Replaces with `null` (which Firestore
+// allows) for top-level scalars, omits them inside nested objects.
+function stripUndefined(value) {
+  if (value === undefined) return null;
+  if (value === null) return null;
+  if (Array.isArray(value)) {
+    return value.map(v => stripUndefined(v));
+  }
+  if (typeof value === 'object' && value.constructor === Object) {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (v === undefined) continue; // omit undefined keys entirely
+      out[k] = stripUndefined(v);
+    }
+    return out;
+  }
+  // Numbers, strings, booleans, Firestore sentinels (serverTimestamp, etc.)
+  // pass through unchanged.
+  return value;
+}
+
+// publishTile — receives the payload built by buildTilePayload() in the
+// inline script and writes it to the `tiles` collection in the exact shape
+// newleaf-workbench's analystApi.buildTile produces.
+window.publishTile = async function(payload) {
+  if (!auth.currentUser) {
+    return { success: false, error: 'Not signed in — click "Sign in with Google" first' };
+  }
+  try {
+    // Aggregate Greeks across legs (sell legs negate)
+    const netGreeks = (payload.legs || []).reduce((acc, leg) => {
+      const sign = leg.action === 'sell' ? -1 : 1;
+      acc.netDelta += sign * (leg.delta || 0);
+      acc.netGamma += sign * (leg.gamma || 0);
+      acc.netTheta += sign * (leg.theta || 0);
+      acc.netVega  += sign * (leg.vega  || 0);
+      return acc;
+    }, { netDelta: 0, netGamma: 0, netTheta: 0, netVega: 0 });
+    Object.keys(netGreeks).forEach(k => netGreeks[k] = parseFloat(netGreeks[k].toFixed(4)));
+
+    // Normalised legs (matches workbench shape exactly)
+    const normalisedLegs = payload.legs.map(leg => ({
+      action:   leg.action,
+      type:     leg.type,
+      strike:   leg.strike,
+      premium:  leg.mid || leg.ask || 0, // per-share — optionsCalc reads this
+      expiry:   leg.expiry || payload.expiry || '',
+      quantity: 1,
+      bid:      leg.bid   || 0,
+      ask:      leg.ask   || 0,
+      mid:      leg.mid   || 0,
+      delta:    leg.delta || 0,
+      gamma:    leg.gamma || 0,
+      theta:    leg.theta || 0,
+      vega:     leg.vega  || 0
+    }));
+
+    const aiInsight =
+      `${payload.ticker} ${payload.strategy} $${(payload.metrics.netCredit/100).toFixed(2)} `
+      + `${payload.metrics.rr.toFixed(2)}× R/R · `
+      + `${Math.round(payload.metrics.pop * 100)}% PoP — ${payload.direction} bias`;
+
+    const tileDoc = {
+      // Identity
+      symbol:           payload.ticker,
+      ticker:           payload.ticker,
+      strategy:         payload.strategy,
+      strategyCode:     payload.strategyCode,
+      tradeType:        payload.strategy,
+      direction:        payload.direction,
+
+      // Expiry
+      expiry:           payload.expiry,
+      expirationDate:   payload.expiry,
+      dte:              payload.dte,
+      daysToExpiry:     payload.dte,
+      // Calendar back-month metadata (null for non-calendar)
+      backExpiry:       payload.backExpiry,
+      backDte:          payload.backDte,
+
+      // Underlying price
+      underlyingPrice:  payload.spot,
+      currentPrice:     payload.spot,
+      price:            payload.spot,
+
+      // P&L (dollars per contract — maxLoss stored as POSITIVE so the
+      // investor app's DiscoverPageNew filter can compute reward:risk correctly)
+      maxProfit:        Math.abs(payload.metrics.maxProfit || 0),
+      maxLoss:          Math.abs(payload.metrics.maxLoss   || 0),
+      entryCredit:      payload.metrics.netCredit || 0,
+      netCredit:        payload.metrics.netCredit || 0,
+      pnlPercent:       0,
+      rewardRisk:       payload.metrics.rr || 0,
+
+      // Probability (0-100 ints)
+      oddsOfProfit:     Math.round((payload.metrics.pop || 0) * 100),
+      probOfProfit:     Math.round((payload.metrics.pop || 0) * 100),
+
+      // Legs + Greeks
+      legs:             normalisedLegs,
+      greeks:           netGreeks,
+      netTheta:         netGreeks.netTheta,
+
+      // Confidence (from gamma analysis)
+      confidenceScore:  Math.round((payload.gammaData?.confidence_score || 0.7) * 100),
+      confidence:       Math.round((payload.gammaData?.confidence_score || 0.7) * 100),
+
+      // Snapshots
+      gammaData:        payload.gammaData || null,
+      technicalData:    payload.technicalData || null,
+
+      // AI insight + quality gate
+      aiInsight,
+      qualityGatePassed: (payload.metrics.rr >= 1.0) && (payload.metrics.pop >= 0.65),
+
+      // Provenance — so the investor app + audit can tell where this came from
+      source:           'strategy-builder',
+      publishedBy:      auth.currentUser.email,
+
+      // Firestore lifecycle
+      isActive:         true,
+      // Negative epoch so newer manual publishes get a SMALLER sortOrder
+      // and land at the top of the investor app's discover list (which uses
+      // orderBy('sortOrder','asc')). Sync-script tiles use small positives
+      // (100 − score), so manual publishes always come before them.
+      sortOrder:        -Date.now(),
+      createdAt:        serverTimestamp(),
+      updatedAt:        serverTimestamp()
+    };
+
+    // Firestore rejects ANY undefined value anywhere in the doc tree. Strip
+    // undefineds recursively before writing — this catches missing optional
+    // fields from older R2 reports (e.g. gammaData.condor_allowed).
+    const cleanedDoc = stripUndefined(tileDoc);
+
+    const docRef = await addDoc(collection(db, 'tiles'), cleanedDoc);
+    return { success: true, tileId: docRef.id };
+  } catch (e) {
+    console.error('[publishTile] failed:', e);
+    return { success: false, error: e.message || String(e) };
+  }
+};
+</script>
+</body>
+</html>

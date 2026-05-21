@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NewLeaf System Design · Data Pipeline v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Playfair Display:ital,opsz,wght@0,9..144,300;0,9..144,600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --forest: #0B2D23; --gold: #C9A96E; --green:#4caf85; --red:#e05c5c;
+    --amber:#f0a830; --blue:#3b82f6; --purple:#8b5cf6;
+    --bg:#f7f8f6; --card:#fff; --border:#e2e8f0; --text:#1a1a1a; --muted:#64748b;
+    --mono:'Space Mono',monospace; --serif:'Playfair Display', serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--mono);background:var(--bg);color:var(--text);line-height:1.7;font-size:14px;}
+  .page{max-width:1100px;margin:0 auto;padding:2rem 2rem 6rem;}
+
+  /* Header */
+  .doc-header{background:var(--forest);color:#fff;padding:2.5rem;border-radius:12px;margin-bottom:2rem;position:relative;overflow:hidden;}
+  .doc-header::after{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:rgba(201,169,110,0.15);border-radius:50%;}
+  .doc-title{font-family:var(--serif);font-size:2rem;font-weight:300;font-style:italic;color:#fff;margin-bottom:.3rem;}
+  .doc-sub{font-size:.65rem;color:rgba(255,255,255,.6);letter-spacing:.15em;text-transform:uppercase;}
+  .doc-meta{display:flex;gap:2rem;margin-top:1.5rem;font-size:.65rem;color:rgba(255,255,255,.7);}
+  .doc-meta span{display:flex;align-items:center;gap:.4rem;}
+
+  /* TOC */
+  .toc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+  .toc h3{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;}
+  .toc ol{padding-left:1.2rem;}
+  .toc li{margin:.3rem 0;}
+  .toc a{color:var(--forest);text-decoration:none;font-size:.8rem;}
+  .toc a:hover{color:var(--gold);}
+  .toc .toc-sub{font-size:.72rem;color:var(--muted);padding-left:.5rem;}
+
+  /* Sections */
+  h2{font-family:var(--serif);font-size:1.4rem;font-weight:600;color:var(--forest);margin:2.5rem 0 1rem;padding-bottom:.5rem;border-bottom:2px solid var(--gold);}
+  h3{font-size:.8rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text);margin:1.5rem 0 .75rem;}
+  h4{font-size:.75rem;font-weight:700;color:var(--gold);margin:.75rem 0 .4rem;}
+  p{margin:.5rem 0;font-size:.82rem;color:var(--text);}
+
+  /* Callout boxes */
+  .callout{border-radius:8px;padding:1rem 1.2rem;margin:1rem 0;font-size:.78rem;}
+  .callout-info{background:rgba(59,130,246,.08);border-left:3px solid var(--blue);}
+  .callout-warn{background:rgba(240,168,48,.08);border-left:3px solid var(--amber);}
+  .callout-success{background:rgba(76,175,133,.08);border-left:3px solid var(--green);}
+  .callout-danger{background:rgba(224,92,92,.08);border-left:3px solid var(--red);}
+  .callout strong{display:block;margin-bottom:.3rem;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;}
+
+  /* Architecture diagram */
+  .arch{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.5rem;margin:1rem 0;overflow-x:auto;}
+  .arch pre{font-family:var(--mono);font-size:.72rem;line-height:1.8;color:var(--text);}
+
+  /* Tables */
+  table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.78rem;}
+  th{background:var(--forest);color:#fff;padding:.6rem .8rem;text-align:left;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;}
+  td{padding:.6rem .8rem;border-bottom:1px solid var(--border);}
+  tr:hover td{background:rgba(201,169,110,.05);}
+  .tag{display:inline-block;padding:.1rem .4rem;border-radius:3px;font-size:.62rem;font-weight:700;letter-spacing:.04em;}
+  .tag-green{background:rgba(76,175,133,.15);color:var(--green);}
+  .tag-red{background:rgba(224,92,92,.15);color:var(--red);}
+  .tag-amber{background:rgba(240,168,48,.15);color:var(--amber);}
+  .tag-blue{background:rgba(59,130,246,.15);color:var(--blue);}
+
+  /* Data flow boxes */
+  .flow-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin:1rem 0;}
+  .flow-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.2rem;}
+  .flow-box h4{margin-top:0;}
+  .flow-box ul{list-style:none;padding:0;margin:.5rem 0;}
+  .flow-box li{font-size:.75rem;padding:.2rem 0;display:flex;align-items:flex-start;gap:.4rem;}
+  .flow-box li::before{content:'→';color:var(--gold);flex-shrink:0;}
+
+  /* Code blocks */
+  .code{background:#1a1a2e;color:#e2e8f0;border-radius:8px;padding:1rem 1.2rem;margin:1rem 0;overflow-x:auto;}
+  .code pre{font-family:var(--mono);font-size:.72rem;line-height:1.7;}
+  .code .c{color:#64748b;} .code .k{color:#c8a85a;} .code .s{color:#4caf85;} .code .n{color:#93c5fd;}
+
+  /* Numbered steps */
+  .steps{counter-reset:step;margin:1rem 0;}
+  .step{display:flex;gap:1rem;margin:.75rem 0;align-items:flex-start;}
+  .step-num{background:var(--gold);color:var(--forest);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;margin-top:.1rem;}
+  .step-body{flex:1;font-size:.8rem;}
+  .step-body strong{display:block;margin-bottom:.2rem;}
+
+  /* Data source badges */
+  .source-alpaca{background:rgba(201,169,110,.15);color:#b8922a;border:1px solid rgba(201,169,110,.3);padding:.15rem .5rem;border-radius:3px;font-size:.6rem;font-weight:700;}
+  .source-yahoo{background:rgba(59,130,246,.12);color:var(--blue);border:1px solid rgba(59,130,246,.25);padding:.15rem .5rem;border-radius:3px;font-size:.6rem;font-weight:700;}
+  .source-both{background:rgba(139,92,246,.12);color:var(--purple);border:1px solid rgba(139,92,246,.25);padding:.15rem .5rem;border-radius:3px;font-size:.6rem;font-weight:700;}
+
+  /* Field table */
+  .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0;}
+  @media(max-width:700px){.field-grid{grid-template-columns:1fr;}}
+
+  footer{border-top:1px solid var(--border);padding-top:1rem;margin-top:3rem;font-size:.6rem;color:var(--muted);letter-spacing:.08em;}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ── HEADER ─────────────────────────────────────────────────── -->
+<div class="doc-header">
+  <div class="doc-title">NewLeaf System Design</div>
+  <div class="doc-sub">Data Pipeline v2 · Standalone · Multi-Instance · Gateway-Free</div>
+  <div class="doc-meta">
+    <span>📅 2026-03-26</span>
+    <span>👤 Manish · NewLeaf System</span>
+    <span>📦 newleaf-alpaca-r2</span>
+    <span>🔖 v2.0 Draft</span>
+  </div>
+</div>
+
+<!-- ── TOC ────────────────────────────────────────────────────── -->
+<div class="toc">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#s1">1. Current Architecture (v1)</a></li>
+    <li><a href="#s2">2. Problem Statement</a></li>
+    <li><a href="#s3">3. v2 Pipeline Design</a>
+      <div class="toc-sub">3.1 Data Sources · 3.2 Fetch Strategy · 3.3 Merge Logic</div>
+    </li>
+    <li><a href="#s4">4. Output Schema (JSON Report)</a></li>
+    <li><a href="#s5">5. Multi-Instance Architecture</a></li>
+    <li><a href="#s6">6. Script Architecture</a></li>
+    <li><a href="#s7">7. Configuration Reference</a></li>
+    <li><a href="#s8">8. Deployment Guide</a></li>
+    <li><a href="#s9">9. Known Limitations & Mitigations</a></li>
+  </ol>
+</div>
+
+
+<!-- ──────────────────────────────────────────────────────────── -->
+<h2 id="s1">1. Current Architecture (v1)</h2>
+
+<p>The v1 pipeline has worked well for a small watchlist but has two hard dependencies that prevent horizontal scaling:</p>
+
+<div class="arch">
+<pre>
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │  Mac Mini M4 Pro (localhost)                                         │
+  │                                                                      │
+  │  generate-report.js                                                  │
+  │    │                                                                 │
+  │    ├── getBars()         → Alpaca Data API  (stock history)          │
+  │    ├── getExpirations()  → localhost:4000   (API Gateway)  ◄─ DEP   │
+  │    └── getOptionChain()  → localhost:4000   (API Gateway)  ◄─ DEP   │
+  │                │                                                     │
+  │                └── API Gateway (port 4000)                          │
+  │                      ├── Alpaca Data API  (snapshots, no real OI)   │
+  │                      ├── Alpaca Trade API (OI via /v2/options/...)   │
+  │                      └── Yahoo Svc (port 5300) — Python/Flask/yfinance│
+  │                                                                     │
+  │  push-to-r2.js  →  Cloudflare R2  →  newleaf-alpaca-r2 (Firebase)  │
+  └──────────────────────────────────────────────────────────────────────┘
+</pre>
+</div>
+
+<div class="callout callout-warn">
+  <strong>⚠ v1 Problems</strong>
+  Requires API Gateway (port 4000) and Python Yahoo service (port 5300) to both be running on the same machine.
+  Cannot be deployed to a remote server or run as multiple instances.
+  DTE filter bug (time-of-day rounding) caused 0-DTE expiries to be silently dropped.
+  All 10 symbols run sequentially — too slow for 100+ stocks.
+</div>
+
+
+<!-- ──────────────────────────────────────────────────────────── -->
+<h2 id="s2">2. Problem Statement</h2>
+
+<table>
+  <tr><th>Requirement</th><th>v1 Status</th><th>v2 Target</th></tr>
+  <tr><td>No gateway dependency</td><td><span class="tag tag-red">FAILS</span></td><td><span class="tag tag-green">SOLVED</span></td></tr>
+  <tr><td>No Python service dependency</td><td><span class="tag tag-red">FAILS</span></td><td><span class="tag tag-green">SOLVED</span></td></tr>
+  <tr><td>Run on any server (no localhost)</td><td><span class="tag tag-red">FAILS</span></td><td><span class="tag tag-green">SOLVED</span></td></tr>
+  <tr><td>Multiple parallel instances</td><td><span class="tag tag-red">FAILS</span></td><td><span class="tag tag-green">SOLVED</span></td></tr>
+  <tr><td>100+ symbols in 15 min</td><td><span class="tag tag-amber">~10 symbols / slow</span></td><td><span class="tag tag-green">Batched concurrency</span></td></tr>
+  <tr><td>Real Open Interest data</td><td><span class="tag tag-amber">Gateway only</span></td><td><span class="tag tag-green">Yahoo Finance direct</span></td></tr>
+  <tr><td>Live option prices + Greeks</td><td><span class="tag tag-amber">Indicative feed only</span></td><td><span class="tag tag-green">Alpaca direct</span></td></tr>
+  <tr><td>Single script, no npm install</td><td><span class="tag tag-red">Requires @aws-sdk etc.</span></td><td><span class="tag tag-green">Node 18+ built-ins only</span></td></tr>
+</table>
+
+
+<!-- ──────────────────────────────────────────────────────────── -->
+<h2 id="s3">3. v2 Pipeline Design</h2>
+
+<h3>3.1 Data Sources</h3>
+
+<p>Two APIs are used, each providing what the other lacks:</p>
+
+<div class="flow-grid">
+  <div class="flow-box">
+    <h4>🔶 Alpaca Markets</h4>
+    <ul>
+      <li>Live bid / ask / mid prices</li>
+      <li>Greeks (gamma, delta, theta, vega) — OPRA feed</li>
+      <li>IV (implied volatility)</li>
+      <li>Volume (intraday)</li>
+      <li>Stock snapshot (price, OHLC, volume)</li>
+      <li>Stock bars (OHLCV history for technicals)</li>
+    </ul>
+    <p style="font-size:.68rem;color:var(--muted);margin-top:.5rem">Base: <code>data.alpaca.markets</code> · Auth: API key header</p>
+  </div>
+  <div class="flow-box">
+    <h4>🔵 Yahoo Finance (unofficial)</h4>
+    <ul>
+      <li><strong>Open Interest</strong> per strike per expiry</li>
+      <li>Expiry date list</li>
+      <li>Strike list for each expiry</li>
+      <li>Volume cross-check</li>
+    </ul>
+    <p style="font-size:.68rem;color:var(--muted);margin-top:.5rem">Direct HTTP — no API key needed · ~15 min delay on OI · Called via <code>query2.finance.yahoo.com</code></p>
+    <div class="callout callout-warn" style="margin-top:.5rem;padding:.6rem .8rem">
+      <strong>⚠ Why Yahoo for OI?</strong>
+      Alpaca's <code>/v1beta1/options/snapshots</code> data API returns <code>openInterest: 0</code> for all contracts. Real OI is only available via <code>api.alpaca.markets/v2/options/contracts</code> (trading API) which requires a trading account auth. Yahoo Finance is the cleanest zero-auth alternative.
+    </div>
+  </div>
+</div>
+
+<h3>3.2 Fetch Strategy Per Symbol</h3>
+
+<div class="steps">
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <strong>Stock snapshot (Alpaca)</strong>
+      Fetch current price, OHLC, volume, change% from <code>/v2/stocks/{symbol}/snapshot</code>.
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <strong>Price bars for technicals (Alpaca)</strong>
+      Fetch 160 days of daily OHLCV from <code>/v2/stocks/{symbol}/bars</code>.
+      Compute: RSI-14, SMA-50, SMA-100, Bollinger Bands, support/resistance.
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <strong>Expiry list + OI (Yahoo Finance)</strong>
+      Call <code>query2.finance.yahoo.com/v7/finance/options/{symbol}</code> with no expiry param — returns list of all expiry timestamps and the ATM chain.
+      Then for each relevant expiry, call with <code>?date={timestamp}</code> to get full chain with real OI per strike.
+      This is the <strong>only</strong> place OI comes from.
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <strong>Live prices + Greeks (Alpaca)</strong>
+      For each relevant expiry within DTE range, call <code>/v1beta1/options/snapshots/{symbol}?expiration_date=...</code> to get live bid/ask and Greeks (gamma, delta, IV) per contract.
+      Note: Greeks only available on OPRA subscription; falls back to Black-Scholes estimate if null.
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <strong>Merge on (strike, type, expiry)</strong>
+      Join Yahoo OI into Alpaca snapshot contracts.
+      Result: each contract has live price, Greeks, AND real OI.
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">6</div>
+    <div class="step-body">
+      <strong>Gamma wall analysis</strong>
+      Compute GEX = gamma × OI × 100 × spot per strike.
+      Find call wall (max call GEX above spot), put wall (max put GEX below spot), gamma flip.
+      If gamma = 0 (no OPRA), fall back to OI-weighted wall detection.
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">7</div>
+    <div class="step-body">
+      <strong>Score + strategy</strong>
+      Compute opportunity score (0–100) across Gamma / IV / Trend pillars.
+      Select strategy: Iron Condor / Iron Butterfly / Directional Spreads.
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">8</div>
+    <div class="step-body">
+      <strong>Write JSON → R2</strong>
+      Upload <code>reports/{SYMBOL}/latest.json</code> and <code>reports/{SYMBOL}/{date}.json</code>.
+      Update <code>reports/manifest.json</code> atomically.
+    </div>
+  </div>
+</div>
+
+<h3>3.3 Merge Logic</h3>
+
+<div class="arch">
+<pre>
+  Yahoo Chain (per expiry):                Alpaca Snapshot (per expiry):
+  ┌─────────────────────────────┐          ┌─────────────────────────────┐
+  │ strike: 400                 │          │ occ: GLD260327C00400000     │
+  │ type: call                  │   JOIN   │ strike: 400                 │
+  │ expiry: 2026-03-27          │ ◄──────► │ type: call                  │
+  │ openInterest: 1523   ✅ OI  │          │ expiry: 2026-03-27          │
+  │ volume: 340                 │          │ gamma: 0.052        ✅ Greek│
+  │ impliedVolatility: 0.28     │          │ delta: 0.48         ✅ Greek│
+  └─────────────────────────────┘          │ iv: 0.28            ✅ Live │
+                                           │ bid: 7.85                   │
+                                           │ ask: 8.10                   │
+                                           └─────────────────────────────┘
+
+  Merged Contract:
+  ┌──────────────────────────────────────────────────────┐
+  │ strike: 400 · type: call · expiry: 2026-03-27        │
+  │ openInterest: 1523  ← Yahoo                          │
+  │ gamma: 0.052        ← Alpaca (or BS estimate)        │
+  │ iv: 28.0%           ← Alpaca                         │
+  │ bid: 7.85 · ask: 8.10 ← Alpaca (live)               │
+  │ GEX = 0.052 × 1523 × 100 × $400 = $3,167,840        │
+  └──────────────────────────────────────────────────────┘
+</pre>
+</div>
+
+
+<!-- ──────────────────────────────────────────────────────────── -->
+<h2 id="s4">4. Output Schema (JSON Report)</h2>
+
+<p>Each symbol writes a self-contained JSON report. Structure is identical to v1 — existing <code>newleaf-alpaca-r2</code> viewer requires no changes.</p>
+
+<div class="field-grid">
+  <div>
+    <h4>Top-level keys</h4>
+    <table>
+      <tr><th>Key</th><th>Source</th></tr>
+      <tr><td><code>meta</code></td><td>Pipeline</td></tr>
+      <tr><td><code>snapshot</code></td><td><span class="source-alpaca">Alpaca</span></td></tr>
+      <tr><td><code>technicalData</code></td><td><span class="source-alpaca">Alpaca bars</span></td></tr>
+      <tr><td><code>gammaData</code></td><td><span class="source-both">Yahoo OI + Alpaca Greeks</span></td></tr>
+      <tr><td><code>scoring</code></td><td>Pipeline computed</td></tr>
+    </table>
+  </div>
+  <div>
+    <h4>gammaData.analysis fields</h4>
+    <table>
+      <tr><th>Field</th><th>Source</th></tr>
+      <tr><td><code>put_wall</code></td><td><span class="source-both">Merged</span></td></tr>
+      <tr><td><code>call_wall</code></td><td><span class="source-both">Merged</span></td></tr>
+      <tr><td><code>topStrikes[].gamma_exposure</code></td><td><span class="source-alpaca">Alpaca γ × <span class="source-yahoo">Yahoo OI</span></span></td></tr>
+      <tr><td><code>topStrikes[].call_oi</code></td><td><span class="source-yahoo">Yahoo</span></td></tr>
+      <tr><td><code>topStrikes[].put_oi</code></td><td><span class="source-yahoo">Yahoo</span></td></tr>
+      <tr><td><code>ivData.atmIv</code></td><td><span class="source-alpaca">Alpaca</span></td></tr>
+    </table>
+  </div>
+</div>
+
+<h4>topStrikes selection (v2 improved)</h4>
+<table>
+  <tr><th>Data available</th><th>Sort key</th><th>Chart shown in viewer</th></tr>
+  <tr><td>Real gamma + real OI</td><td><code>|GEX|</code> descending</td><td>Green/red GEX bar chart</td></tr>
+  <tr><td>OI only (no OPRA Greeks)</td><td><code>call_oi + put_oi</code> desc, near spot</td><td>Call OI / Put OI bars</td></tr>
+  <tr><td>Neither (no OI data)</td><td>proximity to spot</td><td>Put wall / Call wall info panel</td></tr>
+</table>
+
+
+<!-- ──────────────────────────────────────────────────────────── -->
+<h2 id="s5">5. Multi-Instance Architecture</h2>
+
+<p>The key design principle: <strong>R2 is the coordination layer</strong>. Each instance owns its own partition of the symbol list and writes independently. No inter-instance communication needed.</p>
+
+<div class="arch">
+<pre>
+  ┌────────────────────────────────────────────────────────────────────────────┐
+  │  Symbol List: 300 stocks                                                   │
+  │  SPY QQQ MSFT AAPL NVDA TSLA AMZN GOOGL META AVGO ... (290 more)          │
+  │                                                                            │
+  │  Instance A (Mac Mini M4)      Instance B (VPS-1)    Instance C (VPS-2)   │
+  │  Symbols: 1–100                Symbols: 101–200      Symbols: 201–300      │
+  │  --shard=0 --total-shards=3    --shard=1 --shards=3  --shard=2 --shards=3 │
+  │                                                                            │
+  │  Each instance runs every 15 minutes (cron) independently                 │
+  │  Concurrency: 5 symbols in parallel per instance                          │
+  │  ~100 symbols × ~8s per symbol / 5 parallel = ~160s = under 3 min        │
+  │                                                                            │
+  │              ↓ All write to same R2 bucket ↓                              │
+  │                                                                            │
+  │  Cloudflare R2: newleaf bucket                                             │
+  │    reports/SPY/latest.json        reports/GOOGL/latest.json               │
+  │    reports/QQQ/latest.json        reports/META/latest.json                │
+  │    ...                            reports/manifest.json  (merged)         │
+  │                                                                            │
+  │  Manifest strategy: each instance reads manifest, upserts its symbols,    │
+  │  writes back. Last-write-wins per symbol key (safe, idempotent).          │
+  └────────────────────────────────────────────────────────────────────────────┘
+</pre>
+</div>
+
+<div class="callout callout-info">
+  <strong>📐 Capacity calculation</strong>
+  Yahoo Finance: ~2s per symbol (2 requests: expiries + chain per expiry) · Alpaca: ~1.5s per symbol (snapshot + bars + chain) · Total per symbol: ~4–6s · 5 parallel workers · 100 symbols = ~100s per run = well within 15 min window.
+  For 300 symbols across 3 instances: each handles 100 symbols ≈ 100s per run.
+</div>
+
+<h3>Shard Assignment</h3>
+<div class="arch">
+<pre>
+  # Sorted symbol list partitioned by index modulo total shards
+  # Ensures stable, even distribution regardless of list order
+
+  symbols = sorted(ALL_SYMBOLS)
+  my_symbols = [s for i, s in enumerate(symbols) if i % TOTAL_SHARDS == MY_SHARD]
+
+  # Example: 9 symbols, 3 shards
+  # Shard 0: AAPL, GOOGL, MSFT     (indices 0, 3, 6)
+  # Shard 1: AMZN, META, NVDA      (indices 1, 4, 7)
+  # Shard 2: AVGO, QQQ, SPY        (indices 2, 5, 8)
+</pre>
+</div>
+
+
+<!-- ──────────────────────────────────────────────────────────── -->
+<h2 id="s6">6. Script Architecture</h2>
+
+<p>The v2 pipeline is a single Node.js file with <strong>zero npm dependencies</strong>. Uses only Node 18+ built-ins (<code>fetch</code>, <code>fs</code>, <code>path</code>, <code>crypto</code>).</p>
+
+<div class="arch">
+<pre>
+  newleaf-pipeline.js  (~700 lines, single file)
+  ├── CONFIG LOADER          loadConfig(path) → reads JSON config file
+  │
+  ├── ALPACA CLIENT          (inline, no class)
+  │   ├── alpacaGet(url)     → fetch with Alpaca auth headers
+  │   ├── getSnapshot(sym)   → stock price, OHLC, volume
+  │   ├── getBars(sym)       → 160d OHLCV for technicals
+  │   └── getAlpacaChain()   → snapshots for expiry (Greeks + live prices)
+  │
+  ├── YAHOO CLIENT           (inline, no dependencies)
+  │   ├── yahooGet(url)      → fetch with Yahoo headers + user-agent
+  │   ├── getYahooExpiries() → list of expiry unix timestamps
+  │   └── getYahooChain()    → full chain with real OI per strike
+  │
+  ├── TECHNICALS             (pure functions, identical to v1)
+  │   ├── calcSMA()
+  │   ├── calcBB()
+  │   ├── calcRSI()
+  │   └── analyzeTechnicals()
+  │
+  ├── GAMMA ANALYSIS         (pure functions, improved from v1)
+  │   ├── estimateGamma()    → Black-Scholes fallback
+  │   ├── mergeChains()      → join Yahoo OI + Alpaca Greeks by (strike,type,expiry)
+  │   └── analyzeGamma()     → walls, flip, confidence, topStrikes
+  │
+  ├── SCORING                (pure functions, identical to v1)
+  │   ├── calcScore()
+  │   ├── getDirection()
+  │   └── selectStrategy()
+  │
+  ├── R2 UPLOADER            (inline, uses @aws-sdk/client-s3 OR native fetch + signed URL)
+  │   └── uploadToR2()
+  │
+  ├── MANIFEST MANAGER
+  │   └── upsertManifest()   → read-modify-write per symbol
+  │
+  ├── processSymbol(sym)     → orchestrates all above for one symbol
+  │
+  └── main()                 → sharding, concurrency, CLI args, summary
+</pre>
+</div>
+
+<h3>Concurrency Model</h3>
+<div class="arch">
+<pre>
+  // Process symbols in batches of CONCURRENCY (default 5)
+  for (let i = 0; i < symbols.length; i += CONCURRENCY) {
+    const batch = symbols.slice(i, i + CONCURRENCY);
+    await Promise.all(batch.map(sym => processSymbol(sym).catch(err => {
+      results.push({ sym, ok: false, error: err.message });
+    })));
+  }
+  // Each symbol's Yahoo + Alpaca calls run in parallel WITHIN processSymbol
+  const [yahooChain, alpacaSnap, bars] = await Promise.all([
+    getYahooData(sym),
+    getAlpacaSnapshot(sym),
+    getAlpacaBars(sym)
+  ]);
+</pre>
+</div>
+
+
+<!-- ──────────────────────────────────────────────────────────── -->
+<h2 id="s7">7. Configuration Reference</h2>
+
+<div class="arch">
+<pre>
+  // config.json  (never committed, never deployed to R2)
+  {
+    "alpaca": {
+      "apiKey":    "AKWIZ...",
+      "secretKey": "GRBw..."
+    },
+    "r2": {
+      "accountId":       "bdac00e7cad9fd1fb1091543292c293a",
+      "accessKeyId":     "...",
+      "secretAccessKey": "...",
+      "bucketName":      "newleaf",
+      "publicUrl":       "https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev"
+    },
+    "watchlist": ["SPY","QQQ","MSFT","AAPL","NVDA","AMZN","TSLA","GLD","IWM","ORCL"],
+    "pipeline": {
+      "dteMin":      0,
+      "dteMax":      60,
+      "concurrency": 5
+    }
+  }
+</pre>
+</div>
+
+<h3>CLI Flags</h3>
+<table>
+  <tr><th>Flag</th><th>Default</th><th>Description</th></tr>
+  <tr><td><code>AAPL MSFT SPY</code></td><td>—</td><td>Explicit symbol list (overrides config watchlist)</td></tr>
+  <tr><td><code>--watchlist</code></td><td>off</td><td>Use watchlist from config.json</td></tr>
+  <tr><td><code>--no-upload</code></td><td>off</td><td>Write local files only, skip R2</td></tr>
+  <tr><td><code>--dte-min=N</code></td><td>0</td><td>Minimum DTE filter</td></tr>
+  <tr><td><code>--dte-max=N</code></td><td>60</td><td>Maximum DTE filter</td></tr>
+  <tr><td><code>--concurrency=N</code></td><td>5</td><td>Symbols processed in parallel</td></tr>
+  <tr><td><code>--shard=N</code></td><td>0</td><td>This instance's shard index (0-based)</td></tr>
+  <tr><td><code>--total-shards=N</code></td><td>1</td><td>Total number of parallel instances</td></tr>
+  <tr><td><code>--config=path</code></td><td>./config.json</td><td>Path to config file</td></tr>
+</table>
+
+
+<!-- ──────────────────────────────────────────────────────────── -->
+<h2 id="s8">8. Deployment Guide</h2>
+
+<h3>Single instance (Mac Mini — current setup)</h3>
+<div class="arch">
+<pre>
+  # crontab -e
+  */15 9-16 * * 1-5  cd /path/to/pipeline && node newleaf-pipeline.js --watchlist
+
+  # Or with PM2 (restarts on crash):
+  pm2 start newleaf-pipeline.js --name newleaf-pipeline --cron "*/15 9-16 * * 1-5"
+</pre>
+</div>
+
+<h3>3-instance setup (Mac Mini + 2× VPS)</h3>
+<div class="arch">
+<pre>
+  # Each server has:
+  #   newleaf-pipeline.js
+  #   config.json  (same Alpaca + R2 credentials, same full watchlist)
+
+  # Mac Mini (shard 0 of 3):
+  node newleaf-pipeline.js --watchlist --shard=0 --total-shards=3
+
+  # VPS-1 (shard 1 of 3):
+  node newleaf-pipeline.js --watchlist --shard=1 --total-shards=3
+
+  # VPS-2 (shard 2 of 3):
+  node newleaf-pipeline.js --watchlist --shard=2 --total-shards=3
+</pre>
+</div>
+
+<h3>Watching 300 stocks (full S&P-100 + extras)</h3>
+<div class="arch">
+<pre>
+  // config.json watchlist — 300 symbols
+  // Each shard picks every 3rd symbol alphabetically
+  // All 3 instances finish in ~160s, all under 15-min cron window
+  "watchlist": [
+    "AAPL","ABBV","ABT","ACN","ADBE","ADI","ADP","ADSK","AIG","AMGN",
+    "AMT","AMZN","ANET","ANSS","AON","APA","APD","APH","APTV","ARE",
+    ... (260 more)
+  ]
+</pre>
+</div>
+
+<div class="callout callout-success">
+  <strong>✅ Zero coordination required</strong>
+  Each instance reads from its own config, fetches its own slice of symbols, and writes to R2 independently. No shared state, no locking, no message queue. R2's last-write-wins is safe because each symbol's data is fully self-contained and instances never overlap (sharding is deterministic).
+</div>
+
+
+<!-- ──────────────────────────────────────────────────────────── -->
+<h2 id="s9">9. Known Limitations & Mitigations</h2>
+
+<table>
+  <tr><th>Limitation</th><th>Impact</th><th>Mitigation</th></tr>
+  <tr>
+    <td>Yahoo Finance rate limiting</td>
+    <td>429 errors during rapid scans</td>
+    <td>200ms jitter between Yahoo calls; exponential backoff; symbol-level catch so one failure doesn't stop batch</td>
+  </tr>
+  <tr>
+    <td>Yahoo OI is ~15-20 min delayed</td>
+    <td>OI walls not perfectly real-time</td>
+    <td>Acceptable for 15-min scan cadence; document clearly in UI</td>
+  </tr>
+  <tr>
+    <td>Alpaca Greeks require OPRA subscription</td>
+    <td>gamma=0, falls back to Black-Scholes</td>
+    <td>B-S estimate is used; chart shows OI bars instead of GEX bars; confidence score is penalised</td>
+  </tr>
+  <tr>
+    <td>Yahoo API is unofficial / undocumented</td>
+    <td>Could break without notice</td>
+    <td>Fallback path: if Yahoo fails, use Alpaca OI estimate + flag <code>oi_source: "estimated"</code> in report</td>
+  </tr>
+  <tr>
+    <td>R2 manifest write conflicts</td>
+    <td>Manifest corruption if 2 instances write simultaneously</td>
+    <td>Each instance reads full manifest, upserts only its own symbols, writes back. Worst case: one instance's data overwrites another's for the same run — benign since next run corrects it</td>
+  </tr>
+  <tr>
+    <td>0-DTE expiries expire at market close</td>
+    <td>Chain data disappears mid-day</td>
+    <td>DTE_MIN=0; expired contracts return empty chain which pipeline handles gracefully</td>
+  </tr>
+  <tr>
+    <td>No real-time streaming</td>
+    <td>Data is 15-min snapshots</td>
+    <td>By design for this use-case; real-time would require WebSocket subscriptions (future v3)</td>
+  </tr>
+</table>
+
+<h3>Yahoo Finance Direct API</h3>
+<p>The v2 pipeline calls Yahoo Finance directly (no Python service) using the same undocumented JSON endpoint that yfinance uses:</p>
+<div class="arch">
+<pre>
+  # Expiries + ATM chain:
+  GET https://query2.finance.yahoo.com/v7/finance/options/{SYMBOL}
+    headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }
+    → { optionChain: { result: [{ expirationDates: [unix...], options: [{calls,puts}] }] } }
+
+  # Specific expiry:
+  GET https://query2.finance.yahoo.com/v7/finance/options/{SYMBOL}?date={unix_timestamp}
+    → { optionChain: { result: [{ options: [{ calls: [{strike,openInterest,...}], puts: [...] }] }] } }
+
+  # Each call/put has: strike, openInterest, volume, impliedVolatility, bid, ask, lastPrice
+</pre>
+</div>
+
+<div class="callout callout-info">
+  <strong>📋 Next step</strong>
+  Build <code>newleaf-pipeline.js</code> as described in Section 6. The script will be a drop-in replacement for <code>generate-report.js</code> — same output JSON schema, same R2 structure, same manifest format. The <code>newleaf-alpaca-r2</code> viewer needs no changes.
+</div>
+
+<footer>
+  NewLeaf System Design · Data Pipeline v2 · Confidential · Not Financial Advice
+</footer>
+
+</div>
+</body>
+</html>

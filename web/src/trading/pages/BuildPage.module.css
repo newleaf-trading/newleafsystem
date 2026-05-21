@@ -1,0 +1,105 @@
+/* ─── Build Page ─── */
+
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 22px 0 60px;
+}
+
+/* ─── Capital prompt ─── */
+.capitalPrompt {
+  background: rgba(201, 169, 110, 0.04);
+  border: 1px solid rgba(201, 169, 110, 0.15);
+  border-radius: var(--nl-radius);
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.capitalTitle {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--nl-text);
+  margin-bottom: 4px;
+}
+
+.capitalSub {
+  font-size: 13px;
+  color: var(--nl-text-muted);
+}
+
+.capitalInputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.capitalSign {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--nl-text);
+}
+
+.capitalInput {
+  padding: 8px 12px;
+  border: 1px solid var(--nl-border);
+  border-radius: var(--nl-radius-sm);
+  font-size: 15px;
+  font-weight: 700;
+  width: 140px;
+  font-family: var(--nl-font-mono);
+}
+
+/* ─── Tabs ─── */
+.tabBar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--nl-border);
+  margin-bottom: 24px;
+}
+
+.tab {
+  padding: 12px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 2px solid transparent;
+}
+
+.tabActive {
+  font-weight: 700;
+  color: var(--nl-green);
+  border-bottom-color: var(--nl-green);
+}
+
+.tabInactive {
+  font-weight: 500;
+  color: var(--nl-text-dim);
+}
+
+/* ─── Execute bar ─── */
+.executeBar {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--nl-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 640px) {
+  .capitalPrompt {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .executeBar {
+    flex-direction: column;
+    gap: 12px;
+  }
+}

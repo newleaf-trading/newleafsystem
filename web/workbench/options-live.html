@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-06YFVHFNYT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-06YFVHFNYT");</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NewLeaf · Live Option Price</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Playfair Display:ital,wght@0,300;0,600;1,300;1,600&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --forest: #0B2D23;
+      --forest-d: #0A2B20;
+      --forest-l: #164d3a;
+      --gold: #C9A96E;
+      --gold-l:   #e0c07a;
+      --gold-d:   #a0843d;
+      --cream:    #F4EFE4;
+      --muted:    #8aac9b;
+      --red:      #e05c5c;
+      --green:    #4caf85;
+      --card-bg:  rgba(255,255,255,0.04);
+      --border:   rgba(201,169,110,0.18);
+      --radius:   12px;
+      --mono:     'Space Mono', monospace;
+      --serif:    'Playfair Display', serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--forest-d);
+      background-image:
+        radial-gradient(ellipse 60% 50% at 80% 10%, rgba(201,169,110,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 60% at 10% 80%, rgba(15,61,46,0.8) 0%, transparent 70%);
+      color: var(--cream);
+      font-family: var(--mono);
+      min-height: 100vh;
+      padding: 0 1rem 4rem;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.6rem 0 1.4rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2.4rem;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+    }
+    .logo-leaf {
+      width: 28px; height: 28px;
+      background: var(--gold);
+      clip-path: polygon(50% 0%, 100% 40%, 80% 100%, 20% 100%, 0% 40%);
+      flex-shrink: 0;
+    }
+    .logo-text {
+      font-family: var(--serif);
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--cream);
+      letter-spacing: 0.02em;
+    }
+    .logo-text span { color: var(--gold); }
+    nav a {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    nav a:hover { color: var(--gold); }
+
+    /* ── Main Layout ── */
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* ── Section heading ── */
+    .section-title {
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--cream);
+      margin-bottom: 0.3rem;
+    }
+    .section-sub {
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+    }
+
+    /* ── API Key Banner ── */
+    .api-banner {
+      background: rgba(201,169,110,0.08);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.2rem;
+      margin-bottom: 1.8rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .api-banner label {
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      white-space: nowrap;
+    }
+    .api-inputs { display: flex; gap: 0.6rem; flex: 1; flex-wrap: wrap; }
+    .api-banner input {
+      flex: 1;
+      min-width: 160px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--cream);
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      padding: 0.45rem 0.75rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .api-banner input:focus { border-color: var(--gold); }
+    .api-banner input::placeholder { color: var(--muted); opacity: 0.6; }
+    .save-btn {
+      background: var(--gold);
+      color: var(--forest-d);
+      border: none;
+      border-radius: 6px;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.48rem 1rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    .save-btn:hover { background: var(--gold-l); }
+
+    /* ── Search Card ── */
+    .search-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.6rem;
+      margin-bottom: 1.8rem;
+    }
+    .search-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.4fr 0.8fr auto;
+      gap: 0.75rem;
+      align-items: end;
+    }
+    @media (max-width: 700px) {
+      .search-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; }
+    .field label {
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .field input, .field select {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--cream);
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      padding: 0.6rem 0.8rem;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      width: 100%;
+    }
+    .field input:focus, .field select:focus { border-color: var(--gold); background: rgba(0,0,0,0.4); }
+    .field input::placeholder { color: var(--muted); opacity: 0.5; }
+    .field select option { background: var(--forest-d); color: var(--cream); }
+
+    /* Toggle C/P */
+    .cp-toggle { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .cp-toggle input[type=radio] { display: none; }
+    .cp-toggle label {
+      flex: 1;
+      text-align: center;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      color: var(--muted);
+      background: transparent;
+      user-select: none;
+    }
+    .cp-toggle input:checked + label {
+      background: var(--gold);
+      color: var(--forest-d);
+    }
+
+    .fetch-btn {
+      background: var(--forest-l);
+      border: 1px solid var(--gold);
+      border-radius: 8px;
+      color: var(--gold);
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.6rem 1.2rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      white-space: nowrap;
+      height: 100%;
+    }
+    .fetch-btn:hover { background: var(--gold); color: var(--forest-d); }
+    .fetch-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* OCC symbol display */
+    .occ-pill {
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.68rem;
+    }
+    .occ-label { color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+    .occ-val {
+      background: rgba(201,169,110,0.1);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--gold);
+      padding: 0.2rem 0.6rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Result Panel ── */
+    #result { display: none; }
+
+    .ticker-bar {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+      flex-wrap: wrap;
+    }
+    .ticker-symbol {
+      font-family: var(--serif);
+      font-size: 2.4rem;
+      font-weight: 600;
+      color: var(--cream);
+      letter-spacing: 0.02em;
+    }
+    .ticker-desc {
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+    .refresh-info {
+      margin-left: auto;
+      font-size: 0.62rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .pulse {
+      width: 8px; height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    /* ── Price Cards ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+    }
+    @media (max-width: 600px) { .cards-grid { grid-template-columns: 1fr 1fr; } }
+
+    .price-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .price-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--gold);
+      opacity: 0.4;
+    }
+    .price-card.highlight::before { opacity: 1; }
+    .card-label {
+      font-size: 0.6rem;
+      color: var(--muted);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .card-value {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--cream);
+      letter-spacing: -0.02em;
+    }
+    .card-value.up { color: var(--green); }
+    .card-value.down { color: var(--red); }
+    .card-sub {
+      font-size: 0.62rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+
+    /* ── Greeks Grid ── */
+    .greeks-title {
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+    .greeks-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.4rem;
+    }
+    @media (max-width: 600px) { .greeks-grid { grid-template-columns: repeat(3, 1fr); } }
+
+    .greek-cell {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem 0.9rem;
+      text-align: center;
+    }
+    .greek-symbol {
+      font-family: 'Georgia', serif;
+      font-size: 1.1rem;
+      font-style: italic;
+      color: var(--gold);
+      margin-bottom: 0.25rem;
+    }
+    .greek-name {
+      font-size: 0.55rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+    .greek-val {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--cream);
+    }
+
+    /* ── Details Table ── */
+    .details-table {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .details-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .details-table td {
+      padding: 0.65rem 1rem;
+      font-size: 0.72rem;
+      border-bottom: 1px solid rgba(201,169,110,0.07);
+    }
+    .details-table tr:last-child td { border-bottom: none; }
+    .details-table td:first-child {
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.6rem;
+      width: 40%;
+    }
+    .details-table td:last-child { color: var(--cream); font-weight: 700; }
+
+    /* ── Error / Loading ── */
+    .status-msg {
+      text-align: center;
+      padding: 2.5rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+    }
+    .status-msg.error { color: var(--red); }
+
+    /* ── Countdown bar ── */
+    .countdown-wrap {
+      height: 3px;
+      background: rgba(201,169,110,0.1);
+      border-radius: 2px;
+      margin-bottom: 1.4rem;
+      overflow: hidden;
+    }
+    .countdown-bar {
+      height: 100%;
+      background: var(--gold);
+      border-radius: 2px;
+      transition: width 1s linear;
+    }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 4rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+      font-size: 0.6rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Header -->
+    <header>
+      <a class="logo" href="index.html">
+        <div class="logo-leaf"></div>
+        <span class="logo-text">New<span>Leaf</span></span>
+      </a>
+      <nav>
+        <a href="index.html">← Dashboard</a>
+      </nav>
+    </header>
+
+    <!-- Page Title -->
+    <div class="section-title">Live Option Price</div>
+    <div class="section-sub">Real-time quote &amp; Greeks via Alpaca Markets</div>
+
+    <!-- API Keys Banner -->
+    <div class="api-banner">
+      <label>API Keys</label>
+      <div class="api-inputs">
+        <input type="text" id="apiKey" placeholder="Alpaca API Key ID" autocomplete="off" />
+        <input type="password" id="apiSecret" placeholder="Alpaca Secret Key" autocomplete="off" />
+        <select id="baseUrl" style="min-width:140px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:6px;color:var(--cream);font-family:var(--mono);font-size:0.7rem;padding:0.45rem 0.75rem;outline:none;">
+          <option value="https://data.alpaca.markets">Live Data</option>
+          <option value="https://paper-api.alpaca.markets">Paper</option>
+        </select>
+      </div>
+      <button class="save-btn" onclick="saveKeys()">Save</button>
+    </div>
+
+    <!-- Search Card -->
+    <div class="search-card">
+      <div class="search-grid">
+        <div class="field">
+          <label>Symbol</label>
+          <input type="text" id="symbol" placeholder="AAPL" style="text-transform:uppercase" maxlength="10" />
+        </div>
+        <div class="field">
+          <label>Strike</label>
+          <input type="number" id="strike" placeholder="150" step="0.5" min="1" />
+        </div>
+        <div class="field">
+          <label>Expiry</label>
+          <input type="date" id="expiry" />
+        </div>
+        <div class="field">
+          <label>Type</label>
+          <div class="cp-toggle">
+            <input type="radio" name="cp" id="call" value="C" checked />
+            <label for="call">Call</label>
+            <input type="radio" name="cp" id="put" value="P" />
+            <label for="put">Put</label>
+          </div>
+        </div>
+        <button class="fetch-btn" id="fetchBtn" onclick="fetchOption()">Fetch</button>
+      </div>
+
+      <div class="occ-pill">
+        <span class="occ-label">OCC Symbol:</span>
+        <span class="occ-val" id="occDisplay">—</span>
+        <span class="occ-label" id="refreshLabel" style="display:none;margin-left:0.6rem;">Auto-refresh every 15s</span>
+      </div>
+    </div>
+
+    <!-- Countdown bar -->
+    <div class="countdown-wrap" id="countdownWrap" style="display:none">
+      <div class="countdown-bar" id="countdownBar" style="width:100%"></div>
+    </div>
+
+    <!-- Result -->
+    <div id="result">
+      <!-- Ticker Bar -->
+      <div class="ticker-bar">
+        <div class="ticker-symbol" id="resSymbol">—</div>
+        <div class="ticker-desc" id="resDesc">—</div>
+        <div class="refresh-info">
+          <div class="pulse"></div>
+          <span id="lastUpdated">—</span>
+        </div>
+      </div>
+
+      <!-- Price Cards -->
+      <div class="cards-grid">
+        <div class="price-card highlight">
+          <div class="card-label">Last Price</div>
+          <div class="card-value" id="lastPrice">—</div>
+          <div class="card-sub" id="lastSize">—</div>
+        </div>
+        <div class="price-card">
+          <div class="card-label">Bid</div>
+          <div class="card-value" id="bidPrice">—</div>
+          <div class="card-sub" id="bidSize">size —</div>
+        </div>
+        <div class="price-card">
+          <div class="card-label">Ask</div>
+          <div class="card-value" id="askPrice">—</div>
+          <div class="card-sub" id="askSize">size —</div>
+        </div>
+        <div class="price-card">
+          <div class="card-label">Mid Price</div>
+          <div class="card-value" id="midPrice">—</div>
+          <div class="card-sub">bid/ask midpoint</div>
+        </div>
+        <div class="price-card">
+          <div class="card-label">Implied Vol</div>
+          <div class="card-value" id="ivVal">—</div>
+          <div class="card-sub">annualised</div>
+        </div>
+        <div class="price-card">
+          <div class="card-label">Open Interest</div>
+          <div class="card-value" id="oiVal">—</div>
+          <div class="card-sub" id="volumeVal">vol —</div>
+        </div>
+      </div>
+
+      <!-- Greeks -->
+      <div class="greeks-title">Option Greeks</div>
+      <div class="greeks-grid">
+        <div class="greek-cell">
+          <div class="greek-symbol">Δ</div>
+          <div class="greek-name">Delta</div>
+          <div class="greek-val" id="gDelta">—</div>
+        </div>
+        <div class="greek-cell">
+          <div class="greek-symbol">Γ</div>
+          <div class="greek-name">Gamma</div>
+          <div class="greek-val" id="gGamma">—</div>
+        </div>
+        <div class="greek-cell">
+          <div class="greek-symbol">Θ</div>
+          <div class="greek-name">Theta</div>
+          <div class="greek-val" id="gTheta">—</div>
+        </div>
+        <div class="greek-cell">
+          <div class="greek-symbol">ν</div>
+          <div class="greek-name">Vega</div>
+          <div class="greek-val" id="gVega">—</div>
+        </div>
+        <div class="greek-cell">
+          <div class="greek-symbol">ρ</div>
+          <div class="greek-name">Rho</div>
+          <div class="greek-val" id="gRho">—</div>
+        </div>
+      </div>
+
+      <!-- Details Table -->
+      <div class="details-table">
+        <table>
+          <tr><td>OCC Symbol</td><td id="dOcc">—</td></tr>
+          <tr><td>Underlying</td><td id="dUnderlying">—</td></tr>
+          <tr><td>Strike</td><td id="dStrike">—</td></tr>
+          <tr><td>Expiry</td><td id="dExpiry">—</td></tr>
+          <tr><td>Type</td><td id="dType">—</td></tr>
+          <tr><td>Day High / Low</td><td id="dHL">—</td></tr>
+          <tr><td>VWAP</td><td id="dVwap">—</td></tr>
+          <tr><td>Prev Close</td><td id="dPrevClose">—</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Loading / Error -->
+    <div id="statusMsg" class="status-msg" style="display:none"></div>
+
+    <footer>NewLeaf · Options Advisory Platform · Data via Alpaca Markets · Not financial advice</footer>
+  </div>
+
+  <script>
+    // ── Helpers ──────────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+
+    function buildOCC(symbol, expiry, type, strike) {
+      if (!symbol || !expiry || !strike) return null;
+      const [y, m, d] = expiry.split('-');
+      const yy = y.slice(2);
+      const cp = type.toUpperCase();
+      const strikeCents = Math.round(parseFloat(strike) * 1000);
+      const strikeStr = String(strikeCents).padStart(8, '0');
+      return `${symbol.toUpperCase()}${yy}${m}${d}${cp}${strikeStr}`;
+    }
+
+    function fmt(v, decimals = 2) {
+      if (v == null || v === '' || isNaN(v)) return '—';
+      return Number(v).toFixed(decimals);
+    }
+    function fmtDollar(v) {
+      if (v == null || isNaN(v)) return '—';
+      return '$' + Number(v).toFixed(2);
+    }
+    function fmtPct(v) {
+      if (v == null || isNaN(v)) return '—';
+      return (Number(v) * 100).toFixed(1) + '%';
+    }
+    function fmtInt(v) {
+      if (v == null || isNaN(v)) return '—';
+      return Number(v).toLocaleString();
+    }
+
+    // ── API Keys ─────────────────────────────────────────────────
+    function loadKeys() {
+      $('apiKey').value    = localStorage.getItem('nlAlpacaKey') || '';
+      $('apiSecret').value = localStorage.getItem('nlAlpacaSecret') || '';
+      $('baseUrl').value   = localStorage.getItem('nlAlpacaBase') || 'https://data.alpaca.markets';
+    }
+    function saveKeys() {
+      localStorage.setItem('nlAlpacaKey',    $('apiKey').value.trim());
+      localStorage.setItem('nlAlpacaSecret', $('apiSecret').value.trim());
+      localStorage.setItem('nlAlpacaBase',   $('baseUrl').value);
+      $('apiKey').style.borderColor    = 'var(--green)';
+      $('apiSecret').style.borderColor = 'var(--green)';
+      setTimeout(() => {
+        $('apiKey').style.borderColor    = '';
+        $('apiSecret').style.borderColor = '';
+      }, 1200);
+    }
+
+    // ── OCC live preview ─────────────────────────────────────────
+    function updateOCC() {
+      const sym    = $('symbol').value.trim().toUpperCase();
+      const strike = $('strike').value;
+      const expiry = $('expiry').value;
+      const cp     = document.querySelector('input[name=cp]:checked').value;
+      const occ = buildOCC(sym, expiry, cp, strike);
+      $('occDisplay').textContent = occ || '—';
+    }
+    ['symbol','strike','expiry'].forEach(id => {
+      $(id).addEventListener('input', updateOCC);
+    });
+    document.querySelectorAll('input[name=cp]').forEach(el => {
+      el.addEventListener('change', updateOCC);
+    });
+
+    // Set default expiry to next Friday
+    function nextFriday() {
+      const d = new Date();
+      const day = d.getDay();
+      const add = (5 - day + 7) % 7 || 7;
+      d.setDate(d.getDate() + add);
+      return d.toISOString().split('T')[0];
+    }
+    $('expiry').value = nextFriday();
+    updateOCC();
+
+    // ── Fetch Snapshot (tries opra feed, then no feed) ──────────
+    async function fetchSnapshot(base, key, secret, occ) {
+      const headers = { 'APCA-API-KEY-ID': key, 'APCA-API-SECRET-KEY': secret };
+      const feeds = ['opra', ''];           // try opra first, then bare
+      for (const feed of feeds) {
+        const qs  = feed ? `symbols=${encodeURIComponent(occ)}&feed=${feed}`
+                         : `symbols=${encodeURIComponent(occ)}`;
+        const url = `${base}/v1beta1/options/snapshots?${qs}`;
+        console.log('[NewLeaf] Trying:', url);
+        const res = await fetch(url, { headers });
+        if (!res.ok) {
+          const body = await res.text();
+          console.warn(`[NewLeaf] ${res.status} with feed=${feed||'(none)'}:`, body);
+          if (feed === '') {
+            // last attempt failed — surface the error
+            let msg = body;
+            try { msg = JSON.parse(body).message || body; } catch(_){}
+            throw new Error(`${res.status}: ${msg}`);
+          }
+          continue;   // try next feed
+        }
+        const data = await res.json();
+        console.log('[NewLeaf] Response:', data);
+        const snap = data.snapshots?.[occ] ?? data[occ] ?? null;
+        if (snap) return snap;
+      }
+      return null;
+    }
+
+    // ── Fetch ─────────────────────────────────────────────────────
+    let refreshTimer  = null;
+    let countdownInt  = null;
+    const REFRESH_SEC = 15;
+
+    async function fetchOption() {
+      const key    = ($('apiKey').value || localStorage.getItem('nlAlpacaKey') || '').trim();
+      const secret = ($('apiSecret').value || localStorage.getItem('nlAlpacaSecret') || '').trim();
+      const base   = $('baseUrl').value || 'https://data.alpaca.markets';
+
+      if (!key || !secret) {
+        showStatus('Enter your Alpaca API Key and Secret above, then click Save.', true);
+        return;
+      }
+
+      const sym    = $('symbol').value.trim().toUpperCase();
+      const strike = $('strike').value;
+      const expiry = $('expiry').value;
+      const cp     = document.querySelector('input[name=cp]:checked').value;
+      const occ    = buildOCC(sym, expiry, cp, strike);
+
+      if (!occ) {
+        showStatus('Fill in Symbol, Strike, and Expiry to continue.', true);
+        return;
+      }
+
+      $('fetchBtn').disabled = true;
+      showStatus('Fetching live data…', false);
+      $('result').style.display = 'none';
+
+      try {
+        const snap = await fetchSnapshot(base, key, secret, occ);
+        if (!snap) throw new Error(`No snapshot found for ${occ} — contract may not exist or has no data yet.`);
+
+        renderResult(snap, occ, sym, strike, expiry, cp);
+        startAutoRefresh(key, secret, base, occ, sym, strike, expiry, cp);
+      } catch (e) {
+        showStatus(`Error: ${e.message}`, true);
+      } finally {
+        $('fetchBtn').disabled = false;
+      }
+    }
+
+    function renderResult(snap, occ, sym, strike, expiry, cp) {
+      hideStatus();
+      $('result').style.display = 'block';
+
+      const q = snap.latestQuote || {};
+      const t = snap.latestTrade || {};
+      const d = snap.dailyBar    || {};
+      const g = snap.greeks      || {};
+      const iv = snap.impliedVolatility;
+
+      const bid = parseFloat(q.bp ?? q.bid_price ?? q.BidPrice ?? 0);
+      const ask = parseFloat(q.ap ?? q.ask_price ?? q.AskPrice ?? 0);
+      const mid = (bid + ask) / 2;
+      const last = parseFloat(t.p ?? t.price ?? t.Price ?? mid);
+
+      $('resSymbol').textContent  = sym;
+      $('resDesc').textContent    = `${cp === 'C' ? 'Call' : 'Put'} · $${strike} · ${expiry}`;
+      $('lastUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+
+      // Prices
+      $('lastPrice').textContent = fmtDollar(last);
+      $('lastSize').textContent  = `size ${fmtInt(t.s ?? t.size ?? '—')}`;
+      $('bidPrice').textContent  = fmtDollar(bid);
+      $('bidSize').textContent   = `size ${fmtInt(q.bs ?? q.bid_size ?? '—')}`;
+      $('askPrice').textContent  = fmtDollar(ask);
+      $('askSize').textContent   = `size ${fmtInt(q.as ?? q.ask_size ?? '—')}`;
+      $('midPrice').textContent  = fmtDollar(mid);
+      $('ivVal').textContent     = iv != null ? fmtPct(iv) : '—';
+      $('oiVal').textContent     = fmtInt(snap.openInterest ?? snap.open_interest);
+      $('volumeVal').textContent = `vol ${fmtInt(d.v ?? d.volume ?? '—')}`;
+
+      // Greeks
+      $('gDelta').textContent = fmt(g.delta, 4);
+      $('gGamma').textContent = fmt(g.gamma, 4);
+      $('gTheta').textContent = fmt(g.theta, 4);
+      $('gVega').textContent  = fmt(g.vega,  4);
+      $('gRho').textContent   = fmt(g.rho,   4);
+
+      // Details
+      $('dOcc').textContent      = occ;
+      $('dUnderlying').textContent = sym;
+      $('dStrike').textContent   = '$' + parseFloat(strike).toFixed(2);
+      $('dExpiry').textContent   = expiry;
+      $('dType').textContent     = cp === 'C' ? 'Call' : 'Put';
+      const hi = d.h ?? d.high, lo = d.l ?? d.low;
+      $('dHL').textContent = (hi != null && lo != null) ? `$${fmt(hi)} / $${fmt(lo)}` : '—';
+      $('dVwap').textContent     = fmtDollar(d.vw ?? d.vwap);
+      $('dPrevClose').textContent = fmtDollar(snap.prevDailyBar?.c ?? snap.prevDailyBar?.close);
+
+      $('occDisplay').textContent = occ;
+      $('refreshLabel').style.display = '';
+    }
+
+    function startAutoRefresh(key, secret, base, occ, sym, strike, expiry, cp) {
+      clearInterval(refreshTimer);
+      clearInterval(countdownInt);
+
+      $('countdownWrap').style.display = '';
+      let remaining = REFRESH_SEC;
+      $('countdownBar').style.width = '100%';
+
+      countdownInt = setInterval(() => {
+        remaining--;
+        const pct = (remaining / REFRESH_SEC) * 100;
+        $('countdownBar').style.width = pct + '%';
+        if (remaining <= 0) {
+          remaining = REFRESH_SEC;
+          doRefresh();
+        }
+      }, 1000);
+
+      async function doRefresh() {
+        $('countdownBar').style.width = '100%';
+        remaining = REFRESH_SEC;
+        try {
+          const snap = await fetchSnapshot(base, key, secret, occ);
+          if (snap) renderResult(snap, occ, sym, strike, expiry, cp);
+        } catch(_) {}
+      }
+    }
+
+    function showStatus(msg, isError) {
+      const el = $('statusMsg');
+      el.textContent = msg;
+      el.className = 'status-msg' + (isError ? ' error' : '');
+      el.style.display = '';
+    }
+    function hideStatus() { $('statusMsg').style.display = 'none'; }
+
+    // Enter key to fetch
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') fetchOption();
+    });
+
+    // Init — pre-load hardcoded keys if nothing stored yet
+    const DEFAULT_KEY    = 'AK45G2WHRJH2FSPJKCUDT6FDWE';
+    const DEFAULT_SECRET = 'NarNQFfjopAQrpgWxY5MUaQqBZPt87XGss7HkCVUsMU';
+    if (!localStorage.getItem('nlAlpacaKey'))    localStorage.setItem('nlAlpacaKey',    DEFAULT_KEY);
+    if (!localStorage.getItem('nlAlpacaSecret')) localStorage.setItem('nlAlpacaSecret', DEFAULT_SECRET);
+    loadKeys();
+  </script>
+</body>
+</html>

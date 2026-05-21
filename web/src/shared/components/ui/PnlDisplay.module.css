@@ -1,0 +1,12 @@
+.pnl {
+  font-family: var(--nl-font-mono);
+  font-weight: 700;
+}
+
+.sm { font-size: 13px; }
+.md { font-size: 16px; }
+.lg { font-size: 22px; }
+
+.profit { color: var(--nl-profit); }
+.loss { color: var(--nl-loss); }
+.neutral { color: var(--nl-text); }

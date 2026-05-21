@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Find Valid OCC Symbols</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #00ff00; }
+    button { padding: 10px 20px; margin: 10px 0; cursor: pointer; background: #333; color: #0f0; border: 1px solid #0f0; }
+    button:hover { background: #0f0; color: #000; }
+    input, select { width: 300px; padding: 5px; margin: 5px; background: #333; color: #0f0; border: 1px solid #0f0; }
+    pre { background: #000; padding: 10px; overflow-x: auto; border: 1px solid #0f0; margin: 10px 0; }
+    .success { color: #00ff00; }
+    .error { color: #ff0000; }
+    .warning { color: #ff9900; }
+    table { border-collapse: collapse; margin: 10px 0; }
+    th, td { border: 1px solid #0f0; padding: 8px; text-align: left; }
+    th { background: #0f3d2e; }
+    .clickable { cursor: pointer; text-decoration: underline; }
+    .clickable:hover { color: #ffff00; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Find Valid OCC Symbols for Alpaca</h1>
+
+  <div>
+    <label>API Key:</label><br>
+    <input type="text" id="apiKey" value="AK45G2WHRJH2FSPJKCUDT6FDWE">
+  </div>
+
+  <div>
+    <label>API Secret:</label><br>
+    <input type="password" id="apiSecret" value="NarNQFfjopAQrpgWxY5MUaQqBZPt87XGss7HkCVUsMU">
+  </div>
+
+  <div>
+    <label>Underlying Symbol:</label><br>
+    <input type="text" id="symbol" value="SPY">
+  </div>
+
+  <div>
+    <label>Strike Price (leave empty for ATM):</label><br>
+    <input type="number" id="strike" placeholder="e.g., 570">
+  </div>
+
+  <div>
+    <label>Days Out:</label><br>
+    <select id="daysOut">
+      <option value="1">Tomorrow</option>
+      <option value="2">2 Days</option>
+      <option value="7" selected>1 Week</option>
+      <option value="14">2 Weeks</option>
+      <option value="30">1 Month</option>
+    </select>
+  </div>
+
+  <button onclick="findSymbols()">🔍 Find Valid Symbols</button>
+  <button onclick="testOI()">🧪 Test Selected Symbol for OI</button>
+
+  <div id="output"></div>
+  <div id="testResult"></div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let selectedSymbol = '';
+
+    function log(msg, type = 'success') {
+      const div = document.createElement('div');
+      div.className = type;
+      div.textContent = msg;
+      $('output').appendChild(div);
+    }
+
+    function formatDate(date) {
+      const y = date.getFullYear().toString().slice(-2);
+      const m = (date.getMonth() + 1).toString().padStart(2, '0');
+      const d = date.getDate().toString().padStart(2, '0');
+      return y + m + d;
+    }
+
+    function buildOCC(underlying, expiry, type, strike) {
+      // Format: SYMBOL(6) + YYMMDD + C/P + Strike(8)
+      const sym = underlying.padEnd(6, ' ').substring(0, 6);
+      const strikeStr = (strike * 1000).toFixed(0).padStart(8, '0');
+      return sym.trim() + expiry + type + strikeStr;
+    }
+
+    async function getStockPrice(symbol) {
+      const key = $('apiKey').value;
+      const secret = $('apiSecret').value;
+
+      try {
+        const url = `https://data.alpaca.markets/v2/stocks/${symbol}/bars/latest?feed=iex`;
+        const res = await fetch(url, {
+          headers: {
+            'APCA-API-KEY-ID': key,
+            'APCA-API-SECRET-KEY': secret
+          }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          return data.bar?.c || null;
+        }
+      } catch (e) {
+        console.error('Price fetch error:', e);
+      }
+      return null;
+    }
+
+    async function findSymbols() {
+      $('output').innerHTML = '<h2>🔍 Finding Valid OCC Symbols...</h2>';
+
+      const key = $('apiKey').value;
+      const secret = $('apiSecret').value;
+      const underlying = $('symbol').value.toUpperCase();
+      const daysOut = parseInt($('daysOut').value);
+
+      log(`Looking for ${underlying} options ${daysOut} days out...`);
+
+      // Get current stock price
+      const stockPrice = await getStockPrice(underlying);
+      if (stockPrice) {
+        log(`Current ${underlying} price: $${stockPrice.toFixed(2)}`);
+      } else {
+        log(`Could not fetch ${underlying} price - using manual strike`, 'warning');
+      }
+
+      // Calculate target expiry date
+      const targetDate = new Date();
+      targetDate.setDate(targetDate.getDate() + daysOut);
+
+      // Options typically expire on Fridays
+      const dayOfWeek = targetDate.getDay();
+      const daysToFriday = (5 - dayOfWeek + 7) % 7;
+      targetDate.setDate(targetDate.getDate() + daysToFriday);
+
+      const expiryStr = formatDate(targetDate);
+      log(`Target expiry: ${targetDate.toLocaleDateString()} (${expiryStr})`);
+
+      // Determine strikes to test
+      let strikes = [];
+      const manualStrike = parseFloat($('strike').value);
+
+      if (manualStrike) {
+        strikes = [manualStrike];
+      } else if (stockPrice) {
+        // Test ATM and nearby strikes
+        const atmStrike = Math.round(stockPrice);
+        strikes = [atmStrike - 5, atmStrike, atmStrike + 5];
+      } else {
+        log('Please enter a strike price', 'error');
+        return;
+      }
+
+      // Build test symbols
+      const testSymbols = [];
+      for (const strike of strikes) {
+        testSymbols.push({
+          occ: buildOCC(underlying, expiryStr, 'C', strike),
+          desc: `${underlying} ${targetDate.toLocaleDateString()} $${strike} Call`,
+          strike: strike,
+          type: 'Call'
+        });
+        testSymbols.push({
+          occ: buildOCC(underlying, expiryStr, 'P', strike),
+          desc: `${underlying} ${targetDate.toLocaleDateString()} $${strike} Put`,
+          strike: strike,
+          type: 'Put'
+        });
+      }
+
+      log(`Testing ${testSymbols.length} symbols...`);
+
+      // Test each symbol
+      const results = [];
+      for (const sym of testSymbols) {
+        const url = `https://data.alpaca.markets/v1beta1/options/snapshots?symbols=${sym.occ}`;
+
+        try {
+          const res = await fetch(url, {
+            headers: {
+              'APCA-API-KEY-ID': key,
+              'APCA-API-SECRET-KEY': secret
+            }
+          });
+
+          const data = await res.json();
+          const snap = data.snapshots?.[sym.occ];
+
+          if (snap) {
+            results.push({
+              ...sym,
+              valid: true,
+              bid: snap.latestQuote?.bp || 0,
+              ask: snap.latestQuote?.ap || 0,
+              iv: snap.impliedVolatility || 0,
+              oi: snap.openInterest
+            });
+          }
+        } catch (e) {
+          console.error('Test error:', e);
+        }
+      }
+
+      // Display results
+      if (results.length > 0) {
+        log(`✅ Found ${results.length} valid symbols!`);
+
+        const table = document.createElement('table');
+        table.innerHTML = `
+          <tr>
+            <th>OCC Symbol</th>
+            <th>Description</th>
+            <th>Bid</th>
+            <th>Ask</th>
+            <th>IV</th>
+            <th>Open Interest</th>
+          </tr>
+        `;
+
+        results.forEach(r => {
+          const row = table.insertRow();
+          row.innerHTML = `
+            <td class="clickable" onclick="selectSymbol('${r.occ}')">${r.occ}</td>
+            <td>${r.desc}</td>
+            <td>$${r.bid.toFixed(2)}</td>
+            <td>$${r.ask.toFixed(2)}</td>
+            <td>${r.iv ? (r.iv * 100).toFixed(1) + '%' : 'N/A'}</td>
+            <td style="color: ${r.oi !== undefined && r.oi !== null ? '#0f0' : '#f00'}">
+              ${r.oi !== undefined && r.oi !== null ? r.oi : 'NOT AVAILABLE'}
+            </td>
+          `;
+        });
+
+        $('output').appendChild(table);
+
+        // Check if any have OI
+        const withOI = results.filter(r => r.oi !== undefined && r.oi !== null && r.oi > 0);
+        if (withOI.length > 0) {
+          log(`🎉 ${withOI.length} symbols have Open Interest data!`, 'success');
+        } else if (results.some(r => r.oi === 0)) {
+          log(`⚠️  Symbols found but Open Interest is 0 (may update later)`, 'warning');
+        } else {
+          log(`❌ No symbols have Open Interest field`, 'error');
+        }
+
+      } else {
+        log(`❌ No valid symbols found. Try a different date or strike.`, 'error');
+      }
+    }
+
+    function selectSymbol(occ) {
+      selectedSymbol = occ;
+      log(`Selected: ${occ}`, 'success');
+      $('testResult').innerHTML = `<p style="color:#ffff00">Selected: ${occ} - Click "Test Selected Symbol for OI" button</p>`;
+    }
+
+    async function testOI() {
+      if (!selectedSymbol) {
+        alert('Please select a symbol from the table first');
+        return;
+      }
+
+      $('testResult').innerHTML = '<h2>🧪 Testing Open Interest...</h2>';
+
+      const key = $('apiKey').value;
+      const secret = $('apiSecret').value;
+
+      const url = `https://data.alpaca.markets/v1beta1/options/snapshots?symbols=${selectedSymbol}&feed=opra`;
+
+      const div = document.createElement('div');
+      div.innerHTML = `<p>Fetching: ${url}</p>`;
+      $('testResult').appendChild(div);
+
+      try {
+        const res = await fetch(url, {
+          headers: {
+            'APCA-API-KEY-ID': key,
+            'APCA-API-SECRET-KEY': secret
+          }
+        });
+
+        const data = await res.json();
+
+        const pre = document.createElement('pre');
+        pre.textContent = JSON.stringify(data, null, 2);
+        $('testResult').appendChild(pre);
+
+        const snap = data.snapshots?.[selectedSymbol];
+        if (snap && snap.openInterest !== undefined && snap.openInterest !== null) {
+          const success = document.createElement('div');
+          success.className = 'success';
+          success.innerHTML = `<h3>🎉 SUCCESS!</h3><p>Open Interest: ${snap.openInterest}</p>`;
+          $('testResult').appendChild(success);
+        } else {
+          const error = document.createElement('div');
+          error.className = 'error';
+          error.textContent = '❌ Open Interest not available';
+          $('testResult').appendChild(error);
+        }
+
+      } catch (e) {
+        const error = document.createElement('div');
+        error.className = 'error';
+        error.textContent = '❌ Error: ' + e.message;
+        $('testResult').appendChild(error);
+      }
+    }
+  </script>
+</body>
+</html>

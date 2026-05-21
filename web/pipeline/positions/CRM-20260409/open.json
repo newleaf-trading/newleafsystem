@@ -1,0 +1,20 @@
+{
+  "id": "CRM-20260409",
+  "symbol": "CRM",
+  "company": "Salesforce Inc.",
+  "strategy": "Iron Condor",
+  "status": "open",
+  "openDate": "2026-04-09",
+  "expiry": "April 24, 2026",
+  "entryPrice": "$178.99",
+  "credit": 2.45,
+  "strikes": "$150/$162P | $192/$202C",
+  "maxProfit": "$245",
+  "maxLoss": "$1005",
+  "winRate": "80",
+  "score": "73",
+  "currentPnl": 0,
+  "adjustments": [],
+  "notes": [],
+  "reportUrl": "reports/pdf/CRM/CRM-Iron-Condor-latest.pdf"
+}

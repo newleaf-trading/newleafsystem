@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf System — AI Sentiment Implementation Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--forest:#0B2D23;--gold:#C9A96E;--gold-pale:#f5ecd4;--cream:#F7F5F0;--ink:#0B0F14;--ink-mid:#3d3d35;--ink-muted:#6b6b60;--white:#fff;--green:#1D9E75;--red:#E24B4A;--blue:#1a5ca0;--amber:#d97706;--purple:#7c3aed;--cyan:#0891b2}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);line-height:1.6}
+.container{max-width:1100px;margin:0 auto;padding:0 2rem}
+header{background:var(--forest);padding:28px 0}
+header h1{font-family:'Playfair Display',serif;font-size:28px;color:var(--gold);font-weight:400;text-align:center}
+header p{font-size:12px;color:rgba(201,169,110,.5);text-align:center;margin-top:4px;font-family:'Space Mono',monospace;letter-spacing:.08em}
+.section{padding:40px 0}
+.section-title{font-family:'Playfair Display',serif;font-size:24px;color:var(--forest);margin-bottom:6px}
+.section-sub{font-size:13px;color:var(--ink-muted);margin-bottom:24px;line-height:1.7}
+.divider{border:none;border-top:1px solid rgba(15,61,46,.12);margin:40px 0}
+.card{background:var(--white);border:1px solid rgba(15,61,46,.12);border-radius:12px;padding:22px;margin-bottom:16px}
+.card-title{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:10px}
+.callout{padding:20px 24px;border-radius:12px;margin:20px 0;font-size:13px;line-height:1.7}
+.callout-forest{background:var(--forest);color:rgba(255,255,255,.85)}
+.callout-forest strong{color:var(--gold)}
+.callout-warn{background:#fef8f0;border:1px solid rgba(217,119,6,.2);color:#7a4a07}
+.callout-warn strong{color:#92400e}
+.callout-green{background:rgba(29,158,117,.06);border:1px solid rgba(29,158,117,.15);color:#0d5c43}
+.callout-green strong{color:var(--green)}
+.callout-blue{background:rgba(26,92,160,.06);border:1px solid rgba(26,92,160,.15);color:#1a4971}
+.callout-blue strong{color:var(--blue)}
+.diagram{background:#0B2D23;border-radius:12px;padding:28px;margin:20px 0;overflow-x:auto}
+.diagram pre{color:rgba(255,255,255,.85);font-family:'Space Mono',monospace;font-size:11px;line-height:1.8;white-space:pre}
+.h{color:#C9A96E}.g{color:#1D9E75}.r{color:#E24B4A}.b{color:#60a5fa}.p{color:#a78bfa}.a{color:#fbbf24}.w{color:rgba(255,255,255,.5)}.c{color:#22d3ee}
+code{font-family:'Space Mono',monospace;font-size:11px;background:rgba(15,61,46,.06);padding:2px 6px;border-radius:3px}
+.num{font-family:'Playfair Display',serif;font-size:64px;font-weight:700;color:rgba(15,61,46,.06);position:absolute;top:8px;right:16px}
+.step-grid{display:grid;grid-template-columns:1fr;gap:0;margin:20px 0}
+.step{background:var(--white);border:1px solid rgba(15,61,46,.12);padding:24px 28px;position:relative;overflow:hidden}
+.step:first-child{border-radius:12px 12px 0 0}
+.step:last-child{border-radius:0 0 12px 12px}
+.step + .step{border-top:none}
+.step-label{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px}
+.step-title{font-size:16px;font-weight:700;color:var(--forest);margin-bottom:8px}
+.step-desc{font-size:13px;color:var(--ink-mid);line-height:1.6}
+.step-file{font-family:'Space Mono',monospace;font-size:11px;color:var(--blue);margin-top:8px}
+table.t{width:100%;border-collapse:collapse;font-size:12px;background:var(--white);border-radius:12px;overflow:hidden;border:1px solid rgba(15,61,46,.12);margin:16px 0}
+table.t thead{background:var(--forest)}
+table.t th{padding:12px 14px;text-align:left;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700}
+table.t td{padding:10px 14px;border-bottom:1px solid rgba(15,61,46,.06);vertical-align:top}
+table.t tr:last-child td{border-bottom:none}
+.mono{font-family:'Space Mono',monospace;font-size:11px}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.badge-green{background:rgba(29,158,117,.12);color:var(--green)}
+.badge-amber{background:rgba(217,119,6,.12);color:var(--amber)}
+.badge-purple{background:rgba(124,58,237,.12);color:var(--purple)}
+.badge-blue{background:rgba(26,92,160,.12);color:var(--blue)}
+.badge-red{background:rgba(226,75,74,.12);color:var(--red)}
+.badge-gray{background:rgba(107,107,96,.12);color:var(--ink-muted)}
+.phase-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+@media(max-width:700px){.phase-grid{grid-template-columns:1fr}}
+.phase-card{background:var(--white);border:1px solid rgba(15,61,46,.12);border-radius:12px;padding:22px;border-top:3px solid var(--gold)}
+.phase-card h3{font-size:15px;font-weight:700;color:var(--forest);margin-bottom:4px}
+.phase-card .phase-status{font-size:11px;margin-bottom:10px}
+.phase-card ul{padding-left:16px;font-size:12px;color:var(--ink-mid);line-height:1.8}
+.flow-row{display:flex;align-items:center;gap:0;flex-wrap:wrap;justify-content:center;margin:16px 0}
+.flow-box{padding:10px 14px;border-radius:10px;border:2px solid;text-align:center;min-width:90px}
+.flow-box .flow-label{font-size:11px;font-weight:700;line-height:1.2}
+.flow-box .flow-sub{font-size:9px;color:var(--ink-muted);margin-top:2px}
+.flow-arrow{width:28px;text-align:center;color:var(--gold);font-size:14px;flex-shrink:0}
+.touch-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:20px 0}
+@media(max-width:700px){.touch-grid{grid-template-columns:1fr}}
+.touch-card{background:var(--white);border:1px solid rgba(15,61,46,.12);border-radius:10px;padding:16px;text-align:center}
+.touch-icon{font-size:28px;margin-bottom:6px}
+.touch-label{font-size:12px;font-weight:700;color:var(--forest);margin-bottom:4px}
+.touch-desc{font-size:11px;color:var(--ink-muted);line-height:1.4}
+.vs-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:start;margin:20px 0}
+@media(max-width:700px){.vs-grid{grid-template-columns:1fr}}
+.vs-divider{display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--gold);padding-top:40px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>AI Sentiment Analysis — Implementation Plan</h1>
+    <p>Phase 1: Claude Web Search &bull; Published Tiles + Weekly Picks Only</p>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CURRENT ARCHITECTURE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">Current Pipeline Architecture</h2>
+  <p class="section-sub">NewLeaf runs <strong>6 pipelines</strong> across two domains: the <strong>Scanner</strong> (data collection every 15 min) and the <strong>Publishing</strong> (manual analysis &rarr; picks &rarr; PDFs &rarr; video scripts).</p>
+
+  <div class="diagram">
+<pre>
+<span class="h">═══════════════════════════════════════════════════════════════════════</span>
+<span class="h"> SCANNER PIPELINES (automated, cron-driven)</span>
+<span class="h">═══════════════════════════════════════════════════════════════════════</span>
+
+<span class="a">Pipeline 1: Intraday Fast</span>  <span class="w">── every 15 min, 9am-4pm ET Mon-Fri</span>
+  <span class="b">scanner/pipeline-fast.js</span> --watchlist
+  ├─ Alpaca API → spot price, bars, option chains (bid/ask/IV/Greeks)
+  ├─ Technical analysis → RSI, Bollinger Bands, SMA 50/100/200
+  ├─ Gamma wall detection → put wall, call wall, band width
+  ├─ Opportunity scoring → 3-pillar score (Gamma + IV + Trend = 0-100)
+  ├─ Strategy selection → Iron Condor / BWB / IB / Spreads
+  ├─ Save → <span class="g">reports/{SYMBOL}/latest.json</span>
+  └─ Upload → <span class="b">Cloudflare R2</span> (CDN)
+
+<span class="a">Pipeline 2: OI Enrichment</span>  <span class="w">── daily, after market open</span>
+  <span class="b">scanner/pipeline-oi-enrichment.js</span> --watchlist
+  ├─ Yahoo Service :5300 → Open Interest (T-1 data)
+  ├─ Merge OI into existing latest.json option chains
+  ├─ Recalculate gamma walls with real OI
+  ├─ Save daily snapshot → <span class="g">reports/{SYMBOL}/{date}.json</span>
+  └─ Append history → premium.json, walls.json, oi-{date}.json
+
+<span class="a">Pipeline 3: Watchlist Snapshots</span>  <span class="w">── daily, after OI enrichment</span>
+  <span class="b">scanner/pipeline-watchlist.js</span>
+  ├─ Generate weekly + monthly watchlist snapshots
+  ├─ Regenerate manifest.json (111 symbols sorted by score)
+  └─ Upload to R2
+
+<span class="a">Pipeline 4: R2 → Firestore Sync</span>  <span class="w">── daily, after watchlist</span>
+  <span class="b">scanner/sync-r2-to-firestore-fixed.mjs</span>
+  ├─ Fetch latest.json from R2 for each watchlist symbol
+  ├─ Transform v3 reports → tile format
+  ├─ Deactivate old tiles, write new <span class="g">tiles/{tileId}</span> to Firestore
+  └─ Update <span class="g">marketState/current</span> document
+
+<span class="h">═══════════════════════════════════════════════════════════════════════</span>
+<span class="h"> PUBLISHING PIPELINES (manual, triggered by user)</span>
+<span class="h">═══════════════════════════════════════════════════════════════════════</span>
+
+<span class="a">Pipeline 5: Publish Pick</span>  <span class="w">── on demand, when you publish from workbench</span>
+  <span class="b">pipeline/publish-pick.cjs</span> SYMBOL --strategy "iron condor" --expiry DATE
+  ├─ <span class="c">Step 1:</span> Fetch live spot price from Alpaca
+  ├─ <span class="c">Step 2:</span> Fetch live option chain for expiry
+  ├─ <span class="c">Step 3:</span> Fetch gamma walls from R2 latest.json
+  ├─ <span class="c">Step 4:</span> Build strategy (auto-select strikes, calc Greeks, P&L, PoP)
+  ├─ <span class="c">Step 5:</span> Write tile → Firestore <span class="g">tiles/{tileId}</span>
+  ├─ <span class="c">Step 6:</span> Call <span class="p">Claude CLI</span> → deep analysis (rationale, technicals, risk)
+  ├─ <span class="c">Step 7:</span> Write analysis → Firestore <span class="g">analyses/{tileId}</span>
+  ├─ <span class="c">Step 8:</span> Save enriched-pick.json locally
+  ├─ <span class="c">Step 9:</span> Add to Firestore <span class="g">weeklyPicks/{weekId}</span>
+  └─ <span class="c">Step 10:</span> (Optional) Generate PDF via generate-report.py
+
+<span class="a">Pipeline 6: Weekly Picks Bundle</span>  <span class="w">── Sunday, before deployment</span>
+  <span class="b">run-weekly.sh</span> orchestrates:
+  ├─ <span class="b">create-weekly-picks.js</span> → bundle tiles into weeklyPicks
+  ├─ <span class="b">generate-outputs.js</span> → picks.json archive + video script
+  ├─ <span class="b">generate-report.py</span> → <span class="r">2 PDFs</span> (modern + institutional)
+  ├─ <span class="b">generate-script.py</span> → <span class="p">HeyGen video script</span> (10 slides)
+  ├─ <span class="b">upload-to-r2.py</span> → PDFs + scripts to R2
+  └─ <span class="b">firebase deploy</span> → newleafsystem.web.app
+</pre>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PUBLISH TO FIREBASE DETAIL -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">Publishing to Firebase — What Happens</h2>
+  <p class="section-sub">When you publish a tile from the workbench, <code>publish-pick.cjs</code> creates the tile, runs Claude analysis, and populates 4 Firestore collections that power the trading dashboard tabs.</p>
+
+  <div class="flow-row">
+    <div class="flow-box" style="border-color:var(--ink-muted);color:var(--ink-muted)"><div class="flow-label">Workbench</div><div class="flow-sub">Select strategy</div></div>
+    <div class="flow-arrow">&#9654;</div>
+    <div class="flow-box" style="border-color:var(--blue);color:var(--blue)"><div class="flow-label">publish-pick</div><div class="flow-sub">Build tile + strikes</div></div>
+    <div class="flow-arrow">&#9654;</div>
+    <div class="flow-box" style="border-color:var(--purple);color:var(--purple)"><div class="flow-label">Claude CLI</div><div class="flow-sub">Deep analysis</div></div>
+    <div class="flow-arrow">&#9654;</div>
+    <div class="flow-box" style="border-color:var(--green);color:var(--green)"><div class="flow-label">Firestore</div><div class="flow-sub">3 collections</div></div>
+    <div class="flow-arrow">&#9654;</div>
+    <div class="flow-box" style="border-color:var(--amber);color:var(--amber)"><div class="flow-label">Dashboard</div><div class="flow-sub">Live for users</div></div>
+  </div>
+
+  <h3 style="font-size:14px;font-weight:700;color:var(--forest);margin:20px 0 12px">Firestore Collections Written</h3>
+
+  <table class="t">
+    <thead>
+      <tr><th>Collection</th><th>Document</th><th>What It Contains</th><th>Powers</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code class="mono">tiles/{tileId}</code></td>
+        <td>Strategy tile</td>
+        <td>Symbol, strategy, legs[], Greeks, gammaData, maxProfit, maxLoss, netCredit, R:R, PoP, direction, expiry, DTE, isActive</td>
+        <td>Trading dashboard cards, position detail overview</td>
+      </tr>
+      <tr>
+        <td><code class="mono">analyses/{tileId}</code></td>
+        <td>Claude analysis</td>
+        <td><strong>strategyRationale</strong> (why this strategy, why these strikes, why this expiry, alternatives considered)<br>
+            <strong>technicalIndicators</strong> (RSI, Bollinger Bands, MACD, MAs, IV rank, support/resistance)<br>
+            <strong>thetaDecaySchedule</strong> (daily decay table, early close recommendation)<br>
+            <strong>riskAnalysis</strong> (max pain scenario, earnings risk, event risk, management plan)</td>
+        <td>Analysis tab, Technical tab, Theta tab, Risk tab on position detail page</td>
+      </tr>
+      <tr>
+        <td><code class="mono">weeklyPicks/{weekId}</code></td>
+        <td>Weekly bundle</td>
+        <td>weekId, dateRange, theme, status (current/past), tileIds[], picks[], tileCount, review (after closing)</td>
+        <td>Picks page, weekly recap, performance tracking</td>
+      </tr>
+      <tr>
+        <td><code class="mono">marketState/current</code></td>
+        <td>Market snapshot</td>
+        <td>lastScanTime, activeTileCount, symbols, pipelineVersion</td>
+        <td>Scanner status indicator, "Live" badge</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-blue">
+    <strong>The <code>analyses/{tileId}</code> document powers 4 tabs</strong> on the position detail page:<br>
+    &bull; <strong>Analysis</strong> — Strategy rationale, why these strikes, alternatives considered<br>
+    &bull; <strong>Technical</strong> — RSI, Bollinger Bands, MACD, moving averages, IV rank, support/resistance<br>
+    &bull; <strong>Theta</strong> — Daily theta decay schedule, cumulative theta, early close recommendation<br>
+    &bull; <strong>Risk</strong> — Max pain scenario, earnings risk, dividend risk, event risk, management plan
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PUBLISH TO PICKS DETAIL -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">Publishing to Picks — What Gets Generated</h2>
+  <p class="section-sub">Weekly picks go through output generation producing <strong>2 PDF reports</strong> and a <strong>HeyGen video script</strong>, then uploaded to R2 for distribution.</p>
+
+  <div class="flow-row">
+    <div class="flow-box" style="border-color:var(--ink-muted);color:var(--ink-muted)"><div class="flow-label">Published Tiles</div><div class="flow-sub">From Firestore</div></div>
+    <div class="flow-arrow">&#9654;</div>
+    <div class="flow-box" style="border-color:var(--blue);color:var(--blue)"><div class="flow-label">create-weekly-picks</div><div class="flow-sub">Bundle into week</div></div>
+    <div class="flow-arrow">&#9654;</div>
+    <div class="flow-box" style="border-color:var(--amber);color:var(--amber)"><div class="flow-label">generate-outputs</div><div class="flow-sub">picks.json + script</div></div>
+    <div class="flow-arrow">&#9654;</div>
+    <div class="flow-box" style="border-color:var(--red);color:var(--red)"><div class="flow-label">2 PDFs</div><div class="flow-sub">Modern + Institutional</div></div>
+    <div class="flow-arrow">&#9654;</div>
+    <div class="flow-box" style="border-color:var(--purple);color:var(--purple)"><div class="flow-label">Video Script</div><div class="flow-sub">10-slide HeyGen</div></div>
+  </div>
+
+  <h3 style="font-size:14px;font-weight:700;color:var(--forest);margin:20px 0 12px">Output Files Per Pick</h3>
+
+  <table class="t">
+    <thead>
+      <tr><th>Output</th><th>Generator</th><th>Contents</th><th>Destination</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-red">PDF 1</span> Modern Report</td>
+        <td class="mono">generate-report.py<br>+ report-v3.html</td>
+        <td>Trade structure, strike rationale, gamma walls, Greeks, theta decay schedule, risk analysis, support/resistance — all from Claude analysis</td>
+        <td class="mono">R2: reports/pdf/{SYM}/</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">PDF 2</span> Institutional</td>
+        <td class="mono">generate-report.py<br>+ institutional-report-enhanced.html</td>
+        <td>Institutional format with detailed analytics, position sizing, correlation data, volatility surface analysis</td>
+        <td class="mono">R2: reports/pdf/{SYM}/</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-purple">Video Script</span></td>
+        <td class="mono">generate-script.py</td>
+        <td>10-slide HeyGen format: Cover, Macro, News, Analyst Consensus, S&R, Trade Structure, Greeks, Exit Plan, Confidence, Closing. Each slide has title, duration (30-60s), narration</td>
+        <td class="mono">R2: reports/scripts/{SYM}/</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-amber">picks.json</span></td>
+        <td class="mono">generate-outputs.js</td>
+        <td>Weekly archive with all enriched picks (tile + Claude analysis merged)</td>
+        <td class="mono">pipeline/output/{weekId}/</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-forest">
+    <strong>The enriched-pick.json</strong> is the key intermediate file. It merges the Firestore tile + Claude analysis into one document that feeds both PDF templates and the video script generator. File path: <code>pipeline/output/{weekId}/enriched/{SYMBOL}-{strategy}.json</code>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- WEEK LIFECYCLE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">Weekly Lifecycle</h2>
+  <p class="section-sub">The full week from analysis to close.</p>
+
+  <div class="step-grid">
+    <div class="step" style="border-left:3px solid var(--green)">
+      <div class="num">M</div>
+      <div class="step-label">Monday &mdash; Publish</div>
+      <div class="step-title">Analyse workbench &rarr; Publish picks</div>
+      <div class="step-desc">
+        Review scanner in workbench (111 stocks scored). Select best setups.
+        Run <code>publish-pick.cjs NVDA --strategy "iron condor" --expiry 2026-05-02</code> for each.
+        Each publish: creates tile, runs Claude analysis, writes to Firestore, generates enriched JSON.
+      </div>
+    </div>
+    <div class="step" style="border-left:3px solid var(--blue)">
+      <div class="num">S</div>
+      <div class="step-label">Sunday &mdash; Bundle &amp; Deploy</div>
+      <div class="step-title">Generate outputs &rarr; Deploy to web</div>
+      <div class="step-desc">
+        Run <code>run-weekly.sh</code>:<br>
+        &bull; <code>create-weekly-picks.js</code> &mdash; bundles tiles into <code>weeklyPicks/{weekId}</code><br>
+        &bull; <code>generate-outputs.js</code> &mdash; creates picks.json + video-script.md<br>
+        &bull; <code>generate-report.py</code> &mdash; generates 2 PDFs per pick (modern + institutional)<br>
+        &bull; <code>generate-script.py</code> &mdash; generates HeyGen video script (10 slides)<br>
+        &bull; <code>upload-to-r2.py</code> &mdash; uploads PDFs + scripts to R2 CDN<br>
+        &bull; <code>firebase deploy</code> &mdash; deploy to newleafsystem.web.app
+      </div>
+    </div>
+    <div class="step" style="border-left:3px solid var(--amber)">
+      <div class="num">F</div>
+      <div class="step-label">Friday &mdash; Close Week</div>
+      <div class="step-title">Calculate P&amp;L &rarr; Archive</div>
+      <div class="step-desc">
+        Run <code>run-close-week.sh</code>:<br>
+        &bull; <code>close-week.js</code> &mdash; fetches each tile, calculates actual P&L<br>
+        &bull; Updates <code>weeklyPicks/{weekId}</code> with review (totalPnl, winRate, results)<br>
+        &bull; Deactivates all tiles (isActive=false, status='closed')<br>
+        &bull; Redeploys with recap page
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- WHERE SENTIMENT FITS -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title" style="color:var(--purple)">Where Sentiment Fits In</h2>
+  <p class="section-sub">Sentiment plugs into the two publishing pipelines — <strong>publish-pick.cjs</strong> and <strong>analyse-tiles.cjs</strong>. It enriches the same data that powers tiles, analysis tabs, PDFs, and video scripts.</p>
+
+  <div class="diagram">
+<pre>
+<span class="h">BEFORE (current):</span>
+
+  publish-pick.cjs:
+    Alpaca data → build strategy → <span class="b">Claude analysis</span> → Firestore
+
+<span class="h">AFTER (with sentiment):</span>
+
+  publish-pick.cjs:
+    Alpaca data → build strategy → <span class="p">fetchSentiment(symbol)</span> → <span class="b">Claude analysis</span> → Firestore
+                                        │                          │
+                                        │                          ├─ Prompt now includes:
+                                        │                          │  <span class="g">MARKET SENTIMENT CONTEXT</span>
+                                        │                          │  Score: 72/100 (Bullish)
+                                        │                          │  Key Drivers: MS upgrade...
+                                        │                          │  Material Events: none
+                                        │                          │
+                                        └─ Tile gets:              └─ Analysis gets:
+                                           <span class="g">tile.sentiment = {</span>        richer rationale informed
+                                           <span class="g">  score, label,</span>          by real news context
+                                           <span class="g">  summary, drivers,</span>
+                                           <span class="g">  modifier, flags</span>
+                                           <span class="g">}</span>
+
+  Result: PDFs, video scripts, and dashboard all inherit sentiment
+  because they read from the same enriched tile + analysis data.
+</pre>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>Downstream benefit:</strong> Because PDFs and video scripts are generated from the enriched-pick.json (which merges tile + analysis), adding sentiment to the tile and analysis prompt means <strong>PDFs automatically include sentiment context</strong> and <strong>video scripts reference real market news</strong> — zero changes to the PDF/script generators needed.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- WHY SCOPED -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">Scope: Published Tiles &amp; Weekly Picks Only</h2>
+  <p class="section-sub">Sentiment analysis runs <strong>only for symbols that are actually being used</strong> — published tiles in Firestore and weekly pick candidates. Not all 111 watchlist symbols.</p>
+
+  <div class="callout callout-forest">
+    <strong>Why not all 111?</strong> Most of the watchlist is background scanning. Only a handful of symbols (typically 5-15) get published as tiles or selected as weekly picks. Running sentiment for all 111 would cost $3-6/month for data nobody looks at. Scoped to published tiles + picks, we're looking at <strong>~5-15 Claude calls/week = less than $1/month</strong>.
+  </div>
+
+  <div class="touch-grid">
+    <div class="touch-card" style="border-top:3px solid var(--green)">
+      <div class="touch-icon">&#128293;</div>
+      <div class="touch-label">Published Tiles</div>
+      <div class="touch-desc">When you publish a tile from the workbench to Firestore, sentiment analysis runs for that symbol. The tile gets enriched with sentiment data before users see it.</div>
+      <div style="margin-top:8px"><span class="badge badge-green">On publish</span></div>
+    </div>
+    <div class="touch-card" style="border-top:3px solid var(--purple)">
+      <div class="touch-icon">&#127942;</div>
+      <div class="touch-label">Weekly Picks Pipeline</div>
+      <div class="touch-desc">When <code>analyse-tiles.cjs</code> runs to generate weekly picks, sentiment is fetched for each pick candidate. Claude's analysis prompt includes the sentiment context.</div>
+      <div style="margin-top:8px"><span class="badge badge-purple">On analysis</span></div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- ARCHITECTURE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">Architecture</h2>
+  <p class="section-sub">Sentiment is a module, not a pipeline. It's called inline when tiles are published or picks are analysed.</p>
+
+  <div class="diagram">
+<pre>
+<span class="h">TRIGGER 1: TILE PUBLISHING</span>
+
+  Workbench ─► <span class="b">publish-pick.cjs</span>
+                │
+                ├─ Read tile data from Firestore
+                ├─ <span class="p">NEW: fetchSentiment(symbol)</span>  ──► <span class="c">Claude CLI + web search</span>
+                │     └─ returns { score, label, summary, drivers, events }
+                ├─ Enrich tile with sentiment fields
+                └─ Save to Firestore <span class="g">tiles/{tileId}</span>
+
+
+<span class="h">TRIGGER 2: WEEKLY PICKS ANALYSIS</span>
+
+  <span class="b">analyse-tiles.cjs</span> ──► for each unanalysed tile:
+                │
+                ├─ Read tile from Firestore
+                ├─ <span class="p">NEW: fetchSentiment(symbol)</span>  ──► <span class="c">Claude CLI + web search</span>
+                │     └─ cached if fetched within 6 hours
+                ├─ <span class="a">Enrich Claude analysis prompt</span> with sentiment context
+                ├─ Call Claude for deep analysis (existing)
+                └─ Save analysis to Firestore <span class="g">analyses/{tileId}</span>
+
+
+<span class="h">CACHING</span>
+
+  <span class="g">reports/{SYMBOL}/sentiment.json</span>  ──  6-hour TTL
+    └─ If fresh cache exists, skip Claude call
+    └─ If stale or missing, call Claude, save cache
+    └─ Both triggers share the same cache
+</pre>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>Key difference from previous plan:</strong> No separate <code>pipeline-sentiment.js</code>. Instead, a <strong>shared module</strong> (<code>sentiment-engine.js</code>) is called inline by <code>publish-pick.cjs</code> and <code>analyse-tiles.cjs</code>. The module handles caching so the same symbol is never fetched twice within 6 hours.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- DATA FLOW DETAIL -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">How It Works — Step by Step</h2>
+
+  <h3 style="font-size:15px;font-weight:700;color:var(--forest);margin-bottom:16px">Flow 1: Publishing a Tile</h3>
+
+  <div class="flow-row">
+    <div class="flow-box" style="border-color:var(--ink-muted);color:var(--ink-muted)"><div class="flow-label">Workbench</div><div class="flow-sub">Select tile to publish</div></div>
+    <div class="flow-arrow">&#9654;</div>
+    <div class="flow-box" style="border-color:var(--blue);color:var(--blue)"><div class="flow-label">publish-pick.cjs</div><div class="flow-sub">Tile data ready</div></div>
+    <div class="flow-arrow">&#9654;</div>
+    <div class="flow-box" style="border-color:var(--purple);color:var(--purple)"><div class="flow-label">fetchSentiment()</div><div class="flow-sub">Claude + web search</div></div>
+    <div class="flow-arrow">&#9654;</div>
+    <div class="flow-box" style="border-color:var(--green);color:var(--green)"><div class="flow-label">Enrich Tile</div><div class="flow-sub">Add sentiment fields</div></div>
+    <div class="flow-arrow">&#9654;</div>
+    <div class="flow-box" style="border-color:var(--amber);color:var(--amber)"><div class="flow-label">Firestore</div><div class="flow-sub">tiles/{tileId}</div></div>
+  </div>
+
+  <h3 style="font-size:15px;font-weight:700;color:var(--forest);margin:24px 0 16px">Flow 2: Weekly Picks Analysis</h3>
+
+  <div class="flow-row">
+    <div class="flow-box" style="border-color:var(--ink-muted);color:var(--ink-muted)"><div class="flow-label">Active Tiles</div><div class="flow-sub">From Firestore</div></div>
+    <div class="flow-arrow">&#9654;</div>
+    <div class="flow-box" style="border-color:var(--purple);color:var(--purple)"><div class="flow-label">fetchSentiment()</div><div class="flow-sub">Per symbol (cached)</div></div>
+    <div class="flow-arrow">&#9654;</div>
+    <div class="flow-box" style="border-color:var(--amber);color:var(--amber)"><div class="flow-label">Build Prompt</div><div class="flow-sub">+ sentiment context</div></div>
+    <div class="flow-arrow">&#9654;</div>
+    <div class="flow-box" style="border-color:var(--blue);color:var(--blue)"><div class="flow-label">Claude Analysis</div><div class="flow-sub">Deep analysis</div></div>
+    <div class="flow-arrow">&#9654;</div>
+    <div class="flow-box" style="border-color:var(--green);color:var(--green)"><div class="flow-label">Firestore</div><div class="flow-sub">analyses/{id}</div></div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CLAUDE PROMPT -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">Claude Sentiment Prompt</h2>
+  <p class="section-sub">One Claude CLI call per symbol. Uses web search to gather real-time news and analyst data.</p>
+
+  <div class="diagram">
+<pre>
+<span class="h">PROMPT (per symbol)</span>
+
+You are a financial sentiment analyst for an options trading system.
+Analyze the current market sentiment for <span class="a">{symbol}</span> using web search.
+Focus on developments from the <span class="g">last 48 hours</span>.
+
+Search for:
+  1. Breaking news and developments
+  2. Analyst upgrades, downgrades, price target changes
+  3. Earnings announcements, guidance, pre-announcements
+  4. Material corporate events (M&A, regulatory, legal)
+  5. Social media and retail trader sentiment
+  6. Sector-wide themes affecting this stock
+
+Return <span class="r">ONLY</span> a JSON object (no markdown, no explanation):
+{
+  "<span class="b">symbol</span>": "<span class="a">{symbol}</span>",
+  "<span class="b">score</span>": 72,              <span class="w">// 0-100. 50=neutral, >70=bullish, <30=bearish</span>
+  "<span class="b">label</span>": "bullish",        <span class="w">// bullish | neutral | bearish</span>
+  "<span class="b">confidence</span>": 0.85,        <span class="w">// 0.0-1.0 based on source quality</span>
+  "<span class="b">summary</span>": "...",           <span class="w">// 2-3 sentence synthesis</span>
+  "<span class="b">keyDrivers</span>": [
+    {"<span class="b">factor</span>": "Morgan Stanley PT raise to $260",
+     "<span class="b">impact</span>": "positive",     <span class="w">// positive | negative | neutral</span>
+     "<span class="b">source</span>": "Bloomberg"}
+  ],
+  "<span class="b">materialEvents</span>": [],      <span class="w">// earnings, M&A, regulatory → triggers suppress</span>
+  "<span class="b">socialSentiment</span>": "...",   <span class="w">// brief note on retail/social mood if found</span>
+  "<span class="b">sectorContext</span>": "..."      <span class="w">// broader sector theme affecting this stock</span>
+}
+</pre>
+  </div>
+
+  <div class="callout callout-blue">
+    <strong>CLI invocation</strong> — same proven pattern as <code>analyse-tiles.cjs</code> line 221:
+    <br><br><code>spawnSync('claude', ['--print', '--output-format', 'text'], { input: prompt, timeout: 180000 })</code>
+    <br><br>Since we're doing individual symbols (not sector batches), each call is more focused and produces higher-quality sentiment. With caching, the same symbol won't be fetched again within 6 hours.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- DATA SCHEMA -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">Data Schema</h2>
+
+  <div class="card">
+    <div class="card-title">Disk Cache: reports/{SYMBOL}/sentiment.json</div>
+    <div class="diagram" style="margin:0">
+<pre>
+{
+  "<span class="b">symbol</span>": "AAPL",
+  "<span class="b">date</span>": "2026-04-25",
+  "<span class="b">updatedAt</span>": "2026-04-25T13:30:00Z",
+  "<span class="b">score</span>": 72,                    <span class="w">// 0-100</span>
+  "<span class="b">label</span>": "bullish",              <span class="w">// bullish | neutral | bearish</span>
+  "<span class="b">confidence</span>": 0.85,
+  "<span class="b">summary</span>": "MS upgrade + strong iPhone 17 data...",
+  "<span class="b">keyDrivers</span>": [
+    {"factor": "Morgan Stanley PT raise", "impact": "positive", "source": "Bloomberg"},
+    {"factor": "iPhone 17 pre-orders beat", "impact": "positive", "source": "Reuters"},
+    {"factor": "Earnings in 5 days", "impact": "neutral", "source": "SEC filing"}
+  ],
+  "<span class="b">materialEvents</span>": [],
+  "<span class="b">socialSentiment</span>": "Retail bullish, high call volume on WSB",
+  "<span class="b">sectorContext</span>": "Tech sector rotating into large-cap quality names",
+  "<span class="b">modifier</span>": {
+    "<span class="a">action</span>": "boost",              <span class="w">// boost | caution | suppress | none</span>
+    "<span class="a">points</span>": 3,                    <span class="w">// -5 to +5</span>
+    "<span class="a">flags</span>": [],                    <span class="w">// ["caution"] or ["suppress"]</span>
+    "<span class="a">reason</span>": "Bullish sentiment aligned with neutral technicals"
+  }
+}
+</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Firestore Tile Extension: tiles/{tileId}</div>
+    <div class="diagram" style="margin:0">
+<pre>
+{
+  <span class="w">// ... existing tile fields ...</span>
+  "<span class="b">sentiment</span>": {
+    "<span class="g">score</span>": 72,
+    "<span class="g">label</span>": "bullish",
+    "<span class="g">summary</span>": "MS upgrade + strong iPhone 17 data...",
+    "<span class="g">keyDrivers</span>": [...],
+    "<span class="g">modifier</span>": 3,
+    "<span class="g">flags</span>": [],
+    "<span class="g">updatedAt</span>": "2026-04-25T13:30:00Z"
+  }
+}
+</pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">analyse-tiles.cjs Prompt Enrichment</div>
+    <div class="diagram" style="margin:0">
+<pre>
+<span class="w">// Added to buildPrompt() in analyse-tiles.cjs, after GAMMA WALL CONTEXT</span>
+
+<span class="h">MARKET SENTIMENT CONTEXT:</span>
+  Sentiment Score:   <span class="g">72/100 (Bullish)</span>
+  Confidence:        85%
+  Summary:           MS upgrade + strong iPhone 17 pre-order data...
+  Key Drivers:
+    <span class="g">+</span> Morgan Stanley PT raise to $260 (Bloomberg)
+    <span class="g">+</span> iPhone 17 pre-orders beat estimates (Reuters)
+    <span class="a">~</span> Earnings in 5 days (SEC filing)
+  Social Mood:       Retail bullish, high call volume on WSB
+  Sector Theme:      Tech rotating into large-cap quality
+  Material Events:   None
+</pre>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MODIFIER LOGIC -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">Sentiment Modifier Logic</h2>
+  <p class="section-sub">Applied when tiles are published. Adjusts the opportunity score by -5 to +5 points.</p>
+
+  <table class="t">
+    <thead>
+      <tr><th>Condition</th><th>Action</th><th>Modifier</th><th>Flag</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Sentiment &ge; 75, aligned with trend</td>
+        <td><span class="badge badge-green">Boost</span></td>
+        <td class="mono">+1 to +5</td>
+        <td>Shown on tile card</td>
+      </tr>
+      <tr>
+        <td>Sentiment &lt; 35, contradicts bullish trend</td>
+        <td><span class="badge badge-amber">Caution</span></td>
+        <td class="mono">-2</td>
+        <td><code>caution</code> — divergence warning</td>
+      </tr>
+      <tr>
+        <td>Sentiment &lt; 30, confirms bearish trend</td>
+        <td><span class="badge badge-red">Bearish</span></td>
+        <td class="mono">-3</td>
+        <td>Displayed in analysis</td>
+      </tr>
+      <tr>
+        <td>Material event (earnings, M&A, regulatory)</td>
+        <td><span class="badge badge-red">Suppress</span></td>
+        <td class="mono">0</td>
+        <td><code>suppress</code> — skip from picks</td>
+      </tr>
+      <tr>
+        <td>Cache miss or low confidence (&lt; 0.5)</td>
+        <td><span class="badge badge-gray">None</span></td>
+        <td class="mono">0</td>
+        <td>Graceful degradation</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-warn">
+    <strong>Suppress logic for picks:</strong> If <code>materialEvents</code> is non-empty (e.g. earnings in 5 days, pending M&A), the tile is flagged with <code>suppress</code>. In <code>analyse-tiles.cjs</code>, suppressed tiles are <strong>skipped from weekly picks</strong> — they shouldn't be recommended when a binary event is imminent.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- FILES -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">Files to Create &amp; Modify</h2>
+
+  <table class="t">
+    <thead>
+      <tr><th>Action</th><th>File</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><span class="badge badge-green">Create</span></td><td class="mono">scanner/sentiment-engine.js</td>
+        <td>Core module: <code>fetchSentiment(symbol)</code>, <code>loadCache()</code>, <code>saveCache()</code>, <code>computeModifier()</code></td></tr>
+      <tr><td><span class="badge badge-amber">Modify</span></td><td class="mono">pipeline/analyse-tiles.cjs</td>
+        <td>Import sentiment-engine, call <code>fetchSentiment()</code> per tile, enrich Claude prompt with sentiment context, skip tiles with suppress flag</td></tr>
+      <tr><td><span class="badge badge-amber">Modify</span></td><td class="mono">pipeline/publish-pick.cjs</td>
+        <td>Import sentiment-engine, call <code>fetchSentiment()</code> for the published symbol, add sentiment fields to Firestore tile document</td></tr>
+      <tr><td><span class="badge badge-green">Create</span></td><td class="mono">src/trading/components/SentimentBadge.jsx</td>
+        <td>React component: green/grey/red dot + score, caution icon, tooltip with summary</td></tr>
+      <tr><td><span class="badge badge-amber">Modify</span></td><td class="mono">src/trading/components/TechnicalCard.jsx</td>
+        <td>Display <code>SentimentBadge</code> on tile cards (reads from Firestore tile.sentiment)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-green">
+    <strong>Minimal footprint:</strong> Only 2 new files + 3 modifications. No new cron jobs, no separate pipeline, no config changes. The sentiment module is self-contained and uses the same Claude CLI pattern already proven in <code>analyse-tiles.cjs</code>.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- IMPLEMENTATION STEPS -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">Implementation Steps</h2>
+
+  <div class="step-grid">
+    <div class="step" style="border-left:3px solid var(--green)">
+      <div class="num">1</div>
+      <div class="step-label">Step 1 — Core Module</div>
+      <div class="step-title">Create scanner/sentiment-engine.js</div>
+      <div class="step-desc">
+        Exports: <code>fetchSentiment(symbol)</code> — checks disk cache first, calls Claude CLI if stale.
+        <code>computeModifier(sentimentData, direction)</code> — returns { points, flags, action }.
+        <code>buildSentimentContext(sentimentData)</code> — formats sentiment for Claude analysis prompt.
+        <br><br>Uses <code>spawnSync('claude', ['--print', ...])</code> — same pattern as analyse-tiles.cjs line 221.
+        Cache at <code>reports/{SYMBOL}/sentiment.json</code> with 6-hour TTL.
+      </div>
+      <div class="step-file">scanner/sentiment-engine.js (new)</div>
+    </div>
+    <div class="step" style="border-left:3px solid var(--green)">
+      <div class="num">2</div>
+      <div class="step-label">Step 2 — Test Standalone</div>
+      <div class="step-title">Verify sentiment-engine works</div>
+      <div class="step-desc">
+        Run: <code>node -e "const s = require('./sentiment-engine'); s.fetchSentiment('AAPL').then(console.log)"</code>
+        <br>Verify: Claude is called, JSON parsed, cache file written to <code>reports/AAPL/sentiment.json</code>.
+        <br>Run again: verify cache hit (no Claude call, instant return).
+      </div>
+    </div>
+    <div class="step" style="border-left:3px solid var(--purple)">
+      <div class="num">3</div>
+      <div class="step-label">Step 3 — Picks Pipeline Integration</div>
+      <div class="step-title">Modify analyse-tiles.cjs</div>
+      <div class="step-desc">
+        For each tile being analysed:
+        <br>1. Call <code>fetchSentiment(tile.symbol)</code>
+        <br>2. If <code>materialEvents</code> non-empty → skip tile, log "suppressed due to {event}"
+        <br>3. Call <code>buildSentimentContext()</code> and inject into <code>buildPrompt()</code> after GAMMA WALL CONTEXT
+        <br>4. Store sentiment fields in the analysis document
+      </div>
+      <div class="step-file">pipeline/analyse-tiles.cjs (~line 96 in buildPrompt, ~line 262 in main loop)</div>
+    </div>
+    <div class="step" style="border-left:3px solid var(--purple)">
+      <div class="num">4</div>
+      <div class="step-label">Step 4 — Tile Publishing Integration</div>
+      <div class="step-title">Modify publish-pick.cjs</div>
+      <div class="step-desc">
+        When publishing a tile to Firestore:
+        <br>1. Call <code>fetchSentiment(symbol)</code>
+        <br>2. Add <code>tile.sentiment = { score, label, summary, keyDrivers, modifier, flags, updatedAt }</code>
+        <br>3. Apply <code>computeModifier()</code> to adjust opportunity score if desired
+      </div>
+      <div class="step-file">pipeline/publish-pick.cjs</div>
+    </div>
+    <div class="step" style="border-left:3px solid var(--blue)">
+      <div class="num">5</div>
+      <div class="step-label">Step 5 — Frontend Badge</div>
+      <div class="step-title">Create SentimentBadge + update TechnicalCard</div>
+      <div class="step-desc">
+        <code>SentimentBadge.jsx</code>: green dot (bullish &ge;70), grey (neutral 40-69), red (bearish &lt;40).
+        Caution icon overlay. Tooltip shows summary + key drivers on hover.
+        <br><br>Add to <code>TechnicalCard.jsx</code>: reads <code>tile.sentiment</code> from Firestore, renders badge.
+      </div>
+      <div class="step-file">src/trading/components/SentimentBadge.jsx (new)<br>src/trading/components/TechnicalCard.jsx (modify)</div>
+    </div>
+    <div class="step" style="border-left:3px solid var(--amber)">
+      <div class="num">6</div>
+      <div class="step-label">Step 6 — End-to-End Test</div>
+      <div class="step-title">Full pipeline verification</div>
+      <div class="step-desc">
+        1. Run <code>node analyse-tiles.cjs --id {tileId}</code> → verify sentiment in prompt + analysis
+        <br>2. Publish a tile → verify sentiment fields in Firestore
+        <br>3. Open trading dashboard → verify SentimentBadge visible
+        <br>4. Check a symbol with upcoming earnings → verify suppress flag works
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- COST COMPARISON -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">Cost &amp; Performance</h2>
+
+  <div class="vs-grid">
+    <div class="card" style="border-top:3px solid var(--red)">
+      <div class="card-title">&#10006; All 111 Symbols (Rejected)</div>
+      <table class="t" style="margin:0">
+        <tbody>
+          <tr><td>Claude calls per day</td><td class="mono">30 (sector batches)</td></tr>
+          <tr><td>Monthly cost</td><td class="mono">$3-6</td></tr>
+          <tr><td>Symbols with users</td><td class="mono">~5-15</td></tr>
+          <tr><td>Waste ratio</td><td class="mono" style="color:var(--red)">~90% unused</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="vs-divider">vs</div>
+    <div class="card" style="border-top:3px solid var(--green)">
+      <div class="card-title">&#10004; Published Tiles + Picks (Selected)</div>
+      <table class="t" style="margin:0">
+        <tbody>
+          <tr><td>Claude calls per week</td><td class="mono">5-15 (on demand)</td></tr>
+          <tr><td>Monthly cost</td><td class="mono" style="color:var(--green)">$0.50-1.50</td></tr>
+          <tr><td>Symbols with users</td><td class="mono">All of them</td></tr>
+          <tr><td>Waste ratio</td><td class="mono" style="color:var(--green)">0%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <table class="t">
+    <thead>
+      <tr><th>Metric</th><th>Value</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Time per sentiment call</td><td class="mono">30-90 seconds (web search)</td></tr>
+      <tr><td>Cache TTL</td><td class="mono">6 hours</td></tr>
+      <tr><td>Typical symbols per week</td><td class="mono">5-15 (published tiles + pick candidates)</td></tr>
+      <tr><td>Claude calls per week</td><td class="mono">5-15 (cached = free)</td></tr>
+      <tr><td>Added latency to publish</td><td class="mono">~60 seconds (one-time, cached after)</td></tr>
+      <tr><td>Added latency to analyse-tiles</td><td class="mono">~0-60s per tile (cached hits = 0s)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- FUTURE PHASES -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">Future Phases</h2>
+  <p class="section-sub">Phase 1 builds the sentiment-engine module. Future engines plug into the same interface.</p>
+
+  <div class="phase-grid">
+    <div class="phase-card" style="border-top-color:var(--green)">
+      <h3>Phase 1 — Claude Web Search</h3>
+      <div class="phase-status"><span class="badge badge-green">Build Now</span></div>
+      <ul>
+        <li>Claude CLI with web search (proven pattern)</li>
+        <li>Per-symbol calls on demand</li>
+        <li>6-hour disk cache</li>
+        <li>Inline in publish + analyse pipelines</li>
+        <li>~$0.50-1.50/month</li>
+      </ul>
+    </div>
+    <div class="phase-card" style="border-top-color:var(--blue)">
+      <h3>Phase 1b — Anthropic SDK</h3>
+      <div class="phase-status"><span class="badge badge-blue">Follow-up</span></div>
+      <ul>
+        <li>Replace CLI with <code>@anthropic-ai/sdk</code></li>
+        <li>Web search tool via API</li>
+        <li>Better token tracking + cost monitoring</li>
+        <li>Async parallel calls</li>
+      </ul>
+    </div>
+    <div class="phase-card" style="border-top-color:var(--amber)">
+      <h3>Phase 2 — Grok / X API</h3>
+      <div class="phase-status"><span class="badge badge-amber">Planned</span></div>
+      <ul>
+        <li>Add <code>fetchSentimentGrok(symbol)</code> to engine</li>
+        <li>X/Twitter $TICKER analysis</li>
+        <li>Composite: Claude 55% + Grok 45%</li>
+        <li>Still per-symbol, on demand</li>
+      </ul>
+    </div>
+    <div class="phase-card" style="border-top-color:var(--purple)">
+      <h3>Phase 3 — Gemini + Social</h3>
+      <div class="phase-status"><span class="badge badge-purple">Planned</span></div>
+      <ul>
+        <li>Gemini with Google Search grounding</li>
+        <li>Reddit / StockTwits aggregation</li>
+        <li>Full composite: 30/25/25/20 weights</li>
+        <li>Same on-demand model, same cache</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- VERIFICATION -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">Verification Checklist</h2>
+
+  <div class="card">
+    <table class="t" style="margin:0">
+      <thead>
+        <tr><th>#</th><th>Test</th><th>Expected Result</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>Call <code>fetchSentiment('AAPL')</code> directly</td><td>Claude called, sentiment.json created, JSON returned</td></tr>
+        <tr><td>2</td><td>Call <code>fetchSentiment('AAPL')</code> again within 6h</td><td>Cache hit, no Claude call, instant return</td></tr>
+        <tr><td>3</td><td>Run <code>node analyse-tiles.cjs --id {tile}</code></td><td>Prompt includes MARKET SENTIMENT CONTEXT section</td></tr>
+        <tr><td>4</td><td>Analyse a tile with upcoming earnings</td><td>Tile skipped with "suppressed" log message</td></tr>
+        <tr><td>5</td><td>Publish a tile via <code>publish-pick.cjs</code></td><td>Firestore tile has <code>sentiment</code> field</td></tr>
+        <tr><td>6</td><td>Open trading dashboard</td><td>SentimentBadge visible on published tile cards</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- container -->
+
+<footer style="background:var(--forest);padding:20px 0;margin-top:40px;text-align:center">
+  <div style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(201,169,110,.5);letter-spacing:.1em">
+    NEWLEAF SYSTEM &bull; AI SENTIMENT IMPLEMENTATION PLAN &bull; APRIL 2026
+  </div>
+</footer>
+
+</body>
+</html>

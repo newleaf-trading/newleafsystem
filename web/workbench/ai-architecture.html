@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NewLeaf AI Architecture — Current State & Target State</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1c2333;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --red: #f85149;
+      --orange: #d29922;
+      --purple: #bc8cff;
+      --pink: #f778ba;
+      --cyan: #39d353;
+      --teal: #2ea043;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 0;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 40px 60px;
+      text-align: center;
+    }
+    .header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .header h1 span { color: var(--green); }
+    .header p { color: var(--text-muted); font-size: 1rem; }
+
+    /* ── Tabs ── */
+    .tab-bar {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      padding: 20px 60px 0;
+      background: var(--bg);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab {
+      padding: 12px 28px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── Section ── */
+    .section {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 40px 60px;
+    }
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title .badge {
+      font-size: 0.7rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-current { background: var(--red); color: #fff; }
+    .badge-target { background: var(--green); color: #fff; }
+    .badge-plan { background: var(--accent); color: #000; }
+    .section-sub { color: var(--text-muted); margin-bottom: 30px; font-size: 0.95rem; }
+
+    /* ── Architecture Diagram ── */
+    .arch-diagram {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .arch-layer {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      position: relative;
+    }
+    .arch-layer.problem {
+      border-color: var(--red);
+      box-shadow: 0 0 0 1px rgba(248, 81, 73, 0.15);
+    }
+    .arch-layer.ok {
+      border-color: var(--green);
+      box-shadow: 0 0 0 1px rgba(63, 185, 80, 0.15);
+    }
+    .arch-layer.target {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(88, 166, 255, 0.15);
+    }
+
+    .layer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .layer-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .layer-tag {
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .tag-red { background: rgba(248, 81, 73, 0.15); color: var(--red); }
+    .tag-green { background: rgba(63, 185, 80, 0.15); color: var(--green); }
+    .tag-orange { background: rgba(210, 153, 34, 0.15); color: var(--orange); }
+    .tag-blue { background: rgba(88, 166, 255, 0.15); color: var(--accent); }
+    .tag-purple { background: rgba(188, 140, 255, 0.15); color: var(--purple); }
+
+    .layer-port {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    /* ── Grid of boxes ── */
+    .box-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .box-grid.wide {
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+
+    .box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .box-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .box-detail {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .box-detail code {
+      background: rgba(88, 166, 255, 0.1);
+      color: var(--accent);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 0.75rem;
+    }
+    .box-detail .model {
+      display: inline-block;
+      background: rgba(188, 140, 255, 0.12);
+      color: var(--purple);
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      margin: 1px 0;
+    }
+    .box-detail .warn {
+      color: var(--red);
+      font-weight: 600;
+    }
+    .box-detail .good {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    /* ── Flow arrows ── */
+    .flow-arrow {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      padding: 4px 0;
+      letter-spacing: 4px;
+    }
+    .flow-arrow.problem-arrow { color: var(--red); }
+    .flow-arrow.ok-arrow { color: var(--green); }
+
+    /* ── Connection lines ── */
+    .connections {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .conn {
+      font-size: 0.72rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .conn-ok { background: rgba(63, 185, 80, 0.1); color: var(--green); border: 1px solid rgba(63, 185, 80, 0.2); }
+    .conn-bad { background: rgba(248, 81, 73, 0.1); color: var(--red); border: 1px solid rgba(248, 81, 73, 0.2); }
+    .conn-new { background: rgba(88, 166, 255, 0.1); color: var(--accent); border: 1px solid rgba(88, 166, 255, 0.2); }
+
+    /* ── Problems list ── */
+    .problems {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .problem-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--red);
+      border-radius: 8px;
+      padding: 18px;
+    }
+    .problem-card.warn {
+      border-left-color: var(--orange);
+    }
+    .problem-card h4 {
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .problem-card p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .problem-card .versus {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+      font-size: 0.78rem;
+    }
+    .versus .col {
+      background: var(--surface2);
+      padding: 10px;
+      border-radius: 6px;
+    }
+    .versus .col-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Model inventory table ── */
+    .model-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin-top: 16px;
+    }
+    .model-table th {
+      text-align: left;
+      padding: 10px 14px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .model-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .model-table tr:hover td { background: rgba(88, 166, 255, 0.03); }
+    .model-table .cell-model { font-family: monospace; color: var(--purple); font-weight: 600; }
+    .model-table .cell-loc { font-family: monospace; color: var(--accent); font-size: 0.78rem; }
+    .model-table .cell-bad { color: var(--red); }
+    .model-table .cell-good { color: var(--green); }
+
+    /* ── Plan timeline ── */
+    .timeline {
+      position: relative;
+      padding-left: 40px;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+    .phase {
+      position: relative;
+      margin-bottom: 36px;
+    }
+    .phase::before {
+      content: '';
+      position: absolute;
+      left: -33px;
+      top: 6px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      background: var(--bg);
+    }
+    .phase.p0::before { border-color: var(--red); background: var(--red); }
+    .phase.p1::before { border-color: var(--orange); background: var(--orange); }
+    .phase.p2::before { border-color: var(--accent); background: var(--accent); }
+    .phase.p3::before { border-color: var(--purple); background: var(--purple); }
+    .phase.p4::before { border-color: var(--green); background: var(--green); }
+
+    .phase-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .phase-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .phase-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    .phase-effort {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-left: auto;
+      font-family: monospace;
+    }
+
+    .phase-body {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px;
+    }
+    .phase-body p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .change-list {
+      list-style: none;
+      padding: 0;
+    }
+    .change-list li {
+      font-size: 0.82rem;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .change-list li:last-child { border-bottom: none; }
+    .change-list .icon {
+      flex-shrink: 0;
+      width: 18px;
+      text-align: center;
+    }
+
+    .file-chip {
+      display: inline-block;
+      font-family: monospace;
+      font-size: 0.72rem;
+      background: rgba(88, 166, 255, 0.1);
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin: 2px 0;
+    }
+
+    /* ── Stats row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 20px 0;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-num {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .stat-num.red { color: var(--red); }
+    .stat-num.green { color: var(--green); }
+    .stat-num.orange { color: var(--orange); }
+    .stat-num.blue { color: var(--accent); }
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Comparison table ── */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .compare-col {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .compare-col-header {
+      padding: 14px 18px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .compare-col-header.current { background: rgba(248, 81, 73, 0.08); }
+    .compare-col-header.target { background: rgba(63, 185, 80, 0.08); }
+    .compare-col-body {
+      padding: 16px 18px;
+    }
+    .compare-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+      font-size: 0.82rem;
+    }
+    .compare-item:last-child { border-bottom: none; }
+    .compare-item .label { color: var(--text-muted); }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .section { padding: 24px 20px; }
+      .header { padding: 24px 20px; }
+      .problems { grid-template-columns: 1fr; }
+      .compare-grid { grid-template-columns: 1fr; }
+      .box-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════ HEADER ═══════════════════ -->
+<div class="header">
+  <h1>NewLeaf <span>AI Architecture</span> Audit</h1>
+  <p>Current State Analysis &middot; Target State Design &middot; Migration Plan</p>
+</div>
+
+<!-- ═══════════════════ TABS ═══════════════════ -->
+<div class="tab-bar">
+  <button class="tab active" onclick="switchTab('current')">Current State</button>
+  <button class="tab" onclick="switchTab('problems')">Problems Found</button>
+  <button class="tab" onclick="switchTab('target')">Target State</button>
+  <button class="tab" onclick="switchTab('plan')">Migration Plan</button>
+  <button class="tab" onclick="switchTab('models')">Model Inventory</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 1: CURRENT STATE                                                       -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="tab-current" class="tab-content active">
+  <div class="section">
+    <div class="section-title">Current Architecture <span class="badge badge-current">As-Is</span></div>
+    <p class="section-sub">Three separate systems calling AI models independently with no unified cost tracking or model management.</p>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num red">3</div><div class="stat-label">Separate AI Systems</div></div>
+      <div class="stat-card"><div class="stat-num orange">2</div><div class="stat-label">Duplicate Sentiment Engines</div></div>
+      <div class="stat-card"><div class="stat-num blue">9+</div><div class="stat-label">AI Models Used</div></div>
+      <div class="stat-card"><div class="stat-num red">0</div><div class="stat-label">Unified Cost Tracking</div></div>
+      <div class="stat-card"><div class="stat-num orange">3</div><div class="stat-label">API Key Locations</div></div>
+    </div>
+
+    <div class="arch-diagram">
+
+      <!-- Layer 1: Frontend -->
+      <div class="arch-layer ok">
+        <div class="layer-header">
+          <div class="layer-title">
+            <span class="layer-tag tag-green">OK</span>
+            discover.html &mdash; Frontend (Workbench)
+          </div>
+          <div class="layer-port">localhost:3000/workbench/discover.html</div>
+        </div>
+        <div class="box-grid wide">
+          <div class="box">
+            <div class="box-title">Stage 1: Market Snapshot</div>
+            <div class="box-detail">
+              <code>GET /api/snapshot/:ticker</code><br>
+              <code>GET /api/indicators/:ticker</code><br>
+              <code>GET /api/gamma/:ticker/:expiry</code><br>
+              <code>POST /api/ai-read</code> &rarr; <span class="model">QWQ</span><br>
+              <span class="good">Routes through API</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Stage 2: AI Strategy Finder</div>
+            <div class="box-detail">
+              <code>GET /api/chain/:ticker/:expiry</code><br>
+              <code>POST /api/recommend</code> &rarr; <span class="model">QWQ / Qwen-Max</span><br>
+              Returns 3-5 ranked strategies with scores<br>
+              <span class="good">Routes through API</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Stage 3: Trade Builder</div>
+            <div class="box-detail">
+              Pure client-side computation<br>
+              P&L chart, leg editing, strike sliders<br>
+              Uses <code>chainData</code> already loaded<br>
+              <span class="good">No AI calls needed</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Stage 4-5: Verification + Verdict</div>
+            <div class="box-detail">
+              <code>POST /verify</code> &rarr; 8-agent pipeline<br>
+              <span class="model">Sonnet</span> <span class="model">Haiku</span> <span class="model">GPT-4</span> <span class="model">DeepSeek</span> <span class="model">Qwen-Max</span><br>
+              Debate, risk, judge, fixer agents<br>
+              <span class="good">Routes through API</span>
+            </div>
+          </div>
+        </div>
+        <div class="connections">
+          <span class="conn conn-ok">All calls &rarr; newleaf-api proxy</span>
+          <span class="conn conn-ok">Cost tracked per request</span>
+          <span class="conn conn-ok">Model mode: budget-qwq default</span>
+        </div>
+      </div>
+
+      <div class="flow-arrow ok-arrow">&darr;&darr;&darr; HTTP via server.cjs proxy &darr;&darr;&darr;</div>
+
+      <!-- Layer 2: API -->
+      <div class="arch-layer ok">
+        <div class="layer-header">
+          <div class="layer-title">
+            <span class="layer-tag tag-green">OK</span>
+            newleaf-api &mdash; Centralized LLM Router
+          </div>
+          <div class="layer-port">localhost:4000 (Fastify)</div>
+        </div>
+        <div class="box-grid">
+          <div class="box">
+            <div class="box-title">LLM Router</div>
+            <div class="box-detail">
+              8 models with cost tracking:<br>
+              <span class="model">Claude Sonnet 4</span>
+              <span class="model">Claude Haiku 4.5</span>
+              <span class="model">GPT-4o</span>
+              <span class="model">Grok-4</span>
+              <span class="model">DeepSeek Chat</span>
+              <span class="model">DeepSeek R1</span>
+              <span class="model">QWQ (Qwen-Plus)</span>
+              <span class="model">Qwen-Max</span><br>
+              <span class="warn">Missing: Gemini</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">8-Agent Orchestrator</div>
+            <div class="box-detail">
+              Phase 1: Technical + Gamma + IV + Sentiment<br>
+              Phase 2: Bull vs Bear (2 rounds)<br>
+              Phase 3: Risk Manager + Judge<br>
+              Phase 4: Trade Fixer (if fail/marginal)
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Sentiment (API version)</div>
+            <div class="box-detail">
+              3 engines (NOT 4):<br>
+              <span class="model">Grok</span> + <span class="model">Gemini</span> + Reddit<br>
+              <span class="warn">Missing: Claude engine</span><br>
+              <span class="warn">Gemini bypasses router</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">AI Endpoints</div>
+            <div class="box-detail">
+              <code>/api/ai-read</code> <code>/api/recommend</code><br>
+              <code>/api/chat</code> <code>/verify</code><br>
+              <code>/api/picks-narrative</code><br>
+              <code>/api/strike-compare</code><br>
+              <code>/api/event-risk</code> <code>/api/adjust</code>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Data Tools</div>
+            <div class="box-detail">
+              Alpaca API &rarr; prices, chains, Greeks<br>
+              Nasdaq OI &rarr; gamma walls<br>
+              Serper &rarr; web search for sentiment<br>
+              Indicators &rarr; RSI, ADX, ATR, SMA
+            </div>
+          </div>
+        </div>
+        <div class="connections">
+          <span class="conn conn-ok">Token counting per call</span>
+          <span class="conn conn-ok">Per-model pricing ($)</span>
+          <span class="conn conn-ok">Full LLM trace logs</span>
+          <span class="conn conn-bad">Gemini calls bypass router</span>
+        </div>
+      </div>
+
+      <div class="flow-arrow">&nbsp;</div>
+
+      <!-- Layer 3: Pipeline (PROBLEM) -->
+      <div class="arch-layer problem">
+        <div class="layer-header">
+          <div class="layer-title">
+            <span class="layer-tag tag-red">BYPASSES API</span>
+            Pipeline &mdash; CLI Scripts (Weekly Batch)
+          </div>
+          <div class="layer-port">scanner/ + pipeline/</div>
+        </div>
+        <div class="box-grid wide">
+          <div class="box">
+            <div class="box-title">sentiment-engine.js</div>
+            <div class="box-detail">
+              4 engines (DUPLICATE of API):<br>
+              <span class="model">Claude CLI</span> 30% &mdash; spawnSync<br>
+              <span class="model">Grok-3-mini</span> 25% &mdash; direct REST<br>
+              <span class="model">Gemini 2.5 Flash</span> 25% &mdash; direct SDK<br>
+              Reddit/StockTwits 20% &mdash; scraping<br>
+              <span class="warn">No cost tracking</span><br>
+              <span class="warn">API keys hardcoded in config.json</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">analyse-tiles.cjs</div>
+            <div class="box-detail">
+              Deep analysis per tile:<br>
+              <span class="model">Claude CLI</span> &mdash; spawnSync, 5min timeout<br>
+              Web search enabled (expensive)<br>
+              Outputs: strategyRationale, technicals, theta, risk<br>
+              <span class="warn">No version pinning</span><br>
+              <span class="warn">No cost tracking</span><br>
+              <span class="warn">No fallback if Claude fails</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Output Pipeline</div>
+            <div class="box-detail">
+              generate-outputs.js &rarr; picks-archive.json<br>
+              build-enriched-report-data.py &rarr; template data<br>
+              generate-report.py &rarr; PDF via WeasyPrint<br>
+              <span class="good">No AI calls (data transforms)</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Data Collection</div>
+            <div class="box-detail">
+              newleaf-pipeline.js &rarr; Alpaca + Yahoo<br>
+              gamma-analyzer-enhanced.js &rarr; gamma walls<br>
+              144 symbols on watchlist<br>
+              <span class="good">No AI calls (algorithmic)</span>
+            </div>
+          </div>
+        </div>
+        <div class="connections">
+          <span class="conn conn-bad">Claude CLI: unknown model version</span>
+          <span class="conn conn-bad">Grok-3-mini vs API's Grok-4</span>
+          <span class="conn conn-bad">API keys in config.json (committed)</span>
+          <span class="conn conn-bad">Zero cost visibility</span>
+        </div>
+      </div>
+
+      <div class="flow-arrow">&nbsp;</div>
+
+      <!-- Layer 4: Firebase (PROBLEM) -->
+      <div class="arch-layer problem">
+        <div class="layer-header">
+          <div class="layer-title">
+            <span class="layer-tag tag-red">BYPASSES API</span>
+            Firebase Cloud Functions
+          </div>
+          <div class="layer-port">us-central1-newleaf-trading.cloudfunctions.net</div>
+        </div>
+        <div class="box-grid wide">
+          <div class="box">
+            <div class="box-title">aiChat (Portfolio Assistant)</div>
+            <div class="box-detail">
+              <span class="model">Gemini 2.0 Flash</span> &mdash; direct REST<br>
+              Portfolio context + tiles + history<br>
+              Returns text + suggested actions<br>
+              <span class="warn">Bypasses LLM Router entirely</span><br>
+              <span class="warn">No cost tracking</span><br>
+              <span class="warn">Different Gemini version than sentiment</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Other Functions (7)</div>
+            <div class="box-detail">
+              Admin functions, market data, DTE refresh<br>
+              <span class="good">No AI calls</span>
+            </div>
+          </div>
+        </div>
+        <div class="connections">
+          <span class="conn conn-bad">Direct Gemini 2.0 Flash (not 2.5)</span>
+          <span class="conn conn-bad">Separate API key (Firebase Secret)</span>
+        </div>
+      </div>
+
+      <div class="flow-arrow">&nbsp;</div>
+
+      <!-- Layer 5: Storage -->
+      <div class="arch-layer">
+        <div class="layer-header">
+          <div class="layer-title">
+            <span class="layer-tag tag-blue">STORAGE</span>
+            Data Layer
+          </div>
+        </div>
+        <div class="box-grid">
+          <div class="box">
+            <div class="box-title">Firestore (newleafdb)</div>
+            <div class="box-detail">
+              tiles/, analyses/, recommendations/<br>
+              discover_usage/, portfolios/<br>
+              Shared by all 3 systems
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Local File Cache</div>
+            <div class="box-detail">
+              scanner/reports/{SYM}/sentiment.json &mdash; 6h TTL<br>
+              scanner/reports/{SYM}/latest.json<br>
+              pipeline/output/{week}/enriched/*.json
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Cloudflare R2</div>
+            <div class="box-detail">
+              Static assets, report PDFs<br>
+              Proxied via /r2/* on server.cjs
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 2: PROBLEMS                                                           -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="tab-problems" class="tab-content">
+  <div class="section">
+    <div class="section-title">Problems Found <span class="badge badge-current">6 Issues</span></div>
+    <p class="section-sub">Duplication, inconsistency, security risks, and blind spots in cost visibility.</p>
+
+    <div class="problems">
+
+      <!-- P1: Duplicate Sentiment -->
+      <div class="problem-card">
+        <h4><span style="color:var(--red)">P1</span> Duplicate Sentiment Engines</h4>
+        <p>The same sentiment analysis exists in two places with different implementations, producing inconsistent scores for the same ticker.</p>
+        <div class="versus">
+          <div class="col">
+            <div class="col-title" style="color:var(--red)">scanner/sentiment-engine.js</div>
+            4 engines (Claude + Grok + Gemini + Reddit)<br>
+            Weights: 30/25/25/20<br>
+            Claude CLI with web search<br>
+            Grok <strong>3-mini</strong><br>
+            API keys in config.json
+          </div>
+          <div class="col">
+            <div class="col-title" style="color:var(--orange)">newleaf-api/tools/sentiment.ts</div>
+            3 engines (Grok + Gemini + Reddit)<br>
+            No Claude engine at all<br>
+            Grok via <strong>env var key</strong><br>
+            Gemini bypasses LLM Router<br>
+            Used by /api/sentiment/:ticker
+          </div>
+        </div>
+      </div>
+
+      <!-- P2: Pipeline bypasses API -->
+      <div class="problem-card">
+        <h4><span style="color:var(--red)">P2</span> Pipeline Bypasses API Gateway</h4>
+        <p><code>analyse-tiles.cjs</code> spawns Claude CLI directly instead of calling newleaf-api. Every weekly batch run burns untracked credits.</p>
+        <div class="versus">
+          <div class="col">
+            <div class="col-title" style="color:var(--red)">Current (CLI Spawn)</div>
+            spawnSync('claude', ['--print'])<br>
+            Unknown model version<br>
+            5-min timeout, web search<br>
+            No cost logged<br>
+            No fallback model
+          </div>
+          <div class="col">
+            <div class="col-title" style="color:var(--green)">Should Be (API Call)</div>
+            POST /api/analyze-tile<br>
+            Pinned Claude Sonnet 4<br>
+            Cost tracked per tile<br>
+            Fallback to DeepSeek-R1<br>
+            Full LLM trace
+          </div>
+        </div>
+      </div>
+
+      <!-- P3: Model version inconsistency -->
+      <div class="problem-card">
+        <h4><span style="color:var(--orange)">P3</span> Inconsistent Model Versions</h4>
+        <p>Same logical model used in different versions across systems, causing inconsistent analysis quality.</p>
+        <div class="versus">
+          <div class="col">
+            <div class="col-title">Grok</div>
+            API: <strong>grok-4</strong><br>
+            Pipeline: <strong>grok-3-mini</strong><br>
+            <span style="color:var(--red)">Huge quality gap</span>
+          </div>
+          <div class="col">
+            <div class="col-title">Gemini</div>
+            Sentiment: <strong>2.5-flash</strong><br>
+            Firebase aiChat: <strong>2.0-flash</strong><br>
+            LLM Router: <span style="color:var(--red)">not supported</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- P4: Security -->
+      <div class="problem-card">
+        <h4><span style="color:var(--red)">P4</span> API Keys in Committed File</h4>
+        <p><code>scanner/config.json</code> contains raw Grok and Gemini API keys committed to the repo. Any repo access = key exposure.</p>
+        <div class="versus">
+          <div class="col">
+            <div class="col-title" style="color:var(--red)">config.json (committed)</div>
+            Grok apiKey: xai-jWfK3e...<br>
+            Gemini apiKey: AIzaSyDp2...<br>
+            Alpaca keys also present
+          </div>
+          <div class="col">
+            <div class="col-title" style="color:var(--green)">newleaf-api/.env.local</div>
+            All keys in .env (gitignored)<br>
+            Proper secret management<br>
+            Firebase uses defineSecret()
+          </div>
+        </div>
+      </div>
+
+      <!-- P5: Gemini missing from router -->
+      <div class="problem-card warn">
+        <h4><span style="color:var(--orange)">P5</span> Gemini Not in LLM Router</h4>
+        <p>The router supports 8 models but Gemini isn't one of them. Both sentiment systems call Gemini directly via SDK, bypassing cost tracking and tracing entirely.</p>
+        <div class="versus">
+          <div class="col">
+            <div class="col-title">Routed Models (8)</div>
+            Claude Sonnet, Haiku, GPT-4o,<br>
+            Grok-4, DeepSeek, R1, QWQ, Qwen-Max<br>
+            All get: cost, tokens, traces
+          </div>
+          <div class="col">
+            <div class="col-title" style="color:var(--orange)">Unrouted (Gemini)</div>
+            Gemini 2.5 Flash (sentiment)<br>
+            Gemini 2.0 Flash (aiChat)<br>
+            Zero cost visibility
+          </div>
+        </div>
+      </div>
+
+      <!-- P6: Firebase bypasses -->
+      <div class="problem-card warn">
+        <h4><span style="color:var(--orange)">P6</span> Firebase aiChat Isolated</h4>
+        <p>The portfolio chat assistant calls Gemini directly from a Cloud Function. It uses a different model version (2.0 vs 2.5), separate API key management, and has no connection to the cost tracking system.</p>
+        <div class="versus">
+          <div class="col">
+            <div class="col-title">aiChat Current</div>
+            Gemini 2.0 Flash (direct REST)<br>
+            GEMINI_API_KEY Firebase Secret<br>
+            1024 max tokens, temp 0.7<br>
+            No cost tracking
+          </div>
+          <div class="col">
+            <div class="col-title" style="color:var(--green)">Should Be</div>
+            Call /api/chat via newleaf-api<br>
+            Unified key management<br>
+            Cost tracked with router<br>
+            Model version aligned
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 3: TARGET STATE                                                       -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="tab-target" class="tab-content">
+  <div class="section">
+    <div class="section-title">Target Architecture <span class="badge badge-target">To-Be</span></div>
+    <p class="section-sub">All AI calls route through a single gateway. One sentiment engine. Full cost visibility. Consistent model versions.</p>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num green">1</div><div class="stat-label">Unified AI Gateway</div></div>
+      <div class="stat-card"><div class="stat-num green">1</div><div class="stat-label">Sentiment Engine</div></div>
+      <div class="stat-card"><div class="stat-num green">10</div><div class="stat-label">Models in Router</div></div>
+      <div class="stat-card"><div class="stat-num green">100%</div><div class="stat-label">Cost Visibility</div></div>
+      <div class="stat-card"><div class="stat-num green">1</div><div class="stat-label">Key Management Location</div></div>
+    </div>
+
+    <div class="arch-diagram">
+
+      <!-- Target Layer 1: Frontend (unchanged) -->
+      <div class="arch-layer ok">
+        <div class="layer-header">
+          <div class="layer-title">
+            <span class="layer-tag tag-green">UNCHANGED</span>
+            discover.html &mdash; Frontend
+          </div>
+          <div class="layer-port">localhost:3000</div>
+        </div>
+        <div class="box-grid wide">
+          <div class="box">
+            <div class="box-title">All 5 Stages</div>
+            <div class="box-detail">
+              Already routes through API. No changes needed.<br>
+              Same endpoints, same model modes.<br>
+              <span class="good">No migration required</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow ok-arrow">&darr;&darr;&darr;&darr;&darr;&darr;&darr;&darr;&darr;&darr;&darr;&darr;&darr;&darr;&darr;&darr;&darr;</div>
+
+      <!-- Target Layer 2: Unified API -->
+      <div class="arch-layer target">
+        <div class="layer-header">
+          <div class="layer-title">
+            <span class="layer-tag tag-blue">ENHANCED</span>
+            newleaf-api &mdash; Unified AI Gateway
+          </div>
+          <div class="layer-port">localhost:4000</div>
+        </div>
+        <div class="box-grid">
+          <div class="box">
+            <div class="box-title">LLM Router (Enhanced)</div>
+            <div class="box-detail">
+              <strong>10 models</strong> with cost tracking:<br>
+              <span class="model">Claude Sonnet 4</span>
+              <span class="model">Claude Haiku 4.5</span>
+              <span class="model">GPT-4o</span>
+              <span class="model">Grok-4</span>
+              <span class="model">DeepSeek</span>
+              <span class="model">DeepSeek R1</span>
+              <span class="model">QWQ</span>
+              <span class="model">Qwen-Max</span>
+              <span class="model">Gemini 2.5 Flash</span>
+              <span class="model">Gemini 2.5 Pro</span><br>
+              <span class="good">NEW: Gemini in router</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Unified Sentiment Engine</div>
+            <div class="box-detail">
+              4 engines, all through router:<br>
+              <span class="model">Claude Sonnet</span> 30% (via API, not CLI)<br>
+              <span class="model">Grok-4</span> 25% (via router)<br>
+              <span class="model">Gemini 2.5 Flash</span> 25% (via router)<br>
+              Reddit/StockTwits 20% (scraping)<br>
+              <span class="good">Single implementation, full cost tracking</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">8-Agent Orchestrator</div>
+            <div class="box-detail">
+              Unchanged from current.<br>
+              Phase 1-4 verification pipeline.<br>
+              <span class="good">Already well-designed</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">NEW: /api/analyze-tile</div>
+            <div class="box-detail">
+              Replaces Claude CLI spawn in pipeline.<br>
+              <span class="model">Claude Sonnet 4</span> pinned<br>
+              Fallback: <span class="model">DeepSeek R1</span><br>
+              Returns: rationale, technicals, theta, risk<br>
+              <span class="good">Cost tracked, versioned, traced</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">NEW: /api/portfolio-chat</div>
+            <div class="box-detail">
+              Replaces Firebase aiChat direct Gemini call.<br>
+              <span class="model">Gemini 2.5 Flash</span> or <span class="model">DeepSeek</span><br>
+              Portfolio context + actions<br>
+              <span class="good">Unified model management</span>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-title">Cost Dashboard API</div>
+            <div class="box-detail">
+              <code>GET /api/admin/costs</code><br>
+              Per-model, per-feature, per-day<br>
+              Writes to Firestore usage/{date}<br>
+              <span class="good">Full visibility</span>
+            </div>
+          </div>
+        </div>
+        <div class="connections">
+          <span class="conn conn-new">ALL AI calls routed here</span>
+          <span class="conn conn-new">Gemini in router</span>
+          <span class="conn conn-new">Pipeline uses API endpoints</span>
+          <span class="conn conn-new">Firebase functions use API</span>
+          <span class="conn conn-new">Cost logged to Firestore</span>
+        </div>
+      </div>
+
+      <div class="flow-arrow ok-arrow">&uarr;&uarr;&uarr; ALL consumers call API &uarr;&uarr;&uarr;</div>
+
+      <!-- Target consumers -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div class="arch-layer target">
+          <div class="layer-header">
+            <div class="layer-title">
+              <span class="layer-tag tag-blue">MIGRATED</span>
+              Pipeline Scripts
+            </div>
+          </div>
+          <div class="box-grid">
+            <div class="box">
+              <div class="box-title">analyse-tiles.cjs (Refactored)</div>
+              <div class="box-detail">
+                Calls <code>POST /api/analyze-tile</code><br>
+                Calls <code>GET /api/sentiment/:ticker</code><br>
+                No more Claude CLI spawn<br>
+                No more direct Grok/Gemini calls<br>
+                <span class="good">All costs tracked</span>
+              </div>
+            </div>
+            <div class="box">
+              <div class="box-title">sentiment-engine.js</div>
+              <div class="box-detail">
+                <span style="color:var(--red);text-decoration:line-through">DELETED</span><br>
+                Replaced by <code>GET /api/sentiment/:ticker</code><br>
+                <span class="good">Single source of truth</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="arch-layer target">
+          <div class="layer-header">
+            <div class="layer-title">
+              <span class="layer-tag tag-blue">MIGRATED</span>
+              Firebase Functions
+            </div>
+          </div>
+          <div class="box-grid">
+            <div class="box">
+              <div class="box-title">aiChat (Refactored)</div>
+              <div class="box-detail">
+                Calls <code>POST /api/portfolio-chat</code><br>
+                No more direct Gemini REST<br>
+                Model aligned with router<br>
+                <span class="good">Cost tracked</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Before / After comparison -->
+    <div style="margin-top: 40px;">
+      <div class="section-title" style="margin-bottom: 20px;">Before vs After</div>
+      <div class="compare-grid">
+        <div class="compare-col">
+          <div class="compare-col-header current">Current State</div>
+          <div class="compare-col-body">
+            <div class="compare-item"><span class="label">AI Systems</span><span style="color:var(--red)">3 separate</span></div>
+            <div class="compare-item"><span class="label">Sentiment Engines</span><span style="color:var(--red)">2 (different)</span></div>
+            <div class="compare-item"><span class="label">Models in Router</span><span>8</span></div>
+            <div class="compare-item"><span class="label">Gemini in Router</span><span style="color:var(--red)">No</span></div>
+            <div class="compare-item"><span class="label">Pipeline AI Tracking</span><span style="color:var(--red)">None</span></div>
+            <div class="compare-item"><span class="label">Firebase AI Tracking</span><span style="color:var(--red)">None</span></div>
+            <div class="compare-item"><span class="label">API Key Locations</span><span style="color:var(--red)">3 places</span></div>
+            <div class="compare-item"><span class="label">Keys in Committed Files</span><span style="color:var(--red)">Yes (config.json)</span></div>
+            <div class="compare-item"><span class="label">Grok Version Consistency</span><span style="color:var(--red)">3-mini vs 4</span></div>
+            <div class="compare-item"><span class="label">Gemini Version Consistency</span><span style="color:var(--red)">2.0 vs 2.5</span></div>
+            <div class="compare-item"><span class="label">Cost Visibility</span><span style="color:var(--orange)">~40% (API only)</span></div>
+            <div class="compare-item"><span class="label">Model Fallback</span><span style="color:var(--orange)">API only</span></div>
+          </div>
+        </div>
+        <div class="compare-col">
+          <div class="compare-col-header target">Target State</div>
+          <div class="compare-col-body">
+            <div class="compare-item"><span class="label">AI Systems</span><span style="color:var(--green)">1 unified gateway</span></div>
+            <div class="compare-item"><span class="label">Sentiment Engines</span><span style="color:var(--green)">1 (4-engine)</span></div>
+            <div class="compare-item"><span class="label">Models in Router</span><span style="color:var(--green)">10</span></div>
+            <div class="compare-item"><span class="label">Gemini in Router</span><span style="color:var(--green)">Yes (Flash + Pro)</span></div>
+            <div class="compare-item"><span class="label">Pipeline AI Tracking</span><span style="color:var(--green)">Full</span></div>
+            <div class="compare-item"><span class="label">Firebase AI Tracking</span><span style="color:var(--green)">Full</span></div>
+            <div class="compare-item"><span class="label">API Key Locations</span><span style="color:var(--green)">1 (.env)</span></div>
+            <div class="compare-item"><span class="label">Keys in Committed Files</span><span style="color:var(--green)">No</span></div>
+            <div class="compare-item"><span class="label">Grok Version Consistency</span><span style="color:var(--green)">Grok-4 everywhere</span></div>
+            <div class="compare-item"><span class="label">Gemini Version Consistency</span><span style="color:var(--green)">2.5 Flash everywhere</span></div>
+            <div class="compare-item"><span class="label">Cost Visibility</span><span style="color:var(--green)">100%</span></div>
+            <div class="compare-item"><span class="label">Model Fallback</span><span style="color:var(--green)">All consumers</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 4: MIGRATION PLAN                                                     -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="tab-plan" class="tab-content">
+  <div class="section">
+    <div class="section-title">Migration Plan <span class="badge badge-plan">5 Phases</span></div>
+    <p class="section-sub">Ordered by priority. Each phase is independently shippable &mdash; no big-bang migration.</p>
+
+    <div class="timeline">
+
+      <!-- Phase 0 -->
+      <div class="phase p0">
+        <div class="phase-header">
+          <span class="phase-label" style="background:var(--red);color:#fff">P0 &middot; Critical</span>
+          <span class="phase-title">Remove API Keys from config.json</span>
+          <span class="phase-effort">~1 hour</span>
+        </div>
+        <div class="phase-body">
+          <p>API keys for Grok and Gemini are hardcoded in <code>scanner/config.json</code> which is tracked by git. Move to environment variables immediately.</p>
+          <ul class="change-list">
+            <li><span class="icon" style="color:var(--red)">-</span> Remove <code>apiKey</code> fields from <span class="file-chip">scanner/config.json</span></li>
+            <li><span class="icon" style="color:var(--green)">+</span> Read from <code>process.env.GROK_API_KEY</code> and <code>process.env.GEMINI_API_KEY</code> in <span class="file-chip">scanner/sentiment-engine.js</span></li>
+            <li><span class="icon" style="color:var(--green)">+</span> Add keys to <span class="file-chip">.env</span> (gitignored) and document in <span class="file-chip">.env.example</span></li>
+            <li><span class="icon" style="color:var(--orange)">!</span> Rotate both API keys since they've been exposed in git history</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Phase 1 -->
+      <div class="phase p1">
+        <div class="phase-header">
+          <span class="phase-label" style="background:var(--orange);color:#000">P1 &middot; High</span>
+          <span class="phase-title">Add Gemini to LLM Router</span>
+          <span class="phase-effort">~2 hours</span>
+        </div>
+        <div class="phase-body">
+          <p>Add <code>gemini-flash</code> and <code>gemini-pro</code> as model tiers in the LLM Router. This unlocks cost tracking for all Gemini calls.</p>
+          <ul class="change-list">
+            <li><span class="icon" style="color:var(--green)">+</span> Add <code>'gemini-flash' | 'gemini-pro'</code> to <code>ModelTier</code> in <span class="file-chip">newleaf-api/src/llm/router.ts</span></li>
+            <li><span class="icon" style="color:var(--green)">+</span> Add <code>@google/generative-ai</code> dependency to <span class="file-chip">newleaf-api/package.json</span></li>
+            <li><span class="icon" style="color:var(--green)">+</span> Implement <code>callGemini()</code> method in LLMRouter class</li>
+            <li><span class="icon" style="color:var(--green)">+</span> Add pricing: Flash ($0.15/$0.60), Pro ($1.25/$5.00) per million tokens</li>
+            <li><span class="icon" style="color:var(--green)">+</span> Add <code>GEMINI_API_KEY</code> to <span class="file-chip">newleaf-api/.env.local</span></li>
+            <li><span class="icon" style="color:var(--orange)">~</span> Update <span class="file-chip">newleaf-api/src/tools/sentiment.ts</span> to call Gemini through router instead of direct SDK</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Phase 2 -->
+      <div class="phase p2">
+        <div class="phase-header">
+          <span class="phase-label" style="background:var(--accent);color:#000">P2 &middot; Core</span>
+          <span class="phase-title">Unify Sentiment Engine</span>
+          <span class="phase-effort">~1 day</span>
+        </div>
+        <div class="phase-body">
+          <p>Merge the 4-engine design from <code>scanner/sentiment-engine.js</code> into <code>newleaf-api/src/tools/sentiment.ts</code> as the single implementation. Add the missing Claude engine. Add caching.</p>
+          <ul class="change-list">
+            <li><span class="icon" style="color:var(--green)">+</span> Add Claude sentiment engine to <span class="file-chip">newleaf-api/src/tools/sentiment.ts</span> (calls <code>claude-sonnet</code> via LLM Router with web search prompt)</li>
+            <li><span class="icon" style="color:var(--orange)">~</span> Route Grok + Gemini through LLM Router (not direct SDK)</li>
+            <li><span class="icon" style="color:var(--green)">+</span> Add 6-hour Firestore cache (replace file-based cache)</li>
+            <li><span class="icon" style="color:var(--green)">+</span> Add <code>computeModifier()</code> and <code>buildSentimentContext()</code> to API</li>
+            <li><span class="icon" style="color:var(--green)">+</span> Add Serper web search integration for Claude engine (already have Serper tool)</li>
+            <li><span class="icon" style="color:var(--orange)">~</span> Update <span class="file-chip">pipeline/analyse-tiles.cjs</span> to call <code>GET /api/sentiment/:ticker</code> instead of importing sentiment-engine.js</li>
+            <li><span class="icon" style="color:var(--red)">-</span> Delete <span class="file-chip">scanner/sentiment-engine.js</span> (replaced by API)</li>
+            <li><span class="icon" style="color:var(--green)">+</span> Test: same ticker produces same score from discover.html and pipeline</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Phase 3 -->
+      <div class="phase p3">
+        <div class="phase-header">
+          <span class="phase-label" style="background:var(--purple);color:#fff">P3 &middot; Major</span>
+          <span class="phase-title">Create /api/analyze-tile &amp; Migrate Pipeline</span>
+          <span class="phase-effort">~1-2 days</span>
+        </div>
+        <div class="phase-body">
+          <p>Replace Claude CLI spawns in the pipeline with a proper API endpoint. This gives cost tracking, version pinning, and fallback capability.</p>
+          <ul class="change-list">
+            <li><span class="icon" style="color:var(--green)">+</span> Create <span class="file-chip">newleaf-api/src/routes/ai-tile.ts</span> &mdash; <code>POST /api/analyze-tile</code></li>
+            <li><span class="icon" style="color:var(--green)">+</span> Endpoint accepts: <code>{ symbol, strategy, legs, greeks, gammaData, sentiment, expiry, dte }</code></li>
+            <li><span class="icon" style="color:var(--green)">+</span> Returns: <code>{ strategyRationale, technicalIndicators, thetaDecaySchedule, riskAnalysis }</code></li>
+            <li><span class="icon" style="color:var(--green)">+</span> Primary model: <code>claude-sonnet</code> (pinned at Sonnet 4); Fallback: <code>deepseek-r1</code></li>
+            <li><span class="icon" style="color:var(--green)">+</span> Port the rich prompt template from analyse-tiles.cjs into the endpoint</li>
+            <li><span class="icon" style="color:var(--orange)">~</span> Refactor <span class="file-chip">pipeline/analyse-tiles.cjs</span>: replace <code>spawnSync('claude',...)</code> with <code>fetch('http://localhost:4000/api/analyze-tile',...)</code></li>
+            <li><span class="icon" style="color:var(--red)">-</span> Remove <code>callClaude()</code> function from analyse-tiles.cjs</li>
+            <li><span class="icon" style="color:var(--green)">+</span> Test: run analyse on 3 tiles, verify JSON output matches current schema</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Phase 4 -->
+      <div class="phase p4">
+        <div class="phase-header">
+          <span class="phase-label" style="background:var(--green);color:#000">P4 &middot; Cleanup</span>
+          <span class="phase-title">Migrate Firebase aiChat + Cost Dashboard</span>
+          <span class="phase-effort">~1 day</span>
+        </div>
+        <div class="phase-body">
+          <p>Route Firebase aiChat through the API. Build a simple cost dashboard that reads from Firestore usage logs.</p>
+          <ul class="change-list">
+            <li><span class="icon" style="color:var(--green)">+</span> Create <span class="file-chip">newleaf-api/src/routes/ai-chat.ts</span> &mdash; <code>POST /api/portfolio-chat</code></li>
+            <li><span class="icon" style="color:var(--green)">+</span> Accept: <code>{ message, portfolio, tiles, settings, history }</code></li>
+            <li><span class="icon" style="color:var(--green)">+</span> Use <code>gemini-flash</code> via router (cost tracked)</li>
+            <li><span class="icon" style="color:var(--orange)">~</span> Update Firebase <code>aiChat</code> function to call API instead of direct Gemini REST</li>
+            <li><span class="icon" style="color:var(--green)">+</span> Add cost logging middleware: write each request's <code>llm.getUsage()</code> to Firestore <code>usage/{date}/{requestId}</code></li>
+            <li><span class="icon" style="color:var(--green)">+</span> Create <span class="file-chip">workbench/ai-costs.html</span> &mdash; admin page showing: cost per model/day/feature</li>
+            <li><span class="icon" style="color:var(--green)">+</span> Add <code>GET /api/admin/costs?from=&to=</code> endpoint for dashboard</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Summary -->
+    <div style="margin-top: 40px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px;">
+      <div class="section-title" style="font-size: 1.1rem; margin-bottom: 16px;">Migration Summary</div>
+      <div class="box-grid wide">
+        <div class="box">
+          <div class="box-title">Total Effort</div>
+          <div class="box-detail" style="font-size: 1.1rem; font-weight: 700; color: var(--accent);">~4-5 days</div>
+        </div>
+        <div class="box">
+          <div class="box-title">Files Changed</div>
+          <div class="box-detail">
+            <strong>New:</strong> ai-tile.ts, ai-chat.ts, ai-costs.html<br>
+            <strong>Modified:</strong> router.ts, sentiment.ts, analyse-tiles.cjs, aiChat function<br>
+            <strong>Deleted:</strong> scanner/sentiment-engine.js
+          </div>
+        </div>
+        <div class="box">
+          <div class="box-title">Risk: Low</div>
+          <div class="box-detail">
+            Each phase is independently testable.<br>
+            Discover.html needs zero changes.<br>
+            Pipeline output format stays the same.
+          </div>
+        </div>
+        <div class="box">
+          <div class="box-title">Outcome</div>
+          <div class="box-detail">
+            100% cost visibility<br>
+            Consistent model versions everywhere<br>
+            One place to manage all AI<br>
+            Secure key management
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- TAB 5: MODEL INVENTORY                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="tab-models" class="tab-content">
+  <div class="section">
+    <div class="section-title">Complete AI Model Inventory <span class="badge badge-plan">Every Call Mapped</span></div>
+    <p class="section-sub">Every AI model call across the entire NewLeaf system &mdash; where it's called, how, and whether it's tracked.</p>
+
+    <table class="model-table">
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Version</th>
+          <th>Where Used</th>
+          <th>Method</th>
+          <th>Purpose</th>
+          <th>Cost Tracked</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Claude Sonnet -->
+        <tr>
+          <td class="cell-model">Claude Sonnet</td>
+          <td>claude-sonnet-4-20250514</td>
+          <td class="cell-loc">newleaf-api (router)</td>
+          <td>Anthropic SDK</td>
+          <td>Technical, Gamma, Risk, Judge, Fixer agents; strike-compare; adjust</td>
+          <td class="cell-good">Yes</td>
+        </tr>
+        <tr>
+          <td class="cell-model">Claude (CLI)</td>
+          <td class="cell-bad">Unknown (CLI default)</td>
+          <td class="cell-loc">scanner/sentiment-engine.js</td>
+          <td class="cell-bad">spawnSync CLI</td>
+          <td>Sentiment Engine #1 (30% weight) with web search</td>
+          <td class="cell-bad">No</td>
+        </tr>
+        <tr>
+          <td class="cell-model">Claude (CLI)</td>
+          <td class="cell-bad">Unknown (CLI default)</td>
+          <td class="cell-loc">pipeline/analyse-tiles.cjs</td>
+          <td class="cell-bad">spawnSync CLI</td>
+          <td>Deep tile analysis (5-min timeout, web search)</td>
+          <td class="cell-bad">No</td>
+        </tr>
+        <!-- Claude Haiku -->
+        <tr>
+          <td class="cell-model">Claude Haiku</td>
+          <td>claude-haiku-4-5-20251001</td>
+          <td class="cell-loc">newleaf-api (router)</td>
+          <td>Anthropic SDK</td>
+          <td>IV/Skew Analyst agent (premium mode)</td>
+          <td class="cell-good">Yes</td>
+        </tr>
+        <!-- GPT-4 -->
+        <tr>
+          <td class="cell-model">GPT-4o</td>
+          <td>gpt-4o</td>
+          <td class="cell-loc">newleaf-api (router)</td>
+          <td>OpenAI SDK</td>
+          <td>Bull &amp; Bear Researcher agents (premium mode)</td>
+          <td class="cell-good">Yes</td>
+        </tr>
+        <!-- Grok -->
+        <tr>
+          <td class="cell-model">Grok</td>
+          <td>grok-4</td>
+          <td class="cell-loc">newleaf-api (router)</td>
+          <td>xAI API (OpenAI compat)</td>
+          <td>Various agents in budget modes</td>
+          <td class="cell-good">Yes</td>
+        </tr>
+        <tr>
+          <td class="cell-model">Grok</td>
+          <td class="cell-bad">grok-3-mini</td>
+          <td class="cell-loc">scanner/sentiment-engine.js</td>
+          <td class="cell-bad">Direct REST (axios)</td>
+          <td>Sentiment Engine #2 (25% weight) &mdash; X/Twitter analysis</td>
+          <td class="cell-bad">No</td>
+        </tr>
+        <tr>
+          <td class="cell-model">Grok</td>
+          <td>via XAI_API_KEY</td>
+          <td class="cell-loc">newleaf-api/tools/sentiment.ts</td>
+          <td>Direct REST (axios)</td>
+          <td>API sentiment &mdash; X/Twitter analysis</td>
+          <td class="cell-bad">No (bypasses router)</td>
+        </tr>
+        <!-- Gemini -->
+        <tr>
+          <td class="cell-model">Gemini</td>
+          <td>gemini-2.5-flash</td>
+          <td class="cell-loc">scanner/sentiment-engine.js</td>
+          <td class="cell-bad">Direct Google AI SDK</td>
+          <td>Sentiment Engine #3 (25% weight) &mdash; news analysis</td>
+          <td class="cell-bad">No</td>
+        </tr>
+        <tr>
+          <td class="cell-model">Gemini</td>
+          <td>gemini-2.5-flash</td>
+          <td class="cell-loc">newleaf-api/tools/sentiment.ts</td>
+          <td class="cell-bad">Direct Google AI SDK</td>
+          <td>API sentiment &mdash; news analysis</td>
+          <td class="cell-bad">No (bypasses router)</td>
+        </tr>
+        <tr>
+          <td class="cell-model">Gemini</td>
+          <td class="cell-bad">gemini-2.0-flash</td>
+          <td class="cell-loc">Firebase functions/index.js</td>
+          <td class="cell-bad">Direct REST (fetch)</td>
+          <td>Portfolio chat assistant (aiChat)</td>
+          <td class="cell-bad">No</td>
+        </tr>
+        <!-- DeepSeek -->
+        <tr>
+          <td class="cell-model">DeepSeek Chat</td>
+          <td>deepseek-chat</td>
+          <td class="cell-loc">newleaf-api (router)</td>
+          <td>DeepSeek API (OpenAI compat)</td>
+          <td>Sentiment Analyst agent; chat (budget-v3)</td>
+          <td class="cell-good">Yes</td>
+        </tr>
+        <tr>
+          <td class="cell-model">DeepSeek R1</td>
+          <td>deepseek-reasoner</td>
+          <td class="cell-loc">newleaf-api (router)</td>
+          <td>DeepSeek API (OpenAI compat)</td>
+          <td>All agents in budget-r1 mode</td>
+          <td class="cell-good">Yes</td>
+        </tr>
+        <!-- Qwen -->
+        <tr>
+          <td class="cell-model">QWQ (Qwen-Plus)</td>
+          <td>qwen-plus</td>
+          <td class="cell-loc">newleaf-api (router)</td>
+          <td>DashScope / CF Proxy</td>
+          <td>AI-read, picks-narrative, event-risk, all agents in budget-qwq</td>
+          <td class="cell-good">Yes</td>
+        </tr>
+        <tr>
+          <td class="cell-model">Qwen-Max</td>
+          <td>qwen-max</td>
+          <td class="cell-loc">newleaf-api (router)</td>
+          <td>DashScope / CF Proxy</td>
+          <td>Judge &amp; Fixer (critical budget-qwq); strike-compare (premium)</td>
+          <td class="cell-good">Yes</td>
+        </tr>
+        <!-- Social (not AI) -->
+        <tr>
+          <td class="cell-model" style="color:var(--text-muted)">Reddit + StockTwits</td>
+          <td>N/A (scraping)</td>
+          <td class="cell-loc">Both sentiment engines</td>
+          <td>Public REST APIs</td>
+          <td>Social sentiment aggregation (20% weight)</td>
+          <td style="color:var(--text-muted)">N/A (free)</td>
+        </tr>
+        <tr>
+          <td class="cell-model" style="color:var(--text-muted)">Serper</td>
+          <td>N/A (search)</td>
+          <td class="cell-loc">newleaf-api (sentiment agent)</td>
+          <td>Serper REST API</td>
+          <td>Web search for news + Reddit posts</td>
+          <td style="color:var(--text-muted)">Serper billing</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Legend -->
+    <div style="margin-top: 20px; display: flex; gap: 20px; font-size: 0.8rem; color: var(--text-muted);">
+      <span><span style="color:var(--green);">Green</span> = tracked through LLM Router</span>
+      <span><span style="color:var(--red);">Red</span> = untracked / inconsistent</span>
+    </div>
+
+    <!-- Cost estimates -->
+    <div style="margin-top: 40px;">
+      <div class="section-title" style="font-size: 1.1rem; margin-bottom: 16px;">Estimated Untracked Cost (per week)</div>
+      <div class="box-grid wide">
+        <div class="box">
+          <div class="box-title">Pipeline: analyse-tiles.cjs</div>
+          <div class="box-detail">
+            ~10-20 tiles/week &times; Claude CLI (5min, web search)<br>
+            Estimated: <strong style="color:var(--red)">$2-8/week untracked</strong><br>
+            Most expensive untracked cost
+          </div>
+        </div>
+        <div class="box">
+          <div class="box-title">Pipeline: sentiment-engine.js</div>
+          <div class="box-detail">
+            ~10-20 symbols &times; 3 AI engines<br>
+            Claude CLI + Grok + Gemini<br>
+            Estimated: <strong style="color:var(--red)">$1-3/week untracked</strong>
+          </div>
+        </div>
+        <div class="box">
+          <div class="box-title">Firebase: aiChat</div>
+          <div class="box-detail">
+            User chat sessions &times; Gemini calls<br>
+            Estimated: <strong style="color:var(--orange)">$0.50-2/week untracked</strong><br>
+            Lower volume, cheaper model
+          </div>
+        </div>
+        <div class="box">
+          <div class="box-title">API Sentiment (Gemini bypass)</div>
+          <div class="box-detail">
+            Discover.html sentiment lookups<br>
+            Gemini + Grok bypass router<br>
+            Estimated: <strong style="color:var(--orange)">$0.50-1/week untracked</strong>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 12px; padding: 14px; background: rgba(248, 81, 73, 0.08); border: 1px solid rgba(248, 81, 73, 0.2); border-radius: 8px; font-size: 0.85rem;">
+        <strong style="color: var(--red);">Total Estimated Untracked AI Spend: $4-14/week ($200-700/year)</strong>
+        <br><span style="color: var(--text-muted);">After migration, 100% of this becomes visible in the cost dashboard.</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<script>
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

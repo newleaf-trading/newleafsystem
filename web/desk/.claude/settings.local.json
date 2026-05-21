@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -H \"APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ\" -H \"APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y\" \"https://paper-api.alpaca.markets/v2/account\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s -H \"APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ\" -H \"APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y\" \"https://paper-api.alpaca.markets/v2/options/contracts?underlying_symbols=BABA&expiration_date=2026-05-22&strike_price_gte=130&strike_price_lte=130&type=call\")",
+      "Bash(curl -s -X POST https://paper-api.alpaca.markets/v2/orders -H 'APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ' -H 'APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y' -H 'Content-Type: application/json' -d '{:*)",
+      "Bash(curl -s -H \"APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ\" -H \"APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y\" \"https://paper-api.alpaca.markets/v2/orders/5ee4cb19-dbf4-49e2-a3c7-6a10cdedbb84\")",
+      "Bash(curl -s -H \"APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ\" -H \"APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y\" \"https://paper-api.alpaca.markets/v2/options/contracts?underlying_symbols=BIDU&expiration_date=2026-05-22&strike_price_gte=112&strike_price_lte=112&type=put\")",
+      "Bash(curl -s -H \"APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ\" -H \"APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y\" \"https://paper-api.alpaca.markets/v2/options/contracts?underlying_symbols=BIDU&expiration_date=2026-05-22&strike_price_gte=117&strike_price_lte=117&type=put\")",
+      "Bash(curl -s -H \"APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ\" -H \"APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y\" \"https://paper-api.alpaca.markets/v2/options/contracts?underlying_symbols=BIDU&expiration_date=2026-05-22&strike_price_gte=132&strike_price_lte=132&type=call\")",
+      "Bash(curl -s -H \"APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ\" -H \"APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y\" \"https://paper-api.alpaca.markets/v2/options/contracts?underlying_symbols=BIDU&expiration_date=2026-05-22&strike_price_gte=137&strike_price_lte=137&type=call\")",
+      "Bash(curl -s -H \"APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ\" -H \"APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y\" \"https://paper-api.alpaca.markets/v2/orders/53fb26c2-1688-435a-bb18-d344dc32ad55\")",
+      "Bash(python3 -c ':*)",
+      "Bash(curl -s -H \"APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ\" -H \"APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y\" \"https://paper-api.alpaca.markets/v2/stocks/BABA/quotes/latest\")",
+      "Bash(curl -s -H \"APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ\" -H \"APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y\" \"https://data.alpaca.markets/v2/stocks/BABA/quotes/latest\")",
+      "Bash(curl -s -H \"APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ\" -H \"APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y\" \"https://paper-api.alpaca.markets/v2/options/contracts?underlying_symbols=BABA&expiration_date=2026-05-22&strike_price_gte=110&strike_price_lte=150\")",
+      "Bash(python3 -c \" import json, sys data = json.load\\(sys.stdin\\) for c in sorted\\(data['option_contracts'], key=lambda x: \\(x['type'], float\\(x['strike_price']\\)\\)\\): print\\(f'{c[\\\\\"symbol\\\\\"]:30s} type={c[\\\\\"type\\\\\"]:4s} strike={c[\\\\\"strike_price\\\\\"]:>6s} OI={str\\(c.get\\(\\\\\"open_interest\\\\\",\\\\\"?\\\\\"\\)\\):>5s} close={c.get\\(\\\\\"close_price\\\\\",\\\\\"N/A\\\\\"\\)}'\\) \")",
+      "Bash(curl -s -H \"APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ\" -H \"APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y\" \"https://paper-api.alpaca.markets/v2/orders/772fdf86-2446-4b00-adcb-87682a44cb6e\")",
+      "Bash(curl -s -H \"APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ\" -H \"APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y\" \"https://data.alpaca.markets/v2/stocks/DIS/quotes/latest\")",
+      "Bash(curl -s -H \"APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ\" -H \"APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y\" \"https://paper-api.alpaca.markets/v2/options/contracts?underlying_symbols=DIS&expiration_date=2026-05-22&strike_price_gte=80&strike_price_lte=130\")",
+      "Bash(curl -s -H \"APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ\" -H \"APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y\" \"https://paper-api.alpaca.markets/v2/orders/a5b97dda-90e2-4a90-a727-a5e15d174f4d\")",
+      "Bash(curl -s -H \"APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ\" -H \"APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y\" \"https://paper-api.alpaca.markets/v2/positions\")",
+      "Bash(python3 -c \" import json, sys data = json.load\\(sys.stdin\\) for p in sorted\\(data, key=lambda x: x['symbol']\\): print\\(f'{p[\\\\\"symbol\\\\\"]:30s} qty={p[\\\\\"qty\\\\\"]:>3s} side={p[\\\\\"side\\\\\"]:5s} avg_entry=\\\\${p[\\\\\"avg_entry_price\\\\\"]:>7s} mkt_val=\\\\${p[\\\\\"market_value\\\\\"]:>8s} unrealized_pl=\\\\${p[\\\\\"unrealized_pl\\\\\"]:>8s}'\\) \")",
+      "Bash(curl -s -H 'APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ' -H 'APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y' https://paper-api.alpaca.markets/v2/orders/__TRACKED_VAR__)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f'BIDU close: {d[\\\\\"status\\\\\"]} id={d[\\\\\"id\\\\\"]}'\\)\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f'BABA close: {d[\\\\\"status\\\\\"]} id={d[\\\\\"id\\\\\"]}'\\)\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f'DIS close: {d[\\\\\"status\\\\\"]} id={d[\\\\\"id\\\\\"]}'\\)\")",
+      "Bash(python3 -c \" import json, sys data = json.load\\(sys.stdin\\) legs = data.get\\('legs', []\\) sym = legs[0]['symbol'][:4] if legs else data.get\\('symbol','?'\\) print\\(f'{sym} close: {data[\\\\\"status\\\\\"]}'\\) \" done)",
+      "Bash(curl -s -H \"APCA-API-KEY-ID: PKQBIG7ZIXBSRH5RH2HXLWYQYZ\" -H \"APCA-API-SECRET-KEY: J9F8yNt6cfzkc5q2638K81XLu2xa1e6mhZbbpzKGqT8y\" \"https://paper-api.alpaca.markets/v2/orders/65a6dc23-f768-4da7-92db-5580f59792d7\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f'DIS close: {d[\\\\\"status\\\\\"]}'\\)\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f'BIDU IC limit \\\\$2.00 credit: {d[\\\\\"status\\\\\"]} id={d[\\\\\"id\\\\\"]}'\\)\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f'BABA IC limit \\\\$1.50 credit: {d[\\\\\"status\\\\\"]} id={d[\\\\\"id\\\\\"]}'\\)\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f'DIS IC limit \\\\$1.50 credit: {d[\\\\\"status\\\\\"]} id={d[\\\\\"id\\\\\"]}'\\)\")",
+      "Bash(curl -s -X GET https://paper-api.alpaca.markets/v2/account -H 'APCA-API-KEY-ID: PK6IUDNYUOJ2VDJRKZZY6TDCEO' -H 'APCA-API-SECRET-KEY: Fp9bqFsCzNwuXiT27cZnVRwsUytHZqmip3TMn9hmdSu8')",
+      "Bash(curl -s -X POST https://paper-api.alpaca.markets/v2/orders -H 'APCA-API-KEY-ID: PK6IUDNYUOJ2VDJRKZZY6TDCEO' -H 'APCA-API-SECRET-KEY: Fp9bqFsCzNwuXiT27cZnVRwsUytHZqmip3TMn9hmdSu8' -H 'Content-Type: application/json' -d '{:*)"
+    ]
+  }
+}

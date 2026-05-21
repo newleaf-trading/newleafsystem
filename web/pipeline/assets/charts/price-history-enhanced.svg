@@ -1,0 +1,120 @@
+<svg viewBox="0 0 800 350" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto;">
+  <defs>
+    <!-- Bar gradients for 3D effect -->
+    <linearGradient id="barNormal" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#d4b76a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#C8A85A;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="barPeak" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#86efac;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="barDecline" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#fca5a5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#dc2626;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Drop shadow -->
+    <filter id="barShadow">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+      <feOffset dx="2" dy="3" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.25"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Shine effect -->
+    <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:white;stop-opacity:0" />
+      <stop offset="50%" style="stop-color:white;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:white;stop-opacity:0" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background grid -->
+  <g opacity="0.2">
+    <line x1="60" y1="50" x2="760" y2="50" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2"/>
+    <line x1="60" y1="100" x2="760" y2="100" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2"/>
+    <line x1="60" y1="150" x2="760" y2="150" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2"/>
+    <line x1="60" y1="200" x2="760" y2="200" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2"/>
+    <line x1="60" y1="250" x2="760" y2="250" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2"/>
+  </g>
+  
+  <!-- Baseline -->
+  <line x1="60" y1="300" x2="760" y2="300" stroke="#0F3D2E" stroke-width="3"/>
+  
+  <!-- Timeline connector (connects tops of bars) -->
+  <path d="M 115,225 L 215,165 L 315,120 L 415,80 L 515,50 L 615,85 L 715,135" 
+        fill="none" 
+        stroke="#C8A85A" 
+        stroke-width="2" 
+        stroke-dasharray="5,3" 
+        opacity="0.4"/>
+  
+  <!-- Bar 1: Oct '25 ($30) -->
+  <g filter="url(#barShadow)">
+    <rect x="80" y="225" width="70" height="75" rx="6" ry="6" fill="url(#barNormal)"/>
+    <rect x="80" y="225" width="70" height="15" rx="6" ry="6" fill="url(#shine)" opacity="0.4"/>
+  </g>
+  <text x="115" y="210" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#0F3D2E">$30</text>
+  <text x="115" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#6b7280">Oct '25</text>
+  
+  <!-- Bar 2: Nov '25 ($40) -->
+  <g filter="url(#barShadow)">
+    <rect x="180" y="165" width="70" height="135" rx="6" ry="6" fill="url(#barNormal)"/>
+    <rect x="180" y="165" width="70" height="15" rx="6" ry="6" fill="url(#shine)" opacity="0.4"/>
+  </g>
+  <text x="215" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#0F3D2E">$40</text>
+  <text x="215" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#6b7280">Nov '25</text>
+  
+  <!-- Bar 3: Dec '25 ($55) -->
+  <g filter="url(#barShadow)">
+    <rect x="280" y="120" width="70" height="180" rx="6" ry="6" fill="url(#barNormal)"/>
+    <rect x="280" y="120" width="70" height="15" rx="6" ry="6" fill="url(#shine)" opacity="0.4"/>
+  </g>
+  <text x="315" y="105" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#0F3D2E">$55</text>
+  <text x="315" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#6b7280">Dec '25</text>
+  
+  <!-- Bar 4: Jan '26 ($75) -->
+  <g filter="url(#barShadow)">
+    <rect x="380" y="80" width="70" height="220" rx="6" ry="6" fill="url(#barNormal)"/>
+    <rect x="380" y="80" width="70" height="15" rx="6" ry="6" fill="url(#shine)" opacity="0.4"/>
+  </g>
+  <text x="415" y="65" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#0F3D2E">$75</text>
+  <text x="415" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#6b7280">Jan '26</text>
+  
+  <!-- Bar 5: Jan 27 ($111) - PEAK -->
+  <g filter="url(#barShadow)">
+    <rect x="480" y="50" width="70" height="250" rx="6" ry="6" fill="url(#barPeak)"/>
+    <rect x="480" y="50" width="70" height="15" rx="6" ry="6" fill="url(#shine)" opacity="0.6"/>
+    <!-- Peak indicator star -->
+    <path d="M 515,30 L 520,40 L 530,40 L 522,46 L 526,56 L 515,50 L 504,56 L 508,46 L 500,40 L 510,40 Z" 
+          fill="#f59e0b" stroke="#fff" stroke-width="1"/>
+  </g>
+  <text x="515" y="35" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#16a34a">$111</text>
+  <text x="515" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#16a34a">Jan 27</text>
+  
+  <!-- Bar 6: Feb '26 ($85) - DECLINE -->
+  <g filter="url(#barShadow)">
+    <rect x="580" y="85" width="70" height="215" rx="6" ry="6" fill="url(#barDecline)"/>
+    <rect x="580" y="85" width="70" height="15" rx="6" ry="6" fill="url(#shine)" opacity="0.4"/>
+  </g>
+  <text x="615" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#dc2626">$85</text>
+  <text x="615" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#6b7280">Feb '26</text>
+  
+  <!-- Bar 7: Apr '26 ($65) - CURRENT -->
+  <g filter="url(#barShadow)">
+    <rect x="680" y="135" width="70" height="165" rx="6" ry="6" fill="url(#barNormal)"/>
+    <rect x="680" y="135" width="70" height="15" rx="6" ry="6" fill="url(#shine)" opacity="0.4"/>
+    <!-- Current price indicator -->
+    <circle cx="715" cy="135" r="8" fill="#0F3D2E" stroke="white" stroke-width="2"/>
+  </g>
+  <text x="715" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#0F3D2E">$65</text>
+  <text x="715" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#0F3D2E">Apr '26</text>
+</svg>

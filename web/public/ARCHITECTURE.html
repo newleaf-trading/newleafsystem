@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf System — Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --forest: #0B2D23; --forest-mid: #1a5c44; --gold: #C9A96E;
+    --cream: #F7F5F0; --cream-dark: #EDE8DC; --white: #fff;
+    --ink: #0B0F14; --ink-mid: #3d3d35; --ink-muted: #6b6b60;
+    --teal: #0d6e56; --teal-bg: #e0f2ec; --teal-text: #07473a;
+    --blue: #2563eb; --blue-bg: #dbeafe; --blue-text: #1e40af;
+    --purple: #7c3aed; --purple-bg: #ede9fe; --purple-text: #5b21b6;
+    --orange: #d97706; --orange-bg: #fef3c7; --orange-text: #92400e;
+    --red: #dc2626; --red-bg: #fee2e2; --red-text: #991b1b;
+    --border: rgba(15,61,46,.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; padding: 40px 20px; }
+  .page { max-width: 1400px; margin: 0 auto; }
+  .page-title { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 400; color: var(--forest); margin-bottom: 6px; }
+  .page-sub { font-size: 13px; color: var(--ink-muted); margin-bottom: 40px; }
+
+  /* ── Diagram grid ── */
+  .diagram { display: flex; flex-direction: column; gap: 24px; }
+
+  .layer { position: relative; }
+  .layer-label {
+    font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-muted); margin-bottom: 10px;
+    padding-left: 4px;
+  }
+  .layer-row { display: flex; gap: 16px; align-items: stretch; flex-wrap: wrap; }
+
+  /* ── Box component ── */
+  .box {
+    background: var(--white); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; flex: 1; min-width: 240px; position: relative; overflow: hidden;
+  }
+  .box::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .box.teal::before { background: var(--teal); }
+  .box.blue::before { background: var(--blue); }
+  .box.purple::before { background: var(--purple); }
+  .box.orange::before { background: var(--orange); }
+  .box.red::before { background: var(--red); }
+  .box.gold::before { background: var(--gold); }
+
+  .box-icon { font-size: 22px; margin-bottom: 8px; }
+  .box-title { font-size: 15px; font-weight: 700; color: var(--forest); margin-bottom: 2px; }
+  .box-url { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--ink-muted); margin-bottom: 10px; }
+  .box-items { list-style: none; }
+  .box-items li {
+    font-size: 12px; color: var(--ink-mid); padding: 4px 0; display: flex; align-items: center; gap: 6px;
+    border-top: 1px solid var(--border);
+  }
+  .box-items li:first-child { border-top: none; }
+  .box-items .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .box-items .dot.teal { background: var(--teal); }
+  .box-items .dot.blue { background: var(--blue); }
+  .box-items .dot.purple { background: var(--purple); }
+  .box-items .dot.orange { background: var(--orange); }
+  .box-items .dot.red { background: var(--red); }
+  .box-items .dot.gold { background: var(--gold); }
+
+  .badge {
+    display: inline-block; font-family: 'Space Mono', monospace; font-size: 9px;
+    letter-spacing: .04em; padding: 2px 6px; border-radius: 4px; font-weight: 600;
+    margin-left: auto; flex-shrink: 0;
+  }
+  .badge.teal { background: var(--teal-bg); color: var(--teal-text); }
+  .badge.blue { background: var(--blue-bg); color: var(--blue-text); }
+  .badge.purple { background: var(--purple-bg); color: var(--purple-text); }
+  .badge.orange { background: var(--orange-bg); color: var(--orange-text); }
+
+  /* ── Flow arrows ── */
+  .flow-section { padding: 16px 0; }
+  .flow-row {
+    display: flex; align-items: center; gap: 12px; padding: 8px 16px;
+    background: var(--white); border: 1px solid var(--border); border-radius: 8px;
+    margin-bottom: 8px; font-size: 12px; color: var(--ink-mid);
+  }
+  .flow-num {
+    width: 24px; height: 24px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-size: 11px;
+    font-weight: 700; flex-shrink: 0;
+  }
+  .flow-num.teal { background: var(--teal); color: white; }
+  .flow-num.blue { background: var(--blue); color: white; }
+  .flow-num.purple { background: var(--purple); color: white; }
+  .flow-num.orange { background: var(--orange); color: white; }
+  .flow-arrow { color: var(--ink-muted); font-family: 'Space Mono', monospace; flex-shrink: 0; }
+  .flow-label { font-weight: 600; color: var(--ink); }
+  .flow-detail { color: var(--ink-muted); font-size: 11px; }
+
+  /* ── Connector lines (SVG overlay) ── */
+  .connectors { margin: -8px 0; text-align: center; }
+  .connector-bar {
+    display: inline-flex; align-items: center; gap: 24px;
+    padding: 6px 20px; font-family: 'Space Mono', monospace; font-size: 10px;
+    color: var(--ink-muted); letter-spacing: .04em;
+  }
+  .connector-bar .arrow { font-size: 16px; }
+
+  .section-title {
+    font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 400;
+    color: var(--forest); margin: 40px 0 16px; padding-top: 20px;
+    border-top: 2px solid var(--border);
+  }
+
+  /* ── Legend ── */
+  .legend {
+    display: flex; gap: 20px; flex-wrap: wrap; padding: 16px 20px;
+    background: var(--white); border: 1px solid var(--border); border-radius: 10px;
+    margin-top: 32px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-mid); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+  .legend-dot.teal { background: var(--teal); }
+  .legend-dot.blue { background: var(--blue); }
+  .legend-dot.purple { background: var(--purple); }
+  .legend-dot.orange { background: var(--orange); }
+  .legend-dot.red { background: var(--red); }
+  .legend-dot.gold { background: var(--gold); }
+
+  @media (max-width: 900px) {
+    .layer-row { flex-direction: column; }
+    .box { min-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1 class="page-title">NewLeaf System Architecture</h1>
+<p class="page-sub">End-to-end flow: AI discovery, recommendation pipeline, picks publishing, and investor delivery</p>
+
+<div class="diagram">
+
+  <!-- ════════════════════════════════════════════════════════════════
+       LAYER 1: USER-FACING APPS
+       ════════════════════════════════════════════════════════════════ -->
+  <div class="layer">
+    <div class="layer-label">Layer 1 — User-Facing Applications</div>
+    <div class="layer-row">
+
+      <div class="box teal">
+        <div class="box-icon">🔍</div>
+        <div class="box-title">AI Discover</div>
+        <div class="box-url">newleafsystem.web.app/workbench/discover.html</div>
+        <ul class="box-items">
+          <li><span class="dot teal"></span> Ticker snapshot & market data <span class="badge teal">STEP 1</span></li>
+          <li><span class="dot teal"></span> AI strategy recommendation</li>
+          <li><span class="dot teal"></span> Strike selection & P/L modeling</li>
+          <li><span class="dot teal"></span> 4-agent verification (technical, gamma, IV, sentiment)</li>
+          <li><span class="dot teal"></span> Bull vs Bear AI debate</li>
+          <li><span class="dot teal"></span> Verdict & confidence score</li>
+          <li><span class="dot teal"></span> Publish to WIP recommendations <span class="badge orange">FIRESTORE</span></li>
+        </ul>
+      </div>
+
+      <div class="box blue">
+        <div class="box-icon">📋</div>
+        <div class="box-title">Picks</div>
+        <div class="box-url">newleafsystem.web.app/picks/</div>
+        <ul class="box-items">
+          <li><span class="dot blue"></span> Weekly picks display</li>
+          <li><span class="dot blue"></span> Pick history & recap</li>
+          <li><span class="dot blue"></span> Monthly performance heatmap</li>
+          <li><span class="dot blue"></span> Reads from <code>weeklyPicks</code> <span class="badge orange">FIRESTORE</span></li>
+          <li><span class="dot blue"></span> Reads from <code>pick_outcomes</code></li>
+        </ul>
+      </div>
+
+      <div class="box purple">
+        <div class="box-icon">💰</div>
+        <div class="box-title">NewLeaf Invest</div>
+        <div class="box-url">newleafsystem.web.app/invest/</div>
+        <ul class="box-items">
+          <li><span class="dot purple"></span> Strategy tiles with live data</li>
+          <li><span class="dot purple"></span> Deep analysis per tile</li>
+          <li><span class="dot purple"></span> Risk analysis & theta decay</li>
+          <li><span class="dot purple"></span> PDF report downloads</li>
+          <li><span class="dot purple"></span> Reads from <code>tiles</code> + <code>analyses</code> <span class="badge orange">FIRESTORE</span></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Connector -->
+  <div class="connectors">
+    <div class="connector-bar">
+      <span class="arrow">&#8595;</span> API calls <span class="arrow">&#8595;</span> Firestore reads/writes <span class="arrow">&#8595;</span>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       LAYER 2: API + DATABASE
+       ════════════════════════════════════════════════════════════════ -->
+  <div class="layer">
+    <div class="layer-label">Layer 2 — API & Data Layer</div>
+    <div class="layer-row">
+
+      <div class="box orange">
+        <div class="box-icon">⚡</div>
+        <div class="box-title">NewLeaf API</div>
+        <div class="box-url">us-central1-newleaf-trading.cloudfunctions.net/api</div>
+        <ul class="box-items">
+          <li><span class="dot orange"></span> <code>/verify</code> — 4-agent trade verification</li>
+          <li><span class="dot orange"></span> <code>/snapshot</code> — ticker market data</li>
+          <li><span class="dot orange"></span> <code>/strategies</code> — AI strategy selection</li>
+          <li><span class="dot orange"></span> Connectors to LLMs <span class="badge purple">AI</span></li>
+          <li><span class="dot orange"></span> Alpaca market data connector <span class="badge teal">MARKET</span></li>
+        </ul>
+      </div>
+
+      <div class="box gold">
+        <div class="box-icon">🔥</div>
+        <div class="box-title">Firestore (newleafdb)</div>
+        <div class="box-url">Firebase — newleaf-trading project</div>
+        <ul class="box-items">
+          <li><span class="dot orange"></span> <code>recommendations</code> — WIP picks from Discover</li>
+          <li><span class="dot teal"></span> <code>tiles</code> — published trade setups</li>
+          <li><span class="dot purple"></span> <code>analyses</code> — Claude deep analysis per tile</li>
+          <li><span class="dot blue"></span> <code>weeklyPicks</code> — weekly pick collections</li>
+          <li><span class="dot blue"></span> <code>pick_outcomes</code> — closed trade results</li>
+          <li><span class="dot gold"></span> <code>marketState</code> — scan metadata</li>
+        </ul>
+      </div>
+
+      <div class="box red">
+        <div class="box-icon">☁️</div>
+        <div class="box-title">Cloudflare R2</div>
+        <div class="box-url">pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev</div>
+        <ul class="box-items">
+          <li><span class="dot red"></span> <code>reports/{SYM}/latest.json</code> — pipeline data</li>
+          <li><span class="dot red"></span> <code>reports/pdf/{SYM}/</code> — PDF reports</li>
+          <li><span class="dot red"></span> <code>reports/manifest.json</code> — symbol index</li>
+          <li><span class="dot red"></span> Gamma wall data & OI history</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Connector -->
+  <div class="connectors">
+    <div class="connector-bar">
+      <span class="arrow">&#8593;</span> reads WIP <span class="arrow">&#8593;</span> publishes enriched data <span class="arrow">&#8593;</span>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       LAYER 3: CLI PIPELINE
+       ════════════════════════════════════════════════════════════════ -->
+  <div class="layer">
+    <div class="layer-label">Layer 3 — CLI-Powered Pipeline (newleaf-pipeline)</div>
+    <div class="layer-row">
+
+      <div class="box teal" style="flex:1.5">
+        <div class="box-icon">🍃</div>
+        <div class="box-title">process-wip-picks.cjs</div>
+        <div class="box-url">node process-wip-picks.cjs</div>
+        <ul class="box-items">
+          <li><span class="dot orange"></span> Pull WIP recommendations from Firestore</li>
+          <li><span class="dot teal"></span> Refresh live spot + option chain (Alpaca)</li>
+          <li><span class="dot teal"></span> Match legs to live greeks/premiums</li>
+          <li><span class="dot purple"></span> 4-engine sentiment analysis</li>
+          <li><span class="dot purple"></span> Claude deep analysis (rationale, technicals, risk)</li>
+          <li><span class="dot red"></span> PDF generation + R2 upload</li>
+          <li><span class="dot teal"></span> Publish tile + analysis + weeklyPick</li>
+          <li><span class="dot orange"></span> Update recommendation: wip &#8594; complete</li>
+        </ul>
+      </div>
+
+      <div class="box blue">
+        <div class="box-icon">📡</div>
+        <div class="box-title">Data Pipeline</div>
+        <div class="box-url">newleaf-pipeline.js + schedulers</div>
+        <ul class="box-items">
+          <li><span class="dot blue"></span> Fast pipeline (15-min, market hours)</li>
+          <li><span class="dot blue"></span> Daily OI enrichment (9:32am ET)</li>
+          <li><span class="dot blue"></span> Gamma wall detection</li>
+          <li><span class="dot blue"></span> OI delta tracking (90-day history)</li>
+          <li><span class="dot blue"></span> R2 upload + Firestore sync</li>
+        </ul>
+      </div>
+
+      <div class="box purple">
+        <div class="box-icon">📧</div>
+        <div class="box-title">Notifications</div>
+        <div class="box-url">Email via SMTP</div>
+        <ul class="box-items">
+          <li><span class="dot purple"></span> Weekly pick email reports</li>
+          <li><span class="dot purple"></span> PDF attachments</li>
+          <li><span class="dot purple"></span> Subscriber distribution</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Connector -->
+  <div class="connectors">
+    <div class="connector-bar">
+      <span class="arrow">&#8595;</span> API keys & connectors <span class="arrow">&#8595;</span>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       LAYER 4: EXTERNAL SERVICES
+       ════════════════════════════════════════════════════════════════ -->
+  <div class="layer">
+    <div class="layer-label">Layer 4 — External Services & APIs</div>
+    <div class="layer-row">
+
+      <div class="box purple">
+        <div class="box-icon">🧠</div>
+        <div class="box-title">AI / LLM Engines</div>
+        <div class="box-url">Sentiment + Analysis + Verification</div>
+        <ul class="box-items">
+          <li><span class="dot purple"></span> Claude (Anthropic) — analysis + web search <span class="badge purple">30%</span></li>
+          <li><span class="dot purple"></span> Grok (xAI) — X/Twitter sentiment <span class="badge purple">25%</span></li>
+          <li><span class="dot purple"></span> Gemini (Google) — news + sector <span class="badge purple">25%</span></li>
+          <li><span class="dot purple"></span> Reddit/StockTwits — social sentiment <span class="badge purple">20%</span></li>
+        </ul>
+      </div>
+
+      <div class="box teal">
+        <div class="box-icon">📊</div>
+        <div class="box-title">Alpaca Markets API</div>
+        <div class="box-url">data.alpaca.markets</div>
+        <ul class="box-items">
+          <li><span class="dot teal"></span> Live stock prices & snapshots</li>
+          <li><span class="dot teal"></span> Options chain (strikes, greeks, IV)</li>
+          <li><span class="dot teal"></span> Historical bars & quotes</li>
+          <li><span class="dot teal"></span> Paper trading execution</li>
+        </ul>
+      </div>
+
+      <div class="box orange">
+        <div class="box-icon">🌐</div>
+        <div class="box-title">Other Services</div>
+        <div class="box-url">Infrastructure</div>
+        <ul class="box-items">
+          <li><span class="dot orange"></span> Firebase Hosting (web app)</li>
+          <li><span class="dot orange"></span> Firebase Auth (Google sign-in)</li>
+          <li><span class="dot orange"></span> Cloud Functions (API)</li>
+          <li><span class="dot orange"></span> Gmail SMTP (email delivery)</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     DATA FLOW
+     ════════════════════════════════════════════════════════════════ -->
+<h2 class="section-title">Data Flow: Discovery to Published Pick</h2>
+
+<div class="flow-section">
+  <div class="flow-row">
+    <div class="flow-num teal">1</div>
+    <span class="flow-label">AI Discover</span>
+    <span class="flow-arrow">&#8594;</span>
+    <span class="flow-label">NewLeaf API</span>
+    <span class="flow-detail">User enters ticker. API fetches snapshot, option chain from Alpaca. AI selects strategies.</span>
+  </div>
+
+  <div class="flow-row">
+    <div class="flow-num teal">2</div>
+    <span class="flow-label">AI Discover</span>
+    <span class="flow-arrow">&#8594;</span>
+    <span class="flow-label">NewLeaf API /verify</span>
+    <span class="flow-detail">4-agent verification: technical, gamma, IV/skew, sentiment engines produce verdict + confidence.</span>
+  </div>
+
+  <div class="flow-row">
+    <div class="flow-num orange">3</div>
+    <span class="flow-label">AI Discover</span>
+    <span class="flow-arrow">&#8594;</span>
+    <span class="flow-label">Firestore recommendations</span>
+    <span class="flow-detail">User clicks "Publish to Picks". Recommendation saved with status: <strong>wip</strong> (legs, verdict, evidence).</span>
+  </div>
+
+  <div class="flow-row">
+    <div class="flow-num purple">4</div>
+    <span class="flow-label">process-wip-picks.cjs</span>
+    <span class="flow-arrow">&#8594;</span>
+    <span class="flow-label">Firestore recommendations</span>
+    <span class="flow-detail">CLI script queries recommendations where status = 'wip'. Status updated to <strong>processing</strong>.</span>
+  </div>
+
+  <div class="flow-row">
+    <div class="flow-num purple">5</div>
+    <span class="flow-label">process-wip-picks.cjs</span>
+    <span class="flow-arrow">&#8594;</span>
+    <span class="flow-label">Alpaca + R2 + LLMs</span>
+    <span class="flow-detail">Refreshes live prices/greeks, fetches gamma walls, runs 4-engine sentiment, runs Claude deep analysis.</span>
+  </div>
+
+  <div class="flow-row">
+    <div class="flow-num teal">6</div>
+    <span class="flow-label">process-wip-picks.cjs</span>
+    <span class="flow-arrow">&#8594;</span>
+    <span class="flow-label">Firestore tiles + analyses + weeklyPicks</span>
+    <span class="flow-detail">Publishes enriched tile, full analysis doc, and adds to weekly picks collection.</span>
+  </div>
+
+  <div class="flow-row">
+    <div class="flow-num red">7</div>
+    <span class="flow-label">process-wip-picks.cjs</span>
+    <span class="flow-arrow">&#8594;</span>
+    <span class="flow-label">R2 + Email</span>
+    <span class="flow-detail">Generates PDF report, uploads to R2. Sends email notifications to subscribers.</span>
+  </div>
+
+  <div class="flow-row">
+    <div class="flow-num blue">8</div>
+    <span class="flow-label">Picks + Invest</span>
+    <span class="flow-arrow">&#8592;</span>
+    <span class="flow-label">Firestore</span>
+    <span class="flow-detail">Web apps read tiles, analyses, weeklyPicks. Pick is now live for users. Recommendation status: <strong>complete</strong>.</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     RECOMMENDATION LIFECYCLE
+     ════════════════════════════════════════════════════════════════ -->
+<h2 class="section-title">Recommendation Lifecycle</h2>
+
+<div style="display:flex;align-items:center;gap:12px;padding:20px;background:var(--white);border:1px solid var(--border);border-radius:10px;flex-wrap:wrap">
+  <div style="display:flex;align-items:center;gap:8px">
+    <div style="padding:8px 16px;border-radius:8px;background:var(--orange-bg);color:var(--orange-text);font-weight:700;font-size:13px;font-family:'Space Mono',monospace">WIP</div>
+    <div style="font-size:12px;color:var(--ink-muted)">AI Discover publishes</div>
+  </div>
+  <div style="font-size:18px;color:var(--ink-muted)">&#8594;</div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div style="padding:8px 16px;border-radius:8px;background:var(--blue-bg);color:var(--blue-text);font-weight:700;font-size:13px;font-family:'Space Mono',monospace">PROCESSING</div>
+    <div style="font-size:12px;color:var(--ink-muted)">Pipeline picks it up</div>
+  </div>
+  <div style="font-size:18px;color:var(--ink-muted)">&#8594;</div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div style="padding:8px 16px;border-radius:8px;background:var(--teal-bg);color:var(--teal-text);font-weight:700;font-size:13px;font-family:'Space Mono',monospace">COMPLETE</div>
+    <div style="font-size:12px;color:var(--ink-muted)">Live on Picks + Invest</div>
+  </div>
+  <div style="font-size:18px;color:var(--ink-muted);margin-left:20px">or</div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div style="padding:8px 16px;border-radius:8px;background:var(--red-bg);color:var(--red-text);font-weight:700;font-size:13px;font-family:'Space Mono',monospace">FAILED</div>
+    <div style="font-size:12px;color:var(--ink-muted)">Error logged, retry possible</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════
+     FIRESTORE COLLECTIONS
+     ════════════════════════════════════════════════════════════════ -->
+<h2 class="section-title">Firestore Collections (newleafdb)</h2>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px;border-left:3px solid var(--orange)">
+    <div style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--orange)">recommendations/{id}</div>
+    <div style="font-size:11px;color:var(--ink-muted);margin-top:6px;line-height:1.5">
+      status, symbol, strategy, direction, expiry, legs[], netCredit, maxProfit, maxLoss, verdict{word, confidence}, evidence{technical, gamma, iv, sentiment}, riskReport, debate[], publishedBy, tileId, createdAt
+    </div>
+  </div>
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px;border-left:3px solid var(--teal)">
+    <div style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--teal)">tiles/{id}</div>
+    <div style="font-size:11px;color:var(--ink-muted);margin-top:6px;line-height:1.5">
+      symbol, strategy, direction, legs[], greeks, gammaData, maxProfit, maxLoss, netCredit, rewardRisk, oddsOfProfit, breakevens, sentiment, confidence, isActive, source, sortOrder
+    </div>
+  </div>
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px;border-left:3px solid var(--purple)">
+    <div style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--purple)">analyses/{tileId}</div>
+    <div style="font-size:11px;color:var(--ink-muted);margin-top:6px;line-height:1.5">
+      strategyRationale, technicalIndicators{rsi, bollingerBands, macd, movingAverages, impliedVolatility, supportResistance}, thetaDecaySchedule, riskAnalysis, _sentiment, _discoverVerdict
+    </div>
+  </div>
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px;border-left:3px solid var(--blue)">
+    <div style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--blue)">weeklyPicks/{weekId}</div>
+    <div style="font-size:11px;color:var(--ink-muted);margin-top:6px;line-height:1.5">
+      weekId, status, dateRange, tileIds[], tileCount, picks[]{tileId, symbol, strategy, direction, price, maxProfit, maxLoss, rewardRisk, thesis, ivContext}
+    </div>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot teal"></div> Web App / Pipeline Output</div>
+  <div class="legend-item"><div class="legend-dot blue"></div> Data Pipeline / Reads</div>
+  <div class="legend-item"><div class="legend-dot purple"></div> AI / LLM Processing</div>
+  <div class="legend-item"><div class="legend-dot orange"></div> API / Firestore</div>
+  <div class="legend-item"><div class="legend-dot red"></div> Storage (R2)</div>
+  <div class="legend-item"><div class="legend-dot gold"></div> Database</div>
+</div>
+
+<div style="text-align:center;padding:32px 0 16px;font-size:11px;color:var(--ink-muted)">
+  NewLeaf System Architecture &mdash; Generated May 2026
+</div>
+
+</div>
+</body>
+</html>

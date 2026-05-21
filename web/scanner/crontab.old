@@ -1,0 +1,15 @@
+# NewLeaf Alpaca R2 — Enhanced Schedulers (v3.1)
+# Email alerts on failures
+MAILTO=4laksh@gmail.com
+
+# Fast Pipeline (Alpaca only) - Every 15 minutes during market hours
+*/15 14-21 * * 1-5 /Users/manish/dev/OptionAdvisor/newleaf-alpaca-r2/pipeline/run-fast-pipeline.sh
+
+# OI Enrichment (Yahoo) - Once daily at 9:32am ET
+32 14 * * 1-5 /Users/manish/dev/OptionAdvisor/newleaf-alpaca-r2/pipeline/run-oi-enrichment.sh
+
+# Watchlist Pipeline - After OI enrichment completes (9:35am ET)
+35 14 * * 1-5 /Users/manish/dev/OptionAdvisor/newleaf-alpaca-r2/pipeline/run-watchlist-pipeline.sh
+
+# Health Check - Monitor scheduler health every 5 minutes
+*/5 * * * * /Users/manish/dev/OptionAdvisor/newleaf-alpaca-r2/pipeline/check-scheduler-health.sh

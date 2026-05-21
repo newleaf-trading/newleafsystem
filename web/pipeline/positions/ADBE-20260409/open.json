@@ -1,0 +1,20 @@
+{
+  "id": "ADBE-20260409",
+  "symbol": "ADBE",
+  "company": "Adobe Inc.",
+  "strategy": "Iron Condor",
+  "status": "open",
+  "openDate": "2026-04-09",
+  "expiry": "April 24, 2026",
+  "entryPrice": "$240.14",
+  "credit": 3.58,
+  "strikes": "$220/$230P | $255/$265C",
+  "maxProfit": "$358",
+  "maxLoss": "$642",
+  "winRate": "57",
+  "score": "62",
+  "currentPnl": 0,
+  "adjustments": [],
+  "notes": [],
+  "reportUrl": "reports/pdf/ADBE/ADBE-Iron-Condor-latest.pdf"
+}

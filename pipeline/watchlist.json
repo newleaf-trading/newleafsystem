@@ -1,0 +1,169 @@
+{
+  "updatedAt": "2026-04-11T20:00:00.000Z",
+  "totalSymbols": 111,
+  "symbols": [
+    "SPY", "QQQ", "IWM", "DIA", "TLT", "XLF", "XLK", "XLE", "XLY", "XLI",
+    "XLP", "XLU", "XLB", "EEM", "FXI", "GLD", "SLV", "USO", "UNG", "GDX", "BITO",
+    "AAPL", "MSFT", "NVDA", "AMZN", "GOOG", "META", "TSLA", "AMD", "AVGO", "NFLX",
+    "ADBE", "CRM", "INTC",
+    "PLTR", "COIN", "RIOT", "MARA", "RIVN", "LCID", "SOFI", "SNAP", "SHOP",
+    "JPM", "BAC", "GS", "MS", "C", "WFC", "SCHW",
+    "XOM", "CVX", "COP", "SLB", "EOG", "MPC", "PSX", "VLO", "OXY", "HES", "HAL",
+    "CAT", "DE", "CMI", "IR", "EMR", "HON", "MMM", "BA", "LMT", "RTX", "GE",
+    "UNH", "PFE", "JNJ", "MRK", "ABBV", "LLY",
+    "WMT", "COST", "TGT", "KR", "PG", "KO", "PEP", "MDLZ", "CL", "GIS",
+    "HD", "MCD", "NKE",
+    "NUE", "FCX", "NEM", "VMC", "MLM", "APD",
+    "NEE", "DUK", "SO", "D", "AEP",
+    "BABA", "BIDU", "JD", "PDD", "NIO",
+    "UVXY", "SQQQ", "TQQQ", "ARKK"
+  ],
+  "groups": {
+    "Index & ETF": {
+      "symbols": ["SPY", "QQQ", "IWM", "DIA", "TLT", "XLF", "XLK", "XLE", "XLY", "XLI", "XLP", "XLU", "XLB", "EEM", "FXI"],
+      "sector": "Index & ETF"
+    },
+    "Commodities & Macro": {
+      "symbols": ["GLD", "SLV", "USO", "UNG", "GDX", "BITO"],
+      "sector": "Commodities"
+    },
+    "Mega Cap Tech": {
+      "symbols": ["AAPL", "MSFT", "NVDA", "AMZN", "GOOG", "META", "TSLA", "AMD", "AVGO", "NFLX", "ADBE", "CRM", "INTC"],
+      "sector": "Technology"
+    },
+    "High Beta / Retail": {
+      "symbols": ["PLTR", "COIN", "RIOT", "MARA", "RIVN", "LCID", "SOFI", "SNAP", "SHOP"],
+      "sector": "High Beta"
+    },
+    "Financials": {
+      "symbols": ["JPM", "BAC", "GS", "MS", "C", "WFC", "SCHW"],
+      "sector": "Financials"
+    },
+    "Energy": {
+      "symbols": ["XOM", "CVX", "COP", "SLB", "EOG", "MPC", "PSX", "VLO", "OXY", "HES", "HAL"],
+      "sector": "Energy"
+    },
+    "Industrials": {
+      "symbols": ["CAT", "DE", "CMI", "IR", "EMR", "HON", "MMM", "BA", "LMT", "RTX", "GE"],
+      "sector": "Industrials"
+    },
+    "Healthcare": {
+      "symbols": ["UNH", "PFE", "JNJ", "MRK", "ABBV", "LLY"],
+      "sector": "Healthcare"
+    },
+    "Consumer Staples": {
+      "symbols": ["WMT", "COST", "TGT", "KR", "PG", "KO", "PEP", "MDLZ", "CL", "GIS"],
+      "sector": "Consumer Staples"
+    },
+    "Consumer Discretionary": {
+      "symbols": ["HD", "MCD", "NKE"],
+      "sector": "Consumer Discretionary"
+    },
+    "Materials": {
+      "symbols": ["NUE", "FCX", "NEM", "VMC", "MLM", "APD"],
+      "sector": "Materials"
+    },
+    "Utilities": {
+      "symbols": ["NEE", "DUK", "SO", "D", "AEP"],
+      "sector": "Utilities"
+    },
+    "China Plays": {
+      "symbols": ["BABA", "BIDU", "JD", "PDD", "NIO"],
+      "sector": "China"
+    },
+    "Volatility": {
+      "symbols": ["UVXY", "SQQQ", "TQQQ", "ARKK"],
+      "sector": "Volatility"
+    }
+  },
+  "marketCapTiers": {
+    "mega": {
+      "label": "Mega Cap",
+      "min": 200000000000,
+      "description": "$200B+ - Best liquidity",
+      "optionsQuality": 5
+    },
+    "large": {
+      "label": "Large Cap",
+      "min": 10000000000,
+      "max": 200000000000,
+      "description": "$10B-$200B - Good liquidity",
+      "optionsQuality": 4
+    },
+    "mid": {
+      "label": "Mid Cap",
+      "min": 2000000000,
+      "max": 10000000000,
+      "description": "$2B-$10B - Moderate liquidity",
+      "optionsQuality": 3
+    },
+    "small": {
+      "label": "Small Cap",
+      "min": 300000000,
+      "max": 2000000000,
+      "description": "$300M-$2B - Low liquidity ⚠️",
+      "optionsQuality": 1
+    },
+    "etf": {
+      "label": "ETF/Index",
+      "description": "Index funds and ETFs",
+      "optionsQuality": 5
+    }
+  },
+  "marketCapMapping": {
+    "SPY": "etf", "QQQ": "etf", "IWM": "etf", "DIA": "etf", "TLT": "etf",
+    "XLF": "etf", "XLK": "etf", "XLE": "etf", "XLY": "etf", "XLI": "etf",
+    "XLP": "etf", "XLU": "etf", "XLB": "etf", "EEM": "etf", "FXI": "etf",
+    "GLD": "etf", "SLV": "etf", "USO": "etf", "UNG": "etf", "GDX": "etf",
+    "BITO": "etf", "UVXY": "etf", "SQQQ": "etf", "TQQQ": "etf", "ARKK": "etf",
+    "AAPL": "mega", "MSFT": "mega", "NVDA": "mega", "AMZN": "mega", "GOOG": "mega",
+    "META": "mega", "TSLA": "mega", "JPM": "mega", "UNH": "mega", "JNJ": "mega",
+    "PG": "mega", "WMT": "mega", "HD": "mega", "LLY": "mega", "ADBE": "mega",
+    "AMD": "large", "AVGO": "large", "NFLX": "large", "PLTR": "large", "COIN": "large",
+    "CRM": "large", "INTC": "large",
+    "BAC": "large", "GS": "large", "MS": "large", "C": "large", "WFC": "large", "SCHW": "large",
+    "XOM": "large", "CVX": "large", "COP": "large", "CAT": "large", "DE": "large",
+    "PFE": "large", "MRK": "large", "ABBV": "large", "COST": "large", "KO": "large",
+    "PEP": "large", "MCD": "large", "NKE": "large", "NEE": "large", "BABA": "large",
+    "RIOT": "mid", "MARA": "mid", "SOFI": "mid", "SNAP": "mid", "SHOP": "mid",
+    "SLB": "mid", "EOG": "mid", "MPC": "mid", "PSX": "mid", "VLO": "mid", "OXY": "mid",
+    "HES": "mid", "HAL": "mid", "CMI": "mid", "IR": "mid", "EMR": "mid", "HON": "mid",
+    "MMM": "mid", "BA": "mid", "LMT": "mid", "RTX": "mid", "GE": "mid", "TGT": "mid",
+    "KR": "mid", "MDLZ": "mid", "CL": "mid", "GIS": "mid", "NUE": "mid", "FCX": "mid",
+    "NEM": "mid", "VMC": "mid", "MLM": "mid", "APD": "mid", "DUK": "mid", "SO": "mid",
+    "D": "mid", "AEP": "mid", "BIDU": "mid", "JD": "mid", "PDD": "mid",
+    "RIVN": "small", "LCID": "small", "NIO": "small"
+  },
+  "sectorMapping": {
+    "SPY": "Index & ETF", "QQQ": "Index & ETF", "IWM": "Index & ETF", "DIA": "Index & ETF",
+    "TLT": "Index & ETF", "XLF": "Index & ETF", "XLK": "Index & ETF", "XLE": "Index & ETF",
+    "XLY": "Index & ETF", "XLI": "Index & ETF", "XLP": "Index & ETF", "XLU": "Index & ETF",
+    "XLB": "Index & ETF", "EEM": "Index & ETF", "FXI": "Index & ETF",
+    "GLD": "Commodities", "SLV": "Commodities", "USO": "Commodities", "UNG": "Commodities",
+    "GDX": "Commodities", "BITO": "Commodities",
+    "AAPL": "Technology", "MSFT": "Technology", "NVDA": "Technology", "AMZN": "Technology",
+    "GOOG": "Technology", "META": "Technology", "TSLA": "Technology", "AMD": "Technology",
+    "AVGO": "Technology", "NFLX": "Technology",
+    "ADBE": "Technology", "CRM": "Technology", "INTC": "Technology",
+    "PLTR": "High Beta", "COIN": "High Beta", "RIOT": "High Beta", "MARA": "High Beta",
+    "RIVN": "High Beta", "LCID": "High Beta", "SOFI": "High Beta", "SNAP": "High Beta", "SHOP": "High Beta",
+    "JPM": "Financials", "BAC": "Financials", "GS": "Financials", "MS": "Financials",
+    "C": "Financials", "WFC": "Financials", "SCHW": "Financials",
+    "XOM": "Energy", "CVX": "Energy", "COP": "Energy", "SLB": "Energy", "EOG": "Energy",
+    "MPC": "Energy", "PSX": "Energy", "VLO": "Energy", "OXY": "Energy", "HES": "Energy", "HAL": "Energy",
+    "CAT": "Industrials", "DE": "Industrials", "CMI": "Industrials", "IR": "Industrials",
+    "EMR": "Industrials", "HON": "Industrials", "MMM": "Industrials", "BA": "Industrials",
+    "LMT": "Industrials", "RTX": "Industrials", "GE": "Industrials",
+    "UNH": "Healthcare", "PFE": "Healthcare", "JNJ": "Healthcare", "MRK": "Healthcare",
+    "ABBV": "Healthcare", "LLY": "Healthcare",
+    "WMT": "Consumer Staples", "COST": "Consumer Staples", "TGT": "Consumer Staples",
+    "KR": "Consumer Staples", "PG": "Consumer Staples", "KO": "Consumer Staples",
+    "PEP": "Consumer Staples", "MDLZ": "Consumer Staples", "CL": "Consumer Staples", "GIS": "Consumer Staples",
+    "HD": "Consumer Discretionary", "MCD": "Consumer Discretionary", "NKE": "Consumer Discretionary",
+    "NUE": "Materials", "FCX": "Materials", "NEM": "Materials", "VMC": "Materials",
+    "MLM": "Materials", "APD": "Materials",
+    "NEE": "Utilities", "DUK": "Utilities", "SO": "Utilities", "D": "Utilities", "AEP": "Utilities",
+    "BABA": "China", "BIDU": "China", "JD": "China", "PDD": "China", "NIO": "China",
+    "UVXY": "Volatility", "SQQQ": "Volatility", "TQQQ": "Volatility", "ARKK": "Volatility"
+  }
+}

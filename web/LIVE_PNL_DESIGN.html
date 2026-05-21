@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf System — Live P&L Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --forest: #0B2D23; --gold: #C9A96E; --cream: #F7F5F0;
+  --ink: #0B0F14; --mid: #3d3d35; --muted: #6b6b60;
+  --green: #1D9E75; --red: #E24B4A; --blue: #1a5ca0;
+  --border: rgba(15,61,46,.10); --card-bg: #fff;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--ink); line-height: 1.7; }
+.container { max-width: 900px; margin: 0 auto; padding: 40px 2rem 80px; }
+
+/* Header */
+.doc-header { margin-bottom: 48px; border-bottom: 2px solid var(--forest); padding-bottom: 24px; }
+.doc-header h1 { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; color: var(--forest); margin-bottom: 4px; }
+.doc-header .subtitle { font-size: 15px; color: var(--muted); }
+.doc-header .meta { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); margin-top: 12px; }
+
+/* Sections */
+h2 { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--forest); margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+h3 { font-size: 15px; font-weight: 700; color: var(--forest); margin: 24px 0 8px; }
+p { margin-bottom: 12px; font-size: 14px; color: var(--mid); }
+ul, ol { margin: 8px 0 16px 20px; font-size: 14px; color: var(--mid); }
+li { margin-bottom: 6px; }
+code { font-family: 'Space Mono', monospace; font-size: 12px; background: rgba(15,61,46,.06); padding: 2px 6px; border-radius: 3px; color: var(--forest); }
+pre { font-family: 'Space Mono', monospace; font-size: 11px; background: var(--forest); color: #e2e8f0; padding: 16px 20px; border-radius: 8px; overflow-x: auto; margin: 12px 0 20px; line-height: 1.6; }
+pre code { background: none; padding: 0; color: inherit; }
+
+/* Cards */
+.card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin: 16px 0; }
+.card-label { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+
+/* Flow diagram */
+.flow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 20px 0; }
+.flow-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; text-align: center; min-width: 140px; }
+.flow-box .label { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.flow-box .value { font-size: 13px; font-weight: 600; color: var(--forest); }
+.flow-arrow { font-size: 18px; color: var(--gold); flex-shrink: 0; }
+
+/* Tier badges */
+.tier { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+.tier-1 { background: #E1F5EE; color: #0F6E56; }
+.tier-2 { background: #FDF8EE; color: #854F0B; }
+.tier-3 { background: #f5f5f0; color: var(--muted); }
+
+/* Status examples */
+.status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+.status-card { border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; background: var(--card-bg); }
+.status-card .status-name { font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+.status-card .status-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+/* Table */
+table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 13px; }
+th { text-align: left; padding: 8px 12px; font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border-bottom: 2px solid var(--border); }
+td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--mid); }
+tr:last-child td { border-bottom: none; }
+
+/* Highlight */
+.highlight { background: linear-gradient(135deg, var(--forest), #1a5c44); color: #fff; border-radius: 12px; padding: 20px 24px; margin: 20px 0; }
+.highlight h3 { color: var(--gold); margin-top: 0; }
+.highlight p { color: rgba(255,255,255,.7); }
+.highlight code { background: rgba(255,255,255,.15); color: #fff; }
+
+@media print { body { background: #fff; } .container { max-width: 100%; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- Header -->
+<div class="doc-header">
+  <h1>Live P&L Tracking System</h1>
+  <div class="subtitle">Architecture & data flow for real-time options portfolio P&L calculation</div>
+  <div class="meta">NewLeaf System &middot; Design Document &middot; April 2026 &middot; v1.0</div>
+</div>
+
+<!-- 1. Overview -->
+<h2>1. Overview</h2>
+<p>
+  The Live P&L system calculates unrealized profit/loss for portfolio positions in real time, entirely client-side.
+  It uses a <strong>three-tier pricing model</strong> to estimate current option values from available data,
+  compares them against entry premiums, and surfaces strategy health with actionable adjustment suggestions.
+</p>
+
+<div class="highlight">
+  <h3>Key Principle</h3>
+  <p>
+    All P&L is calculated <strong>in-memory on the client</strong> using data from R2 (updated every 15 min by the pipeline).
+    No Firestore writes are needed for P&L — the source of truth is entry data (stored once at portfolio add) + live market data (from R2).
+  </p>
+</div>
+
+<!-- 2. Data Flow -->
+<h2>2. Data Flow</h2>
+
+<div class="flow">
+  <div class="flow-box">
+    <div class="label">Publish</div>
+    <div class="value">publish-pick.cjs</div>
+  </div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-box">
+    <div class="label">Firestore</div>
+    <div class="value">tiles/{id}</div>
+  </div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-box">
+    <div class="label">User Action</div>
+    <div class="value">Add to Portfolio</div>
+  </div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-box">
+    <div class="label">Firestore</div>
+    <div class="value">users/{uid}/portfolio/{id}</div>
+  </div>
+</div>
+
+<div class="flow">
+  <div class="flow-box">
+    <div class="label">Pipeline (15 min)</div>
+    <div class="value">pipeline-fast.js</div>
+  </div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-box">
+    <div class="label">R2 Bucket</div>
+    <div class="value">reports/{SYM}/latest.json</div>
+  </div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-box">
+    <div class="label">Client (60s poll)</div>
+    <div class="value">usePortfolioPnl</div>
+  </div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-box">
+    <div class="label">Display</div>
+    <div class="value">Dashboard / Portfolio / Detail</div>
+  </div>
+</div>
+
+<!-- 3. Data Model -->
+<h2>3. Data Model</h2>
+
+<h3>Tile (at publish time)</h3>
+<div class="card">
+<pre><code>// Firestore: tiles/{tileId}
+{
+  id: "a56d3cb4...",
+  symbol: "AAPL",
+  strategy: "Iron Condor",
+  publishedSpotPrice: 261.00,   // NEW — frozen at publish, never changes
+  underlyingPrice: 261.00,      // legacy field (same value)
+  expiry: "2026-04-24",
+  legs: [
+    { action: "BUY",  type: "PUT",  strike: 240, premium: 1.65, iv: 0.32 },
+    { action: "SELL", type: "PUT",  strike: 245, premium: 3.10, iv: 0.30 },
+    { action: "SELL", type: "CALL", strike: 275, premium: 2.80, iv: 0.28 },
+    { action: "BUY",  type: "CALL", strike: 280, premium: 1.20, iv: 0.29 }
+  ],
+  maxProfit: 305,
+  maxLoss: 195,
+  netCredit: 3.05,
+  ...
+}</code></pre>
+</div>
+
+<h3>Portfolio Item (at add time)</h3>
+<div class="card">
+<pre><code>// Firestore: users/{uid}/portfolio/{tileId}
+{
+  tileId: "a56d3cb4...",
+  symbol: "AAPL",
+  strategy: "Iron Condor",
+  entryDate: "2026-04-14",
+  entryUnderlyingPrice: 261.00,
+  entryNetCredit: 305,           // net credit in dollars (per contract)
+  quantity: 2,
+  expiry: "2026-04-24",
+  status: "active",
+  legs: [
+    { strike: 240, type: "put",  action: "buy",  entryPremium: 1.65, entryIv: 0.32 },
+    { strike: 245, type: "put",  action: "sell", entryPremium: 3.10, entryIv: 0.30 },
+    { strike: 275, type: "call", action: "sell", entryPremium: 2.80, entryIv: 0.28 },
+    { strike: 280, type: "call", action: "buy",  entryPremium: 1.20, entryIv: 0.29 }
+  ]
+}</code></pre>
+</div>
+
+<h3>R2 Report (updated every 15 min)</h3>
+<div class="card">
+<pre><code>// R2: reports/AAPL/latest.json
+{
+  snapshot: { price: 264.50 },
+  optionChain: [
+    { strike: 240, type: "put",  expiry: "2026-04-24", mid: 0.45, iv: 0.31 },
+    { strike: 245, type: "put",  expiry: "2026-04-24", mid: 1.20, iv: 0.29 },
+    { strike: 275, type: "call", expiry: "2026-04-24", mid: 1.10, iv: 0.27 },
+    { strike: 280, type: "call", expiry: "2026-04-24", mid: 0.40, iv: 0.28 },
+    ...
+  ]
+}</code></pre>
+</div>
+
+<!-- 4. Three-Tier Pricing -->
+<h2>4. Three-Tier Pricing Model</h2>
+<p>For each option leg, the system tries three methods in order of accuracy:</p>
+
+<table>
+  <thead>
+    <tr><th>Tier</th><th>Method</th><th>Source</th><th>Accuracy</th><th>When Used</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="tier tier-1">Tier 1</span></td>
+      <td>R2 Option Chain Match</td>
+      <td>R2 <code>optionChain[].mid</code></td>
+      <td>Best — actual market mid-price</td>
+      <td>When R2 has the exact strike/expiry/type</td>
+    </tr>
+    <tr>
+      <td><span class="tier tier-2">Tier 2</span></td>
+      <td>Black-Scholes Estimate</td>
+      <td>Current spot + entry IV</td>
+      <td>Good — theoretical fair value</td>
+      <td>When R2 match unavailable but IV is known</td>
+    </tr>
+    <tr>
+      <td><span class="tier tier-3">Tier 3</span></td>
+      <td>Intrinsic Value</td>
+      <td>Current spot vs strike</td>
+      <td>Approximate — ignores time value</td>
+      <td>Fallback when no IV data available</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>P&L Calculation</h3>
+<div class="card">
+<pre><code>// For each leg:
+currentPremium = tier1(r2Chain) || tier2(blackScholes) || tier3(intrinsic)
+
+// Leg P&L (per contract):
+legPnl = (currentPremium - entryPremium) * multiplier * 100
+  where multiplier = +1 for BUY, -1 for SELL
+
+// Position P&L:
+unrealizedPnl = sum(legPnl for all legs)
+
+// Example: AAPL Iron Condor
+// Sold 245 put: entry $3.10, current $1.20 → P&L = (1.20 - 3.10) * -1 * 100 = +$190
+// Bought 240 put: entry $1.65, current $0.45 → P&L = (0.45 - 1.65) * +1 * 100 = -$120
+// Total position P&L = sum of all 4 legs</code></pre>
+</div>
+
+<h3>Black-Scholes Implementation</h3>
+<div class="card">
+<pre><code>// Client-side BS pricing (pnlCalculator.js)
+function bsPrice(spot, strike, expiry, iv, type, r = 0.045) {
+  const T = max(daysToExpiry / 365.25, 0.001)
+  const d1 = (ln(S/K) + (r + iv²/2) * T) / (iv * √T)
+  const d2 = d1 - iv * √T
+
+  Call = S * N(d1) - K * e^(-rT) * N(d2)
+  Put  = K * e^(-rT) * N(-d2) - S * N(-d1)
+}
+
+// Uses entry IV (stored per leg at portfolio add time)
+// Falls back to R2 IV if available and more recent</code></pre>
+</div>
+
+<!-- 5. Strategy Status Engine -->
+<h2>5. Strategy Status Engine</h2>
+<p>
+  After calculating P&L, the system evaluates position health based on where the underlying sits
+  relative to the short strikes, DTE, and P&L percentage. It returns a status label, color, and
+  actionable suggestion.
+</p>
+
+<div class="status-grid">
+  <div class="status-card">
+    <div class="status-name" style="color: var(--green);">Healthy</div>
+    <div class="status-desc">Price is within profit zone, away from short strikes. No action needed.</div>
+  </div>
+  <div class="status-card">
+    <div class="status-name" style="color: var(--green);">Take Profit</div>
+    <div class="status-desc">Captured &gt;50% of max profit. Suggest closing early to free capital.</div>
+  </div>
+  <div class="status-card">
+    <div class="status-name" style="color: var(--gold);">Theta Harvesting</div>
+    <div class="status-desc">&le;7 DTE in profit zone. Theta is accelerating — hold or close near target.</div>
+  </div>
+  <div class="status-card">
+    <div class="status-name" style="color: var(--red);">Breached</div>
+    <div class="status-desc">Price has moved past a short strike. Suggest rolling the tested side.</div>
+  </div>
+  <div class="status-card">
+    <div class="status-name" style="color: var(--red);">Max Loss</div>
+    <div class="status-desc">Price beyond long strike — at maximum loss. Close to limit damage.</div>
+  </div>
+  <div class="status-card">
+    <div class="status-name" style="color: var(--red);">Expiring at Loss</div>
+    <div class="status-desc">DTE = 0 and in loss zone. Close immediately to avoid assignment.</div>
+  </div>
+</div>
+
+<h3>Zone Detection Logic</h3>
+<div class="card">
+<pre><code>// For Iron Condors / Spreads:
+if (spot < shortPut.strike)
+  → breached put side (or max loss if below longPut)
+else if (spot > shortCall.strike)
+  → breached call side (or max loss if above longCall)
+else
+  → profit zone
+
+// Combined with DTE and P&L %:
+if (zone === profit && pnlPct >= 50%)  → "Take Profit"
+if (zone === profit && dte <= 7)       → "Theta Harvesting"
+if (zone === breached && dte <= 5)     → "Critical — close or roll"
+if (zone === max_loss)                 → "Close to limit damage"</code></pre>
+</div>
+
+<!-- 6. Architecture -->
+<h2>6. File Architecture</h2>
+
+<table>
+  <thead>
+    <tr><th>File</th><th>Purpose</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>src/trading/utils/pnlCalculator.js</code></td><td>Black-Scholes pricing, P&L calculation, strategy status engine. Pure functions, no side effects.</td></tr>
+    <tr><td><code>src/trading/hooks/usePortfolioPnl.js</code></td><td>React hook: fetches R2 data every 60s, calls pnlCalculator for each position, returns enriched items with live P&L and status.</td></tr>
+    <tr><td><code>src/trading/hooks/usePortfolio.js</code></td><td>Portfolio CRUD. Stores <code>entryIv</code> per leg at add time for BS estimation.</td></tr>
+    <tr><td><code>pipeline/publish-pick.cjs</code></td><td>Stores <code>publishedSpotPrice</code> on tiles as immutable entry price reference.</td></tr>
+  </tbody>
+</table>
+
+<h3>Hook Usage by Page</h3>
+<table>
+  <thead>
+    <tr><th>Page</th><th>Hook</th><th>What it displays</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>DashboardPage</td><td><code>usePortfolioPnl</code></td><td>Total portfolio value, P&L %, at-risk positions, take-profit opportunities</td></tr>
+    <tr><td>PerformancePageNew</td><td><code>usePortfolioPnl</code></td><td>Active positions table with live P&L, return %, status badges, adjustment suggestions</td></tr>
+    <tr><td>PositionDetail</td><td><code>calculatePositionPnl</code> (direct)</td><td>"Your Position" card: entry vs current price, live P&L, status with suggestion</td></tr>
+    <tr><td>PortfolioPageNew</td><td>Reads from <code>usePortfolioPnl</code> (future)</td><td>Position cards with live P&L instead of theoretical max profit</td></tr>
+  </tbody>
+</table>
+
+<!-- 7. Data Sources -->
+<h2>7. Data Source Update Frequency</h2>
+
+<table>
+  <thead>
+    <tr><th>Source</th><th>Frequency</th><th>Data</th><th>Used For</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>R2 Reports</td><td>Every 15 min (cron)</td><td>Spot price, option chain with mid prices</td><td>Tier 1 matching + spot price for Tier 2/3</td></tr>
+    <tr><td>R2 Cache (client)</td><td>30s TTL</td><td>Cached R2 response</td><td>Avoid redundant fetches across components</td></tr>
+    <tr><td>usePortfolioPnl poll</td><td>Every 60s</td><td>Re-fetches R2 for all portfolio symbols</td><td>Keeps P&L current during active session</td></tr>
+    <tr><td>Firestore (entry data)</td><td>Once (at add)</td><td>Entry premiums, IV, underlying price</td><td>Baseline for P&L comparison</td></tr>
+  </tbody>
+</table>
+
+<!-- 8. Limitations -->
+<h2>8. Known Limitations</h2>
+<ul>
+  <li><strong>Client-side only</strong> — P&L is only calculated when a user has the app open. There is no background job updating P&L in Firestore.</li>
+  <li><strong>IV staleness</strong> — Tier 2 uses IV from entry time. Actual IV may have changed significantly, especially around earnings or market events.</li>
+  <li><strong>No real-time option prices</strong> — R2 updates every 15 min. Between updates, the P&L reflects the last scan's option prices.</li>
+  <li><strong>Spread pricing</strong> — Black-Scholes prices individual legs independently. In practice, spreads trade as packages with different bid-ask dynamics.</li>
+  <li><strong>Assignment risk</strong> — The status engine flags expiring positions but does not model early assignment probability for American options.</li>
+</ul>
+
+<!-- 9. Future -->
+<h2>9. Future Enhancements</h2>
+<ol>
+  <li><strong>Background P&L cron job</strong> — A Node script running alongside <code>pipeline-fast.js</code> that iterates all users' portfolios and updates P&L in Firestore. Enables push notifications and alerts when the app is closed.</li>
+  <li><strong>Live IV from R2</strong> — Use the R2 report's current IV (from <code>gammaData.ivData</code>) instead of entry IV for more accurate BS estimates.</li>
+  <li><strong>Adjustment simulator</strong> — When a position is breached, show what rolling the tested side would look like (new strikes, new credit/debit, new risk profile).</li>
+  <li><strong>Historical P&L snapshots</strong> — Daily cron that snapshots portfolio P&L to Firestore for the Portfolio Growth chart.</li>
+  <li><strong>Broker integration</strong> — Fetch actual fill prices from Alpaca when trades are entered, replacing theoretical entry premiums.</li>
+</ol>
+
+<!-- Footer -->
+<div style="margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); text-align: center;">
+  NewLeaf System &mdash; Options intelligence platform. This is a technical design document, not financial advice.
+</div>
+
+</div>
+</body>
+</html>

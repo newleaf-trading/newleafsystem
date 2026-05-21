@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Alpaca OI Test</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #00ff00; }
+    button { padding: 10px 20px; margin: 10px 0; cursor: pointer; }
+    input { width: 400px; padding: 5px; margin: 5px; }
+    pre { background: #000; padding: 10px; overflow-x: auto; }
+    .success { color: #00ff00; }
+    .error { color: #ff0000; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Alpaca Options API - Open Interest Test</h1>
+
+  <div>
+    <label>API Key:</label><br>
+    <input type="text" id="apiKey" value="AK45G2WHRJH2FSPJKCUDT6FDWE">
+  </div>
+
+  <div>
+    <label>API Secret:</label><br>
+    <input type="password" id="apiSecret" value="NarNQFfjopAQrpgWxY5MUaQqBZPt87XGss7HkCVUsMU">
+  </div>
+
+  <div>
+    <label>OCC Symbol (e.g., BAC260418C00049000):</label><br>
+    <input type="text" id="occSymbol" value="SPY260404C00570000" placeholder="Enter OCC symbol">
+    <small style="display:block;color:#888;margin-top:5px">
+      Format: SYMBOL + YYMMDD + C/P + Strike (8 digits)<br>
+      Example: SPY260404C00570000 = SPY Apr 4, 2026 $570 Call
+    </small>
+  </div>
+
+  <button onclick="testSnapshot()">Test Snapshot (with OPRA feed)</button>
+  <button onclick="testSnapshotNoFeed()">Test Snapshot (no feed)</button>
+  <button onclick="testLatestQuote()">Test Latest Quote</button>
+
+  <div id="output"></div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function log(msg, isError = false) {
+      const div = document.createElement('div');
+      div.className = isError ? 'error' : 'success';
+      div.textContent = msg;
+      $('output').appendChild(div);
+    }
+
+    function logJSON(label, data) {
+      const div = document.createElement('div');
+      div.innerHTML = `<h3>${label}</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+      $('output').appendChild(div);
+    }
+
+    async function testSnapshot() {
+      $('output').innerHTML = '<h2>Testing Snapshot with OPRA feed...</h2>';
+
+      const key = $('apiKey').value;
+      const secret = $('apiSecret').value;
+      const occ = $('occSymbol').value;
+
+      const url = `https://data.alpaca.markets/v1beta1/options/snapshots?symbols=${occ}&feed=opra`;
+      log(`Fetching: ${url}`);
+
+      try {
+        const res = await fetch(url, {
+          headers: {
+            'APCA-API-KEY-ID': key,
+            'APCA-API-SECRET-KEY': secret
+          }
+        });
+
+        log(`Status: ${res.status} ${res.statusText}`);
+
+        const data = await res.json();
+        logJSON('Response', data);
+
+        if (data.snapshots && data.snapshots[occ]) {
+          const snap = data.snapshots[occ];
+          log('✅ Snapshot found!');
+          logJSON('Open Interest', {
+            openInterest: snap.openInterest,
+            impliedVolatility: snap.impliedVolatility,
+            latestQuote: snap.latestQuote,
+            greeks: snap.greeks
+          });
+
+          if (snap.openInterest !== undefined && snap.openInterest !== null) {
+            log(`🎉 SUCCESS: Open Interest = ${snap.openInterest}`);
+          } else {
+            log('⚠️  Open Interest field exists but is null/undefined', true);
+          }
+        } else {
+          log('❌ No snapshot in response', true);
+        }
+      } catch (err) {
+        log(`❌ Error: ${err.message}`, true);
+      }
+    }
+
+    async function testSnapshotNoFeed() {
+      $('output').innerHTML = '<h2>Testing Snapshot without feed param...</h2>';
+
+      const key = $('apiKey').value;
+      const secret = $('apiSecret').value;
+      const occ = $('occSymbol').value;
+
+      const url = `https://data.alpaca.markets/v1beta1/options/snapshots?symbols=${occ}`;
+      log(`Fetching: ${url}`);
+
+      try {
+        const res = await fetch(url, {
+          headers: {
+            'APCA-API-KEY-ID': key,
+            'APCA-API-SECRET-KEY': secret
+          }
+        });
+
+        log(`Status: ${res.status} ${res.statusText}`);
+
+        const data = await res.json();
+        logJSON('Response', data);
+
+        if (data.snapshots && data.snapshots[occ]) {
+          const snap = data.snapshots[occ];
+          log('✅ Snapshot found!');
+
+          if (snap.openInterest !== undefined && snap.openInterest !== null) {
+            log(`🎉 SUCCESS: Open Interest = ${snap.openInterest}`);
+          } else {
+            log('⚠️  Open Interest field exists but is null/undefined', true);
+          }
+        } else {
+          log('❌ No snapshot in response', true);
+        }
+      } catch (err) {
+        log(`❌ Error: ${err.message}`, true);
+      }
+    }
+
+    async function testLatestQuote() {
+      $('output').innerHTML = '<h2>Testing Latest Quote...</h2>';
+
+      const key = $('apiKey').value;
+      const secret = $('apiSecret').value;
+      const occ = $('occSymbol').value;
+
+      const url = `https://data.alpaca.markets/v1beta1/options/quotes/latest?symbols=${occ}`;
+      log(`Fetching: ${url}`);
+
+      try {
+        const res = await fetch(url, {
+          headers: {
+            'APCA-API-KEY-ID': key,
+            'APCA-API-SECRET-KEY': secret
+          }
+        });
+
+        log(`Status: ${res.status} ${res.statusText}`);
+
+        const data = await res.json();
+        logJSON('Response', data);
+
+        if (data.quotes) {
+          log('✅ Quote data found!');
+          log('Note: Latest quote endpoint typically does NOT include OI data');
+        } else {
+          log('❌ No quote in response', true);
+        }
+      } catch (err) {
+        log(`❌ Error: ${err.message}`, true);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf System — Pipeline Operating Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--forest:#0B2D23;--gold:#C9A96E;--cream:#F7F5F0;--ink:#0B0F14;--ink-mid:#3d3d35;--ink-muted:#6b6b60;--white:#fff;--green:#1D9E75;--red:#E24B4A}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);line-height:1.7}
+.container{max-width:900px;margin:0 auto;padding:0 2rem}
+header{background:var(--forest);padding:28px 0}
+header h1{font-family:'Playfair Display',serif;font-size:28px;color:var(--gold);font-weight:400;text-align:center}
+header p{font-size:12px;color:rgba(201,169,110,.5);text-align:center;margin-top:4px;font-family:'Space Mono',monospace;letter-spacing:.08em}
+.section{padding:32px 0}
+h2{font-family:'Playfair Display',serif;font-size:22px;color:var(--forest);margin-bottom:16px}
+h3{font-size:15px;font-weight:700;color:var(--forest);margin:20px 0 8px}
+.divider{border:none;border-top:1px solid rgba(15,61,46,.12);margin:32px 0}
+code{font-family:'Space Mono',monospace;font-size:12px;background:rgba(15,61,46,.06);padding:2px 6px;border-radius:3px}
+pre{font-family:'Space Mono',monospace;font-size:12px;background:var(--forest);color:rgba(255,255,255,.9);padding:20px;border-radius:10px;overflow-x:auto;line-height:1.6;margin:12px 0}
+pre .c{color:rgba(201,169,110,.6)}
+pre .f{color:#60a5fa}
+pre .s{color:#fbbf24}
+.card{background:var(--white);border:1px solid rgba(15,61,46,.12);border-radius:10px;padding:20px;margin:12px 0}
+.ok{color:var(--green);font-weight:700}
+.badge{font-family:'Space Mono',monospace;font-size:9px;padding:3px 10px;border-radius:20px;font-weight:700;letter-spacing:.06em;display:inline-block}
+.badge-ok{background:#e8f4eb;color:#1D9E75;border:1px solid rgba(29,158,117,.2)}
+.badge-test{background:#e6f0fb;color:#1a5ca0;border:1px solid rgba(26,92,160,.2)}
+ol,ul{margin:8px 0 8px 24px;font-size:13px}
+li{margin:4px 0}
+table{width:100%;border-collapse:collapse;font-size:12px;margin:12px 0;background:var(--white);border:1px solid rgba(15,61,46,.12);border-radius:10px;overflow:hidden}
+th{background:var(--forest);color:var(--gold);font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:10px 14px;text-align:left}
+td{padding:10px 14px;border-bottom:1px solid rgba(15,61,46,.06)}
+tr:last-child td{border-bottom:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>Pipeline Operating Guide</h1>
+    <p>How to publish picks, generate outputs, and close weeks</p>
+  </div>
+</header>
+
+<div class="container">
+
+<div class="section">
+  <h2>1. Publish a Pick</h2>
+  <p>The core command. Fetches live data from Alpaca, builds the strategy, runs Claude analysis, pushes to Firestore, and saves enriched JSON.</p>
+
+  <pre><span class="c"># Basic usage</span>
+node pipeline/publish-pick.cjs <span class="s">NVDA</span> <span class="f">--strategy</span> "iron condor" <span class="f">--expiry</span> 2026-04-24
+
+<span class="c"># Preview without publishing</span>
+node pipeline/publish-pick.cjs <span class="s">NVDA</span> <span class="f">--strategy</span> "iron condor" <span class="f">--expiry</span> 2026-04-24 <span class="f">--dry-run</span>
+
+<span class="c"># Also generate PDF</span>
+node pipeline/publish-pick.cjs <span class="s">NVDA</span> <span class="f">--strategy</span> "iron condor" <span class="f">--expiry</span> 2026-04-24 <span class="f">--pdf</span></pre>
+
+  <h3>Supported Strategies</h3>
+  <table>
+    <tr><th>Strategy</th><th>--strategy Flag</th><th>Direction</th><th>Legs</th></tr>
+    <tr><td>Iron Condor</td><td><code>"iron condor"</code></td><td>Neutral</td><td>4</td></tr>
+    <tr><td>Iron Butterfly</td><td><code>"iron butterfly"</code></td><td>Neutral</td><td>4</td></tr>
+    <tr><td>Bull Put Spread</td><td><code>"bull put spread"</code></td><td>Bullish</td><td>2</td></tr>
+    <tr><td>Bear Call Spread</td><td><code>"bear call spread"</code></td><td>Bearish</td><td>2</td></tr>
+  </table>
+
+  <h3>What Happens (10 Steps)</h3>
+  <ol>
+    <li>Fetch <strong>live spot price</strong> from Alpaca</li>
+    <li>Fetch <strong>live option chain</strong> from Alpaca for the specified expiry</li>
+    <li>Fetch <strong>gamma wall context</strong> from R2</li>
+    <li>Auto-select strikes, build legs, calculate P&L, Greeks, breakevens, PoP</li>
+    <li>Create fresh tile in Firestore <code>tiles/{id}</code></li>
+    <li>Run <strong>Claude CLI analysis</strong> (~60s) &mdash; 4 sections</li>
+    <li>Push analysis to Firestore <code>analyses/{id}</code></li>
+    <li>Save <strong>enriched-pick.json</strong> locally</li>
+    <li>Append to <code>weeklyPicks/{weekId}</code></li>
+    <li>Generate PDF (with <code>--pdf</code>)</li>
+  </ol>
+
+  <h3>Finding Valid Expiry Dates</h3>
+  <p>If Alpaca returns 0 contracts, the date isn't a valid options expiry. Try the nearest Friday. Use <code>--dry-run</code> to verify first.</p>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <h2>2. Weekly Workflow</h2>
+
+  <div class="card">
+    <h3 style="margin-top:0">Mon &ndash; Thu: Publish Picks (one at a time)</h3>
+    <pre><span class="c"># Day 1</span>
+node pipeline/publish-pick.cjs <span class="s">NVDA</span> <span class="f">--strategy</span> "iron condor" <span class="f">--expiry</span> 2026-04-24
+node pipeline/publish-pick.cjs <span class="s">AAPL</span> <span class="f">--strategy</span> "iron butterfly" <span class="f">--expiry</span> 2026-05-01
+
+<span class="c"># Day 2</span>
+node pipeline/publish-pick.cjs <span class="s">SPY</span> <span class="f">--strategy</span> "iron condor" <span class="f">--expiry</span> 2026-04-24
+node pipeline/publish-pick.cjs <span class="s">QQQ</span> <span class="f">--strategy</span> "bull put spread" <span class="f">--expiry</span> 2026-04-24</pre>
+    <p>Each pick is immediately live in the React app (~60s per pick).</p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">After All Picks: Generate Week Outputs</h3>
+    <pre>npm run outputs               <span class="c"># video script + pick JSON</span>
+node pipeline/generate-outputs.js <span class="f">--pdf</span>  <span class="c"># + PDFs</span></pre>
+    <p>Produces: <code>picks.json</code>, <code>video-script.md</code>, <code>pdf/</code></p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Friday: Close the Week</h3>
+    <pre>npm run picks:close</pre>
+    <p>Marks week as "past", deactivates tiles, calculates P&L.</p>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <h2>3. Output Directory</h2>
+  <pre>pipeline/output/
+  2026-W16/
+    enriched/
+      NVDA-iron-condor.json       <span class="c"># Tile + Claude analysis merged</span>
+      AAPL-iron-butterfly.json
+    picks.json                    <span class="c"># Week archive</span>
+    video-script.md               <span class="c"># Narration for creative team</span>
+    pdf/
+      NVDA-Iron-Condor.pdf        <span class="c"># Per-pick reports</span></pre>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <h2>4. Where Data Goes</h2>
+  <table>
+    <tr><th>Destination</th><th>Path</th><th>Read By</th></tr>
+    <tr><td>Firestore</td><td><code>tiles/{id}</code></td><td>/trading (Discover, Dashboard)</td></tr>
+    <tr><td>Firestore</td><td><code>analyses/{id}</code></td><td>/trading/position (3 detail tabs)</td></tr>
+    <tr><td>Firestore</td><td><code>weeklyPicks/{weekId}</code></td><td>/picks (current week)</td></tr>
+    <tr><td>Local</td><td><code>output/{weekId}/enriched/*.json</code></td><td>PDF + video generators</td></tr>
+    <tr><td>Local</td><td><code>output/{weekId}/video-script.md</code></td><td>Creative team</td></tr>
+  </table>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <h2>5. All Commands</h2>
+  <table>
+    <tr><th>Command</th><th>What</th></tr>
+    <tr><td><code>node pipeline/publish-pick.cjs SYMBOL --strategy "..." --expiry YYYY-MM-DD</code></td><td>Publish one pick</td></tr>
+    <tr><td><code>... --dry-run</code></td><td>Preview without publishing</td></tr>
+    <tr><td><code>... --pdf</code></td><td>Also generate PDF</td></tr>
+    <tr><td><code>npm run outputs</code></td><td>Generate video + picks.json for the week</td></tr>
+    <tr><td><code>npm run picks:close</code></td><td>Friday: close week</td></tr>
+    <tr><td><code>npm run build</code></td><td>Build React SPA</td></tr>
+    <tr><td><code>npm run deploy</code></td><td>Build + deploy to Firebase</td></tr>
+    <tr><td><code>./start.sh</code></td><td>Start all services</td></tr>
+  </table>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <h2>6. Test Results (April 14, 2026)</h2>
+
+  <div class="card">
+    <h3 style="margin-top:0">Test 1: Dry Run &mdash; NVDA Iron Condor (Apr 17) <span class="badge badge-test">DRY RUN</span></h3>
+    <p><span class="ok">PASS</span> &mdash; 116 calls + 116 puts. Credit: $0.09. R:R: 0.01x (2 DTE &mdash; low credit expected).</p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Test 2: Dry Run &mdash; NVDA Iron Condor (Apr 24) <span class="badge badge-test">DRY RUN</span></h3>
+    <p><span class="ok">PASS</span> &mdash; 74 calls + 74 puts. Credit: $0.36. R:R: 0.04x. PoP: 88%.</p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Test 3: Live Publish &mdash; NVDA Iron Condor (Apr 24) <span class="badge badge-ok">LIVE</span></h3>
+    <p><span class="ok">PASS</span> &mdash; Full pipeline in ~60 seconds:</p>
+    <ul>
+      <li>Alpaca: $192.71 (+1.80%)</li>
+      <li>Legs: BUY PUT $162.5 | SELL PUT $172.5 | SELL CALL $212.5 | BUY CALL $220</li>
+      <li>Credit: $0.32 | Max Profit: $32 | Max Loss: $968 | PoP: 88%</li>
+      <li>Tile: <code>tiles/a56d3cb4a82a4854ab50</code> &check;</li>
+      <li>Claude analysis: 4 sections validated &check;</li>
+      <li>Analyses: <code>analyses/a56d3cb4a82a4854ab50</code> &check;</li>
+      <li>Enriched JSON: thesis, IV rank 44, exit plan &check;</li>
+      <li>WeeklyPicks: appended to <code>2026-W16</code> &check;</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Test 4: Generate Outputs <span class="badge badge-ok">LIVE</span></h3>
+    <p><span class="ok">PASS</span> &mdash; picks.json + video-script.md generated. Video script includes Claude's analysis: strategy rationale, technical context (RSI 51.4, IV rank 44), risk callout (FOMC April 16), exit plan (close at 50% profit).</p>
+  </div>
+</div>
+
+</div>
+
+<footer style="text-align:center;padding:32px 2rem;font-size:11px;color:var(--ink-muted);border-top:1px solid rgba(15,61,46,.1)">
+  NewLeaf System &mdash; Pipeline Guide &middot; April 2026
+</footer>
+
+</body>
+</html>

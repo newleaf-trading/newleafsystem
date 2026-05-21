@@ -1,0 +1,2071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-06YFVHFNYT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-06YFVHFNYT");</script>
+  <meta charset="UTF-8">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NewLeaf System — All Stocks Scanner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,700&family=Inter:wght@300;400;500;600;700;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="nl-brand.css">
+  
+  <!-- Load shared navigation component -->
+  <script src="load-nav.js" defer></script>
+
+  <script>
+    window.R2 = window.location.hostname === 'localhost'
+      ? '/r2'
+      : 'https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev';
+  </script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --forest: #0B2D23;
+      --gold: #C9A96E;
+      --cream: #F7F5F0;
+      --bg-light: #F8F9FA;
+      --bg-card: #FFFFFF;
+      --text-primary: #1A1A1A;
+      --text-secondary: #6B7280;
+      --border: #E5E7EB;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --error: #EF4444;
+      --info: #3B82F6;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--cream);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    /* Header */
+    .header {
+      background: var(--forest);
+      color: white;
+      padding: 0 2rem;
+      height: 56px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-weight: 400;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: var(--gold);
+      letter-spacing: 0.01em;
+    }
+
+    .logo-icon {
+      width: 26px;
+      height: 26px;
+      background: var(--gold);
+      clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+    }
+
+    .logo span {
+      color: rgba(201,169,110,.5);
+      font-style: italic;
+    }
+
+    .nav {
+      display: flex;
+      gap: 0;
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      align-items: center;
+      list-style: none;
+    }
+
+    .nav>a, .nav>.nav-item>a {
+      color: rgba(201,169,110,0.6);
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      transition: color 0.2s;
+      padding: 0 14px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      border-bottom: 2px solid transparent;
+    }
+
+    .nav>a:hover, .nav>a.active, .nav>.nav-item>a:hover, .nav>.nav-item>a.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+
+    .nav a[href*="strategy-logic"] {
+      height: 24px;
+      border-radius: 4px;
+      padding: 0 10px;
+      margin-left: 6px;
+      border-bottom: none;
+    }
+
+    .nav-item {
+      position: relative;
+      height: 56px;
+      display: flex;
+      align-items: center;
+    }
+
+    .nav-item>a {
+      cursor: pointer;
+    }
+
+    .nav-dropdown {
+      position: absolute;
+      top: 56px;
+      left: 0;
+      background: var(--forest);
+      min-width: 220px;
+      border-radius: 0 0 8px 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.2);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all .2s;
+      z-index: 200;
+    }
+
+    .nav-item:hover .nav-dropdown {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .nav-dropdown-group {
+      padding: 12px 0;
+    }
+
+    .nav-dropdown-group:not(:last-child) {
+      border-bottom: 1px solid rgba(201,169,110,.15);
+    }
+
+    .nav-dropdown-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.4);
+      padding: 8px 18px 6px;
+      font-weight: 400;
+    }
+
+    .nav-dropdown a {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: rgba(255,255,255,.75);
+      text-decoration: none;
+      padding: 8px 18px;
+      display: block;
+      transition: all .15s;
+      border-bottom: none !important;
+    }
+
+    .nav-dropdown a:hover {
+      color: var(--gold);
+      background: rgba(201,169,110,.08);
+    }
+
+    .nav-dropdown a.active {
+      color: var(--gold);
+      font-weight: 500;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 1.25rem 2rem;
+    }
+
+    /* Page Header */
+    .page-header {
+      margin-bottom: 1rem;
+    }
+
+    .page-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 36px;
+      font-weight: 300;
+      font-style: italic;
+      margin-bottom: 0.5rem;
+      color: var(--forest);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+
+    .page-subtitle {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      padding: 1rem 1.25rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .stat-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 30px;
+      font-weight: 400;
+      color: var(--forest);
+      line-height: 1;
+    }
+
+    /* Main Layout */
+    .main-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+
+    .content-area {
+      min-width: 0;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 90px;
+      height: fit-content;
+      max-height: calc(100vh - 110px);
+      overflow-y: auto;
+    }
+
+    /* Controls */
+    .controls {
+      background: var(--bg-card);
+      padding: 1rem 1.25rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border);
+    }
+
+    .controls-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 300px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.75rem 1rem 0.75rem 3rem;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--forest);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+    }
+
+    .view-toggles {
+      display: flex;
+      gap: 0.25rem;
+      background: var(--bg-light);
+      padding: 0.25rem;
+      border-radius: 8px;
+    }
+
+    .view-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .view-btn.active {
+      background: var(--bg-card);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .refresh-btn {
+      padding: 0.75rem 1.5rem;
+      background: var(--gold);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 12px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .refresh-btn:hover {
+      background: #B89748;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    /* Active Filters */
+    .active-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      min-height: 28px;
+    }
+
+    .filter-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      background: var(--forest);
+      color: white;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .filter-chip-remove {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .filter-chip-remove:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Faceted Filters Panel */
+    .filters-panel {
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .filters-header {
+      padding: 1.25rem 1.5rem;
+      background: var(--forest);
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .filters-title {
+      font-family: 'Space Mono', monospace;
+      font-weight: 600;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .clear-all-btn {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 0.375rem 0.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 9px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .clear-all-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .filter-section {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .filter-section:last-child {
+      border-bottom: none;
+    }
+
+    .filter-section-header {
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+    }
+
+    .filter-section-header:hover {
+      background: rgba(15, 61, 46, 0.02);
+    }
+
+    .filter-section-title {
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .filter-count {
+      background: var(--gold);
+      color: white;
+      padding: 0.125rem 0.5rem;
+      border-radius: 10px;
+      font-size: 9px;
+      font-weight: 600;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .filter-toggle {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      transition: transform 0.2s;
+    }
+
+    .filter-section.collapsed .filter-toggle {
+      transform: rotate(-90deg);
+    }
+
+    .filter-options {
+      padding: 0 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .filter-section.collapsed .filter-options {
+      display: none;
+    }
+
+    .filter-option {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+
+    .filter-option:hover {
+      background: rgba(15, 61, 46, 0.03);
+    }
+
+    .filter-checkbox {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .filter-option input[type="checkbox"] {
+      display: none;
+    }
+
+    .filter-option input[type="checkbox"]:checked + .filter-checkbox {
+      background: var(--forest);
+      border-color: var(--forest);
+    }
+
+    .filter-option input[type="checkbox"]:checked + .filter-checkbox::after {
+      content: '✓';
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .filter-label {
+      flex: 1;
+      font-size: 12px;
+      color: var(--text-primary);
+    }
+
+    .filter-badge {
+      background: var(--bg-light);
+      color: var(--text-secondary);
+      padding: 0.125rem 0.5rem;
+      border-radius: 10px;
+      font-size: 9px;
+      font-weight: 600;
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* Stock Grid */
+    .stock-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1rem;
+    }
+
+    .stock-grid.view-table {
+      display: block;
+    }
+
+    /* Stock Card */
+    .stock-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 2px solid var(--border);
+      overflow: hidden;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .stock-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+      border-color: var(--forest);
+    }
+
+    /* Score Banner */
+    .score-banner {
+      padding: 1rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .score-banner.excellent {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+      border-bottom: 3px solid var(--success);
+    }
+
+    .score-banner.good {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+      border-bottom: 3px solid var(--info);
+    }
+
+    .score-banner.fair {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+      border-bottom: 3px solid var(--warning);
+    }
+
+    .score-display {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .score-number {
+      font-family: 'Playfair Display', serif;
+      font-size: 38px;
+      font-weight: 400;
+      line-height: 1;
+      color: var(--forest);
+    }
+
+    .score-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.25rem 0.75rem;
+      border-radius: 6px;
+      display: inline-block;
+      width: fit-content;
+    }
+
+    .label-excellent { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .label-good { background: rgba(59, 130, 246, 0.15); color: var(--info); }
+    .label-fair { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+
+    .badges {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-end;
+    }
+
+    .data-badge {
+      font-family: 'Space Mono', monospace;
+      padding: 0.375rem 0.75rem;
+      border-radius: 6px;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-fresh { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .badge-stale { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+
+    /* Stock Info */
+    .stock-info {
+      padding: 1rem 1.25rem 0.75rem;
+    }
+
+    .stock-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .stock-symbol {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .stock-name {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    .stock-type {
+      font-family: 'Space Mono', monospace;
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 6px;
+      font-size: 9px;
+      font-weight: 600;
+      background: var(--forest);
+      color: white;
+      margin-top: 0.5rem;
+    }
+
+    .price-info {
+      text-align: right;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .current-price {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .price-change {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .price-change.positive { color: var(--success); }
+    .price-change.negative { color: var(--error); }
+
+    /* Strategy Section */
+    .strategy-section {
+      margin: 1rem 0;
+      padding: 1rem;
+      background: rgba(15, 61, 46, 0.03);
+      border-radius: 8px;
+      border-left: 3px solid var(--forest);
+    }
+
+    .strategy-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    .strategy-name {
+      font-family: 'Playfair Display', serif;
+      font-weight: 400;
+      font-size: 20px;
+      color: var(--forest);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      line-height: 1.1;
+    }
+
+    .strategy-bias {
+      font-family: 'Space Mono', monospace;
+      padding: 0.25rem 0.75rem;
+      border-radius: 6px;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: rgba(107, 114, 128, 0.1);
+      color: var(--text-secondary);
+    }
+
+    /* Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+
+    .metric {
+      text-align: center;
+      padding: 0.75rem;
+      background: var(--bg-light);
+      border-radius: 8px;
+    }
+
+    .metric-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--forest);
+      margin-bottom: 0.25rem;
+    }
+
+    .metric-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .metric-sublabel {
+      font-size: 8px;
+      color: var(--text-secondary);
+      margin-top: 0.125rem;
+    }
+
+    /* Card Actions */
+    .card-actions {
+      padding: 0.75rem 1.25rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .btn-primary {
+      font-family: 'Space Mono', monospace;
+      flex: 1;
+      padding: 0.75rem 1.5rem;
+      background: var(--forest);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 10px;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary:hover {
+      background: #0A2D21;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .btn-secondary {
+      padding: 0.75rem;
+      background: transparent;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-secondary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--forest);
+      color: var(--forest);
+    }
+
+    /* Loading & Empty States */
+    .empty {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-secondary);
+      font-size: 14px;
+      grid-column: 1 / -1;
+    }
+
+    /* Table View */
+    .stock-table-wrap {
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      overflow-x: auto;
+    }
+
+    .stock-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1200px;
+    }
+
+    .stock-table thead {
+      background: var(--forest);
+    }
+
+    .stock-table th {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: white;
+      padding: 14px 12px;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .stock-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+
+    .stock-table tbody tr:hover {
+      background: rgba(15, 61, 46, 0.02);
+    }
+
+    .stock-table tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    .stock-table td {
+      padding: 12px;
+      font-size: 12px;
+      color: var(--text-primary);
+    }
+
+    .stock-table .td-score {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--forest);
+    }
+
+    .stock-table .td-symbol {
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .stock-table .td-name {
+      color: var(--text-secondary);
+      font-size: 11px;
+    }
+
+    .stock-table .type-badge {
+      font-family: 'Space Mono', monospace;
+      font-size: 8px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    .stock-table .type-badge.etf {
+      background: rgba(15, 61, 46, 0.1);
+      color: var(--forest);
+    }
+
+    .stock-table .type-badge.large {
+      background: rgba(200, 168, 90, 0.15);
+      color: #8a6b1f;
+    }
+
+    .stock-table .type-badge.tech {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--info);
+    }
+
+    .stock-table .type-badge.mid {
+      background: rgba(107, 114, 128, 0.1);
+      color: var(--text-secondary);
+    }
+
+    .stock-table .td-price {
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+    }
+
+    .stock-table .td-strategy {
+      font-size: 11px;
+    }
+
+    .stock-table .td-metric {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .stock-table .data-badge-table {
+      font-family: 'Space Mono', monospace;
+      font-size: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .stock-table .badge-fresh {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+    }
+
+    .stock-table .badge-stale {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+    }
+
+    .stock-table .build-btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: var(--forest);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .stock-table .build-btn:hover {
+      background: #0A2D21;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .main-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        max-height: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+
+      .stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .stock-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .controls-row {
+        flex-direction: column;
+      }
+
+      .search-box {
+        width: 100%;
+      }
+
+      .page-title {
+        font-size: 2rem;
+      }
+
+      .nav {
+        display: none;
+      }
+    }
+
+    /* Hero Component */
+    .scanner-hero {
+      background: linear-gradient(135deg, rgba(15,61,46,.03) 0%, rgba(201,169,110,.05) 100%);
+      padding: 32px 0 24px;
+    }
+
+    .hero-container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .hero-eyebrow {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 300;
+      font-style: italic;
+      color: var(--forest);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-subtitle {
+      font-size: 15px;
+      color: var(--text-primary);
+      line-height: 1.6;
+      max-width: 540px;
+    }
+
+    .hero-benefits {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    .benefit-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: start;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+
+    .benefit-card:hover {
+      box-shadow: 0 4px 12px rgba(15,61,46,0.08);
+      transform: translateY(-2px);
+    }
+
+    .benefit-icon {
+      font-size: 20px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .benefit-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .benefit-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 700;
+    }
+
+    .benefit-desc {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .hero-video-container {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(15,61,46,0.08);
+      transition: all 0.3s;
+    }
+
+    .hero-video-container:hover {
+      box-shadow: 0 8px 24px rgba(15,61,46,0.15);
+    }
+
+    .video-wrapper {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      background: linear-gradient(135deg, #1a3a50 0%, #0d2a3d 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .video-wrapper video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .video-caption {
+      padding: 14px 18px;
+      background: rgba(15,61,46,0.02);
+      border-top: 1px solid var(--border);
+    }
+
+    .video-caption-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .video-caption-text {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    @media (max-width: 768px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+
+      .hero-benefits {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Scanner Hero Component -->
+  <section class="scanner-hero">
+    <div class="hero-container">
+      <div class="hero-grid">
+        <!-- Left: Scanner Info -->
+        <div class="hero-content">
+          <p class="hero-eyebrow">⊞ ALL STOCKS SCANNER</p>
+          <h1 class="hero-title">108 Stocks. One Score.</h1>
+          <p class="hero-subtitle">
+            The All Stocks Scanner runs combined Gamma, Technical, and Implied Volatility analysis across every stock in the NewLeaf watchlist. Each card shows a composite score out of 100 and a recommended strategy based on current market conditions. Use the filters to narrow by sector, strategy, and score threshold.
+          </p>
+
+          <div class="hero-benefits">
+            <div class="benefit-card">
+              <div class="benefit-icon">💯</div>
+              <div class="benefit-text">
+                <span class="benefit-label">COMPOSITE SCORE</span>
+                <span class="benefit-desc">Each stock is scored 0–100. Gamma positioning carries 40 points, Implied Volatility rank 35 points, and trend direction 25 points. Scores above 75 are rated Excellent.</span>
+              </div>
+            </div>
+
+            <div class="benefit-card">
+              <div class="benefit-icon">🎯</div>
+              <div class="benefit-text">
+                <span class="benefit-label">STRATEGY RECOMMENDATION</span>
+                <span class="benefit-desc">NewLeaf reads the gamma walls, trend, and implied volatility environment and recommends the optimal strategy for each stock automatically — no manual analysis required.</span>
+              </div>
+            </div>
+
+            <div class="benefit-card">
+              <div class="benefit-icon">🔍</div>
+              <div class="benefit-text">
+                <span class="benefit-label">SECTOR FILTERING</span>
+                <span class="benefit-desc">Filter by sector, strategy type, score range, and implied volatility range simultaneously. Combine filters to find exactly the setup profile you want.</span>
+              </div>
+            </div>
+
+            <div class="benefit-card">
+              <div class="benefit-icon">⚡</div>
+              <div class="benefit-text">
+                <span class="benefit-label">REAL-TIME DATA</span>
+                <span class="benefit-desc">All scores and recommendations refresh from live options chain data. The FRESH badge confirms the data was calculated in the current session.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Video Player -->
+        <div class="hero-video-container">
+          <div class="video-wrapper">
+            <video controls poster="https://pub-554c552d94e74e32822dd23be2656ba0.r2.dev/thumbnails/scannerthubnail.png">
+              <source src="https://pub-554c552d94e74e32822dd23be2656ba0.r2.dev/strategy-guides/NewLeafAllStocksScanner.mp4" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+          </div>
+          <div class="video-caption">
+            <div class="video-caption-title">SCANNER WALKTHROUGH (2 MIN)</div>
+            <div class="video-caption-text">
+              Learn how to read each stock card, understand the Gamma, Implied Volatility, and Trend sub-scores, use the sector and strategy filters, and build a trade directly from a scanner result.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr style="border:none;border-top:1px solid #0B2D23;margin:0 2rem 32px;opacity:.3">
+
+  <!-- Main Content -->
+  <div class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1 class="page-title">All Stocks Scanner</h1>
+      <p class="page-subtitle">Combined Gamma · Technical · IV Analysis</p>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-label">Watching</div>
+        <div class="stat-value" id="sTotal">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">High Score (≥70)</div>
+        <div class="stat-value" id="sHigh">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Premium</div>
+        <div class="stat-value" id="sAvgIV">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Last Scan</div>
+        <div class="stat-value" style="font-size: 1.25rem;" id="sDate">—</div>
+      </div>
+    </div>
+
+    <!-- Main Layout with Sidebar -->
+    <div class="main-layout">
+      <!-- Content Area -->
+      <div class="content-area">
+        <!-- Controls -->
+        <div class="controls">
+          <div class="controls-row">
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" class="search-input" placeholder="Search by symbol, name, or sector..." id="searchInput">
+            </div>
+
+            <div class="view-toggles">
+              <button class="view-btn active" data-view="cards">Cards</button>
+              <button class="view-btn" data-view="table">Table</button>
+              <button class="view-btn" data-view="compact">Compact</button>
+            </div>
+
+            <button class="refresh-btn" onclick="boot()">
+              <span>🔄</span>
+              <span>Refresh</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Active Filters -->
+        <div class="active-filters" id="activeFilters"></div>
+
+        <!-- Stock Grid -->
+        <div class="stock-grid" id="stockGrid">
+          <div class="empty">Fetching reports from R2...</div>
+        </div>
+      </div>
+
+      <!-- Sidebar with Faceted Filters -->
+      <aside class="sidebar">
+        <div class="filters-panel">
+          <div class="filters-header">
+            <span class="filters-title">Filters</span>
+            <button class="clear-all-btn" id="clearAllBtn">Clear All</button>
+          </div>
+
+          <!-- Sectors Filter -->
+          <div class="filter-section" id="sectorsSection">
+            <div class="filter-section-header" onclick="toggleSection('sectorsSection')">
+              <div class="filter-section-title">
+                <span>Sectors</span>
+                <span class="filter-count" id="sectorsCount">0</span>
+              </div>
+              <span class="filter-toggle">▼</span>
+            </div>
+            <div class="filter-options" id="sectorOptions"></div>
+          </div>
+
+          <!-- Strategies Filter -->
+          <div class="filter-section" id="strategiesSection">
+            <div class="filter-section-header" onclick="toggleSection('strategiesSection')">
+              <div class="filter-section-title">
+                <span>Strategies</span>
+                <span class="filter-count" id="strategiesCount">0</span>
+              </div>
+              <span class="filter-toggle">▼</span>
+            </div>
+            <div class="filter-options" id="strategyOptions"></div>
+          </div>
+
+          <!-- Direction Filter -->
+          <div class="filter-section" id="directionSection">
+            <div class="filter-section-header" onclick="toggleSection('directionSection')">
+              <div class="filter-section-title">
+                <span>Direction</span>
+                <span class="filter-count" id="directionCount">0</span>
+              </div>
+              <span class="filter-toggle">▼</span>
+            </div>
+            <div class="filter-options">
+              <label class="filter-option">
+                <input type="checkbox" data-filter-type="direction" data-filter-value="bullish">
+                <div class="filter-checkbox"></div>
+                <span class="filter-label">📈 Bullish</span>
+                <span class="filter-badge" id="badge-bullish">0</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" data-filter-type="direction" data-filter-value="neutral">
+                <div class="filter-checkbox"></div>
+                <span class="filter-label">⚖️ Neutral</span>
+                <span class="filter-badge" id="badge-neutral">0</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" data-filter-type="direction" data-filter-value="bearish">
+                <div class="filter-checkbox"></div>
+                <span class="filter-label">📉 Bearish</span>
+                <span class="filter-badge" id="badge-bearish">0</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Quality Score Filter -->
+          <div class="filter-section" id="qualitySection">
+            <div class="filter-section-header" onclick="toggleSection('qualitySection')">
+              <div class="filter-section-title">
+                <span>Quality Score</span>
+                <span class="filter-count" id="qualityCount">0</span>
+              </div>
+              <span class="filter-toggle">▼</span>
+            </div>
+            <div class="filter-options">
+              <label class="filter-option">
+                <input type="checkbox" data-filter-type="quality" data-filter-value="excellent">
+                <div class="filter-checkbox"></div>
+                <span class="filter-label">⭐ Excellent (≥70)</span>
+                <span class="filter-badge" id="badge-excellent">0</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" data-filter-type="quality" data-filter-value="good">
+                <div class="filter-checkbox"></div>
+                <span class="filter-label">👍 Good (50-69)</span>
+                <span class="filter-badge" id="badge-good">0</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" data-filter-type="quality" data-filter-value="fair">
+                <div class="filter-checkbox"></div>
+                <span class="filter-label">📊 Fair (<50)</span>
+                <span class="filter-badge" id="badge-fair">0</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Market Cap Filter -->
+          <div class="filter-section" id="marketCapSection">
+            <div class="filter-section-header" onclick="toggleSection('marketCapSection')">
+              <div class="filter-section-title">
+                <span>Market Cap</span>
+                <span class="filter-count" id="marketCapCount">0</span>
+              </div>
+              <span class="filter-toggle">▼</span>
+            </div>
+            <div class="filter-options">
+              <label class="filter-option">
+                <input type="checkbox" data-filter-type="marketCap" data-filter-value="etf">
+                <div class="filter-checkbox"></div>
+                <span class="filter-label">🏦 ETF / Index</span>
+                <span class="filter-badge" id="badge-etf">0</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" data-filter-type="marketCap" data-filter-value="mega">
+                <div class="filter-checkbox"></div>
+                <span class="filter-label">💎 Mega Cap</span>
+                <span class="filter-badge" id="badge-mega">0</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" data-filter-type="marketCap" data-filter-value="large">
+                <div class="filter-checkbox"></div>
+                <span class="filter-label">🏢 Large Cap</span>
+                <span class="filter-badge" id="badge-large">0</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" data-filter-type="marketCap" data-filter-value="mid">
+                <div class="filter-checkbox"></div>
+                <span class="filter-label">📦 Mid Cap</span>
+                <span class="filter-badge" id="badge-mid">0</span>
+              </label>
+              <label class="filter-option">
+                <input type="checkbox" data-filter-type="marketCap" data-filter-value="small">
+                <div class="filter-checkbox"></div>
+                <span class="filter-label">⚠️ Small Cap</span>
+                <span class="filter-badge" id="badge-small">0</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+  'use strict';
+
+  const R2 = window.R2;
+  const G = id => document.getElementById(id);
+  const fmtP = n => n != null ? '$' + n.toFixed(2) : '—';
+  const fmtPct = (n, d=1) => n != null ? n.toFixed(d) + '%' : '—';
+  const fmtN = (n, d=0) => n != null ? n.toFixed(d) : '—';
+
+  let rows = [];
+  let companyMetadata = {};
+
+  // Filter State
+  const filterState = {
+    sector: new Set(),
+    strategy: new Set(),
+    direction: new Set(),
+    quality: new Set(),
+    marketCap: new Set()
+  };
+
+  // Boot
+  async function boot() {
+    G('stockGrid').innerHTML = '<div class="empty">Fetching manifest...</div>';
+
+    // Load company metadata
+    try {
+      const metaRes = await fetch(R2 + '/reports/company-metadata.json?_=' + Date.now());
+      if (metaRes.ok) {
+        companyMetadata = await metaRes.json();
+      }
+    } catch(e) {
+      console.warn('Could not load company metadata:', e);
+    }
+
+    try {
+      const res = await fetch(R2 + '/reports/manifest.json?_=' + Date.now());
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const manifest = await res.json();
+
+      rows = (manifest.reports || []).map(r => ({ ...r, _loaded: false }));
+
+      // Update stats
+      const high = rows.filter(r => r.opportunityScore >= 70).length;
+      const ivVals = rows.map(r => r.iv).filter(v => v != null);
+      const avgIV = ivVals.length ? ivVals.reduce((a,b)=>a+b,0)/ivVals.length : null;
+
+      G('sTotal').textContent = rows.length;
+      G('sHigh').textContent = high;
+      G('sAvgIV').textContent = avgIV != null ? fmtPct(avgIV) : '—';
+      G('sDate').textContent = rows[0]?.date || '—';
+
+      // Build dynamic filters
+      buildDynamicFilters();
+
+      // Update filter badges
+      updateFilterBadges();
+
+      renderGrid();
+      enrichAll();
+    } catch(err) {
+      G('stockGrid').innerHTML = '<div class="empty">⚠️ Could not load manifest from R2.</div>';
+    }
+  }
+
+  // Build dynamic sector and strategy filters
+  function buildDynamicFilters() {
+    const sectors = new Map();
+    const strategies = new Map();
+
+    rows.forEach(r => {
+      const meta = companyMetadata[r.symbol] || {};
+      const sector = meta.sector || 'Unknown';
+      sectors.set(sector, (sectors.get(sector) || 0) + 1);
+
+      if (r.strategy) {
+        strategies.set(r.strategy, (strategies.get(r.strategy) || 0) + 1);
+      }
+    });
+
+    // Render sector options
+    const sectorHtml = Array.from(sectors.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([sector, count]) => {
+        const value = sector.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        return `
+          <label class="filter-option">
+            <input type="checkbox" data-filter-type="sector" data-filter-value="${value}">
+            <div class="filter-checkbox"></div>
+            <span class="filter-label">${sector}</span>
+            <span class="filter-badge">${count}</span>
+          </label>
+        `;
+      })
+      .join('');
+
+    G('sectorOptions').innerHTML = sectorHtml;
+
+    // Render strategy options
+    const strategyHtml = Array.from(strategies.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([strategy, count]) => {
+        const value = strategy.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        const icon = {
+          'Iron Butterfly': '🦋',
+          'Iron Condor': '🦅',
+          'Wheel': '♻️',
+          'Cash-Secured Put': '📉',
+          'Bull Put Spread': '📈',
+          'Bear Call Spread': '📉',
+        }[strategy] || '';
+
+        return `
+          <label class="filter-option">
+            <input type="checkbox" data-filter-type="strategy" data-filter-value="${value}">
+            <div class="filter-checkbox"></div>
+            <span class="filter-label">${icon} ${strategy}</span>
+            <span class="filter-badge">${count}</span>
+          </label>
+        `;
+      })
+      .join('');
+
+    G('strategyOptions').innerHTML = strategyHtml;
+
+    // Attach event listeners
+    document.querySelectorAll('input[type="checkbox"][data-filter-type]').forEach(checkbox => {
+      checkbox.addEventListener('change', handleFilterChange);
+    });
+  }
+
+  // Update filter count badges
+  function updateFilterBadges() {
+    const badges = {
+      bullish: 0, neutral: 0, bearish: 0,
+      excellent: 0, good: 0, fair: 0,
+      etf: 0, mega: 0, large: 0, mid: 0, small: 0
+    };
+
+    rows.forEach(r => {
+      // Direction
+      if (r.direction) badges[r.direction] = (badges[r.direction] || 0) + 1;
+
+      // Quality
+      const score = Math.round(r.opportunityScore || 0);
+      if (score >= 70) badges.excellent++;
+      else if (score >= 50) badges.good++;
+      else badges.fair++;
+
+      // Market cap
+      if (r.marketCapTier) {
+        badges[r.marketCapTier] = (badges[r.marketCapTier] || 0) + 1;
+      }
+    });
+
+    Object.entries(badges).forEach(([key, count]) => {
+      const el = G(`badge-${key}`);
+      if (el) el.textContent = count;
+    });
+  }
+
+  // Enrich all rows
+  async function enrichAll() {
+    for (let i = 0; i < rows.length; i += 3) {
+      const batch = rows.slice(i, i + 3);
+      await Promise.all(batch.map(enrichRow));
+    }
+  }
+
+  async function enrichRow(row) {
+    try {
+      const url = R2 + '/reports/' + row.symbol + '/latest.json';
+      const res = await fetch(url);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      row.pillars = data.scoring?.pillars || null;
+      row.rsi = data.technicalData?.rsi || null;
+      row.confidence = data.gammaData?.analysis?.confidence_score || null;
+      row.iv = data.gammaData?.ivData?.atmIv || row.iv || null;
+      row.gammaRange = data.gammaData?.analysis?.gamma_range || null;
+      row._loaded = true;
+
+      const el = document.getElementById('card-' + row.symbol);
+      if (el && el.style.display !== 'none') {
+        el.outerHTML = buildCard(row);
+      }
+    } catch(_) {}
+  }
+
+  // Toggle section
+  function toggleSection(sectionId) {
+    const section = G(sectionId);
+    section.classList.toggle('collapsed');
+  }
+
+  // Handle filter changes
+  function handleFilterChange(e) {
+    const type = e.target.dataset.filterType;
+    const value = e.target.dataset.filterValue;
+
+    if (e.target.checked) {
+      filterState[type].add(value);
+    } else {
+      filterState[type].delete(value);
+    }
+
+    updateActiveFilters();
+    renderGrid();
+  }
+
+  // Update active filters display
+  function updateActiveFilters() {
+    const container = G('activeFilters');
+    container.innerHTML = '';
+
+    const allFilters = [];
+    for (const [type, values] of Object.entries(filterState)) {
+      values.forEach(value => {
+        allFilters.push({ type, value });
+      });
+    }
+
+    allFilters.forEach(filter => {
+      const chip = document.createElement('div');
+      chip.className = 'filter-chip';
+
+      const label = getFilterLabel(filter.type, filter.value);
+      chip.innerHTML = `
+        <span>${label}</span>
+        <button class="filter-chip-remove" onclick="removeFilter('${filter.type}', '${filter.value}')">×</button>
+      `;
+
+      container.appendChild(chip);
+    });
+
+    // Update section counts
+    G('sectorsCount').textContent = filterState.sector.size;
+    G('strategiesCount').textContent = filterState.strategy.size;
+    G('directionCount').textContent = filterState.direction.size;
+    G('qualityCount').textContent = filterState.quality.size;
+    G('marketCapCount').textContent = filterState.marketCap.size;
+  }
+
+  // Get filter label
+  function getFilterLabel(type, value) {
+    const meta = companyMetadata;
+
+    // Find readable name from metadata
+    if (type === 'sector') {
+      for (const sym in meta) {
+        const sector = (meta[sym].sector || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
+        if (sector === value) return meta[sym].sector;
+      }
+    }
+
+    const labels = {
+      direction: {
+        bullish: '📈 Bullish',
+        neutral: '⚖️ Neutral',
+        bearish: '📉 Bearish'
+      },
+      quality: {
+        excellent: '⭐ Excellent',
+        good: '👍 Good',
+        fair: '📊 Fair'
+      },
+      marketCap: {
+        etf: '🏦 ETF',
+        mega: '💎 Mega Cap',
+        large: '🏢 Large Cap',
+        mid: '📦 Mid Cap',
+        small: '⚠️ Small Cap'
+      }
+    };
+
+    return labels[type]?.[value] || value;
+  }
+
+  // Remove filter
+  function removeFilter(type, value) {
+    filterState[type].delete(value);
+
+    const checkbox = document.querySelector(`input[data-filter-type="${type}"][data-filter-value="${value}"]`);
+    if (checkbox) checkbox.checked = false;
+
+    updateActiveFilters();
+    renderGrid();
+  }
+
+  // Clear all filters
+  G('clearAllBtn').addEventListener('click', () => {
+    for (const key in filterState) {
+      filterState[key].clear();
+    }
+
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.checked = false;
+    });
+
+    updateActiveFilters();
+    renderGrid();
+  });
+
+  // Search
+  G('searchInput').addEventListener('input', renderGrid);
+
+  // View toggles
+  let currentView = 'cards';
+  document.querySelectorAll('.view-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      currentView = btn.dataset.view;
+      renderGrid();
+    });
+  });
+
+  // Render grid
+  function renderGrid() {
+    const query = G('searchInput').value.trim().toLowerCase();
+
+    let list = rows.filter(r => {
+      // Search
+      if (query) {
+        const meta = companyMetadata[r.symbol] || {};
+        const name = (meta.name || '').toLowerCase();
+        const sector = (meta.sector || '').toLowerCase();
+        if (!r.symbol.toLowerCase().includes(query) &&
+            !name.includes(query) &&
+            !sector.includes(query)) {
+          return false;
+        }
+      }
+
+      // Sector filter
+      if (filterState.sector.size > 0) {
+        const meta = companyMetadata[r.symbol] || {};
+        const sector = (meta.sector || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
+        if (!filterState.sector.has(sector)) return false;
+      }
+
+      // Strategy filter
+      if (filterState.strategy.size > 0) {
+        const strategy = (r.strategy || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
+        if (!filterState.strategy.has(strategy)) return false;
+      }
+
+      // Direction filter
+      if (filterState.direction.size > 0) {
+        if (!filterState.direction.has(r.direction)) return false;
+      }
+
+      // Quality filter
+      if (filterState.quality.size > 0) {
+        const score = Math.round(r.opportunityScore || 0);
+        let quality = 'fair';
+        if (score >= 70) quality = 'excellent';
+        else if (score >= 50) quality = 'good';
+
+        if (!filterState.quality.has(quality)) return false;
+      }
+
+      // Market cap filter
+      if (filterState.marketCap.size > 0) {
+        if (!filterState.marketCap.has(r.marketCapTier)) return false;
+      }
+
+      return true;
+    });
+
+    // Sort by score (default)
+    list.sort((a,b) => (b.opportunityScore||0) - (a.opportunityScore||0));
+
+    if (!list.length) {
+      G('stockGrid').innerHTML = '<div class="empty">No results match your filters.</div>';
+      return;
+    }
+
+    const grid = G('stockGrid');
+
+    if (currentView === 'table') {
+      grid.className = 'stock-grid view-table';
+      grid.style.gridTemplateColumns = '';
+      grid.innerHTML = `
+        <div class="stock-table-wrap">
+          <table class="stock-table">
+            <thead>
+              <tr>
+                <th>Score</th>
+                <th>Symbol</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Price</th>
+                <th>Strategy</th>
+                <th>Gamma</th>
+                <th>IV</th>
+                <th>Trend</th>
+                <th>Data</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${list.map(buildTableRow).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    } else {
+      // Cards or Compact view
+      grid.className = 'stock-grid';
+      if (currentView === 'compact') {
+        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+      } else {
+        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))';
+      }
+      grid.innerHTML = list.map(buildCard).join('');
+    }
+  }
+
+  // Build card
+  function buildCard(r) {
+    const score = Math.round(r.opportunityScore || 0);
+    const scoreClass = score >= 70 ? 'excellent' : score >= 50 ? 'good' : 'fair';
+    const scoreLbl = score >= 70 ? 'Excellent' : score >= 50 ? 'Good' : 'Fair';
+
+    const chgCls = (r.changePercent||0) >= 0 ? 'positive' : 'negative';
+    const chgSym = (r.changePercent||0) >= 0 ? '▲' : '▼';
+
+    const today = new Date().toISOString().split('T')[0];
+    const stale = r.date && r.date < today;
+
+    const meta = companyMetadata[r.symbol] || {};
+    const companyName = meta.name || '';
+
+    let pillarsHtml;
+    if (r._loaded && r.pillars) {
+      pillarsHtml = `
+        <div class="metrics-grid">
+          <div class="metric">
+            <div class="metric-value">${fmtN(r.pillars.gamma)}</div>
+            <div class="metric-label">Gamma</div>
+            <div class="metric-sublabel">/40 max</div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">${fmtN(r.pillars.iv)}</div>
+            <div class="metric-label">IV</div>
+            <div class="metric-sublabel">/35 target</div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">${fmtN(r.pillars.trend)}</div>
+            <div class="metric-label">Trend</div>
+            <div class="metric-sublabel">/25 max</div>
+          </div>
+        </div>
+      `;
+    } else {
+      pillarsHtml = '<div class="metrics-grid"><div class="empty" style="padding:1rem;grid-column:1/-1">Loading metrics...</div></div>';
+    }
+
+    const conf = r.confidence != null ? fmtPct(r.confidence * 100, 0) : '—';
+
+    return `
+      <div class="stock-card" id="card-${r.symbol}">
+        <div class="score-banner ${scoreClass}">
+          <div class="score-display">
+            <div class="score-number">${score}</div>
+            <span class="score-label label-${scoreClass}">${scoreLbl}</span>
+          </div>
+          <div class="badges">
+            <span class="data-badge ${stale ? 'badge-stale' : 'badge-fresh'}">${stale ? '24h old' : 'Fresh'}</span>
+          </div>
+        </div>
+
+        <div class="stock-info">
+          <div class="stock-header">
+            <div>
+              <div class="stock-symbol">${r.symbol}</div>
+              ${companyName ? `<div class="stock-name">${companyName}</div>` : ''}
+              ${r.marketCapTier ? `<span class="stock-type">${r.marketCapLabel || r.marketCapTier.toUpperCase()}</span>` : ''}
+            </div>
+            <div class="price-info">
+              <div class="current-price">${fmtP(r.price)}</div>
+              <div class="price-change ${chgCls}">${chgSym} ${fmtPct(Math.abs(r.changePercent||0))}</div>
+            </div>
+          </div>
+
+          <div class="strategy-section">
+            <div class="strategy-label">Recommended Strategy</div>
+            <div class="strategy-name">
+              ${r.strategyIcon||''} ${r.strategy||'—'}
+              <span class="strategy-bias">${(r.direction||'neutral').toUpperCase()}</span>
+            </div>
+          </div>
+
+          ${pillarsHtml}
+        </div>
+
+        <div class="card-actions">
+          <a href="strategy-builder.html?symbol=${r.symbol}${r.strategy ? `&strategy=${encodeURIComponent(r.strategy)}` : ''}" class="btn-primary">
+            <span>⚙️</span>
+            <span>Build Strategy</span>
+          </a>
+          <a href="stock.html?symbol=${r.symbol}${r.strategy ? `&strategy=${encodeURIComponent(r.strategy)}` : ''}" class="btn-secondary">
+            👁️
+          </a>
+        </div>
+      </div>
+    `;
+  }
+
+  // Build table row
+  function buildTableRow(r) {
+    const score = Math.round(r.opportunityScore || 0);
+    const meta = companyMetadata[r.symbol] || {};
+    const companyName = meta.name || r.symbol;
+
+    const today = new Date().toISOString().split('T')[0];
+    const stale = r.date && r.date < today;
+
+    // Type badge class
+    let typeBadgeClass = 'mid';
+    let typeLabel = r.marketCapLabel || r.marketCapTier || 'MID';
+
+    if (r.marketCapTier === 'etf') {
+      typeBadgeClass = 'etf';
+      typeLabel = 'ETF';
+    } else if (r.marketCapTier === 'mega' || r.marketCapTier === 'large') {
+      typeBadgeClass = 'large';
+      typeLabel = r.marketCapTier === 'mega' ? 'MEGA' : 'LARGE';
+    } else if (meta.sector) {
+      const sector = meta.sector.toLowerCase();
+      if (sector.includes('tech')) {
+        typeBadgeClass = 'tech';
+        typeLabel = 'TECH';
+      }
+    }
+
+    const gamma = r.gammaWallScore != null ? `${r.gammaWallScore}/40` : '—';
+    const iv = r.ivRank != null ? `${r.ivRank}/35` : '—';
+    const trend = r.technicalScore != null ? `${r.technicalScore}/25` : '—';
+
+    return `
+      <tr>
+        <td class="td-score">${score}</td>
+        <td class="td-symbol">${r.symbol}</td>
+        <td class="td-name">${companyName}</td>
+        <td><span class="type-badge ${typeBadgeClass}">${typeLabel}</span></td>
+        <td class="td-price">${fmtP(r.price)}</td>
+        <td class="td-strategy">${r.strategy || '—'}</td>
+        <td class="td-metric">${gamma}</td>
+        <td class="td-metric">${iv}</td>
+        <td class="td-metric">${trend}</td>
+        <td><span class="data-badge-table ${stale ? 'badge-stale' : 'badge-fresh'}">${stale ? '24H OLD' : 'FRESH'}</span></td>
+        <td>
+          <button class="build-btn" onclick="window.location.href='strategy-builder.html?symbol=${r.symbol}${r.strategy ? `&strategy=${encodeURIComponent(r.strategy)}` : ''}'">Build</button>
+        </td>
+      </tr>
+    `;
+  }
+
+  // Boot on load
+  window.addEventListener('load', boot);
+  </script>
+</body>
+</html>

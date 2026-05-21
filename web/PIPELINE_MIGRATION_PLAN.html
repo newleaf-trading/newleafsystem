@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf System — Pipeline Migration Plan & Gap Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--forest:#0B2D23;--gold:#C9A96E;--gold-pale:#f5ecd4;--cream:#F7F5F0;--ink:#0B0F14;--ink-mid:#3d3d35;--ink-muted:#6b6b60;--white:#fff;--green:#1D9E75;--red:#E24B4A;--blue:#1a5ca0;--amber:#d97706;--purple:#7c3aed}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);line-height:1.6}
+.container{max-width:1200px;margin:0 auto;padding:0 2rem}
+header{background:var(--forest);padding:24px 0}
+header h1{font-family:'Playfair Display',serif;font-size:28px;color:var(--gold);font-weight:400;text-align:center}
+header p{font-size:12px;color:rgba(201,169,110,.5);text-align:center;margin-top:4px;font-family:'Space Mono',monospace;letter-spacing:.08em}
+.section{padding:40px 0}
+.section-title{font-family:'Playfair Display',serif;font-size:24px;color:var(--forest);margin-bottom:6px}
+.section-sub{font-size:13px;color:var(--ink-muted);margin-bottom:24px;line-height:1.6}
+.divider{border:none;border-top:1px solid rgba(15,61,46,.12);margin:40px 0}
+.card{background:var(--white);border:1px solid rgba(15,61,46,.12);border-radius:12px;padding:22px;margin-bottom:16px}
+.card-title{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:10px}
+.badge{font-family:'Space Mono',monospace;font-size:9px;padding:3px 10px;border-radius:20px;font-weight:700;letter-spacing:.06em;display:inline-block}
+.badge-ok{background:#e8f4eb;color:#1D9E75;border:1px solid rgba(29,158,117,.2)}
+.badge-gap{background:#fef3dc;color:#a0620c;border:1px solid rgba(217,119,6,.2)}
+.badge-missing{background:#fcebeb;color:#A32D2D;border:1px solid rgba(220,38,38,.2)}
+.badge-new{background:#e6f0fb;color:#1a5ca0;border:1px solid rgba(26,92,160,.2)}
+table.t{width:100%;border-collapse:collapse;font-size:12px;background:var(--white);border-radius:12px;overflow:hidden;border:1px solid rgba(15,61,46,.12)}
+table.t thead{background:var(--forest)}
+table.t th{padding:12px 14px;text-align:left;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700}
+table.t td{padding:10px 14px;border-bottom:1px solid rgba(15,61,46,.06);vertical-align:top}
+table.t tr:last-child td{border-bottom:none}
+table.t tr:hover{background:rgba(201,169,110,.04)}
+.mono{font-family:'Space Mono',monospace;font-size:11px}
+.diagram{background:#0B2D23;border-radius:12px;padding:28px;margin:20px 0;overflow-x:auto}
+.diagram pre{color:rgba(255,255,255,.85);font-family:'Space Mono',monospace;font-size:11px;line-height:1.7;white-space:pre}
+.diagram .h{color:#C9A96E}
+.diagram .g{color:#1D9E75}
+.diagram .r{color:#E24B4A}
+.diagram .b{color:#60a5fa}
+.diagram .p{color:#a78bfa}
+.diagram .a{color:#fbbf24}
+.flow-row{display:grid;grid-template-columns:200px 1fr 200px;gap:16px;margin-bottom:12px;align-items:start}
+.flow-label{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);padding-top:6px}
+.flow-box{background:var(--white);border:1px solid rgba(15,61,46,.12);border-radius:8px;padding:12px 16px;font-size:12px}
+.flow-box.highlight{border-left:3px solid var(--gold)}
+.flow-box.gap{border-left:3px solid var(--red);background:#fef8f8}
+.flow-box.new{border-left:3px solid var(--blue);background:#f0f7ff}
+.flow-output{font-family:'Space Mono',monospace;font-size:10px;color:var(--ink-muted);padding-top:6px}
+.step-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;margin:20px 0}
+.step-card{background:var(--white);border:1px solid rgba(15,61,46,.12);border-radius:12px;padding:20px;position:relative}
+.step-num{font-family:'Space Mono',monospace;font-size:28px;font-weight:700;color:rgba(15,61,46,.08);position:absolute;top:12px;right:16px}
+.step-title{font-size:14px;font-weight:700;color:var(--forest);margin-bottom:6px}
+.step-desc{font-size:12px;color:var(--ink-muted);line-height:1.5}
+code{font-family:'Space Mono',monospace;font-size:11px;background:rgba(15,61,46,.06);padding:2px 6px;border-radius:3px}
+.tag-r2{color:var(--amber);font-weight:700}.tag-fs{color:var(--purple);font-weight:700}.tag-local{color:var(--ink-muted);font-weight:600}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>Pipeline Migration Plan &amp; Gap Analysis</h1>
+    <p>NewLeaf System &middot; April 2026</p>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 1: CURRENT STATE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">1. Current State &mdash; What We Have</h2>
+  <p class="section-sub">The pipeline runs across two repos: <code>newleafsystem</code> (scanner + picks) and <code>OptionAdvisor</code> (tile analysis). Data flows through three layers: Local disk &rarr; Cloudflare R2 &rarr; Firestore.</p>
+
+  <div class="diagram">
+<pre>
+<span class="h">EXTERNAL DATA</span>                    <span class="h">PIPELINE PHASES</span>                     <span class="h">STORAGE</span>
+&boxdr;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxur;
+&boxv;                                                                                                        &boxv;
+&boxv;  <span class="b">Alpaca API</span>  &boxh;&boxh;&boxh;&boxh;&rarr;  <span class="g">pipeline-fast.js</span>      &boxh;&boxh;&boxh;&boxh;&rarr;  <span class="tag-local">Local</span> reports/{SYM}/latest.json       &boxv;
+&boxv;  (every 15m)          (prices, IV, Greeks)            <span class="a">R2</span>    reports/{SYM}/latest.json       &boxv;
+&boxv;                                 &boxv;                        <span class="a">R2</span>    reports/manifest.json           &boxv;
+&boxv;                                 &darr;                        <span class="a">R2</span>    pipeline-status/runs.json       &boxv;
+&boxv;  <span class="b">Yahoo :5300</span>  &boxh;&boxh;&boxh;&boxh;&rarr;  <span class="g">pipeline-oi-enrichment.js</span> &boxh;&rarr;  <span class="tag-local">Local</span> reports/{SYM}/latest.json (OI)  &boxv;
+&boxv;  (daily 9:32)         (OI, gamma walls)               <span class="a">R2</span>    reports/{SYM}/{DATE}.json       &boxv;
+&boxv;                                 &boxv;                        <span class="a">R2</span>    history/premium.json            &boxv;
+&boxv;                                 &darr;                        <span class="a">R2</span>    history/walls.json              &boxv;
+&boxv;                        <span class="g">pipeline-watchlist.js</span>    &boxh;&rarr;  <span class="a">R2</span>    watchlist-snapshots.json        &boxv;
+&boxv;                        (daily 9:35, no API)                                                    &boxv;
+&boxv;                                                                                                        &boxv;
+&boxv;  &boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh; <span class="r">GAP: MANUAL TRIGGER</span> &boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;  &boxv;
+&boxv;                                                                                                        &boxv;
+&boxv;  <span class="a">R2 bucket</span>   &boxh;&boxh;&boxh;&boxh;&rarr;  <span class="a">sync-r2-to-firestore.js</span>  &boxh;&boxh;&rarr;  <span class="p">Firestore</span> tiles/{id}                  &boxv;
+&boxv;  (latest.json)         (MANUAL - not in cron)          <span class="p">Firestore</span> marketState/current          &boxv;
+&boxv;                                 &boxv;                                                                   &boxv;
+&boxv;  &boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh; <span class="r">GAP: LIVES IN OptionAdvisor</span> &boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;  &boxv;
+&boxv;                                                                                                        &boxv;
+&boxv;  <span class="p">Firestore</span>   &boxh;&boxh;&boxh;&boxh;&rarr;  <span class="r">analyse-tiles.cjs</span>       &boxh;&boxh;&rarr;  <span class="p">Firestore</span> analyses/{id}                &boxv;
+&boxv;  tiles/{id}            (Claude CLI - MANUAL)           (strategyRationale,                     &boxv;
+&boxv;                        <span class="r">NOT in newleafsystem!</span>            technicalIndicators,                    &boxv;
+&boxv;                                                        thetaDecaySchedule,                     &boxv;
+&boxv;                                                        riskAnalysis)                           &boxv;
+&boxv;                                                                                                        &boxv;
+&boxv;  &boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh; <span class="g">IN NEWLEAFSYSTEM (WORKING)</span> &boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;  &boxv;
+&boxv;                                                                                                        &boxv;
+&boxv;  <span class="p">Firestore</span>   &boxh;&boxh;&boxh;&boxh;&rarr;  <span class="g">create-weekly-picks.js</span>   &boxh;&boxh;&rarr;  <span class="p">Firestore</span> weeklyPicks/{weekId}         &boxv;
+&boxv;  tiles                 (Monday AM)                                                             &boxv;
+&boxv;                                                                                                        &boxv;
+&boxv;  <span class="p">Firestore</span>   &boxh;&boxh;&boxh;&boxh;&rarr;  <span class="g">close-week.js</span>            &boxh;&boxh;&rarr;  <span class="p">Firestore</span> weeklyPicks (status:past)    &boxv;
+&boxv;  weeklyPicks           (Friday PM)                     <span class="p">Firestore</span> tiles (isActive:false)       &boxv;
+&boxv;                                                                                                        &boxv;
+&boxv;  <span class="b">Alpaca</span>      &boxh;&boxh;&boxh;&boxh;&rarr;  <span class="g">update-pick-outcomes.js</span>  &boxh;&boxh;&rarr;  <span class="p">Firestore</span> pick_outcomes               &boxv;
+&boxv;  (closing prices)      (daily 6pm ET cron)             (outcome, actualPnl)                    &boxv;
+&boxv;                                                                                                        &boxv;
+&boxdl;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxdr;
+</pre>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 2: GAP ANALYSIS -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">2. Gap Analysis</h2>
+  <p class="section-sub">Comparing what exists in newleafsystem vs what's needed for a complete standalone system.</p>
+
+  <table class="t">
+    <thead>
+      <tr>
+        <th>Component</th>
+        <th>Script</th>
+        <th>Location</th>
+        <th>Status</th>
+        <th>Issue</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Intraday Scanner</strong></td>
+        <td class="mono">pipeline-fast.js</td>
+        <td class="mono">scanner/</td>
+        <td><span class="badge badge-ok">Working</span></td>
+        <td>Runs every 15min via cron. Writes to R2 + local.</td>
+      </tr>
+      <tr>
+        <td><strong>OI Enrichment</strong></td>
+        <td class="mono">pipeline-oi-enrichment.js</td>
+        <td class="mono">scanner/</td>
+        <td><span class="badge badge-ok">Working</span></td>
+        <td>Runs daily 9:32am via cron. Merges Yahoo OI data.</td>
+      </tr>
+      <tr>
+        <td><strong>Watchlist Snapshots</strong></td>
+        <td class="mono">pipeline-watchlist.js</td>
+        <td class="mono">scanner/</td>
+        <td><span class="badge badge-ok">Working</span></td>
+        <td>Runs daily 9:35am via cron.</td>
+      </tr>
+      <tr>
+        <td><strong>Yahoo OI Service</strong></td>
+        <td class="mono">option_api.py</td>
+        <td class="mono">scanner/yahoo-svc/</td>
+        <td><span class="badge badge-ok">Working</span></td>
+        <td>Flask service on port 5300.</td>
+      </tr>
+      <tr>
+        <td><strong>Health Monitor</strong></td>
+        <td class="mono">check-scheduler-health.sh</td>
+        <td class="mono">scanner/</td>
+        <td><span class="badge badge-ok">Working</span></td>
+        <td>Runs every 5min via cron.</td>
+      </tr>
+      <tr>
+        <td><strong>Pick Outcomes</strong></td>
+        <td class="mono">update-pick-outcomes.js</td>
+        <td class="mono">scripts/</td>
+        <td><span class="badge badge-ok">Working</span></td>
+        <td>Runs daily 6pm via cron. Updates pick_outcomes.</td>
+      </tr>
+      <tr>
+        <td><strong>Weekly Picks</strong></td>
+        <td class="mono">create-weekly-picks.js</td>
+        <td class="mono">pipeline/</td>
+        <td><span class="badge badge-ok">Working</span></td>
+        <td>Manual Monday. Writes weeklyPicks to Firestore.</td>
+      </tr>
+      <tr>
+        <td><strong>Week Close</strong></td>
+        <td class="mono">close-week.js</td>
+        <td class="mono">pipeline/</td>
+        <td><span class="badge badge-ok">Working</span></td>
+        <td>Manual Friday. Calculates P&L, closes tiles.</td>
+      </tr>
+      <tr style="background:rgba(254,243,220,.3)">
+        <td><strong>R2 &rarr; Firestore Sync</strong></td>
+        <td class="mono">sync-r2-to-firestore.js</td>
+        <td class="mono">scanner/</td>
+        <td><span class="badge badge-gap">Manual</span></td>
+        <td><strong>Not in cron.</strong> Must be triggered manually to push R2 data to Firestore tiles. Should be automated after OI enrichment.</td>
+      </tr>
+      <tr style="background:rgba(252,235,235,.3)">
+        <td><strong>Claude Analysis</strong></td>
+        <td class="mono">analyse-tiles.cjs</td>
+        <td class="mono"><span style="color:var(--red)">OptionAdvisor/pipeline/</span></td>
+        <td><span class="badge badge-missing">Missing</span></td>
+        <td><strong>Not in newleafsystem.</strong> Generates strategyRationale, technicalIndicators, thetaDecaySchedule, riskAnalysis using Claude CLI. Must be migrated.</td>
+      </tr>
+      <tr style="background:rgba(252,235,235,.3)">
+        <td><strong>Push Analysis</strong></td>
+        <td class="mono">push-analysis.cjs</td>
+        <td class="mono"><span style="color:var(--red)">OptionAdvisor/pipeline/</span></td>
+        <td><span class="badge badge-missing">Missing</span></td>
+        <td><strong>Not in newleafsystem.</strong> Pushes manually authored analysis JSON to Firestore. Backup path for Claude failures.</td>
+      </tr>
+      <tr style="background:rgba(252,235,235,.3)">
+        <td><strong>Position Monitor</strong></td>
+        <td class="mono">monitor-positions.cjs</td>
+        <td class="mono"><span style="color:var(--red)">OptionAdvisor/pipeline/</span></td>
+        <td><span class="badge badge-missing">Missing</span></td>
+        <td><strong>Not in newleafsystem.</strong> Monitors active positions, calculates P&L changes, writes position_reviews.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 3: FIRESTORE COLLECTIONS -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">3. Firestore Collections &mdash; Who Writes, Who Reads</h2>
+  <p class="section-sub">Database: <code>newleafdb</code> in project <code>newleaf-trading</code>. All apps share the same database.</p>
+
+  <table class="t">
+    <thead>
+      <tr>
+        <th>Collection</th>
+        <th>Written By</th>
+        <th>Read By</th>
+        <th>Key Fields</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="mono"><strong>tiles</strong></td>
+        <td>sync-r2-to-firestore.js<br>strategy-builder (workbench)</td>
+        <td>Trading app (Discover, Dashboard)<br>create-weekly-picks.js<br>analyse-tiles.cjs</td>
+        <td>symbol, strategy, direction, opportunityScore, gammaData, legs, greeks, isActive</td>
+        <td><span class="badge badge-gap">Manual sync</span></td>
+      </tr>
+      <tr>
+        <td class="mono"><strong>analyses</strong></td>
+        <td><span style="color:var(--red)">analyse-tiles.cjs (OptionAdvisor)</span></td>
+        <td>Trading app (PositionDetail tabs)</td>
+        <td>strategyRationale, technicalIndicators, thetaDecaySchedule, riskAnalysis</td>
+        <td><span class="badge badge-missing">Not in newleafsystem</span></td>
+      </tr>
+      <tr>
+        <td class="mono"><strong>weeklyPicks</strong></td>
+        <td>create-weekly-picks.js<br>close-week.js</td>
+        <td>React Picks pages</td>
+        <td>weekId, picks[], theme, status, dateRange</td>
+        <td><span class="badge badge-ok">Working</span></td>
+      </tr>
+      <tr>
+        <td class="mono"><strong>pick_outcomes</strong></td>
+        <td>seed-pick-outcomes.js<br>update-pick-outcomes.js</td>
+        <td>React Recap/Monthly pages<br>server.cjs performance API</td>
+        <td>weekId, ticker, strategy, outcome, actualPnl, legs</td>
+        <td><span class="badge badge-ok">Working</span></td>
+      </tr>
+      <tr>
+        <td class="mono"><strong>marketState</strong></td>
+        <td>sync-r2-to-firestore.js</td>
+        <td>Trading app (AppHeader market indicator)</td>
+        <td>lastScanTime, activeTileCount, isMarketOpen</td>
+        <td><span class="badge badge-gap">Manual sync</span></td>
+      </tr>
+      <tr>
+        <td class="mono"><strong>users</strong></td>
+        <td>useAuth.js (on sign-in)</td>
+        <td>Trading app (profile, settings)</td>
+        <td>email, displayName, createdAt, lastLogin</td>
+        <td><span class="badge badge-ok">Working</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 4: TARGET STATE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">4. Target State &mdash; After Migration</h2>
+  <p class="section-sub">Everything runs from <code>newleafsystem</code>. No dependency on OptionAdvisor. Automated end-to-end.</p>
+
+  <div class="diagram">
+<pre>
+<span class="h">AUTOMATED DAILY PIPELINE (cron)</span>
+&boxdr;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxur;
+&boxv;                                                                                                  &boxv;
+&boxv;  <span class="b">9:00&ndash;4:00 ET</span>    <span class="g">pipeline-fast.js</span>           &rarr;  <span class="a">R2</span> + <span class="tag-local">Local</span>  reports/{SYM}/             &boxv;
+&boxv;  (every 15m)      Alpaca prices, IV, Greeks                                              &boxv;
+&boxv;                                                                                                  &boxv;
+&boxv;  <span class="b">9:32 ET</span>          <span class="g">pipeline-oi-enrichment.js</span>   &rarr;  <span class="a">R2</span> + <span class="tag-local">Local</span>  reports/{SYM}/ (+ OI)     &boxv;
+&boxv;                   Yahoo OI merge                                                          &boxv;
+&boxv;                                                                                                  &boxv;
+&boxv;  <span class="b">9:35 ET</span>          <span class="g">pipeline-watchlist.js</span>       &rarr;  <span class="a">R2</span>  watchlist-snapshots.json          &boxv;
+&boxv;                                                                                                  &boxv;
+&boxv;  <span class="b">9:40 ET</span>          <span class="g">sync-r2-to-firestore.js</span>    &rarr;  <span class="p">Firestore</span>  tiles/{id}                &boxv;  <span class="badge-new" style="font-size:9px;padding:2px 6px">NEW: ADD TO CRON</span>
+&boxv;  <span class="new">(NEW)</span>            Auto-sync after OI enrichment     <span class="p">Firestore</span>  marketState               &boxv;
+&boxv;                                                                                                  &boxv;
+&boxv;  <span class="b">6:00 PM ET</span>       <span class="g">update-pick-outcomes.js</span>    &rarr;  <span class="p">Firestore</span>  pick_outcomes             &boxv;
+&boxv;                   Alpaca closing prices                                                   &boxv;
+&boxv;                                                                                                  &boxv;
+&boxdl;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxdr;
+
+<span class="h">WEEKLY WORKFLOW (Manual Monday + Friday)</span>
+&boxdr;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxur;
+&boxv;                                                                                                  &boxv;
+&boxv;  <span class="h">MONDAY AM</span>                                                                                   &boxv;
+&boxv;  Step 1:  <span class="g">create-weekly-picks.js</span>    &rarr;  <span class="p">Firestore</span>  weeklyPicks/{weekId}              &boxv;
+&boxv;           Bundle active tiles into week                                                   &boxv;
+&boxv;                                                                                                  &boxv;
+&boxv;  Step 2:  <span class="b">analyse-tiles.cjs</span>          &rarr;  <span class="p">Firestore</span>  analyses/{tileId}                 &boxv;  <span class="badge-new" style="font-size:9px;padding:2px 6px">NEW: MIGRATE FROM OptionAdvisor</span>
+&boxv;  <span class="new">(NEW)</span>    Claude CLI generates:                                                            &boxv;
+&boxv;            &bull; strategyRationale       (Why This Trade? tab)                              &boxv;
+&boxv;            &bull; technicalIndicators     (Technical Analysis tab)                           &boxv;
+&boxv;            &bull; thetaDecaySchedule      (Theta &amp; Risk tab)                                &boxv;
+&boxv;            &bull; riskAnalysis            (Risk scenarios)                                   &boxv;
+&boxv;                                                                                                  &boxv;
+&boxv;  Step 3:  generate-analysis-pages.js &rarr;  PDF reports (optional)                              &boxv;
+&boxv;                                                                                                  &boxv;
+&boxv;  <span class="h">FRIDAY PM</span>                                                                                   &boxv;
+&boxv;  Step 4:  <span class="g">close-week.js</span>             &rarr;  <span class="p">Firestore</span>  weeklyPicks (status: past)        &boxv;
+&boxv;           Close tiles, calculate P&L       <span class="p">Firestore</span>  tiles (isActive: false)           &boxv;
+&boxv;                                                                                                  &boxv;
+&boxdl;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxdr;
+
+<span class="h">REACT APP READS (Frontend)</span>
+&boxdr;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxur;
+&boxv;                                                                                                  &boxv;
+&boxv;  <span class="p">Firestore tiles</span>       &rarr;  Trading: Dashboard, Discover, Portfolio                          &boxv;
+&boxv;  <span class="p">Firestore analyses</span>    &rarr;  Trading: PositionDetail (3 tabs)                                 &boxv;
+&boxv;  <span class="p">Firestore weeklyPicks</span> &rarr;  Picks: PicksPage, WeekViewerPage                                &boxv;
+&boxv;  <span class="p">Firestore pick_outcomes</span>&rarr;  Picks: RecapPage, MonthlyPage                                   &boxv;
+&boxv;  <span class="p">Firestore marketState</span> &rarr;  Trading: AppHeader (market status indicator)                     &boxv;
+&boxv;  <span class="a">R2 reports/</span>           &rarr;  Workbench: Scanner, Strategy Builder, Stock Analysis             &boxv;
+&boxv;                          (via /r2/ proxy on server.cjs)                                   &boxv;
+&boxv;                                                                                                  &boxv;
+&boxdl;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxh;&boxdr;
+</pre>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 5: MIGRATION STEPS -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">5. Migration Steps</h2>
+  <p class="section-sub">Three changes needed to close all gaps. Ordered by impact.</p>
+
+  <div class="step-grid">
+    <div class="step-card">
+      <div class="step-num">01</div>
+      <div class="card-title">Migrate analyse-tiles.cjs</div>
+      <div class="step-title">Copy Claude analysis generator into newleafsystem</div>
+      <div class="step-desc">
+        Copy <code>OptionAdvisor/pipeline/analyse-tiles.cjs</code> to <code>newleafsystem/pipeline/</code>. Update Firebase config path. Add npm script: <code>"analyse": "node pipeline/analyse-tiles.cjs"</code>. This fills the <code>analyses</code> collection that powers the 3 PositionDetail tabs.
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">02</div>
+      <div class="card-title">Automate R2 &rarr; Firestore sync</div>
+      <div class="step-title">Add sync-r2-to-firestore to daily cron</div>
+      <div class="step-desc">
+        Add cron entry after OI enrichment: <code>40 14 * * 1-5 sync-r2-to-firestore.js</code> (9:40am ET). This ensures Firestore <code>tiles</code> are always fresh after the daily scan completes. Currently manual &mdash; biggest automation gap.
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">03</div>
+      <div class="card-title">Unified weekly command</div>
+      <div class="step-title">Wire everything into npm run weekly</div>
+      <div class="step-desc">
+        Update <code>package.json</code> scripts:<br>
+        <code>"weekly": "node pipeline/create-weekly-picks.js && node pipeline/analyse-tiles.cjs"</code><br>
+        One command: create picks &rarr; generate Claude analysis &rarr; done. React app picks it up from Firestore.
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 6: CRON SCHEDULE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">6. Target Cron Schedule</h2>
+  <p class="section-sub">Complete automated schedule after migration. All times in London (BST). New entries highlighted.</p>
+
+  <table class="t">
+    <thead>
+      <tr>
+        <th>Time (London)</th>
+        <th>Time (ET)</th>
+        <th>Frequency</th>
+        <th>Script</th>
+        <th>Output</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="mono">*/15 14-21</td>
+        <td>Every 15m, 9am-4pm</td>
+        <td>Mon-Fri</td>
+        <td class="mono">pipeline-fast.js</td>
+        <td><span class="tag-r2">R2</span> + <span class="tag-local">Local</span></td>
+        <td><span class="badge badge-ok">Existing</span></td>
+      </tr>
+      <tr>
+        <td class="mono">32 14</td>
+        <td>9:32am</td>
+        <td>Mon-Fri</td>
+        <td class="mono">pipeline-oi-enrichment.js</td>
+        <td><span class="tag-r2">R2</span> + <span class="tag-local">Local</span></td>
+        <td><span class="badge badge-ok">Existing</span></td>
+      </tr>
+      <tr>
+        <td class="mono">35 14</td>
+        <td>9:35am</td>
+        <td>Mon-Fri</td>
+        <td class="mono">pipeline-watchlist.js</td>
+        <td><span class="tag-r2">R2</span></td>
+        <td><span class="badge badge-ok">Existing</span></td>
+      </tr>
+      <tr style="background:rgba(230,240,251,.4)">
+        <td class="mono">40 14</td>
+        <td>9:40am</td>
+        <td>Mon-Fri</td>
+        <td class="mono">sync-r2-to-firestore.js</td>
+        <td><span class="tag-fs">Firestore</span> tiles + marketState</td>
+        <td><span class="badge badge-new">New</span></td>
+      </tr>
+      <tr>
+        <td class="mono">0 23</td>
+        <td>6:00pm</td>
+        <td>Mon-Fri</td>
+        <td class="mono">update-pick-outcomes.js</td>
+        <td><span class="tag-fs">Firestore</span> pick_outcomes</td>
+        <td><span class="badge badge-ok">Existing</span></td>
+      </tr>
+      <tr>
+        <td class="mono">*/5</td>
+        <td>Every 5m</td>
+        <td>Always</td>
+        <td class="mono">check-scheduler-health.sh</td>
+        <td>Log only</td>
+        <td><span class="badge badge-ok">Existing</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 7: WEEKLY WORKFLOW -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">7. Weekly Workflow &mdash; After Migration</h2>
+  <p class="section-sub">The analyst's weekly routine, fully powered from newleafsystem.</p>
+
+  <div class="step-grid">
+    <div class="step-card">
+      <div class="step-num">Mon</div>
+      <div class="card-title">Create Picks</div>
+      <div class="step-title">Build strategies &amp; publish</div>
+      <div class="step-desc">
+        1. Review scanner at <code>/workbench/</code><br>
+        2. Build strategies in Strategy Builder<br>
+        3. Publish tiles to Firebase (via workbench)<br>
+        4. Run: <code>npm run weekly</code><br>
+        &nbsp;&nbsp;&rarr; <code>create-weekly-picks.js</code> bundles tiles into weeklyPicks<br>
+        &nbsp;&nbsp;&rarr; <code>analyse-tiles.cjs</code> generates Claude analysis for each pick<br>
+        5. React app auto-updates &mdash; picks + analysis tabs live immediately
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">Daily</div>
+      <div class="card-title">Automated</div>
+      <div class="step-title">Pipeline runs on schedule</div>
+      <div class="step-desc">
+        Cron handles everything:<br>
+        &bull; 9:00-4:00 &mdash; Intraday price updates (every 15m)<br>
+        &bull; 9:32 &mdash; OI enrichment<br>
+        &bull; 9:40 &mdash; R2 &rarr; Firestore tile sync <span class="badge badge-new" style="font-size:8px">NEW</span><br>
+        &bull; 6:00pm &mdash; Pick outcome resolution<br>
+        No manual intervention needed.
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">Fri</div>
+      <div class="card-title">Close Week</div>
+      <div class="step-title">Calculate results</div>
+      <div class="step-desc">
+        Run: <code>npm run picks:close</code><br>
+        &rarr; Closes active tiles<br>
+        &rarr; Calculates actual P&L<br>
+        &rarr; Updates weeklyPicks status to "past"<br>
+        &rarr; React recap/monthly pages auto-update
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 8: R2 BUCKET STRUCTURE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">8. R2 Bucket Structure</h2>
+  <p class="section-sub">Cloudflare R2 bucket <code>newleaf</code> &mdash; public URL: <code>https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev</code></p>
+
+  <div class="card" style="font-family:'Space Mono',monospace;font-size:11px;line-height:1.8;color:var(--ink-mid)">
+    reports/<br>
+    &nbsp;&nbsp;manifest.json&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; All symbols + metadata<br>
+    &nbsp;&nbsp;watchlist-snapshots.json&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; Weekly/monthly premium data<br>
+    &nbsp;&nbsp;{SYMBOL}/<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;latest.json&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; Current report (price, IV, Greeks, gamma, OI)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;2026-04-13.json&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; Daily snapshot (OI-enriched)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;2026-04-13T0930.json&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; Intraday timestamp<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;history/<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;iv.json&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; IV time series (90 entries max)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;premium.json&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; Premium time series<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;walls.json&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; Gamma walls time series<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;oi-2026-04-12.json&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; OI baseline (for delta calc)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;contracts/<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;atm-latest.json&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; ATM contracts &plusmn;25% (strategy-builder)<br>
+    pipeline-status/<br>
+    &nbsp;&nbsp;runs.json&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; Last 100 pipeline runs<br>
+    &nbsp;&nbsp;latest.json&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; Most recent run status
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 9: ANALYSIS SCHEMA -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">9. Claude Analysis Schema</h2>
+  <p class="section-sub">The <code>analyses/{tileId}</code> document structure generated by <code>analyse-tiles.cjs</code>. Powers the 3 tabs in PositionDetail.</p>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+    <div class="card">
+      <div class="card-title">Tab 1: Why This Trade?</div>
+      <div style="font-size:12px;color:var(--ink-mid);line-height:1.6">
+        <strong>strategyRationale:</strong><br>
+        &bull; whyThisStrategy (2-3 sentences)<br>
+        &bull; whyTheseStrikes (strike selection logic)<br>
+        &bull; whyThisExpiry (time horizon reasoning)<br>
+        &bull; alternativesConsidered [{strategy, reason}]
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Tab 2: Technical Analysis</div>
+      <div style="font-size:12px;color:var(--ink-mid);line-height:1.6">
+        <strong>technicalIndicators:</strong><br>
+        &bull; rsi {value, signal, description}<br>
+        &bull; bollingerBands {upper, lower, width, signal}<br>
+        &bull; macd {macdLine, signalLine, histogram}<br>
+        &bull; movingAverages {sma20/50/100, crossover}<br>
+        &bull; impliedVolatility {currentIV, ivRank, ivPct}<br>
+        &bull; supportResistance [{level, strength}]
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Tab 3: Theta &amp; Risk</div>
+      <div style="font-size:12px;color:var(--ink-mid);line-height:1.6">
+        <strong>thetaDecaySchedule:</strong><br>
+        &bull; dailyDecay [{daysToExpiry, dailyTheta, cumulative}]<br>
+        &bull; earlyCloseRecommendation<br><br>
+        <strong>riskAnalysis:</strong><br>
+        &bull; maxPainScenario<br>
+        &bull; earningsRisk, dividendRisk, eventRisk<br>
+        &bull; managementPlan (exit/adjustment rules)
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 10: SUMMARY -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">10. Summary</h2>
+
+  <table class="t">
+    <thead>
+      <tr>
+        <th>Gap</th>
+        <th>Impact</th>
+        <th>Effort</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background:rgba(252,235,235,.2)">
+        <td><strong>analyse-tiles.cjs missing</strong></td>
+        <td>PositionDetail 3 tabs show no data</td>
+        <td>Copy + update config</td>
+        <td>Copy from OptionAdvisor/pipeline/ to newleafsystem/pipeline/</td>
+      </tr>
+      <tr style="background:rgba(254,243,220,.2)">
+        <td><strong>R2&rarr;Firestore sync is manual</strong></td>
+        <td>Tiles not auto-refreshed in trading app</td>
+        <td>Add 1 cron line</td>
+        <td>Add <code>40 14 * * 1-5</code> cron entry for sync script</td>
+      </tr>
+      <tr style="background:rgba(230,240,251,.2)">
+        <td><strong>Weekly workflow fragmented</strong></td>
+        <td>Multiple manual steps across repos</td>
+        <td>Update npm scripts</td>
+        <td>Wire <code>npm run weekly</code> = picks + analyse</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:24px;padding:20px;background:var(--forest);border-radius:12px;color:rgba(255,255,255,.85);font-size:13px;line-height:1.6">
+    <strong style="color:var(--gold)">Bottom line:</strong> The scanning pipeline is fully operational in newleafsystem. The only missing piece is the Claude-powered analysis generator (<code>analyse-tiles.cjs</code>) which lives in OptionAdvisor. Migrating it + automating the R2&rarr;Firestore sync closes all gaps. After that, newleafsystem is completely standalone &mdash; no dependency on OptionAdvisor.
+  </div>
+</div>
+
+</div>
+
+<footer style="text-align:center;padding:40px 2rem;font-size:11px;color:var(--ink-muted);border-top:1px solid rgba(15,61,46,.1)">
+  NewLeaf System &mdash; Pipeline Migration Plan &middot; April 2026 &middot; Internal use only
+</footer>
+
+</body>
+</html>

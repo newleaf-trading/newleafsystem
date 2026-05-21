@@ -1,0 +1,43 @@
+{
+  "name": "newleafsystem",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "node scripts/clean-spa.js && vite build && node scripts/prerender.js",
+    "preview": "vite preview",
+    "deploy": "npm run build && firebase deploy --only hosting:newleafsystem"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "axios": "^1.13.6",
+    "d3-scale": "^4.0.2",
+    "d3-selection": "^3.0.0",
+    "d3-transition": "^3.0.1",
+    "firebase": "^12.9.0",
+    "firebase-admin": "^12.0.0",
+    "gsap": "^3.15.0",
+    "highcharts": "^12.6.0",
+    "highcharts-react-official": "^3.2.3",
+    "lucide-react": "^0.564.0",
+    "nodemailer": "^8.0.6",
+    "puppeteer": "^24.43.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-helmet-async": "^3.0.0",
+    "react-router-dom": "^6.30.3",
+    "recharts": "^2.15.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.24",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
+    "vite": "^5.1.0",
+    "vitest": "^4.1.4"
+  }
+}

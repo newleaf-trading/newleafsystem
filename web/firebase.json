@@ -1,0 +1,64 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json",
+    "database": "newleafdb"
+  },
+  "hosting": {
+    "target": "newleafsystem",
+    "public": "dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      { "source": "/how-we-pick", "destination": "/index.html" },
+      { "source": "/how-we-manage", "destination": "/index.html" },
+      { "source": "/how-we-recommend", "destination": "/index.html" },
+      { "source": "/track-record", "destination": "/index.html" },
+      { "source": "/strategies/**", "destination": "/index.html" },
+      { "source": "/learn", "destination": "/index.html" },
+      { "source": "/verification-desk", "destination": "/index.html" },
+      { "source": "/workbench/analysis", "destination": "/index.html" },
+      { "source": "/workbench/analysis/**", "destination": "/index.html" },
+      { "source": "/trading/**", "destination": "/index.html" },
+      { "source": "/picks/**", "destination": "/index.html" },
+      { "source": "/privacy-policy", "destination": "/privacy-policy.html" },
+      { "source": "/terms-and-conditions", "destination": "/terms-and-conditions.html" },
+      { "source": "/blog", "destination": "/index.html" },
+      { "source": "/blog/**", "destination": "/index.html" },
+      { "source": "/quant/**", "destination": "/quant/index.html" },
+      { "source": "/desk/**", "destination": "/desk/index.html" },
+      { "source": "**", "destination": "/index.html" }
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(jpg|jpeg|png|gif|svg|webp|ico|avif)",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=604800, immutable" }
+        ]
+      },
+      {
+        "source": "**/*.@(woff|woff2|ttf|otf|eot)",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=604800, immutable" }
+        ]
+      },
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }
+        ]
+      },
+      {
+        "source": "**/*.html",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" }
+        ]
+      },
+      {
+        "source": "**",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" }
+        ]
+      }
+    ]
+  }
+}

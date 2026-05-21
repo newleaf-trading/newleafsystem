@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{SYMBOL}} {{STRATEGY_NAME}} - NewLeaf System</title>
+<style>
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 300; src: url('../assets/fonts/Inter-300.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; src: url('../assets/fonts/Inter-400.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 500; src: url('../assets/fonts/Inter-500.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 600; src: url('../assets/fonts/Inter-600.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 700; src: url('../assets/fonts/Inter-700.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 800; src: url('../assets/fonts/Inter-800.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 400; src: url('../assets/fonts/Playfair-400.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 700; src: url('../assets/fonts/Playfair-700.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 800; src: url('../assets/fonts/Playfair-800.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-style: italic; font-weight: 400; src: url('../assets/fonts/Playfair-Italic-400.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-style: italic; font-weight: 700; src: url('../assets/fonts/Playfair-Italic-700.ttf') format('truetype'); }
+
+:root {
+    --forest: #0B2D23; --forest2: #1A4A36; --gold: #C9A96E;
+    --gold-bg: #FDF8EE; --offwhite: #F7F5F0; --green-bg: #EEF7F2;
+    --green: #1A7A4A; --red: #C0392B; --red-bg: #FEF0EE;
+    --blue: #185FA5; --blue-bg: #EEF4FD; --amber: #B45309; --amber-bg: #FEF8EE;
+    --charcoal: #0B0F14; --grey: #6B7280; --grey-lt: #E5E7EB; --white: #FFFFFF;
+}
+
+@page {
+    size: 8.5in 11in;
+    margin: 0.4in 0.5in 0.5in 0.5in;
+    @bottom-left { content: "NewLeaf System"; font-family: 'Playfair Display', serif; font-size: 7pt; font-weight: 700; color: var(--forest); }
+    @bottom-center { content: "Not financial advice. See disclosures."; font-family: 'Inter', sans-serif; font-size: 6pt; color: var(--grey); }
+    @bottom-right { content: ""; font-family: 'Inter', sans-serif; font-size: 7pt; font-weight: 600; color: var(--charcoal); }
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; font-size: 8.5pt; line-height: 1.55; color: var(--charcoal); background: var(--white); }
+
+/* ---- BANNER ---- */
+.banner { background: var(--forest); color: white; padding: 6pt 14pt; margin: -0.4in -0.5in 0 -0.5in; width: calc(100% + 1in); display: flex; justify-content: space-between; align-items: center; }
+.banner-left { display: flex; align-items: center; gap: 10pt; }
+.banner-logo { width: 28pt; height: 28pt; border-radius: 4pt; border: 1.5pt solid var(--gold); }
+.banner-text { display: flex; flex-direction: column; }
+.banner-brand { font-family: 'Playfair Display', serif; font-size: 13pt; font-weight: 700; line-height: 1.2; }
+.banner-system { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 400; color: var(--gold); font-size: 13pt; }
+.banner-tagline { font-family: 'Inter', sans-serif; color: var(--gold); font-size: 6pt; letter-spacing: 0.5pt; text-transform: uppercase; font-weight: 600; white-space: nowrap; margin-top: 1pt; }
+.banner-right { text-align: right; font-size: 7.5pt; line-height: 1.5; }
+.banner-date { font-weight: 600; color: #e2e8f0; }
+.banner-section { color: #94d2bd; letter-spacing: 0.3pt; text-transform: uppercase; font-size: 6pt; font-weight: 600; }
+.gold-rule { height: 1.5pt; background: var(--gold); margin: 0 -0.5in 12pt -0.5in; width: calc(100% + 1in); }
+
+/* ---- TYPOGRAPHY ---- */
+h1 { font-family: 'Playfair Display', serif; font-size: 20pt; font-weight: 800; color: var(--charcoal); margin-bottom: 3pt; }
+h1 .symbol { color: var(--forest); }
+h2 { font-family: 'Playfair Display', serif; font-size: 11pt; font-weight: 700; color: var(--forest); margin: 10pt 0 6pt 0; padding-bottom: 3pt; border-bottom: 1pt solid var(--gold); }
+h3 { font-family: 'Inter', sans-serif; font-size: 9pt; font-weight: 600; color: var(--charcoal); margin: 8pt 0 4pt 0; }
+p { margin-bottom: 4pt; color: var(--charcoal); font-size: 8.5pt; }
+.section-label { font-size: 6.5pt; letter-spacing: 0.5pt; text-transform: uppercase; color: var(--grey); font-weight: 600; margin-bottom: 6pt; }
+.report-subtitle { font-size: 10pt; color: var(--grey); margin-bottom: 2pt; }
+.report-meta { font-size: 7.5pt; color: var(--grey); margin-bottom: 12pt; }
+.page-break { page-break-after: always; }
+
+/* ---- METRIC CARDS ---- */
+.metrics-row { display: table; width: 100%; table-layout: fixed; margin: 10pt 0; }
+.metric-card { display: table-cell; vertical-align: top; text-align: center; padding: 8pt 6pt; border: 1pt solid var(--grey-lt); border-top: 2.5pt solid var(--gold); background: white; }
+.metric-card + .metric-card { border-left: none; }
+.metric-card.highlight { background: var(--gold-bg); }
+.metric-value { font-size: 16pt; font-weight: 800; color: var(--charcoal); margin-bottom: 2pt; white-space: nowrap; }
+.metric-value.green { color: var(--green); }
+.metric-value.red { color: var(--red); }
+.metric-value.gold { color: var(--gold); }
+.metric-label { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.5pt; color: var(--grey); font-weight: 600; margin-bottom: 2pt; }
+.metric-sub { font-size: 6.5pt; color: var(--grey); margin-top: 2pt; line-height: 1.3; }
+
+/* ---- INSIGHT BOX ---- */
+.insight-box { background: var(--green-bg); border-left: 3pt solid var(--green); padding: 10pt 12pt; margin: 8pt 0; }
+.insight-box h3 { color: #065f46; margin-top: 0; margin-bottom: 4pt; }
+.insight-box .config-line { font-weight: 600; color: var(--forest); font-size: 8pt; margin-bottom: 2pt; }
+.insight-box .env-line { color: var(--charcoal); font-size: 8pt; margin-bottom: 4pt; }
+.insight-box ul { margin: 4pt 0; padding-left: 16pt; }
+.insight-box li { font-size: 8pt; color: var(--charcoal); margin: 3pt 0; line-height: 1.45; }
+
+/* ---- MACRO CARDS ---- */
+.three-col { display: table; width: 100%; table-layout: fixed; }
+.three-col > div { display: table-cell; vertical-align: top; }
+.macro-card { background: var(--offwhite); border: 1pt solid var(--grey-lt); border-top: 2pt solid var(--gold); padding: 10pt; }
+.macro-card + .macro-card { border-left: none; }
+.macro-card h3 { font-size: 8pt; font-weight: 700; color: var(--forest); margin-bottom: 4pt; text-transform: uppercase; letter-spacing: 0.5pt; }
+.macro-card p { font-size: 8pt; color: var(--charcoal); line-height: 1.5; }
+
+/* ---- TABLES ---- */
+table { width: 100%; border-collapse: collapse; margin: 6pt 0; font-size: 8pt; }
+thead { background: var(--forest); color: white; }
+th { padding: 6pt 8pt; text-align: left; font-weight: 600; font-size: 7.5pt; }
+td { padding: 6pt 8pt; border-bottom: 0.5pt solid var(--grey-lt); color: var(--charcoal); word-break: break-word; overflow-wrap: break-word; }
+.highlight-row { background: var(--gold-bg) !important; font-weight: 600; }
+.highlight-row td { color: var(--forest); }
+
+/* ---- TWO-PANEL (table-based) ---- */
+.two-panel { display: table; width: 100%; table-layout: fixed; }
+.two-panel > .half { display: table-cell; width: 50%; vertical-align: top; padding-right: 8pt; }
+.two-panel > .half:last-child { padding-right: 0; padding-left: 8pt; }
+
+/* ---- ANALYST BAR ---- */
+.analyst-bar { display: flex; height: 16pt; border-radius: 3pt; overflow: hidden; margin: 8pt 0; }
+.analyst-bar .buy { background: var(--green); }
+.analyst-bar .hold { background: var(--gold); }
+.analyst-bar .sell { background: var(--red); }
+.analyst-bar span { display: flex; align-items: center; justify-content: center; font-size: 7pt; font-weight: 700; color: white; }
+
+/* ---- HEADWIND/TAILWIND ---- */
+.hw-tw { display: table; width: 100%; table-layout: fixed; margin: 6pt 0; }
+.hw-tw > div { display: table-cell; width: 50%; vertical-align: top; padding: 8pt; }
+.hw-tw .headwinds { background: var(--red-bg); border-left: 3pt solid var(--red); }
+.hw-tw .tailwinds { background: var(--green-bg); border-left: 3pt solid var(--green); }
+.hw-tw h3 { font-size: 8pt; margin-bottom: 4pt; }
+.hw-tw li { font-size: 7.5pt; margin: 2pt 0; line-height: 1.4; }
+
+@media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+</style>
+</head>
+<body>
+
+<!-- ============ PAGE 1: COVER ============ -->
+<div class="banner">
+    <div class="banner-left">
+        <img class="banner-logo" src="">
+        <div class="banner-text">
+            <div class="banner-brand">NewLeaf <span class="banner-system">System</span></div>
+            <div class="banner-tagline">Defined-Risk Trading OS</div>
+        </div>
+    </div>
+    <div class="banner-right">
+        <div class="banner-date">{{REPORT_DATE}}</div>
+        <div class="banner-section">Quantitative Trading Intelligence</div>
+    </div>
+</div>
+<div class="gold-rule"></div>
+
+<div class="section-label">{{SYMBOL}} &middot; {{COMPANY_NAME}} &middot; Options Strategy</div>
+<h1><span class="symbol">{{SYMBOL}}</span> {{STRATEGY_NAME}}</h1>
+<div class="report-subtitle">Strategic Trade Recommendation</div>
+<div class="report-meta">Expiration: {{EXPIRATION_DATE}} ({{DAYS_TO_EXPIRY}} Days) &nbsp;|&nbsp; Generated: {{REPORT_TIME}} &nbsp;|&nbsp; Entry Price: {{CURRENT_PRICE}}</div>
+
+<div class="metrics-row">
+    <div class="metric-card"><div class="metric-label">Max Profit</div><div class="metric-value green">{{MAX_PROFIT}}</div><div class="metric-sub">{{MAX_PROFIT_DESC}}</div></div>
+    <div class="metric-card"><div class="metric-label">Max Loss</div><div class="metric-value red">{{MAX_LOSS}}</div><div class="metric-sub">{{MAX_LOSS_DESC}}</div></div>
+    <div class="metric-card"><div class="metric-label">Win Probability</div><div class="metric-value">{{WIN_RATE}}%</div><div class="metric-sub">{{WIN_RATE_DESC}}</div></div>
+    <div class="metric-card"><div class="metric-label">Risk / Reward</div><div class="metric-value">{{RISK_REWARD}}</div><div class="metric-sub">{{RISK_REWARD_DESC}}</div></div>
+    <div class="metric-card"><div class="metric-label">Break-Even Range</div><div class="metric-value" style="font-size:11pt;">{{BREAKEVEN_RANGE}}</div><div class="metric-sub">{{BREAKEVEN_RANGE_DESC}}</div></div>
+    <div class="metric-card highlight"><div class="metric-label">Confidence Index</div><div class="metric-value gold">{{TRADE_SCORE}}</div><div class="metric-sub">{{CONFIDENCE_LEVEL}}</div></div>
+</div>
+
+<div class="insight-box">
+    <h3>System Insight</h3>
+    <div class="config-line">{{TRADE_CONFIG}}</div>
+    <div class="env-line">{{MARKET_ENVIRONMENT}}</div>
+    <ul>{{THESIS_POINTS}}</ul>
+</div>
+<div class="page-break"></div>
+
+<!-- IF_MACRO -->
+<!-- ============ PAGE 2: MACRO ENVIRONMENT ============ -->
+<div class="banner">
+    <div class="banner-left"><img class="banner-logo" src=""><div class="banner-text"><div class="banner-brand">NewLeaf <span class="banner-system">System</span></div><div class="banner-tagline">Defined-Risk Trading OS</div></div></div>
+    <div class="banner-right"><div class="banner-date">{{REPORT_DATE}}</div><div class="banner-section">{{SYMBOL}} {{STRATEGY_NAME}} &middot; Macro Environment</div></div>
+</div>
+<div class="gold-rule"></div>
+
+<h2>Macro Environment</h2>
+<p style="color:var(--grey);margin-bottom:8pt;">Why range-bound trading conditions favor this strategy.</p>
+
+<div class="three-col">
+    <div class="macro-card">
+        <h3>{{MACRO_BOX_1_TITLE}}</h3>
+        <p>{{MACRO_BOX_1_TEXT}}</p>
+    </div>
+    <div class="macro-card">
+        <h3>{{MACRO_BOX_2_TITLE}}</h3>
+        <p>{{MACRO_BOX_2_TEXT}}</p>
+    </div>
+    <div class="macro-card">
+        <h3>{{MACRO_BOX_3_TITLE}}</h3>
+        <p>{{MACRO_BOX_3_TEXT}}</p>
+    </div>
+</div>
+
+<div class="insight-box" style="margin-top:12pt;">
+    <h3>Why This Matters for Our Trade</h3>
+    <p>Range-bound conditions are ideal for iron condors. We collect premium from time decay while the underlying stays within our profit zone. The macro environment supports this thesis: enough volatility to generate premium, but not enough to break through key levels.</p>
+</div>
+
+<h3 style="margin-top:12pt;">Technical Framework</h3>
+<table>
+    <thead><tr><th>Indicator</th><th>Value</th><th>Signal</th></tr></thead>
+    <tbody>
+        <tr><td>Implied Volatility</td><td>{{IV_VALUE}}</td><td>Premium collection opportunity</td></tr>
+        <tr><td>Put Gamma Wall</td><td>{{PUT_GAMMA_WALL}}</td><td>Dealer support below</td></tr>
+        <tr><td>Call Gamma Wall</td><td>{{CALL_GAMMA_WALL}}</td><td>Dealer resistance above</td></tr>
+        <tr><td>Days to Expiry</td><td>{{DAYS_TO_EXPIRY}}</td><td>Theta acceleration zone</td></tr>
+    </tbody>
+</table>
+<div class="page-break"></div>
+<!-- /IF_MACRO -->
+
+<!-- IF_COMPANY -->
+<!-- ============ PAGE 3: COMPANY NEWS ============ -->
+<div class="banner">
+    <div class="banner-left"><img class="banner-logo" src=""><div class="banner-text"><div class="banner-brand">NewLeaf <span class="banner-system">System</span></div><div class="banner-tagline">Defined-Risk Trading OS</div></div></div>
+    <div class="banner-right"><div class="banner-date">{{REPORT_DATE}}</div><div class="banner-section">{{SYMBOL}} {{STRATEGY_NAME}} &middot; Company News</div></div>
+</div>
+<div class="gold-rule"></div>
+
+<h2>{{COMPANY_HEADLINE}}</h2>
+
+<h3>Price Journey</h3>
+<table>
+    <thead><tr><th>Milestone</th><th>Price</th></tr></thead>
+    <tbody>{{PRICE_JOURNEY_HTML}}</tbody>
+</table>
+
+<h3 style="margin-top:10pt;">Recent News</h3>
+<ul style="padding-left:16pt;font-size:8pt;line-height:1.5;">{{COMPANY_NEWS_BULLETS}}</ul>
+
+<div class="hw-tw" style="margin-top:10pt;">
+    <div class="headwinds">
+        <h3 style="color:var(--red);">Headwinds</h3>
+        <ul style="padding-left:14pt;">{{COMPANY_HEADWINDS}}</ul>
+    </div>
+    <div class="tailwinds">
+        <h3 style="color:var(--green);">Tailwinds</h3>
+        <ul style="padding-left:14pt;">{{COMPANY_TAILWINDS}}</ul>
+    </div>
+</div>
+<div class="page-break"></div>
+<!-- /IF_COMPANY -->
+
+<!-- IF_ANALYST -->
+<!-- ============ PAGE 4: ANALYST CONSENSUS ============ -->
+<div class="banner">
+    <div class="banner-left"><img class="banner-logo" src=""><div class="banner-text"><div class="banner-brand">NewLeaf <span class="banner-system">System</span></div><div class="banner-tagline">Defined-Risk Trading OS</div></div></div>
+    <div class="banner-right"><div class="banner-date">{{REPORT_DATE}}</div><div class="banner-section">{{SYMBOL}} {{STRATEGY_NAME}} &middot; Analyst Consensus</div></div>
+</div>
+<div class="gold-rule"></div>
+
+<h2>Analyst Consensus</h2>
+<p style="color:var(--grey);margin-bottom:8pt;">Wall Street ratings and price targets.</p>
+
+<div class="two-panel">
+    <div class="half">
+        <div style="text-align:center;margin:10pt 0;">
+            <div style="font-size:28pt;font-weight:800;color:var(--forest);">{{ANALYST_COUNT}}</div>
+            <div style="font-size:8pt;color:var(--grey);text-transform:uppercase;letter-spacing:1pt;">Analysts Covering {{SYMBOL}}</div>
+        </div>
+        <div style="text-align:center;margin:10pt 0;">
+            <div style="font-size:11pt;font-weight:700;color:var(--gold);text-transform:uppercase;">{{ANALYST_CONSENSUS}}</div>
+            <div style="font-size:7pt;color:var(--grey);">Consensus Rating</div>
+        </div>
+        <div class="analyst-bar">
+            <span class="buy" style="width:{{ANALYST_BUY_PCT}}%;">{{ANALYST_BUY_PCT}}% Buy</span>
+            <span class="hold" style="width:{{ANALYST_HOLD_PCT}}%;">{{ANALYST_HOLD_PCT}}% Hold</span>
+            <span class="sell" style="width:{{ANALYST_SELL_PCT}}%;">{{ANALYST_SELL_PCT}}% Sell</span>
+        </div>
+        <table style="margin-top:8pt;">
+            <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+            <tbody>
+                <tr><td>Average Price Target</td><td>{{ANALYST_TARGET_LOW}} &ndash; {{ANALYST_TARGET_HIGH}}</td></tr>
+                <tr><td>Current Price</td><td>{{CURRENT_PRICE}}</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="half">
+        <div class="insight-box">
+            <h3>Analyst Nuance</h3>
+            <p>{{ANALYST_NUANCE}}</p>
+        </div>
+    </div>
+</div>
+<div class="page-break"></div>
+<!-- /IF_ANALYST -->
+
+</body>
+</html>

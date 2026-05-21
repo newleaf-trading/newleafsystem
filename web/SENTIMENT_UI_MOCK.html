@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf Invest — Sentiment UI Mock</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--forest:#0B2D23;--gold:#C9A96E;--cream:#F7F5F0;--ink:#0B0F14;--ink-mid:#3d3d35;--ink-muted:#6b6b60;--white:#fff;--green:#1D9E75;--red:#E24B4A;--blue:#1a5ca0;--amber:#d97706;--purple:#7c3aed}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);line-height:1.6}
+
+/* Nav bar */
+.nav{background:var(--forest);padding:10px 24px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{display:flex;align-items:center;gap:8px;color:var(--gold);font-family:'Playfair Display',serif;font-size:18px;font-weight:400;text-decoration:none}
+.nav-brand em{color:#fff}
+.nav-links{display:flex;gap:24px;list-style:none}
+.nav-links a{color:rgba(255,255,255,.6);font-size:12px;font-weight:600;text-decoration:none;letter-spacing:.08em;text-transform:uppercase}
+.nav-links a.active{color:var(--gold);border-bottom:2px solid var(--gold);padding-bottom:4px}
+.nav-right{display:flex;align-items:center;gap:16px}
+.badge-live{font-size:10px;color:#4caf85;display:flex;align-items:center;gap:4px}
+.badge-live::before{content:'';width:6px;height:6px;border-radius:50%;background:#4caf85}
+
+/* Content */
+.container{max-width:1280px;margin:0 auto;padding:0 24px}
+.section-label{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:4px}
+.page-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:400;color:var(--forest);margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--ink-muted);margin-bottom:24px}
+
+/* Cards */
+.card{background:var(--white);border:1px solid rgba(17,24,39,.10);border-radius:16px;padding:20px;position:relative;overflow:hidden}
+
+/* Sentiment specific */
+.sent-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.sent-dot.bullish{background:var(--green)}
+.sent-dot.neutral{background:#9ca3af}
+.sent-dot.bearish{background:var(--red)}
+.sent-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.sent-badge.bullish{background:rgba(29,158,117,.1);color:var(--green);border:1px solid rgba(29,158,117,.2)}
+.sent-badge.neutral{background:rgba(156,163,175,.1);color:#6b7280;border:1px solid rgba(156,163,175,.2)}
+.sent-badge.bearish{background:rgba(226,75,74,.1);color:var(--red);border:1px solid rgba(226,75,74,.2)}
+.sent-badge.caution{background:rgba(217,119,6,.1);color:var(--amber);border:1px solid rgba(217,119,6,.2)}
+
+.driver-list{list-style:none;padding:0;margin:8px 0 0}
+.driver-list li{font-size:11px;line-height:1.6;display:flex;align-items:flex-start;gap:6px;margin-bottom:4px}
+.driver-icon{font-size:10px;flex-shrink:0;margin-top:2px}
+.driver-icon.pos{color:var(--green)}
+.driver-icon.neg{color:var(--red)}
+.driver-icon.neu{color:var(--amber)}
+.driver-source{font-size:9px;color:#9ca3af;margin-left:4px}
+
+.mono{font-family:'Space Mono',monospace}
+
+/* Mock label */
+.mock-banner{background:var(--purple);color:#fff;text-align:center;padding:8px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+
+/* Divider */
+.section-divider{border:none;border-top:1px solid rgba(15,61,46,.08);margin:40px 0}
+
+/* Tile grid */
+.tile-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:20px 0}
+@media(max-width:900px){.tile-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.tile-grid{grid-template-columns:1fr}}
+
+/* Score circle */
+.score-circle{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-size:16px;font-weight:700}
+
+/* Position card */
+.pos-card{display:flex;gap:16px;padding:16px;border-left:3px solid var(--green);cursor:pointer;transition:transform .15s,box-shadow .15s}
+.pos-card:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.05)}
+
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:1px solid rgba(17,24,39,.08);margin-bottom:20px}
+.tab{padding:12px 20px;font-size:12px;font-weight:600;color:var(--ink-muted);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.04em}
+.tab.active{color:var(--forest);border-bottom-color:var(--gold)}
+.tab.new-tab{position:relative}
+.tab.new-tab::after{content:'NEW';position:absolute;top:4px;right:-4px;font-size:7px;font-weight:700;color:var(--purple);background:rgba(124,58,237,.1);padding:1px 4px;border-radius:3px;letter-spacing:.06em}
+
+/* Sentiment detail section */
+.sent-detail{background:rgba(29,158,117,.03);border:1px solid rgba(29,158,117,.12);border-radius:14px;padding:20px}
+.sent-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.sent-score-large{font-family:'Space Mono',monospace;font-size:32px;font-weight:700;color:var(--green)}
+.sent-meta{font-size:11px;color:var(--ink-muted)}
+.sent-summary{font-size:13px;color:var(--ink-mid);line-height:1.7;margin-bottom:12px;padding:12px 16px;background:rgba(255,255,255,.7);border-radius:10px;border:1px solid rgba(17,24,39,.06)}
+</style>
+</head>
+<body>
+
+<div class="mock-banner">UI MOCK &mdash; Sentiment Integration in NewLeaf Invest</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- NAV -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<nav class="nav">
+  <a class="nav-brand" href="#">&#127807; NewLeaf <em>Invest</em></a>
+  <ul class="nav-links">
+    <li><a href="#">Home</a></li>
+    <li><a href="#" class="active">Discover</a></li>
+    <li><a href="#">Build</a></li>
+    <li><a href="#">Positions</a></li>
+    <li><a href="#">Performance</a></li>
+  </ul>
+  <div class="nav-right">
+    <span class="badge-live">Markets Open</span>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MOCK 1: DISCOVER PAGE — TILE CARDS WITH SENTIMENT -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="container" style="padding-top:32px">
+  <div class="section-label">Discover &middot; Scored Opportunities</div>
+  <h1 class="page-title">Today's Top Setups</h1>
+  <p class="page-sub">Scored by Gamma + IV + Trend. Sentiment-enriched for published tiles.</p>
+
+  <div class="tile-grid">
+
+    <!-- TILE 1: Bullish sentiment -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div>
+          <div style="font-size:13px;color:var(--ink-muted);margin-bottom:2px">Iron Butterfly</div>
+          <div style="font-size:20px;font-weight:700;color:var(--forest)">NVDA</div>
+          <div style="font-size:12px;color:var(--ink-muted)">$198.50 &middot; 14 DTE</div>
+        </div>
+        <div class="score-circle" style="background:rgba(29,158,117,.1);color:var(--green);border:2px solid var(--green)">84</div>
+      </div>
+
+      <!-- SENTIMENT BADGE (NEW) -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 12px;background:rgba(29,158,117,.04);border-radius:8px;border:1px solid rgba(29,158,117,.1)">
+        <span class="sent-dot bullish"></span>
+        <span style="font-size:12px;font-weight:700;color:var(--green)">Bullish 78</span>
+        <span style="font-size:10px;color:var(--ink-muted);margin-left:auto">+3 boost</span>
+      </div>
+
+      <div style="font-size:11px;color:var(--ink-muted);line-height:1.5;margin-bottom:12px">
+        Strong analyst upgrades post-earnings. AI capex narrative supporting semiconductor demand.
+      </div>
+
+      <div style="display:flex;gap:8px;font-size:11px;color:var(--ink-muted)">
+        <span>Max: $420</span>
+        <span>&middot;</span>
+        <span>Risk: $580</span>
+        <span>&middot;</span>
+        <span>PoP: 72%</span>
+      </div>
+    </div>
+
+    <!-- TILE 2: Caution flag -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div>
+          <div style="font-size:13px;color:var(--ink-muted);margin-bottom:2px">Iron Condor</div>
+          <div style="font-size:20px;font-weight:700;color:var(--forest)">TSLA</div>
+          <div style="font-size:12px;color:var(--ink-muted)">$245.30 &middot; 21 DTE</div>
+        </div>
+        <div class="score-circle" style="background:rgba(183,121,31,.1);color:var(--amber);border:2px solid var(--amber)">62</div>
+      </div>
+
+      <!-- SENTIMENT: CAUTION -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 12px;background:rgba(217,119,6,.04);border-radius:8px;border:1px solid rgba(217,119,6,.15)">
+        <span style="font-size:12px">&#9888;</span>
+        <span style="font-size:12px;font-weight:700;color:var(--amber)">Caution 32</span>
+        <span style="font-size:10px;color:var(--ink-muted);margin-left:auto">-2 divergence</span>
+      </div>
+
+      <div style="font-size:11px;color:var(--ink-muted);line-height:1.5;margin-bottom:12px">
+        Bearish sentiment on Robotaxi delays. Technicals still bullish — divergence flagged.
+      </div>
+
+      <div style="display:flex;gap:8px;font-size:11px;color:var(--ink-muted)">
+        <span>Max: $310</span>
+        <span>&middot;</span>
+        <span>Risk: $690</span>
+        <span>&middot;</span>
+        <span>PoP: 68%</span>
+      </div>
+    </div>
+
+    <!-- TILE 3: Neutral / no sentiment -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div>
+          <div style="font-size:13px;color:var(--ink-muted);margin-bottom:2px">Bull Put Spread</div>
+          <div style="font-size:20px;font-weight:700;color:var(--forest)">XOM</div>
+          <div style="font-size:12px;color:var(--ink-muted)">$118.40 &middot; 28 DTE</div>
+        </div>
+        <div class="score-circle" style="background:rgba(29,158,117,.1);color:var(--green);border:2px solid var(--green)">76</div>
+      </div>
+
+      <!-- SENTIMENT: NEUTRAL -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 12px;background:rgba(156,163,175,.04);border-radius:8px;border:1px solid rgba(156,163,175,.12)">
+        <span class="sent-dot neutral"></span>
+        <span style="font-size:12px;font-weight:600;color:#6b7280">Neutral 52</span>
+        <span style="font-size:10px;color:var(--ink-muted);margin-left:auto">no modifier</span>
+      </div>
+
+      <div style="font-size:11px;color:var(--ink-muted);line-height:1.5;margin-bottom:12px">
+        Oil prices stable. No material events. Sector in consolidation phase.
+      </div>
+
+      <div style="display:flex;gap:8px;font-size:11px;color:var(--ink-muted)">
+        <span>Max: $180</span>
+        <span>&middot;</span>
+        <span>Risk: $320</span>
+        <span>&middot;</span>
+        <span>PoP: 78%</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MOCK 2: POSITIONS PAGE — CARDS WITH SENTIMENT -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="container">
+  <div class="section-label">Defend &middot; Positions</div>
+  <h1 class="page-title">Active Positions</h1>
+  <p class="page-sub">Sentiment badges on each position card.</p>
+
+  <div style="display:flex;flex-direction:column;gap:12px">
+
+    <!-- Position 1: Bullish sentiment -->
+    <div class="card pos-card">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:rgba(29,158,117,.1);color:var(--green);border:1px solid rgba(29,158,117,.2)">ON TRACK</span>
+          <span class="sent-badge bullish"><span class="sent-dot bullish"></span> 78</span>
+        </div>
+        <div style="font-weight:700;font-size:16px;color:#111827">NVDA</div>
+        <div style="font-size:12px;color:#6b7280">Iron Butterfly &middot; 14 DTE</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px">Position is within expected parameters. Bullish sentiment confirms thesis.</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:var(--green)">+$840</div>
+        <div style="font-size:11px;color:#9ca3af">5 contracts</div>
+      </div>
+    </div>
+
+    <!-- Position 2: Caution -->
+    <div class="card" style="border-left:3px solid var(--amber);padding:16px;display:flex;gap:16px">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:rgba(217,119,6,.1);color:var(--amber);border:1px solid rgba(217,119,6,.2)">MONITOR</span>
+          <span class="sent-badge caution"><span>&#9888;</span> 32</span>
+        </div>
+        <div style="font-weight:700;font-size:16px;color:#111827">TSLA</div>
+        <div style="font-size:12px;color:#6b7280">Iron Condor &middot; 21 DTE</div>
+        <div style="font-size:12px;color:var(--amber);margin-top:4px">Sentiment/technical divergence. Bearish news but bullish chart — watch closely.</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:var(--green)">+$310</div>
+        <div style="font-size:11px;color:#9ca3af">3 contracts</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MOCK 3: STRATEGY DETAIL — SENTIMENT TAB -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="container">
+  <div class="section-label">Strategy Detail &middot; NVDA Iron Butterfly</div>
+  <h1 class="page-title">NVDA &mdash; Iron Butterfly</h1>
+  <p class="page-sub">$198.50 &middot; 14 DTE &middot; Expires May 9, 2026</p>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab">Setup</div>
+    <div class="tab">Thesis</div>
+    <div class="tab">Chart</div>
+    <div class="tab">Risks</div>
+    <div class="tab active new-tab">Sentiment</div>
+  </div>
+
+  <!-- Sentiment tab content -->
+  <div class="sent-detail">
+    <div class="sent-header">
+      <div class="sent-score-large">78</div>
+      <div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="sent-badge bullish"><span class="sent-dot bullish"></span> Bullish</span>
+          <span style="font-size:11px;color:var(--ink-muted)">Confidence: 85%</span>
+        </div>
+        <div class="sent-meta" style="margin-top:4px">
+          Updated 2h ago &middot; Source: Claude Web Search &middot; <span style="color:var(--green);font-weight:600">+3 score boost applied</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="sent-summary">
+      Strong bullish sentiment driven by Morgan Stanley price target raise to $260 and better-than-expected AI infrastructure spending guidance. iPhone 17 pre-order data exceeded estimates by 12%. Semiconductor sector broadly positive on continued data centre demand narrative.
+    </div>
+
+    <!-- Key Drivers -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Key Drivers</div>
+      <ul class="driver-list">
+        <li>
+          <span class="driver-icon pos">&#9650;</span>
+          <span style="color:var(--ink-mid)">Morgan Stanley raises PT to $260, maintains Overweight</span>
+          <span class="driver-source">Bloomberg</span>
+        </li>
+        <li>
+          <span class="driver-icon pos">&#9650;</span>
+          <span style="color:var(--ink-mid)">Q2 AI infrastructure capex guidance beat by $2B — data centre demand accelerating</span>
+          <span class="driver-source">Reuters</span>
+        </li>
+        <li>
+          <span class="driver-icon pos">&#9650;</span>
+          <span style="color:var(--ink-mid)">iPhone 17 pre-orders exceed estimates by 12% in first 48 hours</span>
+          <span class="driver-source">CNBC</span>
+        </li>
+        <li>
+          <span class="driver-icon neu">&#9679;</span>
+          <span style="color:var(--ink-mid)">Earnings report in 5 days — elevated uncertainty priced into IV</span>
+          <span class="driver-source">SEC Filing</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Social + Sector -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div style="background:rgba(255,255,255,.7);border-radius:10px;padding:12px 16px;border:1px solid rgba(17,24,39,.06)">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px">Social Sentiment</div>
+        <div style="font-size:13px;color:var(--ink-mid)">Retail strongly bullish. High call volume on WSB. $NVDA trending on X with positive sentiment velocity.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.7);border-radius:10px;padding:12px 16px;border:1px solid rgba(17,24,39,.06)">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px">Sector Context</div>
+        <div style="font-size:13px;color:var(--ink-mid)">Tech sector rotating into large-cap quality names. Semiconductor subsector outperforming SPX by 340bps this week on AI spending narrative.</div>
+      </div>
+    </div>
+
+    <!-- Modifier explanation -->
+    <div style="background:rgba(29,158,117,.06);border-radius:10px;padding:12px 16px;border:1px solid rgba(29,158,117,.15)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:14px">&#10003;</span>
+        <span style="font-size:12px;font-weight:700;color:var(--green)">Score Boost Applied: +3 points</span>
+      </div>
+      <div style="font-size:12px;color:var(--ink-mid)">
+        Bullish sentiment (78/100) aligns with neutral/bullish technical trend. Opportunity score adjusted from 81 to 84. No material events detected that would warrant suppression.
+      </div>
+    </div>
+
+    <!-- History sparkline mock -->
+    <div style="margin-top:16px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px">7-Day Sentiment History</div>
+      <div style="display:flex;align-items:flex-end;gap:4px;height:40px">
+        <div style="flex:1;background:rgba(156,163,175,.3);border-radius:2px 2px 0 0;height:50%" title="Apr 19: 52"></div>
+        <div style="flex:1;background:rgba(156,163,175,.3);border-radius:2px 2px 0 0;height:45%" title="Apr 20: 48"></div>
+        <div style="flex:1;background:rgba(29,158,117,.3);border-radius:2px 2px 0 0;height:65%" title="Apr 21: 65"></div>
+        <div style="flex:1;background:rgba(29,158,117,.3);border-radius:2px 2px 0 0;height:60%" title="Apr 22: 60"></div>
+        <div style="flex:1;background:rgba(29,158,117,.4);border-radius:2px 2px 0 0;height:72%" title="Apr 23: 72"></div>
+        <div style="flex:1;background:rgba(29,158,117,.4);border-radius:2px 2px 0 0;height:70%" title="Apr 24: 70"></div>
+        <div style="flex:1;background:rgba(29,158,117,.6);border-radius:2px 2px 0 0;height:78%" title="Apr 25: 78"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:#9ca3af;margin-top:4px">
+        <span>Apr 19</span><span>Apr 20</span><span>Apr 21</span><span>Apr 22</span><span>Apr 23</span><span>Apr 24</span><span>Today</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MOCK 4: SUPPRESS EXAMPLE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="container" style="padding-bottom:60px">
+  <div class="section-label">Edge Case &middot; Suppressed Tile</div>
+  <h1 class="page-title">Material Event Detection</h1>
+  <p class="page-sub">When sentiment detects earnings, M&A, or regulatory events, the tile is suppressed from weekly picks.</p>
+
+  <div class="card" style="border-left:3px solid var(--red);opacity:.7">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+      <div>
+        <div style="font-size:13px;color:var(--ink-muted);margin-bottom:2px">Iron Condor</div>
+        <div style="font-size:20px;font-weight:700;color:var(--forest)">AMZN</div>
+        <div style="font-size:12px;color:var(--ink-muted)">$198.20 &middot; 7 DTE</div>
+      </div>
+      <div class="score-circle" style="background:rgba(226,75,74,.1);color:var(--red);border:2px solid var(--red)">71</div>
+    </div>
+
+    <!-- SUPPRESS FLAG -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:10px 14px;background:rgba(226,75,74,.06);border-radius:8px;border:1px solid rgba(226,75,74,.15)">
+      <span style="font-size:16px">&#128683;</span>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--red)">Suppressed &mdash; Material Event</div>
+        <div style="font-size:11px;color:var(--ink-muted)">Earnings report scheduled May 1 (6 days). Binary event inside DTE window. Excluded from weekly picks.</div>
+      </div>
+    </div>
+
+    <ul class="driver-list">
+      <li>
+        <span class="driver-icon neg">&#9660;</span>
+        <span style="color:var(--ink-mid)">Q1 earnings report May 1 — consensus EPS $1.12, options pricing &plusmn;8% move</span>
+        <span class="driver-source">SEC Filing</span>
+      </li>
+      <li>
+        <span class="driver-icon neg">&#9660;</span>
+        <span style="color:var(--ink-mid)">AWS growth deceleration rumours from cloud channel checks</span>
+        <span class="driver-source">The Information</span>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<footer style="background:var(--forest);padding:20px 0;text-align:center">
+  <div style="font-family:'Space Mono',monospace;font-size:10px;color:rgba(201,169,110,.5);letter-spacing:.1em">
+    NEWLEAF SYSTEM &bull; SENTIMENT UI MOCK &bull; APRIL 2026
+  </div>
+</footer>
+
+</body>
+</html>

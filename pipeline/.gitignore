@@ -1,0 +1,8 @@
+node_modules/
+.env
+serviceAccountKey.json
+config.json
+reports/
+!reports/.gitkeep
+*.log
+.DS_Store

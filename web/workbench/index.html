@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-06YFVHFNYT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-06YFVHFNYT");</script>
+<meta charset="UTF-8">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NewLeaf System — Options Strategy Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,700&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="nl-brand.css">
+<script src="load-nav.js" defer></script>
+<style>
+:root{--forest: #0B2D23;--forest-mid:#1a5c44;--gold: #C9A96E;--gold-pale:#f5ecd4;--cream: #F7F5F0;--cream-dark:#EDE8DC;--ink: #0B0F14;--ink-mid:#3d3d35;--ink-muted:#6b6b60;--ink-faint:#9b9b8e;--white:#fff;--border:rgba(15,61,46,.12);--border-mid:rgba(15,61,46,.22);--teal:#0d6e56;--teal-bg:#e0f2ec;--teal-text:#07473a;--amber:#a0620c;--amber-bg:#fef3dc;--amber-text:#7a4a07;--blue:#1a5ca0;--blue-bg:#e6f0fb;--blue-text:#0d3d6e;--purple:#5a3ab5;--purple-bg:#eeedfb;--purple-text:#3a2580;--coral:#b83c20;--coral-bg:#faeae6;--coral-text:#8a2c14;--pink:#993556;--pink-bg:#fbeaf0;--pink-text:#72243e;--green:#1a8c5e;--red:#c0392b;}
+
+/* Strategy Hero Component */
+.strategy-hero{background:linear-gradient(135deg,rgba(15,61,46,.03) 0%,rgba(201,169,110,.05) 100%);padding:48px 0 40px}
+.hero-container{max-width:1280px;margin:0 auto;padding:0 2rem}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+.hero-content{display:flex;flex-direction:column;gap:20px}
+.hero-eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:700}
+.hero-title{font-family:'Playfair Display', serif;font-size:clamp(32px,5vw,48px);font-weight:300;font-style:italic;color:var(--forest);line-height:1.1;letter-spacing:-.02em}
+.hero-subtitle{font-size:15px;color:var(--ink-mid);line-height:1.6;max-width:540px}
+.hero-benefits{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:8px}
+.benefit-card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:14px 16px;display:flex;align-items:start;gap:10px;transition:all .2s}
+.benefit-card:hover{box-shadow:0 4px 12px rgba(15,61,46,.08);transform:translateY(-2px)}
+.benefit-icon{font-size:20px;line-height:1;flex-shrink:0}
+.benefit-text{display:flex;flex-direction:column;gap:2px}
+.benefit-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);font-weight:700}
+.benefit-desc{font-size:11px;color:var(--ink-muted);line-height:1.4}
+.hero-video-container{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(15,61,46,.08);transition:all .3s}
+.hero-video-container:hover{box-shadow:0 8px 24px rgba(15,61,46,.15)}
+.video-wrapper{position:relative;padding-bottom:56.25%;height:0;background:linear-gradient(135deg,#1a3a50 0%,#0d2a3d 100%);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.video-wrapper video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:12px 12px 0 0}
+.video-mockup{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:rgba(201,169,110,.9);padding:2rem}
+.video-mockup-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:8px}
+.video-mockup-title{font-family:'Playfair Display', serif;font-size:28px;font-weight:300;font-style:italic;margin-bottom:4px}
+.video-mockup-subtitle{font-size:13px;opacity:.8;margin-bottom:16px}
+.video-mockup-duration{display:inline-block;background:rgba(201,169,110,.2);border:1px solid rgba(201,169,110,.4);border-radius:20px;padding:4px 12px;font-family:'Space Mono',monospace;font-size:10px;font-weight:700}
+.video-caption{padding:14px 18px;background:rgba(15,61,46,.02);border-top:1px solid var(--border)}
+.video-caption-title{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:4px}
+.video-caption-text{font-size:11px;color:var(--ink-muted);line-height:1.5}
+.content-divider{border:none;border-top:1px solid var(--forest);margin:0 0 32px;opacity:.3}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter', sans-serif;background:var(--cream);color:var(--ink);min-height:100vh}
+nav{background:var(--forest);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-text{font-family:'Playfair Display', serif;font-size:18px;font-weight:400;color:var(--gold);letter-spacing:.01em}
+.logo-text span{color:rgba(201,169,110,.5);font-style:italic}
+.nav{display:flex;gap:0;list-style:none;align-items:center}
+.nav>a,.nav>.nav-item>a{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(201,169,110,.6);text-decoration:none;padding:0 14px;height:56px;display:flex;align-items:center;border-bottom:2px solid transparent;transition:all .2s}
+.nav>a:hover,.nav>a.active,.nav>.nav-item>a:hover,.nav>.nav-item>a.active{color:var(--gold);border-bottom-color:var(--gold)}
+.nav-item{position:relative;height:56px;display:flex;align-items:center}
+.nav-item>a{cursor:pointer}
+.nav-dropdown{position:absolute;top:56px;left:0;background:var(--forest);min-width:220px;border-radius:0 0 8px 8px;box-shadow:0 4px 12px rgba(0,0,0,.2);opacity:0;visibility:hidden;transform:translateY(-10px);transition:all .2s;z-index:200}
+.nav-item:hover .nav-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dropdown-group{padding:12px 0}
+.nav-dropdown-group:not(:last-child){border-bottom:1px solid rgba(201,169,110,.15)}
+.nav-dropdown-label{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);padding:8px 18px 6px;font-weight:400}
+.nav-dropdown a{font-family:'Inter', sans-serif;font-size:13px;color:rgba(255,255,255,.75);text-decoration:none;padding:8px 18px;display:block;transition:all .15s}
+.nav-dropdown a:hover{color:var(--gold);background:rgba(201,169,110,.08)}
+.nav-dropdown a.active{color:var(--gold);font-weight:500}
+.scan-time{font-family:'Space Mono',monospace;font-size:9px;color:rgba(201,169,110,.4);letter-spacing:.06em}
+.pulse-bar{background:var(--forest-mid);padding:9px 2rem;display:flex;align-items:center;gap:28px;overflow-x:auto}
+.pulse-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:rgba(201,169,110,.45);white-space:nowrap}
+.pulse-item{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.pulse-name{font-family:'Space Mono',monospace;font-size:10px;color:rgba(201,169,110,.65)}
+.pulse-val{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--gold)}
+.pulse-chg{font-size:10px;font-family:'Space Mono',monospace}
+.up{color:#5dba8e}.down{color:#e07070}
+.vix-pill{background:rgba(224,112,112,.18);border:1px solid rgba(224,112,112,.3);border-radius:20px;padding:2px 10px;font-family:'Space Mono',monospace;font-size:10px;color:#f0a0a0}
+.pdiv{width:1px;height:16px;background:rgba(201,169,110,.18);flex-shrink:0}
+.hero{padding:44px 2rem 20px;max-width:1280px;margin:0 auto}
+.eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.hero h1{font-family:'Playfair Display', serif;font-size:clamp(28px,4vw,42px);font-weight:300;color:var(--forest);line-height:1.05;letter-spacing:-.02em;margin-bottom:10px}
+.hero h1 em{font-style:italic;color:var(--gold)}
+.hero-sub{font-size:14px;color:var(--ink-muted);max-width:720px;line-height:1.5}
+.summary-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:20px 2rem;max-width:1280px;margin:0 auto}
+.s-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:16px 20px;position:relative;overflow:hidden}
+.s-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.s-card.c-forest::before{background:var(--forest)}.s-card.c-teal::before{background:var(--teal)}.s-card.c-blue::before{background:var(--blue)}.s-card.c-amber::before{background:var(--amber)}
+.s-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px}
+.s-val{font-family:'Playfair Display', serif;font-size:30px;font-weight:400;color:var(--forest);line-height:1;margin-bottom:3px}
+.s-desc{font-size:11px;color:var(--ink-faint)}
+.sec-hdr{padding:6px 2rem 14px;max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+.sec-title{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-muted)}
+.new-badge{background:var(--gold-pale);border:1px solid rgba(201,169,110,.3);border-radius:20px;padding:3px 10px;font-family:'Space Mono',monospace;font-size:9px;color:var(--amber-text)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:0 2rem 32px;max-width:1280px;margin:0 auto}
+.tile{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:22px;cursor:pointer;transition:all .22s cubic-bezier(.25,.8,.25,1);position:relative;overflow:hidden;display:flex;flex-direction:column;text-decoration:none;color:inherit}
+.tile:hover{border-color:var(--border-mid);transform:translateY(-2px);box-shadow:0 8px 28px rgba(15,61,46,.07)}
+.tile.wide{grid-column:span 2}
+.tile::after{content:'';position:absolute;top:0;left:0;width:4px;height:100%;border-radius:14px 0 0 14px}
+.t-teal::after{background:var(--teal)}.t-amber::after{background:var(--amber)}.t-blue::after{background:var(--blue)}.t-purple::after{background:var(--purple)}.t-coral::after{background:var(--coral)}.t-pink::after{background:var(--pink)}.t-forest::after{background:var(--forest)}
+.tile-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.tile-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.t-teal .tile-icon{background:var(--teal-bg)}.t-amber .tile-icon{background:var(--amber-bg)}.t-blue .tile-icon{background:var(--blue-bg)}.t-purple .tile-icon{background:var(--purple-bg)}.t-coral .tile-icon{background:var(--coral-bg)}.t-pink .tile-icon{background:var(--pink-bg)}.t-forest .tile-icon{background:rgba(15,61,46,.08)}
+.tbadge{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;padding:2px 8px;border-radius:20px;font-weight:700}
+.b-new{background:var(--teal-bg);color:var(--teal-text);border:1px solid rgba(13,110,86,.2)}
+.b-pop{background:var(--amber-bg);color:var(--amber-text);border:1px solid rgba(160,98,12,.2)}
+.b-neu{background:var(--blue-bg);color:var(--blue-text);border:1px solid rgba(26,92,160,.2)}
+.tile-body{display:flex;gap:20px;flex:1}
+.tile.wide .tile-body{flex-direction:row;align-items:flex-start}
+.tile:not(.wide) .tile-body{flex-direction:column}
+.tile-meta{flex:1}
+.tile-strat{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:4px}
+.tile-name{font-family:'Playfair Display', serif;font-size:20px;font-weight:400;color:var(--forest);line-height:1.1;letter-spacing:-.01em;margin-bottom:6px}
+.tile-desc{font-size:12px;color:var(--ink-muted);line-height:1.5}
+.count-block{background:var(--cream);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;align-items:baseline;gap:6px;flex-shrink:0}
+.count-num{font-family:'Playfair Display', serif;font-size:38px;font-weight:400;line-height:1}
+.t-teal .count-num{color:var(--teal)}.t-amber .count-num{color:var(--amber)}.t-blue .count-num{color:var(--blue)}.t-purple .count-num{color:var(--purple)}.t-coral .count-num{color:var(--coral)}.t-pink .count-num{color:var(--pink)}.t-forest .count-num{color:var(--forest)}
+.count-lbl{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);line-height:1.3}
+.tile-divider{width:100%;height:1px;background:var(--border);margin:10px 0}
+.tile-stats{display:flex;gap:14px;flex-wrap:wrap}
+.stat{display:flex;flex-direction:column;gap:1px}
+.stat-lbl{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)}
+.stat-val{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--ink-mid)}
+.stat-val.g{color:var(--green)}.stat-val.a{color:var(--amber)}
+.elig-bar{height:4px;background:var(--cream-dark);border-radius:4px;overflow:hidden;margin-top:8px}
+.elig-fill{height:100%;border-radius:4px;transition:width 1.2s cubic-bezier(.25,.8,.25,1)}
+.t-teal .elig-fill{background:var(--teal)}.t-amber .elig-fill{background:var(--amber)}.t-blue .elig-fill{background:var(--blue)}.t-purple .elig-fill{background:var(--purple)}.t-coral .elig-fill{background:var(--coral)}.t-pink .elig-fill{background:var(--pink)}.t-forest .elig-fill{background:var(--forest)}
+.bar-lbl{font-family:'Space Mono',monospace;font-size:9px;color:var(--ink-faint);margin-top:4px}
+.tile-cta{margin-top:auto;padding-top:12px}
+.cta-btn{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--forest);background:none;border:1px solid var(--border-mid);border-radius:6px;padding:7px 14px;cursor:pointer;transition:all .18s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.cta-btn:hover{background:var(--forest);color:var(--gold);border-color:var(--forest)}
+.sdot{width:6px;height:6px;border-radius:50%;background:#5dba8e;display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+.loading{text-align:center;padding:60px 20px;color:var(--ink-muted);font-size:14px}
+@media(max-width:900px){.grid{grid-template-columns:1fr 1fr}.tile.wide{grid-column:span 2}.summary-row{grid-template-columns:repeat(2,1fr)}.hero-grid{grid-template-columns:1fr;gap:24px}.hero-benefits{grid-template-columns:1fr}}
+@media(max-width:600px){.grid{grid-template-columns:1fr}.tile.wide{grid-column:span 1}.tile.wide .tile-body{flex-direction:column}.summary-row{grid-template-columns:1fr 1fr}.nav a{padding:0 8px;font-size:9px}.hero,.summary-row,.sec-hdr,.grid{padding-left:1rem;padding-right:1rem}.strategy-hero{padding:32px 0 24px}.hero-container{padding:0 1rem}.hero-grid{gap:20px}.hero-benefits{grid-template-columns:1fr}}
+
+/* ───────── HUB REDESIGN ───────── */
+
+/* Equal card heights — grid stretches, tile flex column */
+.grid{align-items:stretch}
+.tile{height:100%;display:flex;flex-direction:column}
+.tile .tile-body{display:flex;flex-direction:column;flex:1}
+.tile .tile-desc{flex:0 0 auto}
+.tile .tile-cta{margin-top:auto}
+
+/* Compact payoff sparkline */
+.payoff-spark{width:100%;height:40px;display:block;margin:6px 0 10px}
+.payoff-spark svg{width:100%;height:40px;display:block}
+
+/* Eligible count block (count-num + progress bar grouped) */
+.elig-block{margin:0 0 10px}
+
+/* Condition tags */
+.tag-row{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 10px}
+.tag{display:inline-flex;align-items:center;gap:4px;background:var(--cream);border:1px solid var(--border);border-radius:20px;padding:2px 8px;font-size:11px;color:var(--ink-mid)}
+.tag .tag-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.tag.iv-boost{background:#f5edd6;border-color:rgba(200,168,90,.4);color:#c07020;font-weight:500}
+
+/* Mute zero-eligible cards */
+.tile.no-entry{opacity:.5;filter:grayscale(.3)}
+.tile.no-entry::after{background:#ccc9b8 !important}
+.tile.no-entry .cta-btn{pointer-events:none;opacity:.5}
+.tile.no-entry .build-link{display:none}
+
+/* Score pill */
+.score-pill{font-family:'Space Mono',monospace;font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:2px;border:.5px solid #e5e1d4;background:#F7F4EE;color:#7a7868;display:inline-block;letter-spacing:.04em}
+.score-pill.score-high{background:#e8f4eb;color:#2d7d4f;border-color:rgba(45,125,79,.25)}
+.score-pill.score-mid{background:#f5edd6;color:#c07020;border-color:rgba(200,168,90,.3)}
+
+/* Build link in CTA */
+.tile-cta{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.build-link{font-size:.68rem;color:#0F3D2E;text-decoration:none;font-weight:500;opacity:.65;transition:opacity .15s;letter-spacing:.03em}
+.build-link:hover{opacity:1}
+
+/* Stronger section dividers */
+.sec-hdr.cat-income{border-left:3px solid #C8A85A;padding-left:12px}
+.sec-hdr.cat-neutral{border-left:3px solid #1a7070;padding-left:12px}
+.sec-hdr.cat-directional{border-left:3px solid #0F3D2E;padding-left:12px}
+.sec-hdr.cat-extra{border-left:3px solid #6b6b60;padding-left:12px}
+.sec-hdr .sec-title{font-size:.68rem;color:#7a7868}
+
+/* Section grid wrapper — grids per category */
+.cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:0 2rem 24px;max-width:1280px;margin:0 auto;align-items:stretch}
+@media(max-width:900px){.cat-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.cat-grid{grid-template-columns:1fr;padding-left:1rem;padding-right:1rem}}
+
+/* Top opportunity banner */
+.top-pick-banner{margin:1rem 2rem 1.25rem;background:#0F3D2E;border-radius:4px;padding:.85rem 1.25rem;display:flex;align-items:center;justify-content:space-between;gap:16px;max-width:1216px;}
+.top-pick-banner.banner-center{margin-left:auto;margin-right:auto}
+.tp-eyebrow{font-size:.58rem;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.45);margin-bottom:4px;font-family:'Space Mono',monospace}
+.tp-body{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tp-name{font-family:'Playfair Display',serif;font-size:1rem;font-style:italic;font-weight:300;color:#C8A85A}
+.tp-sep{color:rgba(255,255,255,.2)}
+.tp-ticker{font-family:'Space Mono',monospace;font-size:.85rem;font-weight:700;color:#fff}
+.tp-detail{font-size:.72rem;color:rgba(255,255,255,.5)}
+.tp-btn{background:#C8A85A;color:#0F3D2E;border:none;padding:8px 16px;font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:3px;cursor:pointer;white-space:nowrap;flex-shrink:0;text-decoration:none;display:inline-block;font-family:'Space Mono',monospace}
+.tp-btn:hover{background:#e0c47c}
+@media(max-width:600px){.top-pick-banner{margin:1rem 1rem 1rem;flex-direction:column;align-items:flex-start}}
+
+/* Market strip — dark bar with IV environment */
+.market-strip{background:#0B2D23;padding:14px 2rem;display:flex;align-items:center;gap:32px;flex-wrap:wrap}
+.market-strip-inner{max-width:1280px;margin:0 auto;display:flex;align-items:flex-start;gap:32px;width:100%;flex-wrap:wrap}
+.market-stat{display:flex;flex-direction:column;gap:0}
+.market-stat-label{font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+.market-stat-sub{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.04em}
+.iv-bar{display:flex;gap:3px;margin:4px 0 3px}
+.iv-seg{font-size:.55rem;padding:2px 7px;border-radius:2px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.25);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.04em}
+.iv-seg.active{background:rgba(200,168,90,.2);color:#C8A85A;font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- Strategy Hero Component -->
+<section class="strategy-hero">
+  <div class="hero-container">
+    <div class="hero-grid">
+      <!-- Left: Content -->
+      <div class="hero-content">
+        <p class="hero-eyebrow">✦ STRATEGY COMMAND CENTRE</p>
+        <h1 class="hero-title">Your Income Engine, Live.</h1>
+        <p class="hero-subtitle">
+          NewLeaf System scans 108 stocks in real time across 8 options strategies. Every tile you see below is scored automatically using implied volatility rank, gamma wall positioning, and trend — so you always know which strategies have live opportunities right now, before you open a single chart.
+        </p>
+
+        <div class="hero-benefits">
+          <div class="benefit-card">
+            <div class="benefit-icon">🟢</div>
+            <div class="benefit-text">
+              <span class="benefit-label">LIVE ELIGIBILITY</span>
+              <span class="benefit-desc">Each strategy tile updates in real time. Green counts mean actionable setups exist right now.</span>
+            </div>
+          </div>
+
+          <div class="benefit-card">
+            <div class="benefit-icon">📊</div>
+            <div class="benefit-text">
+              <span class="benefit-label">UNIFIED SCORING</span>
+              <span class="benefit-desc">Every opportunity across all 8 strategies is scored 0–100 using the same methodology: Gamma (40pts) + Implied Volatility (35pts) + Trend (25pts).</span>
+            </div>
+          </div>
+
+          <div class="benefit-card">
+            <div class="benefit-icon">🎯</div>
+            <div class="benefit-text">
+              <span class="benefit-label">STRATEGY DIVERSITY</span>
+              <span class="benefit-desc">Income strategies for neutral markets, spread strategies for directional bias. NewLeaf surfaces the right strategy for current conditions.</span>
+            </div>
+          </div>
+
+          <div class="benefit-card">
+            <div class="benefit-icon">⚡</div>
+            <div class="benefit-text">
+              <span class="benefit-label">ONE-CLICK ACCESS</span>
+              <span class="benefit-desc">Click any strategy tile to open the full scanner with pre-filtered, ranked setups ready to review.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Video Player -->
+      <div class="hero-video-container">
+        <div class="video-wrapper">
+          <video controls poster="https://pub-554c552d94e74e32822dd23be2656ba0.r2.dev/thumbnails/indexpagethumnail.png">
+            <source src="https://pub-554c552d94e74e32822dd23be2656ba0.r2.dev/strategy-guides/NewLeafStrategyOverview.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+        <div class="video-caption">
+          <div class="video-caption-title">📹 Strategy Overview (2 min)</div>
+          <div class="video-caption-text">
+            See how NewLeaf System organizes 8 different options strategies, how the unified scoring system works across all approaches, and how to navigate from the hub to detailed strategy scanners.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<div class="hero">
+  <p class="eyebrow">Strategy Command Centre</p>
+  <h1>Choose your <em>income engine.</em></h1>
+  <p class="hero-sub">Real-time eligibility powered by the NewLeaf strategy engine. Each tile shows live counts based on IV rank, liquidity, trend, and gamma walls.</p>
+</div>
+
+<div class="summary-row">
+  <div class="s-card c-forest">
+    <p class="s-label">Total Opportunities</p>
+    <p class="s-val" id="total-opps">--</p>
+    <p class="s-desc">Across all strategies today</p>
+  </div>
+  <div class="s-card c-teal">
+    <p class="s-label">Avg IV Premium</p>
+    <p class="s-val" id="avg-iv">--<span style="font-size:16px;color:var(--ink-muted)">%</span></p>
+    <p class="s-desc">ATM IV across watchlist</p>
+  </div>
+  <div class="s-card c-blue">
+    <p class="s-label">Strategies Active</p>
+    <p class="s-val" id="active-strats">--</p>
+    <p class="s-desc">With eligible opportunities</p>
+  </div>
+  <div class="s-card c-amber">
+    <p class="s-label">Last Scan</p>
+    <p class="s-val" style="font-size:20px;padding-top:5px" id="last-scan">--</p>
+    <p class="s-desc"><span class="sdot"></span> <span id="scan-status">Loading...</span></p>
+  </div>
+</div>
+
+<!-- Dark market strip — IV environment indicator -->
+<div class="market-strip">
+  <div class="market-strip-inner">
+    <div class="market-stat">
+      <div class="market-stat-label">IV environment</div>
+      <div class="iv-bar" id="iv-env-bar">
+        <span class="iv-seg" data-seg="low">Low</span>
+        <span class="iv-seg" data-seg="mod">Mod</span>
+        <span class="iv-seg active" data-seg="elev">Elev</span>
+        <span class="iv-seg" data-seg="high">High</span>
+      </div>
+      <div class="market-stat-sub" id="iv-env-sub" style="color:#C8A85A">Premium selling favoured</div>
+    </div>
+  </div>
+</div>
+
+<!-- Top opportunity banner — populated dynamically by renderHub -->
+<a href="#" id="top-pick-banner" class="top-pick-banner banner-center" style="display:none;text-decoration:none">
+  <div class="tp-left">
+    <div class="tp-eyebrow" id="tp-eyebrow">Best setup now</div>
+    <div class="tp-body">
+      <span class="tp-name" id="tp-name">--</span>
+      <span class="tp-sep">·</span>
+      <span class="tp-ticker" id="tp-ticker">--</span>
+      <span class="tp-detail" id="tp-detail">--</span>
+    </div>
+  </div>
+  <span class="tp-btn">Open setup →</span>
+</a>
+
+<div id="grid-container" class="grid" style="display:block;padding:0;max-width:none;">
+  <div class="loading">Loading strategy data...</div>
+</div>
+
+<script src="public/js/pipelineAdapter.browser.js"></script>
+<script src="public/js/strategyEngine.browser.js"></script>
+<script src="public/js/dataLoader.js"></script>
+
+<script>
+'use strict';
+
+const R2 = 'https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev';
+let allData = null;
+
+// Clock is now handled by nav-component.html
+
+async function loadData() {
+  try {
+    document.getElementById('scan-status').textContent = 'Loading reports...';
+
+    const loader = new DataLoader();
+
+    // Set progress callback
+    window.onLoadProgress = (pct, msg) => {
+      document.getElementById('scan-status').textContent = msg;
+    };
+
+    // Load all strategies
+    allData = await loader.loadAllStrategies({ minScore: 30 });
+
+    console.log('Strategy data loaded:', allData);
+
+    renderHub(allData);
+    // updateMarketData() removed - pulse-bar no longer exists
+
+    document.getElementById('scan-status').textContent = 'Live';
+  } catch (error) {
+    console.error('Failed to load data:', error);
+    document.getElementById('grid-container').innerHTML = '<div class="loading">⚠️ Failed to load strategy data. Check console for details.</div>';
+    document.getElementById('scan-status').textContent = 'Error';
+  }
+}
+
+function renderHub(data) {
+  const { byStrategy } = data;
+
+  // Calculate totals
+  const totalOpps = Object.values(byStrategy).reduce((sum, arr) => sum + arr.length, 0);
+  const activeStrats = Object.values(byStrategy).filter(arr => arr.length > 0).length;
+  const watchlistSize = Object.keys(data.bySymbol || {}).length;
+
+  // Update summary cards
+  document.getElementById('total-opps').textContent = totalOpps;
+  document.getElementById('active-strats').textContent = activeStrats + '/9';
+  // document.getElementById('watching-val').textContent = watchlistSize; // Removed - pulse-bar no longer exists
+
+  // Calculate avg IV
+  const symbols = Object.values(data.bySymbol || {});
+  const avgIV = symbols.length > 0
+    ? symbols.reduce((sum, s) => sum + (s.atmIv || 0), 0) / symbols.length * 100
+    : 0;
+  document.getElementById('avg-iv').textContent = avgIV.toFixed(1);
+
+  // Update last scan
+  const now = new Date();
+  document.getElementById('last-scan').textContent = now.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+
+  // IV environment band
+  updateIvEnvironment(avgIV);
+
+  // Top opportunity banner
+  updateTopPickBanner(byStrategy, avgIV);
+
+  // Render strategy tiles
+  renderTiles(byStrategy, watchlistSize, data.bySymbol);
+}
+
+function updateIvEnvironment(avgIV) {
+  let active = 'elev';
+  let sub = 'Premium selling favoured';
+  if (avgIV < 20) { active = 'low';  sub = 'Premium selling unfavoured'; }
+  else if (avgIV < 30) { active = 'mod';  sub = 'Mixed conditions'; }
+  else if (avgIV < 45) { active = 'elev'; sub = 'Premium selling favoured'; }
+  else                  { active = 'high'; sub = 'Tail risk elevated'; }
+
+  document.querySelectorAll('#iv-env-bar .iv-seg').forEach(seg => {
+    seg.classList.toggle('active', seg.dataset.seg === active);
+  });
+  document.getElementById('iv-env-sub').textContent = sub;
+}
+
+// Map a strategy id to its scanner page (mirrors tiles[].link)
+const STRATEGY_LINKS = {
+  CSP: 'sell-puts.html', WHEEL: 'wheel.html', IRON_CONDOR: 'condor-scanner.html',
+  BROKEN_WING: 'broken-wing.html', BULL_PUT: 'bull-put.html', BEAR_CALL: 'bear-call.html',
+  BULL_CALL: 'bull-call.html', BEAR_PUT: 'bear-put.html', CALENDAR: 'calendar.html'
+};
+const STRATEGY_NAMES = {
+  CSP: 'Cash-Secured Puts', WHEEL: 'The Wheel', IRON_CONDOR: 'Iron Condor',
+  BROKEN_WING: 'Broken Wing Butterfly', BULL_PUT: 'Bull Put Spread',
+  BEAR_CALL: 'Bear Call Spread', BULL_CALL: 'Bull Call Spread',
+  BEAR_PUT: 'Bear Put Spread', CALENDAR: 'Calendar Spread'
+};
+
+function updateTopPickBanner(byStrategy, avgIV) {
+  // Find highest-scoring opportunity across all strategies
+  let best = null;
+  for (const [stratId, opps] of Object.entries(byStrategy)) {
+    for (const o of opps) {
+      if (!best || (o.score || 0) > (best.opp.score || 0)) {
+        best = { stratId, opp: o };
+      }
+    }
+  }
+  const banner = document.getElementById('top-pick-banner');
+  if (!best) { banner.style.display = 'none'; return; }
+
+  const stratName = STRATEGY_NAMES[best.stratId] || best.stratId;
+  const link = STRATEGY_LINKS[best.stratId] || '#';
+  const yieldPct = best.opp.setup?.yield != null ? `${best.opp.setup.yield.toFixed(1)}% yield` : null;
+  const dte = best.opp.setup?.dte != null ? `${best.opp.setup.dte} DTE` : '30 DTE';
+  const detailParts = [yieldPct, dte, `IV ${avgIV.toFixed(1)}%`].filter(Boolean);
+
+  document.getElementById('tp-eyebrow').textContent = `Best setup now · IV ${avgIV.toFixed(1)}%`;
+  document.getElementById('tp-name').textContent = stratName;
+  document.getElementById('tp-ticker').textContent = best.opp.symbol || '--';
+  document.getElementById('tp-detail').textContent = detailParts.join(' · ');
+  banner.href = link;
+  banner.style.display = 'flex';
+}
+
+// Compact payoff sparklines (viewBox 0 0 200 40, baseline y=25, spot at x=100)
+const PAYOFF_PATHS = {
+  CSP:         'M10,35 L90,10 L190,10',                       // short put
+  WHEEL:       'M10,35 L90,10 L190,10',                       // similar to CSP
+  IRON_CONDOR: 'M10,35 L50,15 L150,15 L190,35',               // tent flat top
+  BROKEN_WING: 'M10,30 L60,30 L100,5 L140,20 L190,20',        // asymmetric
+  BULL_PUT:    'M10,30 L60,30 L110,10 L190,10',               // bull put credit
+  BEAR_CALL:   'M10,10 L90,10 L140,30 L190,30',               // bear call credit
+  BULL_CALL:   'M10,30 L70,30 L130,10 L190,10',               // bull call debit
+  BEAR_PUT:    'M10,10 L70,10 L130,30 L190,30',               // bear put debit
+  CALENDAR:    'M10,35 L50,25 L100,5 L150,25 L190,35',        // tent peak
+  ALL_STOCKS:  'M10,32 L40,22 L70,28 L100,15 L130,20 L160,12 L190,18'
+};
+
+function renderPayoffSpark(strategyId, color) {
+  const path = PAYOFF_PATHS[strategyId] || PAYOFF_PATHS.IRON_CONDOR;
+  const stroke = ({
+    teal: '#0d6e56', amber: '#a0620c', blue: '#1a5ca0',
+    purple: '#5a3ab5', coral: '#b83c20', pink: '#993556',
+    forest: '#0F3D2E'
+  })[color] || '#0F3D2E';
+  return `<div class="payoff-spark"><svg viewBox="0 0 200 40" preserveAspectRatio="none">
+    <line x1="0" y1="25" x2="200" y2="25" stroke="#e5e1d4" stroke-width="1"/>
+    <line x1="100" y1="4" x2="100" y2="38" stroke="#c4c0b0" stroke-width="1" stroke-dasharray="2,2"/>
+    <polyline points="${path.replace(/[ML]/g,' ').trim()}" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg></div>`;
+}
+
+function scoreLevel(n) {
+  if (n >= 75) return 'high';
+  if (n >= 50) return 'mid';
+  return '';
+}
+
+// Strategy → strategy-builder data-strategy key. CSP / Wheel are real
+// single-leg builds; calendar_spread is a stub that redirects to the
+// Calendar Scanner from inside the builder.
+const BUILDER_KEYS = {
+  CSP: 'cash_secured_put',
+  WHEEL: 'wheel',
+  IRON_CONDOR: 'iron_condor',
+  BROKEN_WING: 'broken_wing_put',
+  BULL_PUT: 'bull_put_spread',
+  BEAR_CALL: 'bear_call_spread',
+  BULL_CALL: 'bull_call_spread',
+  BEAR_PUT: 'bear_put_spread',
+  CALENDAR: 'calendar_spread'
+};
+
+function renderTiles(byStrategy, total, bySymbol) {
+  const tiles = [
+    {
+      id: 'CSP',
+      name: 'Cash-Secured Puts',
+      icon: '📉',
+      color: 'teal',
+      category: 'income',
+      ivBoost: true,
+      badge: 'New',
+      badgeClass: 'b-new',
+      wide: false,
+      desc: 'Sell puts to collect premium. Profits if stock stays flat or rises. Best for bullish/neutral stocks with high IV.',
+      link: 'sell-puts.html',
+      criteria: ['IV > 30%', 'Bullish/Neutral', 'Liquid options'],
+      stats: (opps) => {
+        if (opps.length === 0) return [];
+        const avgYield = opps.reduce((sum, o) => sum + (o.setup?.yield || 0), 0) / opps.length;
+        const topPick = opps[0]?.symbol || '--';
+        return [
+          { label: 'Avg Yield', value: avgYield.toFixed(1) + '%', class: 'g' },
+          { label: 'Avg DTE', value: '30d' },
+          { label: 'Top Pick', value: topPick, class: 'a' }
+        ];
+      }
+    },
+    {
+      id: 'WHEEL',
+      name: 'The Wheel',
+      icon: '♻',
+      color: 'amber',
+      category: 'income',
+      badge: 'Popular',
+      badgeClass: 'b-pop',
+      wide: false,
+      desc: 'CSP → Assignment → Covered Call. Systematic income on quality stocks you want to own.',
+      link: 'wheel.html',
+      stats: (opps) => {
+        if (opps.length === 0) return [];
+        const quality = opps.filter(o => ['mega', 'large'].includes(o.tier)).length;
+        return [
+          { label: 'Quality Stocks', value: quality },
+          { label: 'Avg Score', value: opps.length > 0 ? Math.round(opps[0].score) : '--' }
+        ];
+      }
+    },
+    {
+      id: 'IRON_CONDOR',
+      name: 'Iron Condor',
+      icon: '🦅',
+      color: 'blue',
+      category: 'neutral',
+      ivBoost: true,
+      badge: 'Neutral',
+      badgeClass: 'b-neu',
+      wide: false,
+      desc: 'Sell OTM put spread + call spread. Profit in range. Gamma wall protected.',
+      link: 'condor-scanner.html',
+      criteria: ['Range-bound', 'Gamma wall present'],
+      stats: (opps) => {
+        if (opps.length === 0) return [];
+        const avgScore = opps.reduce((sum, o) => sum + o.score, 0) / opps.length;
+        return [
+          { label: 'Avg Score', value: Math.round(avgScore) },
+          { label: 'Range-bound', value: opps.length }
+        ];
+      }
+    },
+    {
+      id: 'BROKEN_WING',
+      name: 'Broken Wing Butterfly',
+      icon: '🦗',
+      color: 'forest',
+      category: 'neutral',
+      ivBoost: true,
+      badge: 'Asymmetric',
+      badgeClass: 'b-neu',
+      wide: false,
+      desc: 'Asymmetric butterfly at gamma wall. Credit entry with zero risk on one side. Best for wider bands where condors don\'t fit.',
+      link: 'broken-wing.html',
+      criteria: ['Band > 10%', 'Gamma wall present', 'IV > 25%'],
+      stats: (opps) => {
+        if (opps.length === 0) return [];
+        const avgScore = opps.reduce((sum, o) => sum + o.score, 0) / opps.length;
+        return [
+          { label: 'Setups', value: opps.length },
+          { label: 'Avg Score', value: Math.round(avgScore) },
+          { label: 'Entry', value: 'Credit', class: 'g' }
+        ];
+      }
+    },
+    {
+      id: 'CALENDAR',
+      name: 'Calendar Spread',
+      icon: '📅',
+      color: 'purple',
+      category: 'neutral',
+      ivBoost: true,
+      wide: false,
+      desc: 'Sell front month, buy back month. Profit from IV term structure and time decay.',
+      link: 'calendar.html',
+      criteria: ['IV slope+', 'Low realised vol'],
+      stats: (opps) => {
+        if (opps.length === 0) return [];
+        return [
+          { label: 'Term Plays', value: opps.length },
+          { label: 'IV Slope+', value: opps.length }
+        ];
+      }
+    },
+    {
+      id: 'BULL_PUT',
+      name: 'Bull Put Spread',
+      icon: '📈',
+      color: 'purple',
+      category: 'directional',
+      ivBoost: true,
+      wide: false,
+      desc: 'Sell put spread below price. Defined risk, bullish bias required.',
+      link: 'bull-put.html',
+      criteria: ['Bullish bias', 'Defined risk'],
+      stats: (opps) => {
+        if (opps.length === 0) return [];
+        return [
+          { label: 'Bullish', value: opps.length },
+          { label: 'Top Score', value: opps[0]?.score || '--' }
+        ];
+      }
+    },
+    {
+      id: 'BEAR_CALL',
+      name: 'Bear Call Spread',
+      icon: '📉',
+      color: 'coral',
+      category: 'directional',
+      ivBoost: true,
+      wide: false,
+      desc: 'Sell call spread above price. Defined risk, bearish bias required.',
+      link: 'bear-call.html',
+      criteria: ['Bearish bias', 'Defined risk'],
+      stats: (opps) => {
+        if (opps.length === 0) return [];
+        return [
+          { label: 'Bearish', value: opps.length },
+          { label: 'Top Score', value: opps[0]?.score || '--' }
+        ];
+      }
+    },
+    {
+      id: 'BULL_CALL',
+      name: 'Bull Call Spread',
+      icon: '🚀',
+      color: 'pink',
+      category: 'directional',
+      wide: false,
+      desc: 'Buy call spread. Defined risk debit spread for strong bullish moves.',
+      link: 'bull-call.html',
+      criteria: ['Strong bull', 'Debit entry'],
+      stats: (opps) => {
+        if (opps.length === 0) return [];
+        return [
+          { label: 'Strong Bull', value: opps.length },
+          { label: 'Top R/R', value: '--' }
+        ];
+      }
+    },
+    {
+      id: 'BEAR_PUT',
+      name: 'Bear Put Spread',
+      icon: '⬇️',
+      color: 'forest',
+      category: 'directional',
+      wide: false,
+      desc: 'Buy put spread. Defined risk debit spread for strong bearish moves.',
+      link: 'bear-put.html',
+      criteria: ['Strong bear', 'Debit entry'],
+      stats: (opps) => {
+        if (opps.length === 0) return [];
+        return [
+          { label: 'Strong Bear', value: opps.length },
+          { label: 'Top R/R', value: '--' }
+        ];
+      }
+    }
+  ];
+
+  // "All Stocks" tile lives in its own section
+  const extraTile = {
+    id: 'ALL_STOCKS',
+    name: 'All Stocks Scanner',
+    icon: '📊',
+    color: 'forest',
+    category: 'extra',
+    wide: true,
+    badge: 'Full View',
+    badgeClass: 'b-new',
+    desc: 'View complete watchlist with all stocks, prices, IV data, and multi-strategy analysis. Your main options dashboard.',
+    link: 'all-stocks.html',
+    stats: () => {
+      const totalStocks = bySymbol ? Object.keys(bySymbol).length : 0;
+      return [
+        { label: 'Total Stocks', value: totalStocks },
+        { label: 'Live Data', value: '15min updates' }
+      ];
+    }
+  };
+
+  function renderTileHtml(tile) {
+    const opps = byStrategy[tile.id] || [];
+    const count = opps.length;
+    const pct = total > 0 ? (count / total * 100) : 0;
+    const stats = tile.stats(opps);
+    const noEntry = count === 0 && tile.id !== 'ALL_STOCKS';
+
+    const topScore = opps[0]?.score ? Math.round(opps[0].score) : null;
+    const scorePillHtml = topScore !== null
+      ? `<span class="score-pill score-${scoreLevel(topScore)}">Score ${topScore}</span>`
+      : '';
+
+    const sparkHtml = renderPayoffSpark(tile.id, tile.color);
+
+    const eligHtml = `
+      <div class="elig-block">
+        <div class="count-block" style="margin-bottom:8px"><span class="count-num">${count}</span><span class="count-lbl">${tile.wide ? 'stocks<br>eligible' : 'eligible'}</span></div>
+        <div class="elig-bar"><div class="elig-fill" style="width:${pct}%"></div></div>
+        <p class="bar-lbl">${count} of ${total} stocks eligible (${pct.toFixed(1)}%)</p>
+      </div>`;
+
+    // Tag list: IV+ favoured first, then criteria
+    const criteriaTags = (tile.criteria || []).map(c =>
+      `<span class="tag"><span class="tag-dot" style="background:var(--${tile.color})"></span>${c}</span>`
+    );
+    if (tile.ivBoost) {
+      criteriaTags.unshift('<span class="tag iv-boost">IV+ favoured</span>');
+    }
+    const tagsHtml = criteriaTags.length
+      ? `<div class="tag-row">${criteriaTags.join('')}</div>`
+      : '';
+
+    const statsHtml = stats.length > 0
+      ? `<div class="tile-divider"></div>
+         <div class="tile-stats">
+           ${stats.map(s => `<div class="stat"><span class="stat-lbl">${s.label}</span><span class="stat-val ${s.class || ''}">${s.value}</span></div>`).join('')}
+         </div>`
+      : '';
+
+    const builderKey = BUILDER_KEYS[tile.id];
+    // IMPORTANT: this MUST be a <span>, not an <a>. The outer .tile is already
+    // an <a> element and HTML5 parsers auto-close it when they encounter a
+    // nested <a>, splitting the tile into pieces and breaking the grid layout.
+    const buildLinkHtml = (!noEntry && builderKey)
+      ? `<span class="build-link" role="button" tabindex="0" data-href="strategy-builder.html?strategy=${builderKey}" onclick="event.stopPropagation();event.preventDefault();location.href=this.dataset.href;return false;">Build →</span>`
+      : '';
+
+    const stratLabel = tile.wide
+      ? 'Full Watchlist'
+      : tile.category === 'income' ? 'Income Strategy'
+      : tile.category === 'neutral' ? 'Range Strategy'
+      : 'Spread Strategy';
+
+    return `<a href="${tile.link}" class="tile t-${tile.color} ${tile.wide ? 'wide' : ''} ${noEntry ? 'no-entry' : ''}">
+      <div class="tile-hdr">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="tile-icon">${tile.icon}</div>
+          <div>
+            <p class="tile-strat">${stratLabel}</p>
+            <h2 class="tile-name">${tile.name}</h2>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+          ${scorePillHtml}
+          ${tile.badge ? `<span class="tbadge ${tile.badgeClass}">${tile.badge}</span>` : ''}
+        </div>
+      </div>
+      ${sparkHtml}
+      <div class="tile-body">
+        ${eligHtml}
+        <p class="tile-desc">${tile.desc}</p>
+        ${tagsHtml}
+        ${statsHtml}
+      </div>
+      <div class="tile-cta">
+        <span class="cta-btn">Open Scanner →</span>
+        ${buildLinkHtml}
+      </div>
+    </a>`;
+  }
+
+  // Group strategies by category
+  const groups = [
+    { key: 'income',      title: 'Income & Premium Collection', cls: 'cat-income' },
+    { key: 'neutral',     title: 'Neutral / Range',             cls: 'cat-neutral' },
+    { key: 'directional', title: 'Directional Spreads',         cls: 'cat-directional' }
+  ];
+
+  let html = '';
+  for (const g of groups) {
+    const groupTiles = tiles.filter(t => t.category === g.key);
+    if (!groupTiles.length) continue;
+    const activeCount = groupTiles.filter(t => (byStrategy[t.id] || []).length > 0).length;
+    html += `<div class="sec-hdr ${g.cls}">
+      <span class="sec-title">${g.title}</span>
+      <span class="new-badge">${activeCount} of ${groupTiles.length} active</span>
+    </div>
+    <div class="cat-grid">${groupTiles.map(renderTileHtml).join('')}</div>`;
+  }
+
+  // Extra section: All Stocks
+  html += `<div class="sec-hdr cat-extra">
+    <span class="sec-title">Full Watchlist</span>
+    <span class="new-badge">All scanners</span>
+  </div>
+  <div class="cat-grid">${renderTileHtml(extraTile)}</div>`;
+
+  document.getElementById('grid-container').innerHTML = html;
+}
+
+// updateMarketData function removed - pulse-bar no longer exists
+
+// Load data on page load
+window.addEventListener('load', loadData);
+</script>
+</body>
+</html>

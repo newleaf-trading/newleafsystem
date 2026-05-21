@@ -1,0 +1,55 @@
+.card {
+  background: var(--nl-card);
+  border: 1px solid var(--nl-border);
+  border-radius: var(--nl-radius);
+}
+
+.sm { padding: 10px; }
+.md { padding: 14px; }
+.lg { padding: 20px; }
+
+.highlight {
+  border-color: var(--nl-gold);
+  background: rgba(201, 169, 110, 0.03);
+}
+
+.clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--nl-shadow-md);
+}
+
+/* ─── StatCard ─── */
+.stat {}
+
+.statLabel {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--nl-text-dim);
+  margin-bottom: 6px;
+}
+
+.statValue {
+  font-family: var(--nl-font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--nl-text);
+  margin-bottom: 2px;
+}
+
+.statSub {
+  font-size: 11px;
+  color: var(--nl-text-dim);
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 640px) {
+  .md { padding: 12px; }
+  .lg { padding: 16px; }
+  .statValue { font-size: 18px; }
+}

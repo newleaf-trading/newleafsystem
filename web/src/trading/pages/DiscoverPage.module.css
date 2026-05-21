@@ -1,0 +1,75 @@
+/* ─── Discover Page ─── */
+
+.filterRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filterToggle {
+  padding: 9px 16px;
+  border-radius: var(--nl-radius-pill);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filterToggleActive {
+  border: 1.5px solid rgba(11, 45, 35, 0.25);
+  background: rgba(11, 45, 35, 0.08);
+  color: rgba(11, 45, 35, 0.95);
+}
+
+.filterToggleInactive {
+  border: 1px solid var(--nl-border);
+  background: var(--nl-card);
+  color: var(--nl-text-muted);
+}
+
+.filterDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--nl-gold);
+}
+
+/* ─── Market Pulse ─── */
+.pulse {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--nl-radius-sm);
+  background: rgba(11, 45, 35, 0.04);
+  border: 1px solid rgba(11, 45, 35, 0.08);
+  margin-bottom: var(--nl-space-md);
+}
+
+.pulseIcon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.pulseHeadline {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--nl-text);
+}
+
+.pulseCount {
+  font-size: 12px;
+  color: var(--nl-text-muted);
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 640px) {
+  .filterRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf System — Weekly Pipeline Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--forest:#0B2D23;--gold:#C9A96E;--gold-pale:#f5ecd4;--cream:#F7F5F0;--ink:#0B0F14;--ink-mid:#3d3d35;--ink-muted:#6b6b60;--white:#fff;--green:#1D9E75;--red:#E24B4A;--blue:#1a5ca0;--amber:#d97706;--purple:#7c3aed}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);line-height:1.6}
+.container{max-width:1100px;margin:0 auto;padding:0 2rem}
+header{background:var(--forest);padding:28px 0}
+header h1{font-family:'Playfair Display',serif;font-size:28px;color:var(--gold);font-weight:400;text-align:center}
+header p{font-size:12px;color:rgba(201,169,110,.5);text-align:center;margin-top:4px;font-family:'Space Mono',monospace;letter-spacing:.08em}
+.section{padding:40px 0}
+.section-title{font-family:'Playfair Display',serif;font-size:24px;color:var(--forest);margin-bottom:6px}
+.section-sub{font-size:13px;color:var(--ink-muted);margin-bottom:24px;line-height:1.7}
+.divider{border:none;border-top:1px solid rgba(15,61,46,.12);margin:40px 0}
+.card{background:var(--white);border:1px solid rgba(15,61,46,.12);border-radius:12px;padding:22px;margin-bottom:16px}
+.card-title{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:10px}
+.callout{padding:20px 24px;border-radius:12px;margin:20px 0;font-size:13px;line-height:1.7}
+.callout-forest{background:var(--forest);color:rgba(255,255,255,.85)}
+.callout-forest strong{color:var(--gold)}
+.callout-warn{background:#fef8f0;border:1px solid rgba(217,119,6,.2);color:#7a4a07}
+.callout-warn strong{color:#92400e}
+.diagram{background:#0B2D23;border-radius:12px;padding:28px;margin:20px 0;overflow-x:auto}
+.diagram pre{color:rgba(255,255,255,.85);font-family:'Space Mono',monospace;font-size:11px;line-height:1.8;white-space:pre}
+.h{color:#C9A96E}.g{color:#1D9E75}.r{color:#E24B4A}.b{color:#60a5fa}.p{color:#a78bfa}.a{color:#fbbf24}.w{color:rgba(255,255,255,.5)}
+code{font-family:'Space Mono',monospace;font-size:11px;background:rgba(15,61,46,.06);padding:2px 6px;border-radius:3px}
+.num{font-family:'Playfair Display',serif;font-size:64px;font-weight:700;color:rgba(15,61,46,.06);position:absolute;top:8px;right:16px}
+.step-grid{display:grid;grid-template-columns:1fr;gap:0;margin:20px 0}
+.step{background:var(--white);border:1px solid rgba(15,61,46,.12);padding:24px 28px;position:relative;overflow:hidden}
+.step:first-child{border-radius:12px 12px 0 0}
+.step:last-child{border-radius:0 0 12px 12px}
+.step + .step{border-top:none}
+.step-label{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px}
+.step-title{font-size:16px;font-weight:700;color:var(--forest);margin-bottom:8px}
+.step-desc{font-size:13px;color:var(--ink-mid);line-height:1.6}
+.arrow{text-align:center;padding:4px 0;font-size:18px;color:var(--gold)}
+.output-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:20px 0}
+@media(max-width:800px){.output-grid{grid-template-columns:repeat(2,1fr)}}
+.output-card{background:var(--white);border:1px solid rgba(15,61,46,.12);border-radius:10px;padding:16px;text-align:center}
+.output-icon{font-size:28px;margin-bottom:8px}
+.output-label{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;margin-bottom:4px}
+.output-desc{font-size:11px;color:var(--ink-muted);line-height:1.4}
+.output-card.pdf{border-top:3px solid var(--red)}
+.output-card.video{border-top:3px solid var(--purple)}
+.output-card.json{border-top:3px solid var(--amber)}
+.output-card.firestore{border-top:3px solid var(--blue)}
+.output-card.analysis{border-top:3px solid var(--green)}
+table.t{width:100%;border-collapse:collapse;font-size:12px;background:var(--white);border-radius:12px;overflow:hidden;border:1px solid rgba(15,61,46,.12);margin:16px 0}
+table.t thead{background:var(--forest)}
+table.t th{padding:12px 14px;text-align:left;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);font-weight:700}
+table.t td{padding:10px 14px;border-bottom:1px solid rgba(15,61,46,.06);vertical-align:top}
+table.t tr:last-child td{border-bottom:none}
+.mono{font-family:'Space Mono',monospace;font-size:11px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>Weekly Pipeline Architecture</h1>
+    <p>The definitive guide &middot; Analysis-first design &middot; April 2026</p>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 1: THE PROBLEM -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">1. The Problem</h2>
+  <p class="section-sub">The weekly pipeline produces 5 outputs. Today, Claude analysis runs <strong>last</strong> &mdash; after PDFs and pick JSONs are already generated from basic tile data. This creates inconsistency: the PDF says one thing, the app shows richer analysis.</p>
+
+  <div class="callout callout-warn">
+    <strong>Current problem:</strong> PDFs are generated from raw tile data (legs, Greeks, scores). Claude analysis adds strategy rationale, technical insights, theta decay curves, and risk scenarios &mdash; but only to Firestore. The PDF and video script never see this analysis. Investors reading the PDF get a different (weaker) explanation than what the app shows.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 2: THE PRINCIPLE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">2. The Principle: Analysis First</h2>
+  <p class="section-sub">Claude analysis must happen <strong>before</strong> any output is generated. All 5 outputs read from the <strong>same enriched data</strong>. One source of truth, zero inconsistency.</p>
+
+  <div class="diagram">
+<pre>
+<span class="h">ANALYSIS-FIRST PIPELINE</span>
+
+<span class="w">Active tiles</span>                <span class="h">ENRICHMENT</span>                          <span class="h">5 OUTPUTS</span>
+<span class="w">from Firestore</span>              <span class="h">(happens ONCE)</span>                       <span class="h">(all from same data)</span>
+
+                                                         <span class="r">&#9474; PDF Report</span>
+                                                         <span class="r">&#9474;</span> (includes analysis)
+                                                         <span class="r">&#9474;</span>
+                        <span class="g">&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;</span>         <span class="p">&#9474; Video Script</span>
+<span class="w">tiles/{id}</span> &#9472;&#9472;&#9472;&#9472;&#9658; <span class="g">&#9474;  Claude Analysis  &#9474;</span> &#9472;&#9472;&#9472;&#9658; <span class="p">&#9474;</span> (references insights)
+<span class="w">(basic data)</span>        <span class="g">&#9474;  (analyse-tiles)  &#9474;</span>         <span class="p">&#9474;</span>
+                        <span class="g">&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</span>         <span class="a">&#9474; Pick JSON</span>
+                               &#9474;                         <span class="a">&#9474;</span> (analysis summary)
+                               &#9474;                         <span class="a">&#9474;</span>
+                               &#9660;                         <span class="b">&#9474; Firestore tiles</span>
+                     <span class="g">enriched-pick.json</span>            <span class="b">&#9474;</span> (weeklyPicks)
+                     <span class="w">(tile + analysis</span>               <span class="b">&#9474;</span>
+                      <span class="w">merged together)</span>              <span class="g">&#9474; Firestore analyses</span>
+                                                         <span class="g">&#9474;</span> (3 detail tabs)
+</pre>
+  </div>
+
+  <div class="callout callout-forest">
+    <strong>Key insight:</strong> The enriched pick JSON is an intermediate artifact that combines raw tile data + Claude analysis. Every downstream output reads from this artifact. If Claude generates a brilliant insight about gamma wall positioning, it appears in the PDF, the video script, the pick card, AND the app &mdash; all identical.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 3: THE 5 OUTPUTS -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">3. The 5 Outputs</h2>
+  <p class="section-sub">Every weekly publish produces exactly these 5 artifacts. All generated from the same enriched data.</p>
+
+  <div class="output-grid">
+    <div class="output-card pdf">
+      <div class="output-icon">&#128196;</div>
+      <div class="output-label" style="color:var(--red)">PDF Report</div>
+      <div class="output-desc">Per-pick deep analysis. Sent to subscribers, embedded in newsletters. Includes strategy rationale, payoff diagram, risk analysis.</div>
+    </div>
+    <div class="output-card video">
+      <div class="output-icon">&#127909;</div>
+      <div class="output-label" style="color:var(--purple)">Video Script</div>
+      <div class="output-desc">Narration script for creative team. References same analysis: "We chose iron condor because gamma walls at 215/245 create a natural range..."</div>
+    </div>
+    <div class="output-card json">
+      <div class="output-icon">&#128202;</div>
+      <div class="output-label" style="color:var(--amber)">Pick JSON</div>
+      <div class="output-desc">Machine-readable pick data for tracking. Powers the /picks pages, performance tracking, win rate calculations.</div>
+    </div>
+    <div class="output-card firestore">
+      <div class="output-icon">&#128293;</div>
+      <div class="output-label" style="color:var(--blue)">Firestore Tiles</div>
+      <div class="output-desc">weeklyPicks/{weekId} document. Investors build portfolios from these. Includes legs, Greeks, P&L metrics.</div>
+    </div>
+    <div class="output-card analysis">
+      <div class="output-icon">&#129302;</div>
+      <div class="output-label" style="color:var(--green)">Firestore Analyses</div>
+      <div class="output-desc">analyses/{tileId} documents. Powers 3 tabs: "Why This Trade?", "Technical Analysis", "Theta &amp; Risk". The richest content.</div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 4: PIPELINE STAGES -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">4. Pipeline Stages &mdash; In Order</h2>
+  <p class="section-sub">The weekly publish command: <code>npm run weekly</code>. Runs all stages sequentially. Each stage depends on the previous one.</p>
+
+  <div class="step-grid">
+    <div class="step">
+      <div class="num">1</div>
+      <div class="step-label">Stage 1 &mdash; Select &amp; Bundle</div>
+      <div class="step-title">create-weekly-picks.js</div>
+      <div class="step-desc">
+        Read active tiles from Firestore. Bundle into <code>weeklyPicks/{weekId}</code>. Mark previous weeks as "past".
+        <br><br>
+        <strong>Input:</strong> Firestore <code>tiles</code> (isActive: true)<br>
+        <strong>Output:</strong> Firestore <code>weeklyPicks/{weekId}</code> with tileIds, picks summary, theme, dateRange<br>
+        <strong>What's NOT here yet:</strong> No analysis, no PDF, no video. Just the raw pick selection.
+      </div>
+    </div>
+    <div class="step">
+      <div class="num">2</div>
+      <div class="step-label">Stage 2 &mdash; Claude Deep Analysis</div>
+      <div class="step-title">analyse-tiles.cjs</div>
+      <div class="step-desc">
+        For each pick, call Claude CLI with full tile context (legs, Greeks, gamma walls, spot price, DTE). Claude generates structured JSON with 4 analysis sections. Save to local JSON + Firestore.
+        <br><br>
+        <strong>Input:</strong> Firestore <code>tiles/{tileId}</code> (the picks from Stage 1)<br>
+        <strong>Output:</strong>
+        <ul style="margin:8px 0 0 20px;font-size:12px">
+          <li><strong>Local:</strong> <code>pipeline/output/{weekId}/{tileId}.json</code> (enriched pick = tile + analysis merged)</li>
+          <li><strong>Firestore:</strong> <code>analyses/{tileId}</code> (for app's 3 detail tabs)</li>
+        </ul>
+        <br>
+        <strong>The enriched pick JSON contains:</strong>
+        <ul style="margin:8px 0 0 20px;font-size:12px">
+          <li>All tile data (symbol, strategy, legs, Greeks, gamma walls, P&L metrics)</li>
+          <li><code>strategyRationale</code> &mdash; why this strategy, strikes, expiry + alternatives</li>
+          <li><code>technicalIndicators</code> &mdash; RSI, Bollinger, MACD, MAs, IV, support/resistance</li>
+          <li><code>thetaDecaySchedule</code> &mdash; daily theta curve, early close recommendation</li>
+          <li><code>riskAnalysis</code> &mdash; max pain, earnings risk, management plan</li>
+        </ul>
+        <br>
+        This is the <strong>single source of truth</strong> for all downstream outputs.
+      </div>
+    </div>
+    <div class="step">
+      <div class="num">3</div>
+      <div class="step-label">Stage 3 &mdash; Generate Outputs</div>
+      <div class="step-title">generate-outputs.js (new unified script)</div>
+      <div class="step-desc">
+        Read the enriched pick JSONs from Stage 2. Generate all 3 remaining outputs:
+        <br><br>
+        <strong>3a. PDF Reports</strong> (per pick)<br>
+        Full analysis baked in: strategy rationale, payoff diagram, theta decay chart, risk scenarios, management plan.
+        <br>Output: <code>pipeline/output/{weekId}/pdf/{SYMBOL}-{strategy}.pdf</code>
+        <br><br>
+        <strong>3b. Video Script</strong> (per week)<br>
+        Narration script referencing Claude's analysis: "For Adobe, we're using an iron condor because the gamma walls at $215 and $245 create a defined range, and with IV rank at 42, premium selling is favored..."
+        <br>Output: <code>pipeline/output/{weekId}/video-script.md</code>
+        <br><br>
+        <strong>3c. Pick JSON Archive</strong> (per week)<br>
+        Machine-readable snapshot for performance tracking. Includes analysis summary for each pick.
+        <br>Output: <code>pipeline/output/{weekId}/picks.json</code>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-forest">
+    <strong>npm run weekly</strong> = Stage 1 &rarr; Stage 2 &rarr; Stage 3. One command, all 5 outputs, perfectly in sync.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 5: ENRICHED PICK SCHEMA -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">5. Enriched Pick Schema</h2>
+  <p class="section-sub">The intermediate JSON that all outputs read from. Tile data + Claude analysis merged into one document.</p>
+
+  <div class="card" style="font-family:'Space Mono',monospace;font-size:11px;line-height:1.8;overflow-x:auto">
+<pre style="white-space:pre">{
+  <span style="color:var(--gold)">// ── TILE DATA (from Firestore tiles/{id}) ──</span>
+  "tileId": "Mzzh3SRLE0xwM8mV1haI",
+  "symbol": "ADBE",
+  "companyName": "Adobe",
+  "strategy": "Iron Condor",
+  "direction": "neutral",
+  "spotPrice": 240.11,
+  "expiry": "2026-04-24",
+  "dte": 10,
+  "legs": [
+    { "action": "BUY",  "type": "PUT",  "strike": 215, "premium": 3.41, "delta": -0.15 },
+    { "action": "SELL", "type": "PUT",  "strike": 220, "premium": 5.05, "delta": -0.22 },
+    { "action": "SELL", "type": "CALL", "strike": 240, "premium": 2.25, "delta": 0.30 },
+    { "action": "BUY",  "type": "CALL", "strike": 245, "premium": 1.65, "delta": 0.18 }
+  ],
+  "greeks": { "netDelta": 0.036, "netTheta": 0.12, "netVega": -0.08, "netGamma": -0.006 },
+  "gammaData": { "put_wall": 215, "call_wall": 245, "gamma_flip": 230, "confidence_score": 0.72 },
+  "maxProfit": 224, "maxLoss": 276, "netCredit": 2.24, "rewardRisk": 0.81, "oddsOfProfit": 70,
+
+  <span style="color:var(--gold)">// ── CLAUDE ANALYSIS (generated in Stage 2) ──</span>
+  "analysis": {
+    "strategyRationale": {
+      "whyThisStrategy": "Iron Condor is ideal for ADBE's current range-bound ...",
+      "whyTheseStrikes": "Put spread at 215/220 sits below the gamma put wall ...",
+      "whyThisExpiry": "10 DTE captures peak theta decay acceleration ...",
+      "alternativesConsidered": [...]
+    },
+    "technicalIndicators": {
+      "rsi": { "value": 48, "signal": "neutral", "description": "..." },
+      "bollingerBands": { "upper": 254, "lower": 226, "width": 11.7, "signal": "neutral", ... },
+      "macd": { ... },
+      "movingAverages": { ... },
+      "impliedVolatility": { "currentIV": 28.5, "ivRank": 42, ... },
+      "supportResistance": { "support": [...], "resistance": [...] }
+    },
+    "thetaDecaySchedule": {
+      "description": "With 10 DTE, theta decay accelerates rapidly ...",
+      "dailyDecay": [
+        { "daysToExpiry": 10, "dailyTheta": 12.00, "cumulativeTheta": 12 },
+        { "daysToExpiry": 7,  "dailyTheta": 16.50, "cumulativeTheta": 54 },
+        { "daysToExpiry": 3,  "dailyTheta": 28.00, "cumulativeTheta": 152 },
+        { "daysToExpiry": 1,  "dailyTheta": 45.00, "cumulativeTheta": 210 }
+      ],
+      "earlyCloseRecommendation": "Close at 50% profit ($112) or if ADBE breaches $220/$245"
+    },
+    "riskAnalysis": {
+      "maxPainScenario": "ADBE gaps below $215 on earnings miss or macro selloff",
+      "earningsRisk": "No earnings in DTE window. Next report May 15.",
+      "eventRisk": "FOMC minutes April 16 could increase volatility.",
+      "managementPlan": "Close at 50% profit. Roll down if ADBE breaks $225. ..."
+    }
+  },
+
+  <span style="color:var(--gold)">// ── METADATA ──</span>
+  "weekId": "2026-W16",
+  "generatedAt": "2026-04-14T09:45:00Z",
+  "claudeModel": "claude-sonnet-4-20250514"
+}</pre>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 6: DATA FLOW DIAGRAM -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">6. Complete Data Flow</h2>
+  <p class="section-sub">From daily scanning to weekly publish to investor consumption. Every data path mapped.</p>
+
+  <div class="diagram">
+<pre>
+<span class="h">&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;</span>
+<span class="h">  DAILY AUTOMATED (Cron &mdash; Mon-Fri)</span>
+<span class="h">&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;</span>
+
+  <span class="b">Alpaca</span> &#9472;&#9472;&#9472;&#9658; <span class="g">pipeline-fast.js</span> (every 15m) &#9472;&#9472;&#9658; <span class="a">R2</span> reports/{SYM}/latest.json
+                         &#9474;
+  <span class="b">Yahoo</span>  &#9472;&#9472;&#9472;&#9658; <span class="g">pipeline-oi-enrichment.js</span>   &#9472;&#9472;&#9658; <span class="a">R2</span> reports/{SYM}/ (+ OI)
+                         &#9474;
+                  <span class="g">pipeline-watchlist.js</span>        &#9472;&#9472;&#9658; <span class="a">R2</span> watchlist-snapshots.json
+                         &#9474;
+                  <span class="g">sync-r2-to-firestore.js</span>     &#9472;&#9472;&#9658; <span class="p">Firestore</span> tiles/{id}
+                                                      <span class="p">Firestore</span> marketState
+                                                          &#9474;
+  <span class="b">Alpaca</span> &#9472;&#9472;&#9472;&#9658; <span class="g">update-pick-outcomes.js</span>     &#9472;&#9472;&#9658; <span class="p">Firestore</span> pick_outcomes
+  (6pm)
+
+<span class="h">&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;</span>
+<span class="h">  WEEKLY PUBLISH (Monday AM &mdash; npm run weekly)</span>
+<span class="h">&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;</span>
+
+  <span class="p">Firestore</span>                   &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+  tiles/{id} &#9472;&#9472;&#9658; <span class="h">STAGE 1</span> &#9474;  <span class="g">create-weekly-picks.js</span>                &#9474;
+                  <span class="w">Select</span>  &#9474;  Bundle active tiles &rarr; weeklyPicks      &#9474;
+                          &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                                            &#9474;
+                                            &#9660; <span class="w">tileIds</span>
+                          &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+              <span class="h">STAGE 2</span> &#9474;  <span class="g">analyse-tiles.cjs</span> (Claude CLI)           &#9474;
+              <span class="w">Enrich</span>  &#9474;  Per tile: build prompt &rarr; Claude &rarr; JSON   &#9474;
+                          &#9474;  Save enriched-pick.json locally           &#9474;
+                          &#9474;  Push analyses/{tileId} to Firestore       &#9474;
+                          &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+                                            &#9474;
+                                            &#9660; <span class="w">enriched-pick.json</span> (tile + analysis)
+                          &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+              <span class="h">STAGE 3</span> &#9474;  <span class="g">generate-outputs.js</span>                       &#9474;
+              <span class="w">Output</span>  &#9474;  Read enriched-pick.json for each tile      &#9474;
+                          &#9474;                                             &#9474;
+                          &#9474;  <span class="r">3a.</span> generate-pdf.py       &rarr; PDF per pick   &#9474;
+                          &#9474;  <span class="p">3b.</span> generate-video-script  &rarr; .md script    &#9474;
+                          &#9474;  <span class="a">3c.</span> archive picks.json     &rarr; week archive  &#9474;
+                          &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+
+<span class="h">&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;</span>
+<span class="h">  CONSUMERS (React App + External)</span>
+<span class="h">&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;</span>
+
+  <span class="p">Firestore weeklyPicks</span>   &rarr;  <span class="g">/picks/</span>          Current week picks
+  <span class="p">Firestore pick_outcomes</span> &rarr;  <span class="g">/picks/recap</span>     Performance recap
+                               <span class="g">/picks/monthly</span>   Monthly ledger + heatmap
+
+  <span class="p">Firestore tiles</span>         &rarr;  <span class="g">/trading/</span>        Dashboard, Discover, Portfolio
+  <span class="p">Firestore analyses</span>      &rarr;  <span class="g">/trading/position</span> 3 detail tabs (Why, Technical, Theta)
+
+  <span class="a">R2 reports/</span>             &rarr;  <span class="g">/workbench/</span>      Scanner, Strategy Builder, Stock pages
+
+  <span class="r">PDF files</span>               &rarr;  Email, newsletter, social media
+  <span class="p">Video scripts</span>           &rarr;  Creative team &rarr; video production
+</pre>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 7: NPM SCRIPTS -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">7. Target npm Scripts</h2>
+  <p class="section-sub">Clean, composable commands for the weekly workflow.</p>
+
+  <table class="t">
+    <thead>
+      <tr>
+        <th>Command</th>
+        <th>What it does</th>
+        <th>Stages</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="mono"><strong>npm run weekly</strong></td>
+        <td>Full weekly publish. Select picks &rarr; Claude analysis &rarr; generate all outputs.</td>
+        <td>1 &rarr; 2 &rarr; 3</td>
+      </tr>
+      <tr>
+        <td class="mono">npm run picks:create</td>
+        <td>Stage 1 only. Bundle tiles into weeklyPicks.</td>
+        <td>1</td>
+      </tr>
+      <tr>
+        <td class="mono">npm run analyse</td>
+        <td>Stage 2 only. Run Claude analysis on active tiles.</td>
+        <td>2</td>
+      </tr>
+      <tr>
+        <td class="mono">npm run analyse -- --id {tileId}</td>
+        <td>Analyse a single tile (re-run if needed).</td>
+        <td>2 (single)</td>
+      </tr>
+      <tr>
+        <td class="mono">npm run outputs</td>
+        <td>Stage 3 only. Generate PDFs + video script + pick JSON from enriched data.</td>
+        <td>3</td>
+      </tr>
+      <tr>
+        <td class="mono">npm run picks:close</td>
+        <td>Friday close. Calculate P&L, mark week as past.</td>
+        <td>Close</td>
+      </tr>
+      <tr>
+        <td class="mono">npm run picks:preview</td>
+        <td>Dry run &mdash; show what would be selected without publishing.</td>
+        <td>1 (dry)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 8: OUTPUT DIRECTORY -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">8. Output Directory Structure</h2>
+  <p class="section-sub">All weekly outputs organised by week ID. The enriched JSON is the master, everything else derives from it.</p>
+
+  <div class="card" style="font-family:'Space Mono',monospace;font-size:11px;line-height:1.8;color:var(--ink-mid)">
+    pipeline/output/<br>
+    &nbsp;&nbsp;2026-W16/<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<strong style="color:var(--green)">enriched/</strong><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ADBE-iron-condor.json&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; <span style="color:var(--green)">Master: tile + Claude analysis merged</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;QQQ-iron-condor.json<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SPY-iron-condor.json<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AAPL-iron-butterfly.json<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;HON-bwb-put.json<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<strong style="color:var(--red)">pdf/</strong><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ADBE-iron-condor.pdf&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; Generated from enriched JSON<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;QQQ-iron-condor.pdf<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<strong style="color:var(--purple)">video-script.md</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; Week narration script<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<strong style="color:var(--amber)">picks.json</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; Machine-readable week archive<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<strong>summary.txt</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; Human-readable summary
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 9: IMPLEMENTATION PRIORITY -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">9. Implementation Priority</h2>
+  <p class="section-sub">What to build, in what order.</p>
+
+  <table class="t">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Task</th>
+        <th>Effort</th>
+        <th>Impact</th>
+        <th>Details</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1</strong></td>
+        <td>Copy &amp; adapt analyse-tiles.cjs</td>
+        <td>1 hour</td>
+        <td style="color:var(--red);font-weight:700">Critical</td>
+        <td>Copy from OptionAdvisor/pipeline/. Update SA_PATH. Save enriched JSON locally + push to Firestore. This unblocks everything.</td>
+      </tr>
+      <tr>
+        <td><strong>2</strong></td>
+        <td>Add R2&rarr;Firestore sync to cron</td>
+        <td>5 min</td>
+        <td style="color:var(--amber);font-weight:700">High</td>
+        <td>Add <code>40 14 * * 1-5</code> cron entry. Tiles auto-refresh daily.</td>
+      </tr>
+      <tr>
+        <td><strong>3</strong></td>
+        <td>Update generate-outputs to read enriched JSON</td>
+        <td>2 hours</td>
+        <td style="color:var(--amber);font-weight:700">High</td>
+        <td>PDF and video script generators read from enriched-pick.json instead of raw tile data. Analysis baked into all outputs.</td>
+      </tr>
+      <tr>
+        <td><strong>4</strong></td>
+        <td>Wire npm run weekly</td>
+        <td>10 min</td>
+        <td style="color:var(--green);font-weight:700">Medium</td>
+        <td>Chain: picks:create &amp;&amp; analyse &amp;&amp; outputs. One command for entire weekly publish.</td>
+      </tr>
+      <tr>
+        <td><strong>5</strong></td>
+        <td>Test end-to-end</td>
+        <td>1 hour</td>
+        <td style="color:var(--green);font-weight:700">Medium</td>
+        <td>Verify: enriched JSON &rarr; PDF has analysis &rarr; Firestore has analysis &rarr; React app shows 3 tabs &rarr; pick JSON matches.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 10: PRINCIPLE SUMMARY -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="callout callout-forest" style="text-align:center;padding:32px">
+    <div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--gold);margin-bottom:12px">Analysis first. One source. Five outputs.</div>
+    <div style="font-size:14px;max-width:600px;margin:0 auto;line-height:1.7">
+      Claude generates the analysis <strong>once</strong>. The enriched pick JSON is the single source of truth.
+      Every output &mdash; PDF, video, JSON, Firestore tiles, Firestore analyses &mdash; reads from the same data.
+      Zero inconsistency. Zero duplication. One command: <code style="background:rgba(255,255,255,.15);color:#fff">npm run weekly</code>.
+    </div>
+  </div>
+</div>
+
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 10: ENHANCED OUTPUTS -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">10. Enhanced Outputs &mdash; What Changes With Claude Analysis</h2>
+  <p class="section-sub">Each output is refined to use the enriched data. Fields marked <span style="color:var(--green);font-weight:700">NEW</span> are powered by Claude analysis. Fields marked <span style="color:var(--amber);font-weight:700">UPGRADED</span> replace generic placeholders with pick-specific insights.</p>
+
+  <!-- PDF REPORT -->
+  <div class="card" style="border-top:3px solid var(--red)">
+    <div class="card-title" style="color:var(--red)">PDF Report &mdash; Enhanced Sections</div>
+    <p style="font-size:12px;color:var(--ink-muted);margin-bottom:16px">The PDF template (report-v3.html) has 8 pages. Claude analysis enriches 5 of them.</p>
+    <table class="t">
+      <thead><tr><th>PDF Page</th><th>Template Section</th><th>Before (generic)</th><th>After (Claude-enriched)</th><th>Source Field</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Page 1</strong></td>
+          <td>Trade Thesis</td>
+          <td>Generic strategy description</td>
+          <td><span style="color:var(--amber);font-weight:600">UPGRADED</span> &mdash; Claude's "whyThisStrategy" + "whyTheseStrikes" + "whyThisExpiry" woven into 3-point thesis</td>
+          <td class="mono">strategyRationale.*</td>
+        </tr>
+        <tr>
+          <td><strong>Page 2</strong></td>
+          <td>Macro Environment</td>
+          <td>fetch-context.py web scrape (stale)</td>
+          <td><span style="color:var(--amber);font-weight:600">UPGRADED</span> &mdash; Claude's IV analysis + event risk context replaces web scrape</td>
+          <td class="mono">technicalIndicators.impliedVolatility<br>riskAnalysis.eventRisk</td>
+        </tr>
+        <tr>
+          <td><strong>Page 4</strong></td>
+          <td>Support &amp; Resistance</td>
+          <td>Gamma walls only (from R2)</td>
+          <td><span style="color:var(--amber);font-weight:600">UPGRADED</span> &mdash; Gamma walls + Claude's S/R levels with strength ratings + Bollinger Band context</td>
+          <td class="mono">technicalIndicators.supportResistance<br>technicalIndicators.bollingerBands</td>
+        </tr>
+        <tr>
+          <td><strong>Page 6</strong></td>
+          <td>Greeks &amp; Exits</td>
+          <td>Basic theta value, generic exit rules</td>
+          <td><span style="color:var(--amber);font-weight:600">UPGRADED</span> &mdash; Full theta decay schedule with daily values. Exit triggers from Claude's management plan (profit target, stop loss, time exit, adjustment). Event risk calendar.</td>
+          <td class="mono">thetaDecaySchedule.dailyDecay<br>thetaDecaySchedule.earlyCloseRecommendation<br>riskAnalysis.managementPlan</td>
+        </tr>
+        <tr>
+          <td><strong>Page 7</strong></td>
+          <td>Strategy &amp; Confidence</td>
+          <td>Generic alternative strategies</td>
+          <td><span style="color:var(--amber);font-weight:600">UPGRADED</span> &mdash; Claude's "alternativesConsidered" with specific reasons why each was rejected. Score interpretation.</td>
+          <td class="mono">strategyRationale.alternativesConsidered</td>
+        </tr>
+        <tr style="background:rgba(230,255,240,.3)">
+          <td><strong>New Page</strong></td>
+          <td>Technical Analysis</td>
+          <td><em>Did not exist</em></td>
+          <td><span style="color:var(--green);font-weight:600">NEW PAGE</span> &mdash; RSI chart/value + MACD histogram + Moving Averages (SMA 20/50/100) + IV Rank vs Historical + Bollinger Band position. Full technical snapshot.</td>
+          <td class="mono">technicalIndicators.*</td>
+        </tr>
+        <tr style="background:rgba(230,255,240,.3)">
+          <td><strong>New Page</strong></td>
+          <td>Risk Scenarios</td>
+          <td><em>Did not exist (only basic exit cards)</em></td>
+          <td><span style="color:var(--green);font-weight:600">NEW PAGE</span> &mdash; Max pain scenario, earnings risk assessment, dividend risk, event risk, complete position management plan with specific adjustment rules.</td>
+          <td class="mono">riskAnalysis.*</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="callout callout-forest" style="margin-top:16px">
+      <strong>PDF summary:</strong> 5 existing pages upgraded with Claude insights. 2 new pages added (Technical Analysis, Risk Scenarios). Total: 10 pages per pick. The PDF becomes the definitive reference document &mdash; everything an investor needs before placing the trade.
+    </div>
+  </div>
+
+  <!-- PICK JSON -->
+  <div class="card" style="border-top:3px solid var(--amber);margin-top:20px">
+    <div class="card-title" style="color:var(--amber)">Pick JSON &mdash; Enhanced Schema</div>
+    <p style="font-size:12px;color:var(--ink-muted);margin-bottom:16px">The pick JSON (picks.json) is the machine-readable archive used for performance tracking and the /picks React pages.</p>
+    <table class="t">
+      <thead><tr><th>Field</th><th>Before</th><th>After</th><th>Used By</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">symbol, strategy, direction</td><td>Present</td><td>Same</td><td>Pick cards, recap</td></tr>
+        <tr><td class="mono">legs[], greeks, maxProfit, maxLoss</td><td>Present</td><td>Same</td><td>Pick detail, P&L tracking</td></tr>
+        <tr style="background:rgba(230,255,240,.3)">
+          <td class="mono"><strong>thesis</strong></td>
+          <td><em>Did not exist</em></td>
+          <td><span style="color:var(--green);font-weight:600">NEW</span> &mdash; 1-sentence summary from whyThisStrategy</td>
+          <td>Pick card subtitle on /picks page</td>
+        </tr>
+        <tr style="background:rgba(230,255,240,.3)">
+          <td class="mono"><strong>keyLevels</strong></td>
+          <td><em>Did not exist</em></td>
+          <td><span style="color:var(--green);font-weight:600">NEW</span> &mdash; { putWall, callWall, support[], resistance[] }</td>
+          <td>Pick card quick-glance levels</td>
+        </tr>
+        <tr style="background:rgba(230,255,240,.3)">
+          <td class="mono"><strong>ivContext</strong></td>
+          <td><em>Did not exist</em></td>
+          <td><span style="color:var(--green);font-weight:600">NEW</span> &mdash; { currentIV, ivRank, signal }</td>
+          <td>IV badge on pick cards</td>
+        </tr>
+        <tr style="background:rgba(230,255,240,.3)">
+          <td class="mono"><strong>riskSummary</strong></td>
+          <td><em>Did not exist</em></td>
+          <td><span style="color:var(--green);font-weight:600">NEW</span> &mdash; 1-sentence from riskAnalysis.maxPainScenario</td>
+          <td>Risk tooltip on pick cards</td>
+        </tr>
+        <tr style="background:rgba(230,255,240,.3)">
+          <td class="mono"><strong>exitPlan</strong></td>
+          <td><em>Did not exist</em></td>
+          <td><span style="color:var(--green);font-weight:600">NEW</span> &mdash; { profitTarget, stopLoss, earlyClose }</td>
+          <td>Exit rules on pick detail</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="callout callout-forest" style="margin-top:16px">
+      <strong>Pick JSON summary:</strong> 5 new fields distilled from Claude analysis. These are <em>summaries</em> (1-sentence or key values), not the full analysis. The full analysis lives in Firestore analyses/{tileId}. The pick JSON stays lightweight for performance tracking.
+    </div>
+  </div>
+
+  <!-- REACT PAGES -->
+  <div class="card" style="border-top:3px solid var(--blue);margin-top:20px">
+    <div class="card-title" style="color:var(--blue)">React Picks Pages &mdash; Enhanced Views</div>
+    <p style="font-size:12px;color:var(--ink-muted);margin-bottom:16px">The /picks/* pages currently show basic pick data. With enriched pick JSON, they can show more context.</p>
+    <table class="t">
+      <thead><tr><th>Page</th><th>Current</th><th>Enhanced</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>/picks/</strong><br><span style="font-size:10px;color:var(--ink-muted)">PicksPage.jsx</span></td>
+          <td>Symbol, strategy, direction badge, max profit/loss, R:R, DTE</td>
+          <td><span style="color:var(--amber);font-weight:600">UPGRADED</span> &mdash; Add thesis subtitle under strategy name. Add IV rank badge (green/amber/red). Add key support/resistance levels. Add 1-line risk note.</td>
+        </tr>
+        <tr>
+          <td><strong>/picks/:weekId</strong><br><span style="font-size:10px;color:var(--ink-muted)">WeekViewerPage.jsx</span></td>
+          <td>Ticker, strategy, outcome badge, entry/expiry prices, P&L</td>
+          <td><span style="color:var(--amber);font-weight:600">UPGRADED</span> &mdash; Add thesis and exit plan. Show whether early close recommendation was followed. Hindsight overlay: "Claude said close at $112 &mdash; actual close was $98".</td>
+        </tr>
+        <tr style="background:rgba(230,255,240,.3)">
+          <td><strong>/picks/:weekId/:tileId</strong><br><span style="font-size:10px;color:var(--ink-muted)">New: PickDetailPage.jsx</span></td>
+          <td><em>Does not exist</em></td>
+          <td><span style="color:var(--green);font-weight:600">NEW PAGE</span> &mdash; Public version of PositionDetail. Shows thesis, technical analysis summary, risk summary. Full legs table. No auth required. Links to /trading/position for full detail (auth-gated).</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- VIDEO SCRIPT -->
+  <div class="card" style="border-top:3px solid var(--purple);margin-top:20px">
+    <div class="card-title" style="color:var(--purple)">Video Script &mdash; Enhanced Structure</div>
+    <p style="font-size:12px;color:var(--ink-muted);margin-bottom:16px">The video script is a Markdown file for the creative team. Claude analysis provides the narrative backbone.</p>
+    <table class="t">
+      <thead><tr><th>Section</th><th>Content Source</th><th>Example Narration</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Opening hook</strong></td>
+          <td>Week theme + market environment</td>
+          <td>"This week IV is elevated after tariff concerns &mdash; premium selling strategies are favoured."</td>
+        </tr>
+        <tr>
+          <td><strong>Per-pick segment</strong></td>
+          <td class="mono">strategyRationale.whyThisStrategy</td>
+          <td>"For Adobe, we're using an iron condor because the gamma walls at $215 and $245 create a natural range, and with IV rank at 42..."</td>
+        </tr>
+        <tr style="background:rgba(230,255,240,.3)">
+          <td><strong>Technical context</strong></td>
+          <td class="mono">technicalIndicators (RSI, MAs)</td>
+          <td><span style="color:var(--green);font-weight:600">NEW</span> &mdash; "RSI at 48 confirms neutral momentum. The 50-day SMA at $236 acts as near-term support."</td>
+        </tr>
+        <tr style="background:rgba(230,255,240,.3)">
+          <td><strong>Risk callout</strong></td>
+          <td class="mono">riskAnalysis.eventRisk + managementPlan</td>
+          <td><span style="color:var(--green);font-weight:600">NEW</span> &mdash; "Watch for FOMC minutes on April 16. If ADBE breaks $225, roll the put spread down. Exit at 50% profit."</td>
+        </tr>
+        <tr>
+          <td><strong>Closing CTA</strong></td>
+          <td>Week summary + performance</td>
+          <td>"5 picks this week, all income strategies. Our win rate is 67% over the last 9 weeks. Full details at newleafsystem.com/picks."</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 11: SUMMARY MATRIX -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2 class="section-title">11. Enhancement Summary</h2>
+
+  <table class="t">
+    <thead>
+      <tr>
+        <th>Output</th>
+        <th>Existing Sections</th>
+        <th>Upgraded</th>
+        <th>New Sections</th>
+        <th>Net Result</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>PDF Report</strong></td>
+        <td>8 pages</td>
+        <td style="color:var(--amber);font-weight:700">5 pages</td>
+        <td style="color:var(--green);font-weight:700">+2 pages</td>
+        <td><strong>10 pages</strong> (institutional-grade)</td>
+      </tr>
+      <tr>
+        <td><strong>Video Script</strong></td>
+        <td>3 sections (hook, picks, CTA)</td>
+        <td style="color:var(--amber);font-weight:700">1 section</td>
+        <td style="color:var(--green);font-weight:700">+2 sections</td>
+        <td><strong>5 sections</strong> (technical + risk narrative)</td>
+      </tr>
+      <tr>
+        <td><strong>Pick JSON</strong></td>
+        <td>7 fields</td>
+        <td>0</td>
+        <td style="color:var(--green);font-weight:700">+5 fields</td>
+        <td><strong>12 fields</strong> (thesis, IV, levels, risk, exit)</td>
+      </tr>
+      <tr>
+        <td><strong>React /picks</strong></td>
+        <td>Basic card</td>
+        <td style="color:var(--amber);font-weight:700">2 pages</td>
+        <td style="color:var(--green);font-weight:700">+1 page</td>
+        <td><strong>Richer cards</strong> + public pick detail page</td>
+      </tr>
+      <tr>
+        <td><strong>Firestore analyses</strong></td>
+        <td>4 sections</td>
+        <td>0</td>
+        <td>0</td>
+        <td>Same (already comprehensive)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-forest" style="margin-top:24px;text-align:center;padding:32px">
+    <div style="font-family:'Playfair Display',serif;font-size:22px;color:var(--gold);margin-bottom:12px">One analysis. Every output upgraded.</div>
+    <div style="font-size:13px;max-width:650px;margin:0 auto;line-height:1.7">
+      Claude generates the analysis once. The enriched pick JSON feeds all outputs. PDFs gain 2 new pages and 5 upgraded sections. Video scripts gain technical and risk narrative. Pick cards show thesis and IV context. The investor sees the same quality whether they read the PDF, watch the video, or use the app. <strong>Complete consistency.</strong>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<footer style="text-align:center;padding:40px 2rem;font-size:11px;color:var(--ink-muted);border-top:1px solid rgba(15,61,46,.1)">
+  NewLeaf System &mdash; Weekly Pipeline Architecture &middot; April 2026 &middot; Internal
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,45 @@
+# === Dependencies ===
+node_modules/
+
+# === Environment / secrets ===
+.env
+.env.local
+.env.production
+serviceAccountKey.json
+web/scanner/config.json
+
+# === Build output ===
+dist/
+
+# === Runtime output ===
+output/
+reports/
+
+# === Firebase ===
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# === Logs ===
+*.log
+logs/
+
+# === IDE / editor files ===
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# === OS-level files ===
+.DS_Store
+Thumbs.db
+.AppleDouble
+._*
+
+# === Caches / tooling ===
+.cache/
+.nyc_output/
+coverage/
+__pycache__/
+.wrangler/
