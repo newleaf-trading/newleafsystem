@@ -199,10 +199,13 @@ Never assume the structure described here is wrong because the code suggests oth
 
 ## Open questions and known issues
 
-- **MACD computation bug.** Values appear in published JSON but no code computes them. Fix in `api/src/tools/indicators.ts`.
-- **Sentiment engine duplication.** A 4-engine implementation exists in `generaterecommendations/`; the canonical home is `api/src/tools/sentiment.ts`. Migration in progress.
-- **LaunchAgent cutover.** Still points at the legacy `/Users/manish/dev/newleaf-pipeline/` path.
-- **OptionAdvisor decommissioning.** The Firebase `aiChat` callable function lives there. Target: move into `api/` as `/api/portfolio-chat`. Pending.
-- **Pipeline LLM calls.** `generaterecommendations/analyse-tiles.cjs` and `sentiment-engine.cjs` still use direct Claude CLI / SDK calls. Should route through `api/`.
+- **`model_used: 'claude-cli'` placeholder in genrecs provenance.** `publish-pick.cjs` and `analyse-tiles.cjs` stamp provenance with `'claude-cli'` because they still invoke the Claude CLI via `spawnSync`. Fixed in F3 when CLI calls migrate to the LLM router — provenance will then record the actual model string (e.g. `'claude-sonnet-4-7'`).
+- **Gemini SDK has no construction-time timeout.** The Gemini client in `api/src/llm/router.ts` (added in F2.1) does not accept a timeout at construction. Long-running Gemini calls have no shared timeout config. If this becomes a problem in production, wrap `callGemini` in `Promise.race` with a manual deadline.
+- **Sentiment engine duplication.** A 4-engine implementation exists in `generaterecommendations/sentiment-engine.cjs`; the canonical home is `api/src/tools/sentiment.ts`. F3 migrates this — all 4 engines (Claude, Grok, Gemini, Reddit) route through the LLM router uniformly.
+- **LaunchAgent cutover.** Still points at the legacy `/Users/manish/dev/newleaf-pipeline/` path. Switch to the monorepo's `pipeline/` after the runtime is verified end-to-end.
+- **OptionAdvisor decommissioning.** The Firebase `aiChat` callable function lives at `/Users/manish/dev/OptionAdvisor/`. Target: move into `api/` as `/api/portfolio-chat`. Deferred — OptionAdvisor stays as legacy-but-live until a full cutover is planned.
+- **Pipeline LLM calls.** `generaterecommendations/analyse-tiles.cjs` and `publish-pick.cjs` still use direct Claude CLI via `spawnSync`. Should route through `api/src/llm/router.ts`. Fixed in F3.
+- **IV and supportResistance in published analyses.** These two fields in the `technicalIndicators` block remain LLM-narrative (the LLM invents values). IV computation requires historical IV data over ~252 days; supportResistance is genuinely judgmental. Future phase to address.
+- **Enrichment-update provenance.** When `analyse-tiles.cjs` updates an existing tile to add sentiment data, the update does NOT carry provenance — the tile's original creation-time provenance is preserved. If you need to track enrichment events later, consider adding a `provenance_history[]` array rather than overwriting.
 
 See `docs/architecture-deck-v4.html` for the full narrative, decision log, and forward plan.
