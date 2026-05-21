@@ -146,13 +146,21 @@ if (GENERATE_PDF) {
   const pdfDir = resolve(weekDir, 'pdf');
   mkdirSync(pdfDir, { recursive: true });
 
+  const buildScript = resolve(__dirname, 'build-enriched-report-data.py');
+
   for (const pick of picks) {
     try {
-      const dataFile = resolve(enrichedDir, `${pick.symbol.toLowerCase()}-${(pick.strategy || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json`);
+      const enrichedFile = resolve(enrichedDir, `${pick.symbol.toLowerCase()}-${(pick.strategy || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json`);
+      const v3File = enrichedFile.replace('.json', '-v3.json');
       const pdfFile = resolve(pdfDir, `${pick.symbol}-${(pick.strategy || '').replace(/\s+/g, '-')}.pdf`);
 
       console.log(`    → ${pick.symbol} ${pick.strategy}...`);
-      execSync(`python3 ${resolve(__dirname, 'generate-report.py')} "${dataFile}" "${pdfFile}"`, {
+      execSync(`python3 "${buildScript}" "${enrichedFile}" "${v3File}"`, {
+        cwd: __dirname,
+        timeout: 15000,
+        stdio: 'pipe',
+      });
+      execSync(`python3 ${resolve(__dirname, 'generate-report.py')} "${v3File}" "${pdfFile}"`, {
         cwd: __dirname,
         timeout: 30000,
         stdio: 'pipe',

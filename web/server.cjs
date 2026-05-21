@@ -26,7 +26,7 @@ const R2_BASE = 'https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev';
 const PORT    = parseInt(process.argv.find(a => a.startsWith('--port='))?.split('=')[1] || '3000');
 
 // ── Firebase init ──────────────────────────────────────────────────
-const SA_PATH = path.join(__dirname, '..', 'OptionAdvisor', 'newleaf-trading', 'scanner', 'serviceAccountKey.json');
+const SA_PATH = path.join(__dirname, 'scanner', 'serviceAccountKey.json');
 if (!admin.apps.length) {
   admin.initializeApp({
     projectId: 'newleaf-trading',
