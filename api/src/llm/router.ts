@@ -1,7 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-export type ModelTier = 'claude-sonnet' | 'claude-haiku' | 'gpt-4' | 'grok' | 'deepseek' | 'deepseek-r1' | 'qwq' | 'qwen-max';
+export type ModelTier = 'claude-sonnet' | 'claude-haiku' | 'gpt-4' | 'grok' | 'deepseek' | 'deepseek-r1' | 'qwq' | 'qwen-max' | 'gemini-pro' | 'gemini-flash';
 
 export interface LLMCall { system: string; user: string; maxTokens?: number; }
 
@@ -33,6 +34,8 @@ const PRICING: Record<ModelTier, { input: number; output: number }> = {
   'deepseek-r1':   { input: 0.55, output: 2.19 },
   'qwq':           { input: 0.30, output: 1.20 },
   'qwen-max':      { input: 1.60, output: 6.40 },
+  'gemini-pro':    { input: 1.25, output: 5.00 },
+  'gemini-flash':  { input: 0.075, output: 0.30 },
 };
 
 function calcCost(model: ModelTier, inputTokens: number, outputTokens: number): number {
@@ -47,6 +50,7 @@ export class LLMRouter {
   private deepseek: OpenAI;
   private together: OpenAI;
   private dashscope: OpenAI;
+  private gemini: GoogleGenerativeAI;
   private mock: boolean;
   private _usage: TokenUsage[] = [];
   private _traces: LLMTrace[] = [];
@@ -61,6 +65,7 @@ export class LLMRouter {
     this.deepseek = new OpenAI({ apiKey: key('DEEPSEEK_API_KEY'), baseURL: 'https://api.deepseek.com', timeout });
     this.together = new OpenAI({ apiKey: key('TOGETHER_API_KEY'), baseURL: 'https://api.together.xyz/v1', timeout });
     this.dashscope = new OpenAI({ apiKey: key('DASHSCOPE_API_KEY'), baseURL: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1', timeout });
+    this.gemini = new GoogleGenerativeAI(key('GEMINI_API_KEY'));
   }
 
   /** Reset usage tracking (call at start of each request) */
@@ -93,6 +98,8 @@ export class LLMRouter {
         case 'deepseek-r1':   result = await this.callDeepSeek('deepseek-reasoner', model, opts); break;
         case 'qwq':           result = await this.callQwen('qwen-plus', model, opts); break;
         case 'qwen-max':      result = await this.callQwen('qwen-max', model, opts); break;
+        case 'gemini-pro':    result = await this.callGemini('gemini-2.5-pro', model, opts); break;
+        case 'gemini-flash':  result = await this.callGemini('gemini-2.5-flash', model, opts); break;
         default: result = '';
       }
       console.log(`[LLM] ${model} done (${result.length} chars)`);
@@ -198,6 +205,24 @@ export class LLMRouter {
     const outputTokens = r.usage?.completion_tokens ?? 0;
     const cost = calcCost(tier, inputTokens, outputTokens);
     const response = r.choices[0]?.message?.content ?? '';
+    this._usage.push({ model: tier, inputTokens, outputTokens, cost });
+    this._traces.push({ model: tier, system: opts.system, user: opts.user, response, inputTokens, outputTokens, cost, durationMs: Date.now() - t0 });
+    return response;
+  }
+
+  private async callGemini(apiModel: string, tier: ModelTier, opts: LLMCall): Promise<string> {
+    const t0 = Date.now();
+    const model = this.gemini.getGenerativeModel({ model: apiModel });
+    const r = await model.generateContent({
+      systemInstruction: opts.system,
+      contents: [{ role: 'user', parts: [{ text: opts.user }] }],
+      generationConfig: { maxOutputTokens: opts.maxTokens ?? 2000 },
+    });
+    const usage = r.response.usageMetadata;
+    const inputTokens = usage?.promptTokenCount ?? 0;
+    const outputTokens = usage?.candidatesTokenCount ?? 0;
+    const cost = calcCost(tier, inputTokens, outputTokens);
+    const response = r.response.text();
     this._usage.push({ model: tier, inputTokens, outputTokens, cost });
     this._traces.push({ model: tier, system: opts.system, user: opts.user, response, inputTokens, outputTokens, cost, durationMs: Date.now() - t0 });
     return response;
