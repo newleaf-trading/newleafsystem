@@ -20,7 +20,7 @@ const { spawnSync, execSync } = require('child_process');
 const fs         = require('fs');
 const path       = require('path');
 const { randomUUID } = require('crypto');
-const { fetchSentiment, computeModifier, buildSentimentContext } = require('./sentiment-engine.cjs');
+const { fetchSentiment, computeModifier, buildSentimentContext } = require('./sentiment-fetch.cjs');
 const CONFIG     = require('./config.cjs');
 
 // ── Firebase ────────────────────────────────────────────────────────────────
