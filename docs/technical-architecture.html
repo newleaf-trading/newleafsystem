@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf System — Technical Architecture</title>
+<style>
+  :root { --forest: #1a5632; --leaf: #2d8a4e; --gold: #c9a96e; --bg: #fafaf8; --card: #fff; --border: #e8e5e0; --text: #1a1a1a; --gray: #6b7280; --mono: 'SF Mono', 'Fira Code', monospace; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+  h1 { font-size: 28px; font-weight: 800; color: var(--forest); margin-bottom: 8px; }
+  h2 { font-size: 20px; font-weight: 700; color: var(--forest); margin: 36px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+  h3 { font-size: 16px; font-weight: 600; margin: 20px 0 10px; }
+  .subtitle { font-size: 14px; color: var(--gray); margin-bottom: 32px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .card h3 { margin-top: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+  th { text-align: left; padding: 8px 12px; background: #f3f2ef; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); border-bottom: 1px solid var(--border); }
+  td { padding: 8px 12px; border-bottom: 1px solid #f0eeeb; vertical-align: top; }
+  tr:hover td { background: #f9f8f5; }
+  code { font-family: var(--mono); font-size: 12px; background: #f3f2ef; padding: 2px 6px; border-radius: 4px; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 8px; font-family: var(--mono); font-size: 12px; overflow-x: auto; margin: 12px 0; line-height: 1.7; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge-get { background: #dbeafe; color: #1d4ed8; }
+  .badge-post { background: #dcfce7; color: #166534; }
+  .badge-delete { background: #fee2e2; color: #991b1b; }
+  .badge-tier { background: #fef3c7; color: #92400e; font-size: 10px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .flow-arrow { text-align: center; color: var(--leaf); font-size: 20px; margin: 8px 0; }
+  @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>NewLeaf System — Technical Architecture</h1>
+<p class="subtitle">Last updated: 22 May 2026 &nbsp;|&nbsp; Monorepo at <code>/Users/manish/newleafsystem/</code></p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>1. Monorepo Structure</h2>
+
+<pre>newleafsystem/
+├── web/                          React SPA (Picks, Invest, Workbench)
+├── api/                          LLM Router + API endpoints (TypeScript)
+├── pipeline/                     Yahoo OI service + cron schedulers
+├── generaterecommendations/      Pick generation + tile creation
+├── shared/
+│   └── indicators/               Pure-math technical indicators (JS)
+├── docs/                         Architecture docs
+├── ARCHITECTURE.md               Operational guide
+└── .gitignore</pre>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>web/</h3>
+    <p>React + Vite SPA. Three products: Picks site (public), Invest app (authenticated), Workbench (DIY tools). Served from <code>dist/</code> via <code>server.cjs</code> at localhost:3000.</p>
+    <p><strong>Build:</strong> <code>npm run build</code> (vite) &rarr; <code>node server.cjs</code></p>
+  </div>
+  <div class="card">
+    <h3>api/</h3>
+    <p>TypeScript + Fastify. LLM router, market data tools, sentiment, indicators, verification pipeline. Runs at localhost:5400.</p>
+    <p><strong>Build:</strong> <code>npm run build</code> (tsc) &rarr; <code>npm run dev</code> (tsx watch)</p>
+  </div>
+  <div class="card">
+    <h3>pipeline/</h3>
+    <p>Yahoo OI service (Python, localhost:5300), cron schedulers (node-cron), watchlist management. Always-on data layer.</p>
+    <p><strong>Run:</strong> <code>node index.js</code> + <code>cd yahoo-svc && python3 option_api.py</code></p>
+  </div>
+  <div class="card">
+    <h3>generaterecommendations/</h3>
+    <p>Pick publishing, tile analysis, PDF reports, social content, weekly email. Sole writer to tiles/analyses/weeklyPicks collections.</p>
+    <p><strong>Run:</strong> <code>npm run publish -- SYMBOL --strategy "..." --expiry DATE</code></p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>2. API Endpoints</h2>
+
+<h3>Market Data</h3>
+<table>
+  <thead><tr><th>Method</th><th>Endpoint</th><th>Tier</th><th>Description</th><th>Source File</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/snapshot/:ticker</code></td><td><span class="badge badge-tier">free</span></td><td>Current price, quote, daily bar + expirations</td><td>routes/market.ts</td></tr>
+    <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/chain/:ticker/:expiry</code></td><td><span class="badge badge-tier">basic</span></td><td>Options chain grouped by strike</td><td>routes/market.ts</td></tr>
+    <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/indicators/:ticker</code></td><td><span class="badge badge-tier">basic</span></td><td>RSI, SMA, Bollinger, MACD, ADX, ATR</td><td>routes/market.ts</td></tr>
+    <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/gamma/:ticker/:expiry</code></td><td><span class="badge badge-tier">basic</span></td><td>Gamma walls, OI by strike</td><td>routes/market.ts</td></tr>
+    <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/sentiment/:ticker</code></td><td><span class="badge badge-tier">basic</span></td><td>4-engine sentiment (Claude+Grok+Gemini+Reddit)</td><td>routes/market.ts</td></tr>
+    <tr><td><span class="badge badge-get">GET</span></td><td><code>/api/bars/:ticker</code></td><td><span class="badge badge-tier">basic</span></td><td>Historical daily bars (up to 365 days)</td><td>routes/market.ts</td></tr>
+  </tbody>
+</table>
+
+<h3>AI / LLM</h3>
+<table>
+  <thead><tr><th>Method</th><th>Endpoint</th><th>Tier</th><th>Description</th><th>Source File</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/llm/call</code></td><td><span class="badge badge-tier">basic</span></td><td>Generic LLM call — { model, system, user, maxTokens }</td><td>routes/ai.ts</td></tr>
+    <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/ai-read</code></td><td><span class="badge badge-tier">premium</span></td><td>One-sentence market read</td><td>routes/ai.ts</td></tr>
+    <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/recommend</code></td><td><span class="badge badge-tier">premium</span></td><td>Strategy recommendation</td><td>routes/ai.ts</td></tr>
+    <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/chat</code></td><td><span class="badge badge-tier">premium</span></td><td>Contextual AI chat</td><td>routes/ai.ts</td></tr>
+    <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/verdict-explain</code></td><td><span class="badge badge-tier">premium</span></td><td>Verdict explanation</td><td>routes/ai-verdict.ts</td></tr>
+    <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/picks-narrative</code></td><td><span class="badge badge-tier">basic</span></td><td>Weekly picks narrative</td><td>routes/ai-picks.ts</td></tr>
+    <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/adjust</code></td><td><span class="badge badge-tier">premium</span></td><td>Position adjustment recs</td><td>routes/ai-adjust.ts</td></tr>
+    <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/event-risk</code></td><td><span class="badge badge-tier">premium</span></td><td>Event risk analysis</td><td>routes/ai-events.ts</td></tr>
+    <tr><td><span class="badge badge-post">POST</span></td><td><code>/api/strike-compare</code></td><td><span class="badge badge-tier">basic</span></td><td>Strike comparison</td><td>routes/ai-strikes.ts</td></tr>
+  </tbody>
+</table>
+
+<h3>Verification</h3>
+<table>
+  <thead><tr><th>Method</th><th>Endpoint</th><th>Tier</th><th>Description</th><th>Source File</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge badge-post">POST</span></td><td><code>/verify</code></td><td><span class="badge badge-tier">premium</span></td><td>8-agent verification pipeline</td><td>routes/verify.ts</td></tr>
+    <tr><td><span class="badge badge-get">GET</span></td><td><code>/status/:jobId</code></td><td><span class="badge badge-tier">premium</span></td><td>Verification job status</td><td>routes/verify.ts</td></tr>
+  </tbody>
+</table>
+
+<h3>Admin</h3>
+<table>
+  <thead><tr><th>Method</th><th>Endpoint</th><th>Tier</th><th>Description</th><th>Source File</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge badge-get">GET</span></td><td><code>/health</code></td><td><span class="badge badge-tier">free</span></td><td>Health check + env status</td><td>routes/health.ts</td></tr>
+    <tr><td><span class="badge badge-post">POST</span></td><td><code>/admin/keys</code></td><td><span class="badge badge-tier">admin</span></td><td>Create API key</td><td>routes/admin.ts</td></tr>
+    <tr><td><span class="badge badge-get">GET</span></td><td><code>/admin/keys</code></td><td><span class="badge badge-tier">admin</span></td><td>List API keys</td><td>routes/admin.ts</td></tr>
+    <tr><td><span class="badge badge-delete">DELETE</span></td><td><code>/admin/keys/:id</code></td><td><span class="badge badge-tier">admin</span></td><td>Deactivate API key</td><td>routes/admin.ts</td></tr>
+    <tr><td><span class="badge badge-get">GET</span></td><td><code>/admin/model-assignments</code></td><td><span class="badge badge-tier">admin</span></td><td>All LLM model assignments</td><td>routes/admin.ts</td></tr>
+    <tr><td><span class="badge badge-get">GET</span></td><td><code>/admin/usage-summary</code></td><td><span class="badge badge-tier">admin</span></td><td>Session LLM usage by model</td><td>routes/admin.ts</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>3. LLM Router &amp; Model Assignments</h2>
+
+<p>All LLM calls route through <code>api/src/llm/router.ts</code>. The router handles model dispatch, token counting, and cost tracking.</p>
+
+<h3>Available Models</h3>
+<table>
+  <thead><tr><th>Tier</th><th>API Model</th><th>Provider</th><th>Input $/1M</th><th>Output $/1M</th></tr></thead>
+  <tbody>
+    <tr><td><code>claude-sonnet</code></td><td>claude-sonnet-4-20250514</td><td>Anthropic</td><td>$3.00</td><td>$15.00</td></tr>
+    <tr><td><code>claude-haiku</code></td><td>claude-haiku-4-5-20251001</td><td>Anthropic</td><td>$0.80</td><td>$4.00</td></tr>
+    <tr><td><code>gpt-4</code></td><td>gpt-4o</td><td>OpenAI</td><td>$2.50</td><td>$10.00</td></tr>
+    <tr><td><code>grok</code></td><td>grok-4</td><td>xAI</td><td>$3.00</td><td>$15.00</td></tr>
+    <tr><td><code>gemini-pro</code></td><td>gemini-2.5-pro</td><td>Google</td><td>$1.25</td><td>$5.00</td></tr>
+    <tr><td><code>gemini-flash</code></td><td>gemini-2.5-flash</td><td>Google</td><td>$0.075</td><td>$0.30</td></tr>
+    <tr><td><code>deepseek</code></td><td>deepseek-chat</td><td>DeepSeek</td><td>$0.27</td><td>$1.10</td></tr>
+    <tr><td><code>deepseek-r1</code></td><td>deepseek-reasoner</td><td>DeepSeek</td><td>$0.55</td><td>$2.19</td></tr>
+    <tr><td><code>qwq</code></td><td>qwen-plus</td><td>DashScope</td><td>$0.30</td><td>$1.20</td></tr>
+    <tr><td><code>qwen-max</code></td><td>qwen-max</td><td>DashScope</td><td>$1.60</td><td>$6.40</td></tr>
+  </tbody>
+</table>
+
+<h3>Service &rarr; Model Mapping</h3>
+<p>Configured in <code>api/src/llm/model-assignments.ts</code>. Override via env vars.</p>
+<table>
+  <thead><tr><th>Service</th><th>Default Model</th><th>Env Override</th><th>Category</th></tr></thead>
+  <tbody>
+    <tr><td>sentiment-claude</td><td><code>claude-haiku</code></td><td>SENTIMENT_CLAUDE_MODEL</td><td>Sentiment</td></tr>
+    <tr><td>sentiment-grok</td><td><code>grok</code></td><td>SENTIMENT_GROK_MODEL</td><td>Sentiment</td></tr>
+    <tr><td>sentiment-gemini</td><td><code>gemini-flash</code></td><td>SENTIMENT_GEMINI_MODEL</td><td>Sentiment</td></tr>
+    <tr><td>ai-read</td><td><code>qwq</code></td><td>AI_READ_MODEL</td><td>Analysis</td></tr>
+    <tr><td>recommend</td><td><code>claude-sonnet</code></td><td>RECOMMEND_MODEL</td><td>Analysis</td></tr>
+    <tr><td>verify-judge</td><td><code>claude-sonnet</code></td><td>VERIFY_JUDGE_MODEL</td><td>Verification</td></tr>
+    <tr><td>verify-technical</td><td><code>deepseek</code></td><td>VERIFY_TECHNICAL_MODEL</td><td>Verification</td></tr>
+    <tr><td>genrecs analysis</td><td><code>claude-sonnet</code></td><td>GENRECS_LLM_MODEL</td><td>Analysis</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>4. Data Flow</h2>
+
+<div class="card">
+<h3>Pick Publishing Pipeline</h3>
+<pre>
+publish-pick.cjs
+  │
+  ├─ 1. Alpaca API        → spot price, option chain
+  ├─ 2. R2 CDN            → gamma walls (latest.json)
+  ├─ 3. Strike selection   → build strategy legs
+  ├─ 4. Write tile         → Firestore tiles/{id} + provenance
+  ├─ 5. GET /api/sentiment → 4-engine composite sentiment
+  ├─ 6. GET /api/indicators→ RSI, MACD, Bollinger, SMAs (ground truth)
+  ├─ 7. POST /api/llm/call → analysis JSON (claude-sonnet default)
+  ├─ 8. Validate           → structure + indicator echo-back
+  ├─ 9. Write analysis     → Firestore analyses/{id} + provenance
+  ├─ 10. Write weeklyPicks → Firestore weeklyPicks/{weekId}
+  └─ 11. Save enriched.json→ local output/{week}/enriched/
+</pre>
+</div>
+
+<div class="card">
+<h3>Technical Indicators Flow</h3>
+<pre>
+shared/indicators/index.js    (pure math: SMA, EMA, RSI, Bollinger, MACD)
+       │
+       └─ imported by api/src/tools/indicators.ts
+              │
+              ├─ adds ADX, ATR, SMA alignment (bar-based)
+              └─ exposed via GET /api/indicators/:ticker
+                     │
+                     └─ consumed by genrecs/indicators-fetch.cjs
+                            │
+                            └─ injected as GROUND TRUTH into LLM prompts
+</pre>
+</div>
+
+<div class="card">
+<h3>Sentiment Flow</h3>
+<pre>
+api/src/tools/sentiment.ts
+  │
+  ├─ Claude (via router: claude-haiku)  → web search + news
+  ├─ Grok   (via router: grok)         → X/Twitter social
+  ├─ Gemini (via router: gemini-flash)  → Google News + sector
+  └─ Reddit (direct HTTP, no LLM)      → Reddit + StockTwits
+  │
+  └─ Weighted composite: 30% / 25% / 25% / 20%
+         │
+         └─ exposed via GET /api/sentiment/:ticker
+                │
+                └─ consumed by genrecs/sentiment-fetch.cjs
+</pre>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>5. Firestore Collections</h2>
+<table>
+  <thead><tr><th>Collection</th><th>Writer</th><th>Readers</th><th>Provenance</th></tr></thead>
+  <tbody>
+    <tr><td><code>tiles/{id}</code></td><td>generaterecommendations/</td><td>web/ (Picks + Invest)</td><td>Yes (8 fields)</td></tr>
+    <tr><td><code>analyses/{id}</code></td><td>generaterecommendations/</td><td>web/ (Picks + Invest)</td><td>Yes (8 fields)</td></tr>
+    <tr><td><code>weeklyPicks/{weekId}</code></td><td>generaterecommendations/</td><td>web/ (Picks)</td><td>Yes (8 fields)</td></tr>
+    <tr><td><code>pick_outcomes/{id}</code></td><td>generaterecommendations/</td><td>web/ (Track Record)</td><td>Yes (via helper)</td></tr>
+    <tr><td><code>marketState</code></td><td>pipeline/</td><td>web/</td><td>No</td></tr>
+    <tr><td><code>users/{uid}/*</code></td><td>web/</td><td>web/</td><td>No</td></tr>
+    <tr><td><code>apiKeys</code></td><td>api/</td><td>api/</td><td>No</td></tr>
+  </tbody>
+</table>
+
+<h3>Provenance Fields (on every genrecs write)</h3>
+<pre>
+{
+  model_used:            "claude-sonnet",
+  prompt_version:        "publish-pick-v3.2-a1b2c3d4",
+  analysis_source:       "publish-pick" | "analyse-tiles",
+  verify_job_id:         null,
+  verify_verdict:        null,
+  verify_confidence:     null,
+  generation_timestamp:  "2026-05-22T14:30:00.000Z",
+  code_commit_sha:       "1d6cf5d..."
+}
+</pre>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>6. Environment Variables</h2>
+
+<div class="grid-2">
+<div class="card">
+<h3>api/.env</h3>
+<pre>
+ANTHROPIC_API_KEY=
+OPENAI_API_KEY=
+XAI_API_KEY=
+GEMINI_API_KEY=
+DEEPSEEK_API_KEY=
+DASHSCOPE_API_KEY=
+TOGETHER_API_KEY=
+ALPACA_API_KEY=
+ALPACA_SECRET_KEY=
+SERPER_API_KEY=
+</pre>
+</div>
+<div class="card">
+<h3>generaterecommendations/.env</h3>
+<pre>
+NEWLEAF_API_URL=http://localhost:5400
+GENRECS_LLM_MODEL=claude-sonnet
+ALPACA_API_KEY=
+ALPACA_SECRET_KEY=
+R2_PUBLIC_BASE_URL=
+FIREBASE_PROJECT_ID=
+FIRESTORE_DATABASE_ID=
+</pre>
+</div>
+</div>
+
+</div>
+</body>
+</html>

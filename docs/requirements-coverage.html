@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf System — Requirements Coverage</title>
+<style>
+  :root { --forest: #1a5632; --leaf: #2d8a4e; --gold: #c9a96e; --bg: #fafaf8; --card: #fff; --border: #e8e5e0; --text: #1a1a1a; --gray: #6b7280; --mono: 'SF Mono', 'Fira Code', monospace; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+  h1 { font-size: 28px; font-weight: 800; color: var(--forest); margin-bottom: 8px; }
+  h2 { font-size: 20px; font-weight: 700; color: var(--forest); margin: 36px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+  h3 { font-size: 16px; font-weight: 600; margin: 20px 0 10px; }
+  .subtitle { font-size: 14px; color: var(--gray); margin-bottom: 32px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+  th { text-align: left; padding: 8px 12px; background: #f3f2ef; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); border-bottom: 1px solid var(--border); }
+  td { padding: 8px 12px; border-bottom: 1px solid #f0eeeb; vertical-align: top; }
+  code { font-family: var(--mono); font-size: 12px; background: #f3f2ef; padding: 2px 6px; border-radius: 4px; }
+  .done { color: #166534; font-weight: 600; }
+  .partial { color: #92400e; font-weight: 600; }
+  .todo { color: #991b1b; font-weight: 600; }
+  .phase { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .phase-f1 { background: #dbeafe; color: #1d4ed8; }
+  .phase-f2 { background: #dcfce7; color: #166534; }
+  .phase-f3 { background: #fef3c7; color: #92400e; }
+  .phase-f4 { background: #ede9fe; color: #5b21b6; }
+  .phase-todo { background: #fee2e2; color: #991b1b; }
+  .commit { font-family: var(--mono); font-size: 11px; color: var(--gray); }
+  ul { margin: 8px 0 8px 20px; }
+  li { margin: 4px 0; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>NewLeaf System — Requirements Coverage</h1>
+<p class="subtitle">What we built, what's covered, what's remaining &nbsp;|&nbsp; Updated 22 May 2026</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Phase Summary</h2>
+
+<table>
+  <thead><tr><th>Phase</th><th>Requirement</th><th>Status</th><th>Commits</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><span class="phase phase-f1">F1</span></td>
+      <td>Fix MACD hallucination — compute real indicators, stop LLM from inventing numbers</td>
+      <td class="done">COMPLETE</td>
+      <td class="commit">76a73c5, f4d847b, 0562dbb</td>
+    </tr>
+    <tr>
+      <td><span class="phase phase-f2">F2</span></td>
+      <td>Provenance fields on every Firestore write + Gemini in LLM router</td>
+      <td class="done">COMPLETE</td>
+      <td class="commit">1b88391, 117fb98, 9cce548</td>
+    </tr>
+    <tr>
+      <td><span class="phase phase-f3">F3</span></td>
+      <td>Unified 4-engine sentiment through LLM router + admin models page</td>
+      <td class="done">COMPLETE</td>
+      <td class="commit">18c72c1, a74e722, 6b77f36</td>
+    </tr>
+    <tr>
+      <td><span class="phase phase-f4">F4</span></td>
+      <td>Migrate all Claude CLI calls to LLM router</td>
+      <td class="done">COMPLETE</td>
+      <td class="commit">1d6cf5d</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>F1 — Fix MACD Hallucination</h2>
+
+<div class="card">
+<h3>Problem</h3>
+<p>Published pick analysis JSON contained MACD values (macdLine, signalLine, histogram) but no code computed them. Values were LLM-generated — discrepancies visible when compared to any charting tool. Same issue affected RSI, Bollinger Bands, and SMA values.</p>
+
+<h3>Solution (3 commits)</h3>
+<table>
+  <thead><tr><th>Commit</th><th>What</th><th>Files</th></tr></thead>
+  <tbody>
+    <tr><td><span class="phase phase-f1">F1.1</span></td><td>Created <code>shared/indicators/</code> — pure-math module with SMA, EMA, RSI, Bollinger, MACD, SMA crossover detection. 41 unit tests.</td><td>shared/indicators/{index.js, index.test.js, index.d.ts, package.json, README.md}</td></tr>
+    <tr><td><span class="phase phase-f1">F1.2</span></td><td>Wired api/ to import from shared/indicators. Added macdLine, macdSignal, macdHistogram to <code>/api/indicators/:ticker</code> response.</td><td>api/src/tools/indicators.ts</td></tr>
+    <tr><td><span class="phase phase-f1">F1.3</span></td><td>genrecs now calls <code>/api/indicators/:ticker</code> before analysis prompts. Injects values as "GROUND TRUTH" block. LLM instructed to echo values, not invent. Validation checks LLM echoed correctly.</td><td>generaterecommendations/{indicators-fetch.cjs, publish-pick.cjs, analyse-tiles.cjs}</td></tr>
+  </tbody>
+</table>
+
+<h3>Requirements Covered</h3>
+<ul>
+  <li class="done">MACD computed from real price data (EMA 12/26/9)</li>
+  <li class="done">RSI, Bollinger, SMA computed from 250 daily bars</li>
+  <li class="done">LLM prompts include computed values as ground truth</li>
+  <li class="done">Post-response validation catches LLM number substitution</li>
+  <li class="done">Tolerances: RSI +-0.5, prices 1% relative, MACD +-0.001</li>
+  <li class="partial">IV and supportResistance remain LLM-narrative (acknowledged TODO)</li>
+</ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>F2 — Provenance &amp; Gemini</h2>
+
+<div class="card">
+<h3>Problem</h3>
+<p>Firestore documents had no audit trail — impossible to know which model, prompt version, or code commit produced a given analysis. Gemini was not available in the LLM router.</p>
+
+<h3>Solution (3 commits)</h3>
+<table>
+  <thead><tr><th>Commit</th><th>What</th><th>Files</th></tr></thead>
+  <tbody>
+    <tr><td><span class="phase phase-f2">F2.1</span></td><td>Added gemini-pro and gemini-flash tiers to LLM router with pricing + cost tracking</td><td>api/src/llm/router.ts, api/.env.example</td></tr>
+    <tr><td><span class="phase phase-f2">F2.2</span></td><td>Created <code>firestore-helpers.cjs</code> with 8 provenance fields. Wired into publish-pick.cjs (all 4 Firestore writes).</td><td>generaterecommendations/{firestore-helpers.cjs, publish-pick.cjs}</td></tr>
+    <tr><td><span class="phase phase-f2">F2.3</span></td><td>Wired provenance into analyse-tiles.cjs batch flow.</td><td>generaterecommendations/analyse-tiles.cjs</td></tr>
+  </tbody>
+</table>
+
+<h3>Requirements Covered</h3>
+<ul>
+  <li class="done">8 provenance fields on every genrecs Firestore write</li>
+  <li class="done">model_used records actual model string</li>
+  <li class="done">prompt_version = semver tag + SHA256 hash of prompt text</li>
+  <li class="done">code_commit_sha cached from git HEAD at process start</li>
+  <li class="done">Gemini Pro ($1.25/$5) and Flash ($0.075/$0.30) available in router</li>
+  <li class="done">Tile sentiment-enrichment update preserves original provenance</li>
+</ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>F3 — Unified 4-Engine Sentiment</h2>
+
+<div class="card">
+<h3>Problem</h3>
+<p>Sentiment was duplicated: generaterecommendations/ had a 4-engine version (Claude CLI + Grok + Gemini + Reddit), api/ had a 3-engine version (no Claude). Neither routed through the LLM router. Two additional dead copies existed in pipeline/ and web/scanner/.</p>
+
+<h3>Solution (3 commits)</h3>
+<table>
+  <thead><tr><th>Commit</th><th>What</th><th>Files</th></tr></thead>
+  <tbody>
+    <tr><td><span class="phase phase-f3">F3.1</span></td><td>Rebuilt api/src/tools/sentiment.ts with all 4 engines through LLM router. Added admin models page. Model assignments centralized.</td><td>api/src/{tools/sentiment.ts, llm/model-assignments.ts, routes/admin.ts, routes/market.ts, app.ts}, web/src/trading/{pages/AdminPage.jsx, components/admin/ModelAssignmentsPanel.jsx}</td></tr>
+    <tr><td><span class="phase phase-f3">F3.2</span></td><td>genrecs calls <code>/api/sentiment/:ticker</code> instead of local engine. Created sentiment-fetch.cjs.</td><td>generaterecommendations/{sentiment-fetch.cjs, publish-pick.cjs, analyse-tiles.cjs, process-wip-picks.cjs}</td></tr>
+    <tr><td><span class="phase phase-f3">F3.3</span></td><td>Deleted 3 dead sentiment-engine copies (-1,563 lines).</td><td>generaterecommendations/sentiment-engine.cjs, pipeline/sentiment-engine.js, web/scanner/sentiment-engine.js</td></tr>
+  </tbody>
+</table>
+
+<h3>Requirements Covered</h3>
+<ul>
+  <li class="done">All 4 sentiment engines route through LLM router</li>
+  <li class="done">Cost tracking on every sentiment call</li>
+  <li class="done">Model configurable per engine via env vars</li>
+  <li class="done">Admin page shows model assignments + usage stats</li>
+  <li class="done">Weights standardized: Claude 30%, Grok 25%, Gemini 25%, Reddit 20%</li>
+  <li class="done">Dead code eliminated (1,563 lines removed)</li>
+</ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>F4 — Migrate Claude CLI to LLM Router</h2>
+
+<div class="card">
+<h3>Problem</h3>
+<p>genrecs scripts called Claude via <code>spawnSync('claude', ['--print', ...])</code> — no cost tracking, no model selection, provenance showed 'claude-cli' instead of actual model.</p>
+
+<h3>Solution (1 commit)</h3>
+<table>
+  <thead><tr><th>Commit</th><th>What</th><th>Files</th></tr></thead>
+  <tbody>
+    <tr><td><span class="phase phase-f4">F4</span></td><td>Created <code>llm-call.cjs</code> helper. Added <code>POST /api/llm/call</code> endpoint. Replaced all 4 spawnSync calls with async HTTP calls through router.</td><td>api/src/routes/ai.ts, generaterecommendations/{llm-call.cjs, publish-pick.cjs, analyse-tiles.cjs, process-wip-picks.cjs, generate-social-copy.js}</td></tr>
+  </tbody>
+</table>
+
+<h3>Requirements Covered</h3>
+<ul>
+  <li class="done">Zero Claude CLI calls remaining in genrecs</li>
+  <li class="done">All LLM calls route through api/src/llm/router.ts</li>
+  <li class="done">Cost tracking on every analysis call</li>
+  <li class="done">Model configurable via GENRECS_LLM_MODEL env var</li>
+  <li class="done">Provenance records actual model (e.g. 'claude-sonnet')</li>
+  <li class="done">5-minute timeout per LLM call</li>
+</ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Remaining Items</h2>
+
+<table>
+  <thead><tr><th>Item</th><th>Status</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>IV computation (implied volatility)</td><td class="todo">TODO</td><td>Needs 252-day historical IV data. Currently LLM-narrative.</td></tr>
+    <tr><td>supportResistance computation</td><td class="todo">TODO</td><td>Genuinely judgmental — may stay LLM-narrative with gamma wall anchoring.</td></tr>
+    <tr><td>LaunchAgent cutover to monorepo</td><td class="todo">TODO</td><td>Currently points at legacy /Users/manish/dev/newleaf-pipeline/</td></tr>
+    <tr><td>OptionAdvisor decommissioning</td><td class="todo">TODO</td><td>Move aiChat function into api/ as /api/portfolio-chat</td></tr>
+    <tr><td>Firebase function deploy with shared/</td><td class="todo">TODO</td><td>shared/ folder must be copied into api/ deploy artifact</td></tr>
+    <tr><td>Gemini SDK timeout</td><td class="partial">Known</td><td>No construction-time timeout. Use Promise.race if needed.</td></tr>
+  </tbody>
+</table>
+
+</div>
+</body>
+</html>

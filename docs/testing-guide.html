@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf System — Testing Guide</title>
+<style>
+  :root { --forest: #1a5632; --leaf: #2d8a4e; --gold: #c9a96e; --bg: #fafaf8; --card: #fff; --border: #e8e5e0; --text: #1a1a1a; --gray: #6b7280; --mono: 'SF Mono', 'Fira Code', monospace; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+  h1 { font-size: 28px; font-weight: 800; color: var(--forest); margin-bottom: 8px; }
+  h2 { font-size: 20px; font-weight: 700; color: var(--forest); margin: 36px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+  h3 { font-size: 16px; font-weight: 600; margin: 20px 0 10px; }
+  .subtitle { font-size: 14px; color: var(--gray); margin-bottom: 32px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 8px; font-family: var(--mono); font-size: 12px; overflow-x: auto; margin: 12px 0; line-height: 1.7; }
+  code { font-family: var(--mono); font-size: 12px; background: #f3f2ef; padding: 2px 6px; border-radius: 4px; }
+  .step { display: flex; gap: 12px; margin: 12px 0; }
+  .step-num { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--leaf); color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+  .step-body { flex: 1; }
+  .step-body h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .step-body p { font-size: 13px; color: var(--gray); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+  th { text-align: left; padding: 8px 12px; background: #f3f2ef; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); border-bottom: 1px solid var(--border); }
+  td { padding: 8px 12px; border-bottom: 1px solid #f0eeeb; vertical-align: top; }
+  .warn { background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 12px 16px; font-size: 13px; margin: 12px 0; }
+  .tip { background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: 8px; padding: 12px 16px; font-size: 13px; margin: 12px 0; }
+  .check { color: #166534; font-weight: 600; }
+  .fail { color: #991b1b; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>NewLeaf System — Testing Guide</h1>
+<p class="subtitle">How to verify each feature end-to-end &nbsp;|&nbsp; Updated 22 May 2026</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Prerequisites</h2>
+
+<div class="card">
+<h3>Start the API server (required for all tests)</h3>
+<pre>cd /Users/manish/newleafsystem/api
+npm run dev
+# Should show: Server listening at http://0.0.0.0:5400</pre>
+
+<h3>Verify health</h3>
+<pre>curl -s http://localhost:5400/health | python3 -m json.tool</pre>
+<p>Expected: <code>ok: true</code>, all API keys showing <code>true</code>.</p>
+
+<h3>Environment files required</h3>
+<table>
+  <thead><tr><th>File</th><th>What it needs</th></tr></thead>
+  <tbody>
+    <tr><td><code>api/.env</code> + <code>.env.local</code></td><td>ANTHROPIC_API_KEY, XAI_API_KEY, GEMINI_API_KEY, ALPACA_API_KEY/SECRET, DEEPSEEK_API_KEY</td></tr>
+    <tr><td><code>generaterecommendations/.env</code></td><td>ALPACA_API_KEY/SECRET, FIREBASE creds, NEWLEAF_API_URL (default: localhost:5400)</td></tr>
+    <tr><td><code>generaterecommendations/serviceAccountKey.json</code></td><td>Firebase service account</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Test 1: Technical Indicators (MACD verification)</h2>
+
+<div class="card">
+<h3>What to verify</h3>
+<p>The <code>/api/indicators/:ticker</code> endpoint returns real computed MACD, RSI, Bollinger, and SMA values that match a charting tool (TradingView, Yahoo Finance).</p>
+
+<div class="step">
+  <div class="step-num">1</div>
+  <div class="step-body">
+    <h4>Call the indicators endpoint</h4>
+    <pre>curl -s http://localhost:5400/api/indicators/AAPL | python3 -m json.tool</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">2</div>
+  <div class="step-body">
+    <h4>Check the response includes MACD fields</h4>
+    <pre># Expected fields in response.indicators:
+{
+  "price": 198.50,
+  "sma20": 195.30,
+  "sma50": 191.80,
+  "sma100": 188.40,
+  "sma200": 185.20,
+  "rsi14": 55.3,
+  "bollingerUpper": 202.10,
+  "bollingerLower": 188.50,
+  "bollingerWidth": 6.97,
+  "adx14": 22.5,
+  "atr14": 3.45,
+  "macdLine": 1.234,      &larr; NEW (F1)
+  "macdSignal": 0.987,    &larr; NEW (F1)
+  "macdHistogram": 0.247, &larr; NEW (F1)
+  "priceVsSma": "above_all",
+  "smaTrend": "bullish"
+}</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">3</div>
+  <div class="step-body">
+    <h4>Cross-check against TradingView</h4>
+    <p>Open TradingView for the same ticker. Compare:</p>
+    <table>
+      <thead><tr><th>Field</th><th>API value</th><th>TradingView</th><th>Tolerance</th></tr></thead>
+      <tbody>
+        <tr><td>RSI(14)</td><td>from API</td><td>from chart</td><td>+-2 (Cutler's vs Wilder's variant)</td></tr>
+        <tr><td>MACD line</td><td>from API</td><td>from chart</td><td>+-0.5 (different EMA seeds)</td></tr>
+        <tr><td>SMA20</td><td>from API</td><td>from chart</td><td>Should match exactly</td></tr>
+        <tr><td>Bollinger Upper</td><td>from API</td><td>from chart</td><td>Should match within $0.50</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">4</div>
+  <div class="step-body">
+    <h4>Run unit tests</h4>
+    <pre>node /Users/manish/newleafsystem/shared/indicators/index.test.js
+# Expected: 41 passed, 0 failed</pre>
+  </div>
+</div>
+
+<div class="tip">
+  <strong>Note on RSI variance:</strong> Our RSI uses Cutler's variant (simple average) while TradingView uses Wilder's (exponential smoothed). Values may differ by 1-3 points. This is documented and intentional.
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Test 2: Sentiment (4-engine unified)</h2>
+
+<div class="card">
+<h3>What to verify</h3>
+<p>The <code>/api/sentiment/:ticker</code> endpoint runs all 4 engines (Claude, Grok, Gemini, Reddit) through the LLM router and returns a weighted composite.</p>
+
+<div class="step">
+  <div class="step-num">1</div>
+  <div class="step-body">
+    <h4>Call the sentiment endpoint</h4>
+    <pre>curl -s http://localhost:5400/api/sentiment/NVDA | python3 -m json.tool</pre>
+    <p>This takes 30-60 seconds (4 parallel LLM calls).</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">2</div>
+  <div class="step-body">
+    <h4>Verify all 4 engines reported</h4>
+    <pre># Check response.engines has all 4:
+"engines": {
+  "claude": { "score": 62, "label": "neutral", ... },
+  "grok":   { "score": 71, "label": "bullish", ... },
+  "gemini": { "score": 58, "label": "neutral", ... },
+  "reddit": { "score": 75, "label": "bullish", ... }
+}
+
+# Check response.activeEngines === 4
+# Check response.source === "claude+grok+gemini+reddit"</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">3</div>
+  <div class="step-body">
+    <h4>Verify cost tracking</h4>
+    <pre># Response includes cost object:
+"cost": {
+  "totalCost": 0.0234,
+  "totalInputTokens": 4500,
+  "totalOutputTokens": 1200,
+  "calls": [
+    { "model": "claude-haiku", ... },
+    { "model": "grok", ... },
+    { "model": "gemini-flash", ... }
+  ]
+}</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">4</div>
+  <div class="step-body">
+    <h4>Verify weights</h4>
+    <p>Composite score should equal: Claude*0.30 + Grok*0.25 + Gemini*0.25 + Reddit*0.20 (normalized if any engine failed).</p>
+  </div>
+</div>
+
+<div class="warn">
+  <strong>If an engine fails:</strong> The response will still succeed with fewer engines. Check <code>activeEngines</code> count. If all 4 fail, API returns 502.
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Test 3: Create a Pick (end-to-end tile creation)</h2>
+
+<div class="card">
+<h3>What to verify</h3>
+<p>The full publish-pick flow: fetch market data, build strategy, write tile with provenance, fetch indicators + sentiment via API, run LLM analysis via API, validate, write analysis with provenance.</p>
+
+<div class="step">
+  <div class="step-num">1</div>
+  <div class="step-body">
+    <h4>Make sure API is running</h4>
+    <pre>curl -s http://localhost:5400/health | jq .ok
+# must return: true</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">2</div>
+  <div class="step-body">
+    <h4>Run publish-pick</h4>
+    <pre>cd /Users/manish/newleafsystem/generaterecommendations
+npm run publish -- AAPL --strategy "iron condor" --expiry 2026-06-12</pre>
+    <p>Expected output shows each step with checkmarks. Watch for:</p>
+    <pre># Should see these new lines (post F1/F3/F4):
+  📊 Fetching computed indicators from API...
+     RSI=55.3 MACD=1.234 SMA20=195.30
+  🤖 Running LLM analysis (claude-sonnet, 30-60s)...
+     [LLM] claude-sonnet: $0.0450 (2500in/1800out)
+     Analysis validated ✅</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">3</div>
+  <div class="step-body">
+    <h4>Verify the enriched JSON has computed indicators</h4>
+    <pre>cat output/2026-W21/enriched/AAPL-iron-condor.json | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+ti = d['analysis']['technicalIndicators']
+print('RSI:', ti['rsi']['value'])
+print('MACD:', ti['macd']['macdLine'], ti['macd']['signalLine'], ti['macd']['histogram'])
+print('SMA20:', ti['movingAverages']['sma20'])
+"</pre>
+    <p>Values should match what <code>/api/indicators/AAPL</code> returns (within tolerance).</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">4</div>
+  <div class="step-body">
+    <h4>Verify provenance in Firestore</h4>
+    <p>Open Firebase Console &rarr; newleafdb &rarr; analyses collection. Find the new tile ID. Check these fields exist:</p>
+    <pre>model_used:          "claude-sonnet"  (not "claude-cli")
+prompt_version:      "publish-pick-v3.2-a1b2c3d4"
+analysis_source:     "publish-pick"
+generation_timestamp: "2026-05-22T..."
+code_commit_sha:     "1d6cf5d..."</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">5</div>
+  <div class="step-body">
+    <h4>Verify in the React app</h4>
+    <pre>cd /Users/manish/newleafsystem/web
+npm run build && node server.cjs</pre>
+    <p>Open <code>http://localhost:3000/picks/</code> — the new pick should appear. Click into it to see the analysis with real MACD/RSI values.</p>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Test 4: LLM Router (model selection)</h2>
+
+<div class="card">
+<h3>What to verify</h3>
+<p>The generic <code>/api/llm/call</code> endpoint works with different models. This is how genrecs now calls LLMs.</p>
+
+<div class="step">
+  <div class="step-num">1</div>
+  <div class="step-body">
+    <h4>Call with Claude</h4>
+    <pre>curl -s -X POST http://localhost:5400/api/llm/call \
+  -H "Content-Type: application/json" \
+  -d '{"model":"claude-haiku","system":"You are helpful.","user":"Say hello in 5 words.","maxTokens":50}' \
+  | python3 -m json.tool</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">2</div>
+  <div class="step-body">
+    <h4>Call with Gemini</h4>
+    <pre>curl -s -X POST http://localhost:5400/api/llm/call \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gemini-flash","system":"You are helpful.","user":"Say hello in 5 words.","maxTokens":50}' \
+  | python3 -m json.tool</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">3</div>
+  <div class="step-body">
+    <h4>Verify cost tracking in response</h4>
+    <pre># Both responses should include:
+"cost": {
+  "totalCost": 0.000123,
+  "calls": [{ "model": "claude-haiku", "inputTokens": 15, "outputTokens": 12, "cost": 0.000060 }]
+}</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">4</div>
+  <div class="step-body">
+    <h4>Switch genrecs model via env var</h4>
+    <pre># In generaterecommendations/.env, set:
+GENRECS_LLM_MODEL=gemini-pro
+
+# Then run publish-pick — it should use gemini-pro instead of claude-sonnet
+# Check the log output:
+#   🤖 Running LLM analysis (gemini-pro, 30-60s)...
+#   [LLM] gemini-pro: $0.0180 (3000in/1500out)</pre>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Test 5: Admin Models Page</h2>
+
+<div class="card">
+<h3>What to verify</h3>
+<p>The admin page at <code>/invest/admin</code> shows the Models tab with assignments and usage.</p>
+
+<div class="step">
+  <div class="step-num">1</div>
+  <div class="step-body">
+    <h4>Start both servers</h4>
+    <pre># Terminal 1: API
+cd /Users/manish/newleafsystem/api && npm run dev
+
+# Terminal 2: Web
+cd /Users/manish/newleafsystem/web && npm run build && node server.cjs</pre>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">2</div>
+  <div class="step-body">
+    <h4>Open admin page</h4>
+    <p>Navigate to <code>http://localhost:3000/invest/admin</code>. Log in if needed. Click the "🤖 Models" tab.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">3</div>
+  <div class="step-body">
+    <h4>Verify the table shows</h4>
+    <table>
+      <thead><tr><th>What to see</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td>4 categories: Sentiment, Analysis, Verification, Tools</td><td>Section headers</td></tr>
+        <tr><td>18 service rows with current model + alternatives</td><td>Table rows</td></tr>
+        <tr><td>Color-coded model badges</td><td>Current Model column</td></tr>
+        <tr><td>Env var names for each override</td><td>Env Override column</td></tr>
+        <tr><td>Usage cards (if any LLM calls made)</td><td>Top of page</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">4</div>
+  <div class="step-body">
+    <h4>API verification (curl)</h4>
+    <pre># Model assignments
+curl -s http://localhost:5400/admin/model-assignments | python3 -m json.tool
+
+# Usage summary (after some LLM calls)
+curl -s http://localhost:5400/admin/usage-summary | python3 -m json.tool</pre>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Test 6: Provenance Verification</h2>
+
+<div class="card">
+<h3>What to verify</h3>
+<p>Every Firestore write from genrecs carries 8 provenance fields.</p>
+
+<div class="step">
+  <div class="step-num">1</div>
+  <div class="step-body">
+    <h4>After creating a pick (Test 3), check Firestore</h4>
+    <p>Open Firebase Console &rarr; Firestore &rarr; newleafdb</p>
+    <table>
+      <thead><tr><th>Collection</th><th>Check for</th></tr></thead>
+      <tbody>
+        <tr><td><code>tiles/{tileId}</code></td><td>model_used, prompt_version, analysis_source, generation_timestamp, code_commit_sha</td></tr>
+        <tr><td><code>analyses/{tileId}</code></td><td>Same 8 fields. model_used should be "claude-sonnet" (or whatever GENRECS_LLM_MODEL is set to)</td></tr>
+        <tr><td><code>weeklyPicks/{weekId}</code></td><td>Same 8 fields (model_used = "n/a" for non-LLM write)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">2</div>
+  <div class="step-body">
+    <h4>Verify prompt_version format</h4>
+    <p>Should be: <code>publish-pick-v3.2-{8 hex chars}</code> where the hex is SHA256 of the actual prompt text. Different tickers produce different hashes (prompts differ).</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">3</div>
+  <div class="step-body">
+    <h4>Self-test the helper</h4>
+    <pre>cd /Users/manish/newleafsystem/generaterecommendations
+node -e "
+  const p = require('./firestore-helpers.cjs');
+  p.initProvenance();
+  console.log('SHA:', p.getCodeCommitSha());
+  console.log('Version:', p.computePromptVersion('test-v1.0', 'hello'));
+"
+# Should print current git SHA + a version string</pre>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Test 7: Ground Truth Indicator Validation</h2>
+
+<div class="card">
+<h3>What to verify</h3>
+<p>When the LLM tries to substitute its own indicator numbers instead of echoing the ground truth, the validation catches it and fails the analysis.</p>
+
+<div class="step">
+  <div class="step-num">1</div>
+  <div class="step-body">
+    <h4>After a successful pick creation, compare</h4>
+    <pre># Get indicators from API
+curl -s http://localhost:5400/api/indicators/AAPL | python3 -c "
+import json, sys
+d = json.load(sys.stdin)['indicators']
+print(f\"API RSI: {d['rsi14']}\")
+print(f\"API MACD: {d['macdLine']}\")
+print(f\"API SMA20: {d['sma20']}\")
+"
+
+# Get indicators from the published analysis
+cat output/2026-W21/enriched/AAPL-iron-condor.json | python3 -c "
+import json, sys
+d = json.load(sys.stdin)['analysis']['technicalIndicators']
+print(f\"Analysis RSI: {d['rsi']['value']}\")
+print(f\"Analysis MACD: {d['macd']['macdLine']}\")
+print(f\"Analysis SMA20: {d['movingAverages']['sma20']}\")
+"</pre>
+    <p>Values should match within tolerances: RSI +-0.5, prices +-1%, MACD +-0.001.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">2</div>
+  <div class="step-body">
+    <h4>If validation fails</h4>
+    <p>The script will show an error like:</p>
+    <pre>Indicator validation failed — LLM substituted values:
+  rsi.value: expected 55.3, got 48.2 (tolerance 0.5)
+  macd.macdLine: expected 1.234, got 2.100 (tolerance 0.001)</pre>
+    <p>The pick will NOT be published. This is correct behavior — fail loud, publish fewer accurate picks.</p>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Quick Reference: Which LLM Where</h2>
+
+<table>
+  <thead><tr><th>Script / Feature</th><th>LLM Model</th><th>How it's called</th><th>Cost tracked?</th></tr></thead>
+  <tbody>
+    <tr><td>publish-pick.cjs (analysis)</td><td>claude-sonnet (default)</td><td>POST /api/llm/call</td><td class="check">Yes</td></tr>
+    <tr><td>analyse-tiles.cjs (batch)</td><td>claude-sonnet (default)</td><td>POST /api/llm/call</td><td class="check">Yes</td></tr>
+    <tr><td>process-wip-picks.cjs</td><td>claude-sonnet (default)</td><td>POST /api/llm/call</td><td class="check">Yes</td></tr>
+    <tr><td>generate-social-copy.js</td><td>claude-sonnet (default)</td><td>POST /api/llm/call</td><td class="check">Yes</td></tr>
+    <tr><td>Sentiment: Claude engine</td><td>claude-haiku</td><td>LLM router (in-process)</td><td class="check">Yes</td></tr>
+    <tr><td>Sentiment: Grok engine</td><td>grok</td><td>LLM router (in-process)</td><td class="check">Yes</td></tr>
+    <tr><td>Sentiment: Gemini engine</td><td>gemini-flash</td><td>LLM router (in-process)</td><td class="check">Yes</td></tr>
+    <tr><td>Sentiment: Reddit engine</td><td>N/A (HTTP scrape)</td><td>Direct HTTP</td><td>N/A</td></tr>
+    <tr><td>Workbench AI Read</td><td>qwq</td><td>LLM router (in-process)</td><td class="check">Yes</td></tr>
+    <tr><td>Workbench Recommend</td><td>claude-sonnet</td><td>LLM router (in-process)</td><td class="check">Yes</td></tr>
+    <tr><td>Verify pipeline (8 agents)</td><td>deepseek / claude-sonnet</td><td>LLM router (in-process)</td><td class="check">Yes</td></tr>
+  </tbody>
+</table>
+
+<div class="tip">
+  <strong>To change any model:</strong> Set the env var (see model-assignments.ts) and restart the api/ server. No code changes needed. View current assignments at <code>/invest/admin</code> &rarr; Models tab.
+</div>
+
+</div>
+</body>
+</html>
