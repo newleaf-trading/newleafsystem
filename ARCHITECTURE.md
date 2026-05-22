@@ -153,10 +153,10 @@ Marginal verdicts go to a review queue. **There is no analyst override path.** T
 
 ### Data sources
 
-- **Open Interest:** Yahoo Finance via `pipeline/yahoo-svc/` (`localhost:5300`). Single source of truth.
+- **Open Interest:** Yahoo Finance via `pipeline/yahoo-svc/`. Two modes: local at `localhost:5300`, or **Cloud Run** at `https://yahoo-options-svc-m2cty2vxuq-uc.a.run.app`. Single source of truth for OI data.
 - **Spot, chains, bars, dividends:** Alpaca Markets via `api/src/tools/alpaca.ts`.
-- **News/sentiment:** Serper, Claude WebSearch, Grok, Gemini, Reddit — composed via 4-engine sentiment in `api/src/tools/sentiment.ts` (planned; today still partly in `generaterecommendations/`).
-- **Technical indicators:** Computed in `api/src/tools/indicators.ts`. **MACD is currently LLM-hallucinated** — known bug to fix.
+- **News/sentiment:** 4-engine sentiment (Claude + Grok + Gemini + Reddit) in `api/src/tools/sentiment.ts`, all routed through the LLM router. genrecs calls via `/api/sentiment/:ticker`.
+- **Technical indicators:** Computed in `api/src/tools/indicators.ts` using `shared/indicators/`. MACD, RSI, Bollinger, SMA all computed from real price data. genrecs calls via `/api/indicators/:ticker` and injects as ground truth into LLM prompts.
 - **Earnings calendar:** Static `earnings-calendar.json` in `pipeline/`.
 
 ### Naming
