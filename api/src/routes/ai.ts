@@ -93,4 +93,17 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
     });
     return { response, cost: llm.getUsage() };
   });
+
+  // POST /api/llm/call — generic LLM call for internal services (genrecs, pipeline)
+  fastify.post('/api/llm/call', { preHandler: [requireTier('basic')] }, async (req, reply) => {
+    const { model, system, user, maxTokens } = req.body as {
+      model?: ModelTier; system?: string; user?: string; maxTokens?: number;
+    };
+    if (!model || !system || !user) {
+      return reply.code(400).send({ error: 'model, system, and user are required' });
+    }
+    llm.resetUsage();
+    const response = await llm.call(model, { system, user, maxTokens: maxTokens ?? 4000 });
+    return { response, model, cost: llm.getUsage() };
+  });
 }

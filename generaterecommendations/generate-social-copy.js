@@ -11,8 +11,10 @@
  *   node generate-social-copy.js --symbol BABA      # single pick
  */
 
-import { spawnSync } from 'child_process';
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'fs';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { callLLM, DEFAULT_MODEL } = require('./llm-call.cjs');
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -45,7 +47,7 @@ function extractJSON(raw) {
   return null;
 }
 
-function generateCopyForPick(pick) {
+async function generateCopyForPick(pick) {
   const fmtPrice = n => Number(n).toFixed(2);
   const sentimentScore = pick.sentiment?.composite?.score ?? pick.sentiment?.score ?? 50;
   const sentimentLabel = pick.sentiment?.composite?.label ?? pick.sentiment?.label ?? 'neutral';
@@ -76,18 +78,19 @@ Generate JSON with exactly these keys:
   "instagram": "Engaging Instagram caption (80-120 words). Include key metrics. End with 10-15 relevant hashtags like #options #trading #ironcondor #theta etc."
 }`;
 
-  const result = spawnSync('claude', ['--print', '-p', prompt], {
-    cwd: __dirname,
-    encoding: 'utf-8',
-    timeout: 90000,
-  });
-
-  if (result.error || result.status !== 0) {
-    console.error(`    ⚠ Claude CLI failed for ${pick.symbol}:`, result.error?.message || result.stderr?.slice(0, 200));
+  let raw;
+  try {
+    raw = await callLLM(prompt, {
+      system: 'You are a social media marketing expert for a financial technology company. Return ONLY valid JSON.',
+      model: DEFAULT_MODEL,
+      maxTokens: 2000,
+    });
+  } catch (err) {
+    console.error(`    ⚠ LLM failed for ${pick.symbol}:`, err.message?.slice(0, 200));
     return null;
   }
 
-  return extractJSON(result.stdout);
+  return extractJSON(raw);
 }
 
 async function main() {
@@ -118,7 +121,7 @@ async function main() {
   for (const pick of picks) {
     process.stdout.write(`    → ${pick.symbol} ${pick.strategy}...`);
 
-    const copy = generateCopyForPick(pick);
+    const copy = await generateCopyForPick(pick);
 
     if (copy) {
       const filename = `${pick.symbol}-social-copy.json`;

@@ -29,12 +29,12 @@
  */
 
 const admin      = require('firebase-admin');
-const { spawnSync } = require('child_process');
 const fs         = require('fs');
 const path       = require('path');
 const { randomUUID } = require('crypto');
 const { fetchSentiment, computeModifier, buildSentimentContext } = require('./sentiment-fetch.cjs');
 const { fetchIndicators, buildIndicatorsContext, validateIndicatorsInResponse } = require('./indicators-fetch.cjs');
+const { callLLM, DEFAULT_MODEL } = require('./llm-call.cjs');
 const provenance = require('./firestore-helpers.cjs');
 const CONFIG = require('./config.cjs');
 
@@ -401,12 +401,12 @@ impliedVolatility and supportResistance: generate your best estimates (these are
 Be specific to ${tile.symbol} and ${tile.strategy}. Use actual spot price ${fmtP(tile.spotPrice)}, strikes, and metrics. Return ONLY JSON.`;
 }
 
-function callClaude(prompt) {
-  const result = spawnSync('claude', ['--print', '--output-format', 'text'], {
-    input: prompt, encoding: 'utf8', timeout: 300000, maxBuffer: 10 * 1024 * 1024,
+async function callAnalysisLLM(prompt) {
+  return callLLM(prompt, {
+    system: 'You are a professional options analyst for NewLeaf Trading. Return ONLY valid JSON.',
+    model: DEFAULT_MODEL,
+    maxTokens: 4000,
   });
-  if (result.status !== 0) throw new Error(`Claude CLI error: ${result.stderr || result.error?.message || 'Unknown'}`);
-  return result.stdout?.trim() || '';
 }
 
 function extractJSON(raw) {
@@ -537,12 +537,12 @@ async function main() {
   const indicators = await fetchIndicators(SYMBOL);
   log(`     RSI=${indicators.rsi14} MACD=${indicators.macdLine.toFixed(3)} SMA20=${indicators.sma20}`);
 
-  // ── Step 9: Claude analysis ─────────────────────────────────────────────
-  log('  🤖 Running Claude analysis (30-60s)...');
+  // ── Step 9: LLM analysis ─────────────────────────────────────────────
+  log(`  🤖 Running LLM analysis (${DEFAULT_MODEL}, 30-60s)...`);
   const enrichedTile = { ...tile, spotPrice: snapshot.price };
   const sentimentCtx = buildSentimentContext(sentiment);
   const prompt = buildClaudePrompt(enrichedTile, indicators) + (sentimentCtx ? '\n' + sentimentCtx : '');
-  const raw = callClaude(prompt);
+  const raw = await callAnalysisLLM(prompt);
   const analysis = extractJSON(raw);
 
   // Validate required sections
@@ -556,7 +556,7 @@ async function main() {
 
   // Push to Firestore analyses/ with provenance
   const analysisOpts = {
-    modelUsed: 'claude-cli',
+    modelUsed: DEFAULT_MODEL,
     promptVersion: provenance.computePromptVersion(PROMPT_SEMVER, prompt),
     analysisSource: 'publish-pick',
   };

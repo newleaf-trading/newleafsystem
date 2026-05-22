@@ -25,11 +25,11 @@
  */
 
 const admin  = require('firebase-admin');
-const { execSync, spawnSync } = require('child_process');
 const fs     = require('fs');
 const path   = require('path');
 const { fetchSentiment, buildSentimentContext, computeModifier } = require('./sentiment-fetch.cjs');
 const { fetchIndicators, buildIndicatorsContext, validateIndicatorsInResponse } = require('./indicators-fetch.cjs');
+const { callLLM, DEFAULT_MODEL } = require('./llm-call.cjs');
 const provenance = require('./firestore-helpers.cjs');
 const CONFIG = require('./config.cjs');
 
@@ -218,31 +218,14 @@ For theta decay, use netTheta=${fmtPrice(tile.netTheta)}/day as baseline.
 Return ONLY the JSON object, nothing else.`;
 }
 
-// ── Call Claude CLI ────────────────────────────────────────────────────────────
+// ── Call LLM via API router ───────────────────────────────────────────────────
 
-function callClaude(prompt) {
-  // Write prompt to temp file to avoid shell escaping issues
-  const tmpFile = path.join('/tmp', `nl-prompt-${Date.now()}.txt`);
-  fs.writeFileSync(tmpFile, prompt, 'utf8');
-
-  try {
-    // claude --print reads from stdin/file and returns just the text output
-    const result = spawnSync('claude', ['--print', '--output-format', 'text'], {
-      input: prompt,
-      encoding: 'utf8',
-      timeout: 300000,   // 5 min per tile (web search can be slow)
-      maxBuffer: 10 * 1024 * 1024,
-    });
-
-    if (result.status !== 0) {
-      const errMsg = result.stderr || result.error?.message || 'Unknown error';
-      throw new Error(`Claude CLI exited ${result.status}: ${errMsg}`);
-    }
-
-    return result.stdout?.trim() || '';
-  } finally {
-    if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile);
-  }
+async function callAnalysisLLM(prompt) {
+  return callLLM(prompt, {
+    system: 'You are a professional options analyst for NewLeaf Trading. Return ONLY valid JSON.',
+    model: DEFAULT_MODEL,
+    maxTokens: 4000,
+  });
 }
 
 // ── Extract JSON from Claude output ───────────────────────────────────────────
@@ -377,9 +360,9 @@ async function main() {
         log('  ────────────');
       }
 
-      // Call Claude
-      log('  → Calling Claude CLI (may take 30-60s)...');
-      const raw = callClaude(prompt);
+      // Call LLM via API router
+      log(`  → Calling LLM (${DEFAULT_MODEL}, may take 30-60s)...`);
+      const raw = await callAnalysisLLM(prompt);
 
       if (VERBOSE) {
         log('  ── RAW OUTPUT ──');
@@ -459,7 +442,7 @@ async function main() {
       // Push to Firestore analyses/ with provenance
       log('  → Pushing to Firestore analyses collection...');
       const analysisOpts = {
-        modelUsed: 'claude-cli',
+        modelUsed: DEFAULT_MODEL,
         promptVersion: provenance.computePromptVersion(PROMPT_SEMVER, prompt),
         analysisSource: 'analyse-tiles',
       };

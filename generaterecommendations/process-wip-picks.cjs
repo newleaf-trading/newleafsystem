@@ -16,11 +16,11 @@
  */
 
 const admin      = require('firebase-admin');
-const { spawnSync, execSync } = require('child_process');
 const fs         = require('fs');
 const path       = require('path');
 const { randomUUID } = require('crypto');
 const { fetchSentiment, computeModifier, buildSentimentContext } = require('./sentiment-fetch.cjs');
+const { callLLM, DEFAULT_MODEL } = require('./llm-call.cjs');
 const CONFIG     = require('./config.cjs');
 
 // ── Firebase ────────────────────────────────────────────────────────────────
@@ -191,12 +191,12 @@ The JSON must have these exact top-level keys:
 Be specific to ${tile.symbol} and ${tile.strategy}. Use actual spot price ${fmtP(tile.spotPrice)}, strikes, and metrics. Return ONLY JSON.`;
 }
 
-function callClaude(prompt) {
-  const result = spawnSync('claude', ['--print', '--output-format', 'text'], {
-    input: prompt, encoding: 'utf8', timeout: 300000, maxBuffer: 10 * 1024 * 1024,
+async function callAnalysisLLM(prompt) {
+  return callLLM(prompt, {
+    system: 'You are a professional options analyst for NewLeaf Trading. Return ONLY valid JSON.',
+    model: DEFAULT_MODEL,
+    maxTokens: 4000,
   });
-  if (result.status !== 0) throw new Error(`Claude CLI error: ${result.stderr || result.error?.message || 'Unknown'}`);
-  return result.stdout?.trim() || '';
 }
 
 function extractJSON(raw) {
@@ -344,12 +344,12 @@ async function processRecommendation(recId, rec) {
   await db.collection('tiles').doc(tileId).set(tile);
   log(`     tiles/${tileId} ✅`);
 
-  // ── Step 7: Claude analysis ─────────────────────────────────────────────
-  log('  🤖 Running Claude analysis (30-60s)...');
+  // ── Step 7: LLM analysis ─────────────────────────────────────────────
+  log(`  🤖 Running LLM analysis (${DEFAULT_MODEL}, 30-60s)...`);
   const enrichedTile = { ...tile, spotPrice: snapshot.price, discoverVerdict: rec.verdict || null };
   const sentimentCtx = buildSentimentContext(sentiment);
   const prompt = buildClaudePrompt(enrichedTile) + (sentimentCtx ? '\n' + sentimentCtx : '');
-  const raw = callClaude(prompt);
+  const raw = await callAnalysisLLM(prompt);
   const analysis = extractJSON(raw);
 
   for (const key of ['strategyRationale', 'technicalIndicators', 'thetaDecaySchedule', 'riskAnalysis']) {
