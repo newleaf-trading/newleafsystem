@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf System — Architecture Diagram</title>
+<style>
+  :root { --forest: #1a5632; --leaf: #2d8a4e; --gold: #c9a96e; --bg: #fafaf8; --card: #fff; --border: #e8e5e0; --text: #1a1a1a; --gray: #6b7280; --mono: 'SF Mono', 'Fira Code', monospace; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+  h1 { font-size: 28px; font-weight: 800; color: var(--forest); margin-bottom: 8px; }
+  h2 { font-size: 20px; font-weight: 700; color: var(--forest); margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+  h3 { font-size: 16px; font-weight: 600; margin: 24px 0 10px; }
+  .subtitle { font-size: 14px; color: var(--gray); margin-bottom: 36px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+  th { text-align: left; padding: 8px 12px; background: #f3f2ef; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); border-bottom: 1px solid var(--border); }
+  td { padding: 8px 12px; border-bottom: 1px solid #f0eeeb; vertical-align: top; }
+  code { font-family: var(--mono); font-size: 12px; background: #f3f2ef; padding: 2px 6px; border-radius: 4px; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 20px; border-radius: 10px; font-family: var(--mono); font-size: 11px; overflow-x: auto; margin: 16px 0; line-height: 1.8; letter-spacing: 0.3px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .layer { border-radius: 10px; padding: 16px 20px; margin: 8px 0; }
+  .layer h4 { font-size: 14px; margin-bottom: 6px; }
+  .layer p { font-size: 12px; color: var(--gray); }
+  .layer-user { background: #eff6ff; border: 1px solid #bfdbfe; }
+  .layer-web { background: #ecfdf5; border: 1px solid #a7f3d0; }
+  .layer-api { background: #fef3c7; border: 1px solid #fcd34d; }
+  .layer-genrecs { background: #ede9fe; border: 1px solid #c4b5fd; }
+  .layer-pipeline { background: #fee2e2; border: 1px solid #fca5a5; }
+  .layer-data { background: #f3f2ef; border: 1px solid #d1d0cc; }
+  .layer-external { background: #f0f9ff; border: 1px solid #7dd3fc; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+  .badge-node { background: #dcfce7; color: #166534; }
+  .badge-python { background: #dbeafe; color: #1d4ed8; }
+  .badge-react { background: #e0e7ff; color: #3730a3; }
+  .badge-firebase { background: #fef3c7; color: #92400e; }
+  .badge-r2 { background: #fee2e2; color: #991b1b; }
+  .badge-api { background: #f3e8ff; color: #7c3aed; }
+  .arrow { text-align: center; font-size: 18px; color: var(--leaf); margin: 4px 0; font-weight: 700; }
+  .note { font-size: 12px; color: var(--gray); font-style: italic; margin-top: 6px; }
+  @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>NewLeaf System — Architecture Diagram</h1>
+<p class="subtitle">Full system architecture with runtime types, data stores, and external services &nbsp;|&nbsp; 22 May 2026</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>System Overview</h2>
+
+<pre>
+ ┌──────────────────────────────────────────────────────────────────────────────────┐
+ │  USERS (Browser)                                                                │
+ │  newleafsystem.com  /picks  /invest  /workbench  /invest/admin                  │
+ └────────────────────────────────┬─────────────────────────────────────────────────┘
+                                  │ HTTPS
+ ┌────────────────────────────────▼─────────────────────────────────────────────────┐
+ │  LAYER 1: WEB (React SPA)                                    Firebase Hosting   │
+ │  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐  │
+ │  │ Picks Site  │  │ Invest App   │  │  Workbench   │  │ Admin (Models tab)   │  │
+ │  │ /picks/*    │  │ /invest/*    │  │ /workbench/* │  │ /invest/admin        │  │
+ │  │ SSR + React │  │ React + Auth │  │ Static HTML  │  │ React + Firestore    │  │
+ │  └──────┬──────┘  └──────┬───────┘  └──────┬───────┘  └──────────┬───────────┘  │
+ │         │                │                  │                     │              │
+ │         └────────────────┴──────────────────┴─────────────────────┘              │
+ │                                  │                                              │
+ │  Reads from: Firestore (tiles, analyses, weeklyPicks, users)                    │
+ │  Reads from: R2 CDN (gamma walls, reports, manifests)                           │
+ │  Calls: api/ for AI features, indicators, sentiment                            │
+ └────────────────────────────────┬─────────────────────────────────────────────────┘
+                                  │ HTTP (localhost:5400 dev / cloudfunctions.net prod)
+ ┌────────────────────────────────▼─────────────────────────────────────────────────┐
+ │  LAYER 2: API (TypeScript + Fastify)            Firebase Cloud Functions v2     │
+ │                                                                                 │
+ │  ┌──────────────────────────────────────────────────────────────────────────┐    │
+ │  │  LLM Router (api/src/llm/router.ts)                                     │    │
+ │  │  ┌──────────┐ ┌──────┐ ┌──────┐ ┌──────────┐ ┌────────┐ ┌──────────┐   │    │
+ │  │  │ Claude   │ │ GPT-4│ │ Grok │ │ Gemini   │ │DeepSeek│ │ Qwen     │   │    │
+ │  │  │ Sonnet   │ │      │ │      │ │ Pro/Flash│ │ /R1    │ │ QwQ/Max  │   │    │
+ │  │  │ Haiku    │ │      │ │      │ │          │ │        │ │          │   │    │
+ │  │  └──────────┘ └──────┘ └──────┘ └──────────┘ └────────┘ └──────────┘   │    │
+ │  │  Cost tracking: $/call, tokens in/out, per-model aggregation            │    │
+ │  │  Model assignments: api/src/llm/model-assignments.ts (env overridable)  │    │
+ │  └──────────────────────────────────────────────────────────────────────────┘    │
+ │                                                                                 │
+ │  ┌─────────────────────┐  ┌─────────────────────┐  ┌────────────────────────┐   │
+ │  │ Market Data Tools   │  │ AI Endpoints         │  │ Admin Endpoints        │   │
+ │  │ /api/snapshot        │  │ /api/llm/call        │  │ /admin/model-assign.   │   │
+ │  │ /api/chain           │  │ /api/ai-read         │  │ /admin/usage-summary   │   │
+ │  │ /api/indicators ★   │  │ /api/recommend       │  │ /admin/keys            │   │
+ │  │ /api/gamma           │  │ /api/chat            │  │ /health                │   │
+ │  │ /api/sentiment ★    │  │ /api/adjust          │  └────────────────────────┘   │
+ │  │ /api/bars            │  │ /api/event-risk      │                              │
+ │  │                      │  │ /api/strike-compare  │  ┌────────────────────────┐   │
+ │  │ ★ = uses LLM router │  │ /api/verdict-explain │  │ Verify Pipeline        │   │
+ │  └─────────────────────┘  │ /api/picks-narrative │  │ POST /verify           │   │
+ │                            └─────────────────────┘  │ 8 agents: tech, gamma, │   │
+ │  ┌──────────────────────────────────────────┐       │ iv, sentiment, bull,   │   │
+ │  │ shared/indicators/ (pure JS math)        │       │ bear, risk, judge      │   │
+ │  │ SMA, EMA, RSI, Bollinger, MACD           │       └────────────────────────┘   │
+ │  │ Imported by api/src/tools/indicators.ts  │                                    │
+ │  └──────────────────────────────────────────┘                                    │
+ └────────────────────────────────┬─────────────────────────────────────────────────┘
+                                  │ HTTP calls from genrecs to api/
+ ┌────────────────────────────────▼─────────────────────────────────────────────────┐
+ │  LAYER 3: GENERATERECOMMENDATIONS (Node.js CommonJS)           Local scripts    │
+ │                                                                                 │
+ │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────────────────┐   │
+ │  │ publish-pick.cjs │  │ analyse-tiles.cjs│  │ process-wip-picks.cjs       │   │
+ │  │ Single-tile pub  │  │ Batch analysis   │  │ WIP rec → full pick         │   │
+ │  └────────┬─────────┘  └────────┬─────────┘  └────────────┬────────────────┘   │
+ │           │                     │                          │                    │
+ │  ┌────────▼─────────────────────▼──────────────────────────▼────────────────┐   │
+ │  │  Shared helpers:                                                         │   │
+ │  │  indicators-fetch.cjs  → GET /api/indicators/:ticker                    │   │
+ │  │  sentiment-fetch.cjs   → GET /api/sentiment/:ticker                     │   │
+ │  │  llm-call.cjs          → POST /api/llm/call                             │   │
+ │  │  firestore-helpers.cjs → provenance-stamped Firestore writes            │   │
+ │  └─────────────────────────────────────────────────────────────────────────┘   │
+ │                                                                                 │
+ │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────────────────┐   │
+ │  │ generate-        │  │ create-weekly-   │  │ Content: PDFs, social cards, │   │
+ │  │ outputs.js       │  │ picks.js         │  │ email, video scripts         │   │
+ │  │ PDF + video      │  │ Bundle picks     │  │ generate-report.py (Python)  │   │
+ │  └──────────────────┘  └──────────────────┘  └──────────────────────────────┘   │
+ │                                                                                 │
+ │  WRITES TO: Firestore (tiles, analyses, weeklyPicks) — all with provenance      │
+ │  READS FROM: Alpaca (spot, chain), R2 (gamma walls)                             │
+ └────────────────────────────────┬─────────────────────────────────────────────────┘
+                                  │
+ ┌────────────────────────────────▼─────────────────────────────────────────────────┐
+ │  LAYER 4: PIPELINE (Node.js + Python)                  macOS LaunchAgent cron   │
+ │                                                                                 │
+ │  ┌──────────────────────────┐     ┌─────────────────────────────────────────┐   │
+ │  │ newleaf-pipeline.js      │     │ yahoo-svc/ (Python Flask, port 5300)    │   │
+ │  │ 15-min fast scan         │     │ GET /api/options/{symbol}               │   │
+ │  │ OI enrichment            │     │ GET /api/options/{symbol}/{expiry}      │   │
+ │  │ Daily catchup            │     │ Real Open Interest from yfinance        │   │
+ │  │ Health checks            │     │ Greeks calculation                      │   │
+ │  └──────────────────────────┘     └─────────────────────────────────────────┘   │
+ │                                                                                 │
+ │  WRITES TO: R2 (reports/{symbol}/latest.json, history, manifests)               │
+ │  WRITES TO: Firestore (marketState)                                             │
+ └─────────────────────────────────────────────────────────────────────────────────┘
+
+ ┌─────────────────────────────────────────────────────────────────────────────────┐
+ │  DATA STORES                                                                    │
+ │                                                                                 │
+ │  ┌─────────────────────────┐  ┌─────────────────────────┐  ┌────────────────┐  │
+ │  │ Firestore (newleafdb)   │  │ Cloudflare R2 (newleaf) │  │ Alpaca Markets │  │
+ │  │ tiles/{id}              │  │ reports/{SYM}/latest.json│  │ Spot prices    │  │
+ │  │ analyses/{id}           │  │ reports/{SYM}/{date}.json│  │ Option chains  │  │
+ │  │ weeklyPicks/{weekId}    │  │ reports/{SYM}/history/   │  │ Historical bars│  │
+ │  │ pick_outcomes/{id}      │  │ reports/pdf/{SYM}/*.pdf  │  │ Snapshots      │  │
+ │  │ marketState             │  │ reports/manifest.json    │  │ Greeks         │  │
+ │  │ users/{uid}/*           │  │ reports/scripts/{SYM}/   │  └────────────────┘  │
+ │  │ apiKeys                 │  │ pipeline-status/         │                      │
+ │  │ discover_usage          │  │ watchlist-snapshots.json │                      │
+ │  └─────────────────────────┘  └─────────────────────────┘                      │
+ └─────────────────────────────────────────────────────────────────────────────────┘
+
+ ┌─────────────────────────────────────────────────────────────────────────────────┐
+ │  EXTERNAL AI SERVICES (all routed through LLM Router)                           │
+ │                                                                                 │
+ │  Anthropic API ──── Claude Sonnet 4, Claude Haiku 4.5                           │
+ │  OpenAI API    ──── GPT-4o                                                      │
+ │  xAI API       ──── Grok 4                                                     │
+ │  Google AI     ──── Gemini 2.5 Pro, Gemini 2.5 Flash                            │
+ │  DeepSeek API  ──── DeepSeek Chat, DeepSeek Reasoner                            │
+ │  DashScope API ──── Qwen Plus (QwQ), Qwen Max                                  │
+ │                                                                                 │
+ │  NON-LLM: Reddit API, StockTwits API, Serper (search), Yahoo Finance (Python)  │
+ └─────────────────────────────────────────────────────────────────────────────────┘
+</pre>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Layer Details</h2>
+
+<div class="layer layer-web">
+  <h4>Layer 1: Web <span class="badge badge-react">React + Vite</span> <span class="badge badge-node">Node.js server</span> <span class="badge badge-firebase">Firebase Hosting</span></h4>
+  <p><strong>Runtime:</strong> Browser (React SPA) + Node.js server (server.cjs for dev, Firebase Hosting for prod)</p>
+  <p><strong>Build:</strong> <code>vite build</code> produces <code>dist/</code>. SSR prerender for 12 routes (SEO). Workbench static HTML copied to <code>dist/workbench/</code>.</p>
+  <p><strong>Deploy:</strong> <code>firebase deploy --only hosting:newleafsystem</code> &rarr; newleafsystem.com</p>
+  <p><strong>Auth:</strong> Firebase Auth (Google, email). Admin status checked via Firestore user doc.</p>
+  <p><strong>Data reads:</strong> Firestore client SDK (direct). R2 CDN proxied through server.cjs at <code>/r2/reports/*</code>.</p>
+  <p><strong>Does NOT:</strong> Write to tiles/analyses/weeklyPicks. Make LLM calls. Run scheduled jobs.</p>
+</div>
+
+<div class="layer layer-api">
+  <h4>Layer 2: API <span class="badge badge-node">TypeScript + Fastify</span> <span class="badge badge-firebase">Firebase Cloud Functions v2</span></h4>
+  <p><strong>Runtime:</strong> Node.js 20. Fastify HTTP framework. Dev: <code>tsx watch</code> at localhost:5400. Prod: Firebase Cloud Functions (us-central1), 1GB RAM, 540s timeout.</p>
+  <p><strong>Deploy:</strong> <code>npm run build && firebase deploy --only functions</code> &rarr; cloudfunctions.net/api</p>
+  <p><strong>LLM Router:</strong> Single class (<code>LLMRouter</code>) dispatching to 10 model tiers across 6 providers. Token counting + cost tracking on every call. Model assignments configurable via env vars.</p>
+  <p><strong>Tools:</strong> Alpaca client (spot, chains, bars), technical indicators (via shared/indicators), 4-engine sentiment, gamma wall analysis (Nasdaq OI), Serper search.</p>
+  <p><strong>Auth:</strong> API key in <code>X-API-Key</code> header. RBAC tiers: free &lt; basic &lt; premium &lt; admin. Dev mode accepts <code>DEV_API_KEY</code>.</p>
+  <p><strong>Secrets:</strong> Firebase Secret Manager in prod. <code>.env</code> / <code>.env.local</code> in dev.</p>
+</div>
+
+<div class="layer layer-genrecs">
+  <h4>Layer 3: GenerateRecommendations <span class="badge badge-node">Node.js CommonJS</span> <span class="badge badge-python">Python (PDFs)</span></h4>
+  <p><strong>Runtime:</strong> Node.js 20 (CommonJS scripts). Python 3.10 for PDF generation (WeasyPrint). Runs locally on developer machine or scheduled via pipeline.</p>
+  <p><strong>NOT deployed to cloud.</strong> Runs on local machine or a dedicated VM. Calls api/ over HTTP for all LLM, sentiment, and indicator needs.</p>
+  <p><strong>Sole writer</strong> to Firestore tiles, analyses, weeklyPicks collections. All writes carry 8 provenance fields.</p>
+  <p><strong>Key scripts:</strong> publish-pick.cjs (single pick), analyse-tiles.cjs (batch), process-wip-picks.cjs (WIP flow), generate-outputs.js (PDFs + archives), create-weekly-picks.js (bundle), close-week.js (P&L), send-weekly-email.js.</p>
+  <p><strong>HTTP dependencies:</strong> api/ (LLM, sentiment, indicators), Alpaca (spot, chain), R2 CDN (gamma walls).</p>
+</div>
+
+<div class="layer layer-pipeline">
+  <h4>Layer 4: Pipeline <span class="badge badge-node">Node.js</span> <span class="badge badge-python">Python Flask</span></h4>
+  <p><strong>Runtime:</strong> Node.js (schedulers, data pipeline) + Python Flask (Yahoo OI service at port 5300). Always-on via macOS LaunchAgent.</p>
+  <p><strong>Yahoo OI Service:</strong> <code>yahoo-svc/option_api.py</code> — Flask app serving Open Interest data from yfinance. The only real OI source. Port 5300.</p>
+  <p><strong>Schedulers:</strong> <code>node-cron</code> in <code>index.js</code> — 15-min fast scan, OI enrichment, daily catchup, health checks.</p>
+  <p><strong>Uploads to:</strong> Cloudflare R2 (reports, snapshots, pipeline status, manifests).</p>
+  <p><strong>Status:</strong> LaunchAgent still points at legacy <code>/Users/manish/dev/newleaf-pipeline/</code>. Cutover to monorepo pending.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Data Store Details</h2>
+
+<div class="grid-2">
+<div class="card">
+<h3><span class="badge badge-firebase">Firestore</span> &nbsp; Project: newleaf-trading &nbsp; DB: newleafdb</h3>
+<table>
+  <thead><tr><th>Collection</th><th>What's stored</th><th>Writer</th><th>Size</th></tr></thead>
+  <tbody>
+    <tr><td><code>tiles/{id}</code></td><td>Strategy positions: symbol, legs, greeks, gamma, P&L, sentiment, provenance</td><td>genrecs</td><td>~5KB/doc</td></tr>
+    <tr><td><code>analyses/{id}</code></td><td>Deep analysis: strategyRationale, technicalIndicators (computed), theta schedule, risk, provenance</td><td>genrecs</td><td>~10KB/doc</td></tr>
+    <tr><td><code>weeklyPicks/{weekId}</code></td><td>Weekly bundle: pick summaries array, theme, dates, provenance</td><td>genrecs</td><td>~3KB/doc</td></tr>
+    <tr><td><code>pick_outcomes/{id}</code></td><td>P&L at expiry: actual result, WIN/LOSS/PARTIAL</td><td>genrecs</td><td>~1KB/doc</td></tr>
+    <tr><td><code>marketState</code></td><td>Watchlist snapshots synced from R2</td><td>pipeline</td><td>~50KB</td></tr>
+    <tr><td><code>users/{uid}/portfolio</code></td><td>User's tracked positions, P&L</td><td>web</td><td>varies</td></tr>
+    <tr><td><code>users/{uid}/pnlHistory</code></td><td>Historical P&L snapshots</td><td>web</td><td>varies</td></tr>
+    <tr><td><code>apiKeys</code></td><td>API key records: key, role, usage count</td><td>api</td><td>~500B/doc</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="card">
+<h3><span class="badge badge-r2">Cloudflare R2</span> &nbsp; Bucket: newleaf</h3>
+<p>Public URL: <code>https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev</code></p>
+<table>
+  <thead><tr><th>Key pattern</th><th>What's stored</th><th>Writer</th><th>Reader</th></tr></thead>
+  <tbody>
+    <tr><td><code>reports/{SYM}/latest.json</code></td><td>Latest pipeline scan: OI, gamma walls, price, Greeks per strike</td><td>pipeline</td><td>web, genrecs</td></tr>
+    <tr><td><code>reports/{SYM}/{date}.json</code></td><td>Historical daily scan snapshots</td><td>pipeline</td><td>web</td></tr>
+    <tr><td><code>reports/{SYM}/history/*.json</code></td><td>Time-series history by type (price, OI, gamma)</td><td>pipeline</td><td>web</td></tr>
+    <tr><td><code>reports/pdf/{SYM}/*.pdf</code></td><td>Generated PDF reports (latest + dated)</td><td>genrecs (upload-to-r2.py)</td><td>web, users</td></tr>
+    <tr><td><code>reports/scripts/{SYM}/*.md</code></td><td>Video script files</td><td>genrecs</td><td>content team</td></tr>
+    <tr><td><code>reports/manifest.json</code></td><td>Index of all available tickers with metadata</td><td>pipeline, genrecs</td><td>web (workbench)</td></tr>
+    <tr><td><code>pipeline-status/latest.json</code></td><td>Last pipeline run log</td><td>pipeline</td><td>admin</td></tr>
+    <tr><td><code>pipeline-status/runs.json</code></td><td>History of pipeline runs</td><td>pipeline</td><td>admin</td></tr>
+    <tr><td><code>watchlist-snapshots.json</code></td><td>Periodic watchlist state snapshots</td><td>pipeline</td><td>web</td></tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Runtime Summary</h2>
+
+<table>
+  <thead><tr><th>Component</th><th>Language</th><th>Runtime</th><th>Port (dev)</th><th>Deploy target</th><th>Entry point</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Web SPA</strong></td><td>React JSX</td><td>Browser</td><td>5173 (vite) / 3000 (server.cjs)</td><td>Firebase Hosting</td><td><code>npm run dev</code> / <code>node server.cjs</code></td></tr>
+    <tr><td><strong>API</strong></td><td>TypeScript</td><td>Node.js 20</td><td>5400</td><td>Firebase Cloud Functions v2</td><td><code>npm run dev</code> (tsx watch)</td></tr>
+    <tr><td><strong>GenRecs</strong></td><td>JavaScript (CJS)</td><td>Node.js 20</td><td>N/A (scripts)</td><td>Local / VM (not deployed)</td><td><code>npm run publish -- ...</code></td></tr>
+    <tr><td><strong>Pipeline scheduler</strong></td><td>JavaScript (CJS)</td><td>Node.js 20</td><td>N/A (cron)</td><td>Local (LaunchAgent)</td><td><code>node index.js</code></td></tr>
+    <tr><td><strong>Yahoo OI service</strong></td><td>Python</td><td>Python 3.10 (Flask)</td><td>5300</td><td>Local (always-on)</td><td><code>python3 option_api.py</code></td></tr>
+    <tr><td><strong>PDF generator</strong></td><td>Python</td><td>Python 3.10 (WeasyPrint)</td><td>N/A (CLI)</td><td>Local (called by genrecs)</td><td><code>python3 generate-report.py</code></td></tr>
+    <tr><td><strong>R2 uploader</strong></td><td>Python</td><td>Python 3.10 (boto3)</td><td>N/A (CLI)</td><td>Local (called by genrecs)</td><td><code>python3 upload-to-r2.py SYM</code></td></tr>
+    <tr><td><strong>Shared indicators</strong></td><td>JavaScript</td><td>N/A (library)</td><td>N/A</td><td>Imported by api/</td><td><code>require('../shared/indicators')</code></td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>External Service Dependencies</h2>
+
+<table>
+  <thead><tr><th>Service</th><th>What for</th><th>Called by</th><th>Via</th><th>Auth</th></tr></thead>
+  <tbody>
+    <tr><td>Anthropic API</td><td>Claude Sonnet/Haiku — analysis, sentiment, recommendations</td><td>api/ (router)</td><td>SDK</td><td>ANTHROPIC_API_KEY</td></tr>
+    <tr><td>OpenAI API</td><td>GPT-4o — alternative analysis</td><td>api/ (router)</td><td>SDK</td><td>OPENAI_API_KEY</td></tr>
+    <tr><td>xAI API</td><td>Grok — X/Twitter sentiment</td><td>api/ (router)</td><td>SDK (OpenAI-compat)</td><td>XAI_API_KEY</td></tr>
+    <tr><td>Google AI</td><td>Gemini Pro/Flash — news sentiment, analysis</td><td>api/ (router)</td><td>SDK</td><td>GEMINI_API_KEY</td></tr>
+    <tr><td>DeepSeek API</td><td>DeepSeek/R1 — verification agents</td><td>api/ (router)</td><td>SDK (OpenAI-compat)</td><td>DEEPSEEK_API_KEY</td></tr>
+    <tr><td>DashScope API</td><td>Qwen QwQ/Max — market reads, analysis</td><td>api/ (router)</td><td>SDK (OpenAI-compat)</td><td>DASHSCOPE_API_KEY</td></tr>
+    <tr><td>Alpaca Markets</td><td>Spot prices, option chains, historical bars, Greeks</td><td>api/, genrecs</td><td>REST API</td><td>ALPACA_API_KEY + SECRET</td></tr>
+    <tr><td>Yahoo Finance</td><td>Open Interest data (via yfinance Python)</td><td>pipeline (yahoo-svc)</td><td>yfinance library</td><td>None</td></tr>
+    <tr><td>Reddit API</td><td>WSB/options/stocks sentiment</td><td>api/ (sentiment)</td><td>REST API</td><td>None (public)</td></tr>
+    <tr><td>StockTwits API</td><td>Retail sentiment (bullish/bearish ratio)</td><td>api/ (sentiment)</td><td>REST API</td><td>None (public)</td></tr>
+    <tr><td>Serper API</td><td>Google search results for verify agents</td><td>api/ (tools)</td><td>REST API</td><td>SERPER_API_KEY</td></tr>
+    <tr><td>Cloudflare R2</td><td>Object storage for reports, PDFs, manifests</td><td>pipeline, genrecs</td><td>S3-compat API (boto3)</td><td>R2 access key in config</td></tr>
+    <tr><td>Firebase</td><td>Auth, Firestore, Hosting, Cloud Functions</td><td>all layers</td><td>Admin SDK / Client SDK</td><td>serviceAccountKey.json</td></tr>
+    <tr><td>Gmail SMTP</td><td>Weekly email newsletter</td><td>genrecs</td><td>SMTP</td><td>SMTP_USER + SMTP_PASS</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Communication Patterns</h2>
+
+<div class="card">
+<h3>Who calls whom</h3>
+<pre>
+  web/ ──────── reads ────────→ Firestore (tiles, analyses, weeklyPicks, users)
+  web/ ──────── reads ────────→ R2 CDN (gamma walls, reports, PDFs)
+  web/ ──────── HTTP ─────────→ api/ (AI features, indicators, sentiment)
+
+  api/ ──────── SDK ──────────→ Anthropic, OpenAI, xAI, Google, DeepSeek, DashScope
+  api/ ──────── REST ─────────→ Alpaca (market data)
+  api/ ──────── REST ─────────→ Reddit, StockTwits, Serper
+  api/ ──────── import ───────→ shared/indicators/ (pure math)
+
+  genrecs/ ──── HTTP ─────────→ api/ (LLM calls, sentiment, indicators)
+  genrecs/ ──── REST ─────────→ Alpaca (spot, chain — direct, not via api/)
+  genrecs/ ──── REST ─────────→ R2 CDN (gamma walls)
+  genrecs/ ──── writes ───────→ Firestore (tiles, analyses, weeklyPicks)
+  genrecs/ ──── uploads ──────→ R2 (PDFs, via upload-to-r2.py)
+
+  pipeline/ ─── REST ─────────→ Yahoo Finance (via yahoo-svc Python)
+  pipeline/ ─── uploads ──────→ R2 (reports, manifests, pipeline status)
+  pipeline/ ─── writes ───────→ Firestore (marketState)
+</pre>
+</div>
+
+</div>
+</body>
+</html>
