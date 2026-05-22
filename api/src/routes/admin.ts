@@ -2,8 +2,10 @@ import { randomUUID } from 'crypto';
 import type { FastifyInstance } from 'fastify';
 import { requireTier } from '../middleware/rbac.js';
 import type { UserRole } from '../middleware/auth.js';
+import { MODEL_ASSIGNMENTS } from '../llm/model-assignments.js';
+import type { LLMRouter } from '../llm/router.js';
 
-export function registerAdminRoutes(fastify: FastifyInstance) {
+export function registerAdminRoutes(fastify: FastifyInstance, llm?: LLMRouter) {
   // POST /admin/keys — create a new API key
   fastify.post('/admin/keys', { preHandler: [requireTier('admin')] }, async (req, reply) => {
     const { name, role, ownerId } = req.body as { name?: string; role?: UserRole; ownerId?: string };
@@ -76,5 +78,43 @@ export function registerAdminRoutes(fastify: FastifyInstance) {
     if (!snap.exists) return reply.code(404).send({ error: 'Key not found' });
     await doc.update({ active: false });
     return { success: true, id };
+  });
+
+  // GET /admin/model-assignments — list all model assignments
+  fastify.get('/admin/model-assignments', { preHandler: [requireTier('admin')] }, async () => {
+    return {
+      assignments: MODEL_ASSIGNMENTS.map(a => ({
+        service: a.service,
+        description: a.description,
+        currentModel: a.currentModel,
+        alternatives: a.alternatives,
+        envOverride: a.envOverride,
+        category: a.category,
+      })),
+    };
+  });
+
+  // GET /admin/usage-summary — LLM usage stats from current session
+  fastify.get('/admin/usage-summary', { preHandler: [requireTier('admin')] }, async () => {
+    if (!llm) return { usage: null, message: 'LLM router not available' };
+    const usage = llm.getUsage();
+    // Group by model
+    const byModel: Record<string, { calls: number; inputTokens: number; outputTokens: number; cost: number }> = {};
+    for (const call of usage.calls) {
+      if (!byModel[call.model]) byModel[call.model] = { calls: 0, inputTokens: 0, outputTokens: 0, cost: 0 };
+      byModel[call.model].calls++;
+      byModel[call.model].inputTokens += call.inputTokens;
+      byModel[call.model].outputTokens += call.outputTokens;
+      byModel[call.model].cost += call.cost;
+    }
+    // Round costs
+    for (const m of Object.values(byModel)) m.cost = +m.cost.toFixed(6);
+    return {
+      totalCalls: usage.calls.length,
+      totalCost: usage.totalCost,
+      totalInputTokens: usage.totalInputTokens,
+      totalOutputTokens: usage.totalOutputTokens,
+      byModel,
+    };
   });
 }

@@ -4,8 +4,9 @@ import { getStockSnapshot, getOptionsSnapshot, getHistoricalBars } from '../tool
 import { computeIndicators } from '../tools/indicators.js';
 import { fetchNasdaqOI, findGammaWalls } from '../tools/nasdaq-oi.js';
 import { fetchSentiment } from '../tools/sentiment.js';
+import type { LLMRouter } from '../llm/router.js';
 
-export function registerMarketRoutes(fastify: FastifyInstance) {
+export function registerMarketRoutes(fastify: FastifyInstance, llm: LLMRouter) {
   // GET /api/snapshot/:ticker — free tier
   fastify.get('/api/snapshot/:ticker', { preHandler: [requireTier('free')] }, async (req) => {
     const { ticker } = req.params as { ticker: string };
@@ -77,12 +78,13 @@ export function registerMarketRoutes(fastify: FastifyInstance) {
     };
   });
 
-  // GET /api/sentiment/:ticker — basic tier (Grok + Gemini + Reddit/StockTwits)
+  // GET /api/sentiment/:ticker — basic tier (Claude + Grok + Gemini + Reddit/StockTwits)
   fastify.get('/api/sentiment/:ticker', { preHandler: [requireTier('basic')] }, async (req, reply) => {
     const { ticker } = req.params as { ticker: string };
-    const result = await fetchSentiment(ticker.toUpperCase());
+    llm.resetUsage();
+    const result = await fetchSentiment(ticker.toUpperCase(), llm);
     if (!result) return reply.code(502).send({ error: 'All sentiment engines failed' });
-    return result;
+    return { ...result, cost: llm.getUsage() };
   });
 
   // GET /api/bars/:ticker — basic tier (historical bars for pipeline)

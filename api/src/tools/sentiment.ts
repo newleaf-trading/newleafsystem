@@ -1,8 +1,11 @@
 /**
- * Multi-engine sentiment analysis: Grok (xAI) + Gemini (Google) + Reddit/StockTwits.
+ * Multi-engine sentiment analysis: Claude + Grok + Gemini + Reddit/StockTwits.
+ * All LLM engines route through the LLM router for cost tracking.
  * Weighted composite scoring with automatic redistribution when engines are unavailable.
  */
 import axios from 'axios';
+import type { LLMRouter } from '../llm/router.js';
+import { getModel } from '../llm/model-assignments.js';
 
 interface SentimentResult {
   symbol: string;
@@ -69,12 +72,36 @@ Return ONLY a JSON object (no markdown, no explanation):
 }
 Be specific and cite real sources.`;
 
+// ── Engine: Claude (Anthropic) — Web search + news analysis ──
+
+async function fetchClaude(symbol: string, llm: LLMRouter): Promise<SentimentResult> {
+  const prompt = `You are a financial sentiment analyst for an options trading system.
+Analyze the current market sentiment for ${symbol} using web search.
+Focus on developments from the last 48 hours.
+
+Search for:
+  1. Breaking news and developments
+  2. Analyst upgrades, downgrades, price target changes
+  3. Earnings announcements, guidance, or pre-announcements
+  4. Material corporate events (M&A, regulatory, legal)
+  5. Social media and retail trader sentiment
+  6. Sector-wide themes affecting this stock
+${SENTIMENT_PROMPT_SUFFIX.replace('<SYMBOL>', symbol)}
+If you find no significant news, return score 50 with label "neutral" and confidence below 0.5.`;
+
+  const raw = await llm.call(getModel('sentiment-claude'), {
+    system: 'You are a financial sentiment analyst with web search capability. Analyze recent news and market sentiment.',
+    user: prompt,
+    maxTokens: 1500,
+  });
+  const data = extractJSON(raw);
+  data.engine = 'claude';
+  return data;
+}
+
 // ── Engine: Grok (xAI) — X/Twitter sentiment ──
 
-async function fetchGrok(symbol: string): Promise<SentimentResult> {
-  const apiKey = process.env.SENTIMENT_GROK_API_KEY || process.env.XAI_API_KEY;
-  if (!apiKey) throw new Error('No Grok API key');
-
+async function fetchGrok(symbol: string, llm: LLMRouter): Promise<SentimentResult> {
   const prompt = `You are a financial sentiment analyst specializing in social media analysis.
 Analyze the current sentiment for $${symbol} on X (Twitter) and social media.
 Focus on the last 48 hours.
@@ -87,33 +114,19 @@ Look for:
   5. Any viral news or narratives
 ${SENTIMENT_PROMPT_SUFFIX.replace('<SYMBOL>', symbol)}`;
 
-  const res = await axios.post('https://api.x.ai/v1/chat/completions', {
-    model: 'grok-3-mini',
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.3,
-  }, {
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    timeout: 120000,
+  const raw = await llm.call(getModel('sentiment-grok'), {
+    system: 'You are a financial sentiment analyst specializing in X/Twitter social media analysis.',
+    user: prompt,
+    maxTokens: 1500,
   });
-
-  const data = extractJSON(res.data.choices?.[0]?.message?.content || '');
+  const data = extractJSON(raw);
   data.engine = 'grok';
   return data;
 }
 
 // ── Engine: Gemini (Google) — News & sector ──
 
-async function fetchGemini(symbol: string): Promise<SentimentResult> {
-  const apiKey = process.env.SENTIMENT_GEMINI_API_KEY;
-  if (!apiKey) throw new Error('No Gemini API key');
-
-  const { GoogleGenerativeAI } = await import('@google/generative-ai');
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-2.5-flash',
-    tools: [{ googleSearch: {} } as any],
-  });
-
+async function fetchGemini(symbol: string, llm: LLMRouter): Promise<SentimentResult> {
   const prompt = `You are a financial sentiment analyst specializing in news analysis.
 Analyze the current market sentiment for ${symbol} using Google Search.
 Focus on developments from the last 48 hours.
@@ -125,14 +138,17 @@ Search for:
   4. Competitor developments that may impact ${symbol}
 ${SENTIMENT_PROMPT_SUFFIX.replace('<SYMBOL>', symbol)}`;
 
-  const result = await model.generateContent(prompt);
-  const raw = result.response.text();
+  const raw = await llm.call(getModel('sentiment-gemini'), {
+    system: 'You are a financial sentiment analyst specializing in news and sector analysis.',
+    user: prompt,
+    maxTokens: 1500,
+  });
   const data = extractJSON(raw);
   data.engine = 'gemini';
   return data;
 }
 
-// ── Engine: Reddit + StockTwits — Social aggregation (no API keys) ──
+// ── Engine: Reddit + StockTwits — Social aggregation (no LLM, direct HTTP) ──
 
 async function fetchReddit(symbol: string): Promise<SentimentResult> {
   let posts: any[] = [];
@@ -206,17 +222,23 @@ async function fetchReddit(symbol: string): Promise<SentimentResult> {
   };
 }
 
-// ── Composite: weighted multi-engine ──
+// ── Composite: weighted multi-engine (matches genrecs weights) ──
 
-const ENGINE_WEIGHTS: Record<string, number> = { grok: 0.35, gemini: 0.35, reddit: 0.30 };
+const ENGINE_WEIGHTS: Record<string, number> = {
+  claude: 0.30,
+  grok: 0.25,
+  gemini: 0.25,
+  reddit: 0.20,
+};
 
-export async function fetchSentiment(symbol: string): Promise<CompositeResult | null> {
+export async function fetchSentiment(symbol: string, llm: LLMRouter): Promise<CompositeResult | null> {
   const results: Record<string, SentimentResult> = {};
   const promises: Promise<void>[] = [];
 
   // Launch all engines in parallel
-  promises.push(fetchGrok(symbol).then(r => { results.grok = r; }).catch(() => {}));
-  promises.push(fetchGemini(symbol).then(r => { results.gemini = r; }).catch(() => {}));
+  promises.push(fetchClaude(symbol, llm).then(r => { results.claude = r; }).catch(() => {}));
+  promises.push(fetchGrok(symbol, llm).then(r => { results.grok = r; }).catch(() => {}));
+  promises.push(fetchGemini(symbol, llm).then(r => { results.gemini = r; }).catch(() => {}));
   promises.push(fetchReddit(symbol).then(r => { results.reddit = r; }).catch(() => {}));
 
   await Promise.allSettled(promises);
@@ -231,7 +253,7 @@ export async function fetchSentiment(symbol: string): Promise<CompositeResult | 
 
   for (const name of active) {
     const r = results[name];
-    const w = ENGINE_WEIGHTS[name] ?? 0.33;
+    const w = ENGINE_WEIGHTS[name] ?? 0.25;
     totalWeight += w;
     weightedScore += (r.score ?? 50) * w;
     weightedConfidence += (r.confidence ?? 0.5) * w;

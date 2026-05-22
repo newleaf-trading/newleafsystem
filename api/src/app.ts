@@ -57,10 +57,10 @@ export function createApp() {
 
   // Register routes
   registerHealthRoutes(fastify);
-  registerMarketRoutes(fastify);
+  registerMarketRoutes(fastify, llm);
   registerAIRoutes(fastify, llm);
   registerVerifyRoutes(fastify, orchestrator, store);
-  registerAdminRoutes(fastify);
+  registerAdminRoutes(fastify, llm);
   registerAIVerdictRoutes(fastify, llm);
   registerAIPicksRoutes(fastify, llm);
   registerAIStrikesRoutes(fastify, llm);

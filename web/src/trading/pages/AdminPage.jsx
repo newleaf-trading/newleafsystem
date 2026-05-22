@@ -4,6 +4,7 @@ import { formatStrategy, formatCurrency } from '../utils/formatters';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, ReferenceLine } from 'recharts';
 import { AlertConfigPanel } from '../components/admin/AlertConfigPanel';
 import { ApiDiagnostics } from '../components/admin/ApiDiagnostics';
+import { ModelAssignmentsPanel } from '../components/admin/ModelAssignmentsPanel';
 
 export function AdminPage() {
   const {
@@ -199,6 +200,9 @@ export function AdminPage() {
         </button>
         <button className={`adm-tab${tab === 'api' ? ' active' : ''}`} onClick={() => setTab('api')}>
           🔍 API Diagnostics
+        </button>
+        <button className={`adm-tab${tab === 'models' ? ' active' : ''}`} onClick={() => setTab('models')}>
+          🤖 Models
         </button>
       </div>
 
@@ -842,6 +846,9 @@ export function AdminPage() {
 
       {/* ═══ API DIAGNOSTICS TAB ═══ */}
       {tab === 'api' && <ApiDiagnostics />}
+
+      {/* ═══ MODELS TAB ═══ */}
+      {tab === 'models' && <ModelAssignmentsPanel showStatus={showStatus} />}
     </div>
   );
 }
