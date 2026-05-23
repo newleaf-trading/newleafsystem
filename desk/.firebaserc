@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "newleaf-trading"
+  },
+  "targets": {
+    "newleaf-trading": {
+      "hosting": {
+        "newleaf-desk": [
+          "newleaf-desk"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
