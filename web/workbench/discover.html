@@ -557,11 +557,71 @@
       </div>
     </div>
 
-    <!-- ===== STAGE 2: Ranked Strategies ===== -->
+    <!-- ===== STAGE 2: Strategies ===== -->
     <div class="stage hidden" id="stage-2">
-      <div class="panel">
-        <div class="panel-title">Ranked Strategies</div>
-        <div class="strategy-cards" id="strategy-cards"></div>
+      <!-- Mode selector -->
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="btn-primary s2-mode-btn active" id="s2-ai-btn" onclick="setS2Mode('ai')" style="flex:1;padding:12px;font-size:13px">Let AI find a trade</button>
+        <button class="btn-primary s2-mode-btn" id="s2-manual-btn" onclick="setS2Mode('manual')" style="flex:1;padding:12px;font-size:13px;background:var(--white);color:var(--ink);border:1px solid var(--border)">Build my own</button>
+      </div>
+
+      <!-- AI mode -->
+      <div id="s2-ai-mode">
+        <div class="panel" style="padding:16px 20px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <span style="background:var(--teal);color:white;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase">AI Ranked</span>
+            <span style="font-size:12px;color:var(--ink-muted)">Strategies scored for this setup</span>
+          </div>
+          <div id="strategy-cards"></div>
+          <div style="text-align:center;margin-top:14px">
+            <button onclick="setS2Mode('manual')" style="background:none;border:none;color:var(--teal);font-size:12px;cursor:pointer;text-decoration:underline">None of these &#8212; build my own</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manual mode -->
+      <div id="s2-manual-mode" class="hidden">
+        <div class="panel" style="padding:16px 20px">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-muted);font-weight:600;margin-bottom:10px">Choose a structure</div>
+          <div class="strat-strip" style="margin-bottom:0">
+            <div class="strat-chip strat-type-card" data-strat="iron_condor"><svg viewBox="0 0 80 32"><polyline points="0,28 15,28 25,4 55,4 65,28 80,28" fill="none" stroke="var(--pass-text)" stroke-width="2.5"/></svg><span class="strat-chip-name">Iron Condor</span></div>
+            <div class="strat-chip strat-type-card" data-strat="iron_butterfly"><svg viewBox="0 0 80 32"><polyline points="0,28 25,28 40,4 55,28 80,28" fill="none" stroke="var(--pass-text)" stroke-width="2.5"/></svg><span class="strat-chip-name">Iron Butterfly</span></div>
+            <div class="strat-chip strat-type-card" data-strat="vertical_spread"><svg viewBox="0 0 80 32"><polyline points="0,28 30,28 50,4 80,4" fill="none" stroke="var(--accent)" stroke-width="2.5"/></svg><span class="strat-chip-name">Bull Put</span></div>
+            <div class="strat-chip strat-type-card" data-strat="bear_call_spread"><svg viewBox="0 0 80 32"><polyline points="0,4 30,4 50,28 80,28" fill="none" stroke="var(--fail-text)" stroke-width="2.5"/></svg><span class="strat-chip-name">Bear Call</span></div>
+            <div class="strat-chip strat-type-card" data-strat="short_strangle"><svg viewBox="0 0 80 32"><polyline points="0,28 20,28 30,4 50,4 60,28 80,28" fill="none" stroke="var(--concern-text)" stroke-width="2.5"/></svg><span class="strat-chip-name">Strangle</span></div>
+            <div class="strat-chip strat-type-card" data-strat="broken_wing_butterfly"><svg viewBox="0 0 80 32"><polyline points="0,22 20,28 35,4 50,28 65,22 80,22" fill="none" stroke="#a78bfa" stroke-width="2.5"/></svg><span class="strat-chip-name">BWB</span></div>
+          </div>
+
+          <!-- Preset row (shown after strategy type selected) -->
+          <div id="s2-presets" class="hidden" style="margin-top:14px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-muted);font-weight:600;margin-bottom:8px">Risk profile</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+              <div class="panel s2-preset" data-preset="conservative" onclick="selectPreset('conservative')" style="padding:12px;cursor:pointer;text-align:center;transition:all 0.15s">
+                <div style="font-size:12px;font-weight:600;color:var(--ink)">Conservative</div>
+                <div style="font-size:11px;color:var(--green);font-family:var(--mono);margin-top:4px" id="preset-cons-pop">---</div>
+                <div style="font-size:10px;color:var(--ink-muted);margin-top:2px" id="preset-cons-cr">---</div>
+                <div style="font-size:9px;color:var(--ink-faint);margin-top:2px">Wider wings &middot; lower credit</div>
+              </div>
+              <div class="panel s2-preset selected" data-preset="balanced" onclick="selectPreset('balanced')" style="padding:12px;cursor:pointer;text-align:center;transition:all 0.15s;border-color:var(--teal)">
+                <div style="font-size:12px;font-weight:600;color:var(--ink)">Balanced</div>
+                <div style="font-size:11px;color:var(--green);font-family:var(--mono);margin-top:4px" id="preset-bal-pop">---</div>
+                <div style="font-size:10px;color:var(--ink-muted);margin-top:2px" id="preset-bal-cr">---</div>
+                <div style="font-size:9px;color:var(--ink-faint);margin-top:2px">Standard setup</div>
+              </div>
+              <div class="panel s2-preset" data-preset="aggressive" onclick="selectPreset('aggressive')" style="padding:12px;cursor:pointer;text-align:center;transition:all 0.15s">
+                <div style="font-size:12px;font-weight:600;color:var(--ink)">Aggressive</div>
+                <div style="font-size:11px;color:var(--green);font-family:var(--mono);margin-top:4px" id="preset-agg-pop">---</div>
+                <div style="font-size:10px;color:var(--ink-muted);margin-top:2px" id="preset-agg-cr">---</div>
+                <div style="font-size:9px;color:var(--ink-faint);margin-top:2px">Tighter wings &middot; higher credit</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
+            <button onclick="setS2Mode('ai')" style="background:none;border:none;color:var(--teal);font-size:12px;cursor:pointer;text-decoration:underline">Not sure? Let AI rank them</button>
+            <button class="btn-primary" id="s2-drill-btn" disabled onclick="s2BuildTrade()" style="padding:10px 20px">Drill into &#8594;</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1346,6 +1406,8 @@
        STAGE 2: RANKED STRATEGIES
        ================================================================ */
     async function enterStage2() {
+      // Default to AI mode
+      setS2Mode('ai');
       const container = $('#strategy-cards');
       container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)"><span class="mini-spinner"></span> Finding strategies...</div>';
 
@@ -1401,19 +1463,25 @@
     function renderStrategyCards(strategies) {
       const container = $('#strategy-cards');
       container.innerHTML = strategies.map((s, i) => {
-        const scoreClass = s.score >= 75 ? 'high' : s.score >= 60 ? 'mid' : 'low';
+        const scoreColor = s.score >= 75 ? 'var(--green)' : s.score >= 60 ? 'var(--yellow)' : 'var(--red)';
+        const isTop = i === 0;
+        const creditLabel = typeof s.netCredit === 'number' && s.netCredit >= 0 ? 'Credit $' + s.netCredit.toFixed(2) : 'Debit $' + Math.abs(s.netCredit).toFixed(2);
         return `
-          <div class="strat-card ${s.bestFit ? 'best-fit' : ''}" onclick="selectStrategy(${i})">
-            <div class="strat-card-header">
-              <div>
-                <div class="strat-name">${s.strategy}</div>
-                <div class="strat-pills">${s.bestFit ? '<span class="best-fit-pill">Best fit</span>' : ''}</div>
+          <div class="panel" style="padding:14px 18px;margin-bottom:10px;cursor:pointer;transition:all 0.15s;border:${isTop ? '1.5px solid var(--teal)' : '1px solid var(--border)'}" onclick="selectStrategy(${i})" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
+            <div style="display:flex;align-items:center;gap:14px">
+              <div style="width:48px;height:48px;border-radius:50%;border:3px solid ${scoreColor};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;font-family:var(--mono);color:${scoreColor};flex-shrink:0">${s.score}</div>
+              <div style="flex:1">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:15px;font-weight:700">${s.strategy}</span>
+                  ${isTop ? '<span style="background:var(--teal);color:white;font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;text-transform:uppercase">AI Pick</span>' : ''}
+                </div>
+                <div style="font-size:12px;color:var(--ink-muted);margin-top:3px;line-height:1.4">${s.rationale}</div>
               </div>
-              <div class="strat-score ${scoreClass}">${s.score}</div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:13px;font-weight:600;font-family:var(--mono);color:${s.netCredit >= 0 ? 'var(--green)' : 'var(--red)'}">${creditLabel}</div>
+                <div style="font-size:10px;color:var(--ink-muted);margin-top:2px">${s.legs}</div>
+              </div>
             </div>
-            <div class="strat-legs">${s.legs}</div>
-            <div class="strat-rationale">${s.rationale}</div>
-            <div class="strat-credit">${typeof s.netCredit === 'number' && s.netCredit >= 0 ? 'Credit $' + s.netCredit.toFixed(2) : 'Debit $' + Math.abs(s.netCredit).toFixed(2)}</div>
           </div>
         `;
       }).join('');
@@ -1440,6 +1508,124 @@
       state.qty = 10;
       goToStage(3);
       renderStage3();
+    }
+
+    /* ================================================================
+       STAGE 2: MODE SWITCHING + PRESETS
+       ================================================================ */
+    let s2Mode = 'ai';
+    let s2SelectedStrat = null;
+    let s2SelectedPreset = 'balanced';
+
+    function setS2Mode(mode) {
+      s2Mode = mode;
+      if (mode === 'ai') {
+        show($('#s2-ai-mode')); hide($('#s2-manual-mode'));
+        $('#s2-ai-btn').classList.add('active');
+        $('#s2-ai-btn').style.cssText = 'flex:1;padding:12px;font-size:13px';
+        $('#s2-manual-btn').classList.remove('active');
+        $('#s2-manual-btn').style.cssText = 'flex:1;padding:12px;font-size:13px;background:var(--white);color:var(--ink);border:1px solid var(--border)';
+        // Trigger AI ranking if not already loaded
+        if (!state.strategies.length) enterStage2();
+      } else {
+        hide($('#s2-ai-mode')); show($('#s2-manual-mode'));
+        $('#s2-manual-btn').classList.add('active');
+        $('#s2-manual-btn').style.cssText = 'flex:1;padding:12px;font-size:13px';
+        $('#s2-ai-btn').classList.remove('active');
+        $('#s2-ai-btn').style.cssText = 'flex:1;padding:12px;font-size:13px;background:var(--white);color:var(--ink);border:1px solid var(--border)';
+      }
+    }
+
+    // Strat chip click in manual mode
+    document.addEventListener('click', function(e) {
+      const card = e.target.closest('#s2-manual-mode .strat-type-card');
+      if (!card) return;
+      document.querySelectorAll('#s2-manual-mode .strat-type-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      s2SelectedStrat = card.dataset.strat;
+      show($('#s2-presets'));
+      computePresets(s2SelectedStrat);
+      updateDrillBtn();
+    });
+
+    function updateDrillBtn() {
+      const btn = $('#s2-drill-btn');
+      if (!btn) return;
+      const nameMap = { iron_condor: 'Iron Condor', iron_butterfly: 'Iron Butterfly', vertical_spread: 'Bull Put Spread', bear_call_spread: 'Bear Call Spread', short_strangle: 'Strangle', broken_wing_butterfly: 'BWB' };
+      if (s2SelectedStrat) {
+        btn.disabled = false;
+        btn.textContent = 'Drill into ' + (nameMap[s2SelectedStrat] || s2SelectedStrat) + ' \u2192';
+      }
+    }
+
+    function selectPreset(preset) {
+      s2SelectedPreset = preset;
+      document.querySelectorAll('.s2-preset').forEach(p => {
+        p.classList.toggle('selected', p.dataset.preset === preset);
+        p.style.borderColor = p.dataset.preset === preset ? 'var(--teal)' : '';
+      });
+    }
+
+    function computePresets(stratType) {
+      // Compute real PoP + credit for three wing widths from chain data
+      if (!state.chainData.length) {
+        // No chain yet — show placeholders
+        return;
+      }
+      const strikes = state.chainData;
+      const atmIdx = strikes.reduce((best, s, i) =>
+        Math.abs(s.strike - state.spot) < Math.abs(strikes[best].strike - state.spot) ? i : best, 0);
+      const atm = strikes[atmIdx]?.strike || Math.round(state.spot);
+      const find = (offset) => {
+        const target = atm + offset * 5;
+        return strikes.reduce((best, s) => Math.abs(s.strike - target) < Math.abs(best.strike - target) ? s : best, strikes[0]);
+      };
+
+      // Only compute for iron condor-like structures (4 legs)
+      const configs = {
+        conservative: { shortPut: -3, longPut: -5, shortCall: 3, longCall: 5 },
+        balanced:     { shortPut: -2, longPut: -4, shortCall: 2, longCall: 4 },
+        aggressive:   { shortPut: -1, longPut: -3, shortCall: 1, longCall: 3 },
+      };
+      // Adjust for 2-leg strategies
+      const twoLeg = ['vertical_spread', 'bear_call_spread'].includes(stratType);
+
+      for (const [key, cfg] of Object.entries(configs)) {
+        let legs, nc = 0;
+        if (twoLeg) {
+          if (stratType === 'bear_call_spread') {
+            const s1 = find(cfg.shortCall), s2 = find(cfg.longCall);
+            nc = ((s1.call?.mid || 0) - (s2.call?.mid || 0));
+            legs = [{ strike: s1.strike, side: 'short' }, { strike: s2.strike, side: 'long' }];
+          } else {
+            const s1 = find(cfg.shortPut), s2 = find(cfg.longPut);
+            nc = ((s1.put?.mid || 0) - (s2.put?.mid || 0));
+            legs = [{ strike: s1.strike, side: 'short' }, { strike: s2.strike, side: 'long' }];
+          }
+        } else {
+          const lp = find(cfg.longPut), sp = find(cfg.shortPut);
+          const sc = find(cfg.shortCall), lc = find(cfg.longCall);
+          nc = (sp.put?.mid || 0) - (lp.put?.mid || 0) + (sc.call?.mid || 0) - (lc.call?.mid || 0);
+        }
+        // Estimate PoP from wing width: wider wings = higher PoP
+        const wingWidth = Math.abs(cfg.shortCall - cfg.shortPut);
+        const estimatedPoP = Math.min(92, Math.max(45, 50 + wingWidth * 7));
+
+        const prefix = key === 'conservative' ? 'cons' : key === 'balanced' ? 'bal' : 'agg';
+        const popEl = $(`#preset-${prefix}-pop`);
+        const crEl = $(`#preset-${prefix}-cr`);
+        if (popEl) popEl.textContent = `~${estimatedPoP}% PoP`;
+        if (crEl) crEl.textContent = nc >= 0 ? `$${nc.toFixed(2)} credit` : `$${Math.abs(nc).toFixed(2)} debit`;
+      }
+    }
+
+    function s2BuildTrade() {
+      if (!s2SelectedStrat) return;
+      // Map preset to wing offset multiplier
+      const presetMap = { conservative: 1.5, balanced: 1, aggressive: 0.5 };
+      const mult = presetMap[s2SelectedPreset] || 1;
+      // Use the manualStrategy path with the selected strategy
+      manualStrategy(s2SelectedStrat);
     }
 
     /* ================================================================
@@ -2232,6 +2418,10 @@
     window.handleMutation = handleMutation;
     window.handlePublishToPicks = handlePublishToPicks;
     window.handleSaveTrace = handleSaveTrace;
+    window.setS2Mode = setS2Mode;
+    window.selectPreset = selectPreset;
+    window.s2BuildTrade = s2BuildTrade;
+    window.selectStrategy = selectStrategy;
 
     /* ================================================================
        INIT
