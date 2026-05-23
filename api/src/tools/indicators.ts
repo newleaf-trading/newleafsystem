@@ -1,5 +1,5 @@
 import type { Bar } from './alpaca.js';
-import { sma, rsi, bollingerBands, macd as computeMacd } from '../../../shared/indicators/index.js';
+import { sma, rsi, bollingerBands, macd as computeMacd } from '../shared/indicators.js';
 
 export interface TechnicalIndicators {
   price: number;

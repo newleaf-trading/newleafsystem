@@ -6,7 +6,7 @@
   "main": "dist/functions.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc && cp -r src/shared dist/shared",
     "start": "node dist/index.js",
     "emulate": "firebase emulators:start --only functions,firestore",
     "deploy": "npm run build && firebase deploy --only functions",
