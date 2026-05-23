@@ -53,6 +53,9 @@ const MonthlyPage = lazy(() => import('./picks/MonthlyPage'));
 const WeekViewerPage = lazy(() => import('./picks/WeekViewerPage'));
 const PickAnalysisPage = lazy(() => import('./picks/PickAnalysisPage'));
 
+// Auth pages — lazy
+const StandaloneLoginPage = lazy(() => import('./trading/pages/StandaloneLoginPage').then(m => ({ default: m.StandaloneLoginPage })));
+
 // Product pages — lazy
 const DeskPage = lazy(() => import('./trading/pages/DeskPage'));
 const QuantPage = lazy(() => import('./trading/pages/QuantPage'));
@@ -149,6 +152,10 @@ export default function App() {
           <Route path="/workbench/analysis" element={<WorkbenchAnalysisWrapper />} />
           <Route path="/workbench/analysis/:ticker" element={<WorkbenchAnalysisWrapper />} />
         </Route>
+
+        {/* ═══ Auth ═══ */}
+        <Route path="/login" element={<StandaloneLoginPage defaultMode="login" />} />
+        <Route path="/signup" element={<StandaloneLoginPage defaultMode="signup" />} />
 
         {/* ═══ INVEST (formerly Trading) ═══ */}
         <Route path="/invest/*" element={<TradingLayout />} />
