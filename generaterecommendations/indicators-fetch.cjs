@@ -11,6 +11,8 @@
  */
 
 const API_BASE_URL = process.env.NEWLEAF_API_URL || 'http://localhost:5400';
+const API_KEY = process.env.NEWLEAF_API_KEY || 'dev-key';
+const API_HEADERS = { 'X-API-Key': API_KEY };
 
 const REQUIRED_FIELDS = [
   'rsi14', 'bollingerUpper', 'bollingerLower', 'bollingerWidth',
@@ -31,7 +33,7 @@ async function fetchIndicators(symbol) {
 
   let res;
   try {
-    res = await fetch(url, { signal: controller.signal });
+    res = await fetch(url, { headers: API_HEADERS, signal: controller.signal });
   } catch (err) {
     if (err.name === 'AbortError') {
       throw new Error(`fetchIndicators(${symbol}): request timed out after 10s (${url})`);

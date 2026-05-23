@@ -12,6 +12,8 @@
  */
 
 const API_BASE_URL = process.env.NEWLEAF_API_URL || 'http://localhost:5400';
+const API_KEY = process.env.NEWLEAF_API_KEY || 'dev-key';
+const API_HEADERS = { 'X-API-Key': API_KEY };
 
 /**
  * Fetch composite sentiment for a symbol from the NewLeaf API.
@@ -27,7 +29,7 @@ async function fetchSentiment(symbol) {
 
   let res;
   try {
-    res = await fetch(url, { signal: controller.signal });
+    res = await fetch(url, { headers: API_HEADERS, signal: controller.signal });
   } catch (err) {
     if (err.name === 'AbortError') {
       throw new Error(`fetchSentiment(${symbol}): request timed out after 120s (${url})`);

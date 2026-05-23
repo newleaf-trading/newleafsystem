@@ -11,6 +11,7 @@
  */
 
 const API_BASE_URL = process.env.NEWLEAF_API_URL || 'http://localhost:5400';
+const API_KEY = process.env.NEWLEAF_API_KEY || 'dev-key';
 const DEFAULT_MODEL = process.env.GENRECS_LLM_MODEL || 'claude-sonnet';
 
 /**
@@ -35,7 +36,7 @@ async function callLLM(prompt, opts = {}) {
   try {
     res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
       body: JSON.stringify({ model, system, user: prompt, maxTokens }),
       signal: controller.signal,
     });
