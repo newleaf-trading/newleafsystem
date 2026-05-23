@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { requireTier } from '../middleware/rbac.js';
 import { getStockSnapshot, getOptionsSnapshot, getHistoricalBars } from '../tools/alpaca.js';
 import { computeIndicators } from '../tools/indicators.js';
-import { fetchNasdaqOI, findGammaWalls } from '../tools/nasdaq-oi.js';
+import { fetchNasdaqOI, findGammaWalls, fetchFullGammaAnalysis } from '../tools/nasdaq-oi.js';
 import { fetchSentiment } from '../tools/sentiment.js';
 import type { LLMRouter } from '../llm/router.js';
 
@@ -85,6 +85,15 @@ export function registerMarketRoutes(fastify: FastifyInstance, llm: LLMRouter) {
     const result = await fetchSentiment(ticker.toUpperCase(), llm);
     if (!result) return reply.code(502).send({ error: 'All sentiment engines failed' });
     return { ...result, cost: llm.getUsage() };
+  });
+
+  // GET /api/gamma-analysis/:ticker/:expiry — full gamma analysis from Yahoo OI (no R2)
+  fastify.get('/api/gamma-analysis/:ticker/:expiry', { preHandler: [requireTier('basic')] }, async (req) => {
+    const { ticker, expiry } = req.params as { ticker: string; expiry: string };
+    const tk = ticker.toUpperCase();
+    const snapshot = await getStockSnapshot(tk);
+    const analysis = await fetchFullGammaAnalysis(tk, expiry, snapshot.price);
+    return { analysis, spot: snapshot.price };
   });
 
   // GET /api/bars/:ticker — basic tier (historical bars for pipeline)

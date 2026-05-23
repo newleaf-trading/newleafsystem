@@ -1180,32 +1180,61 @@
     async function loadGammaChart() {
       if (!state.ticker || !state.selectedExpiry) return;
       try {
-        const [apiRes, r2Res] = await Promise.allSettled([
-          apiCall(`/api/gamma/${state.ticker}/${state.selectedExpiry}`).then(r => r.json()),
-          fetch(`${R2_BASE}/reports/${state.ticker}/latest.json`).then(r => r.ok ? r.json() : null),
-        ]);
-        const ga = apiRes.status === 'fulfilled' ? apiRes.value : {};
-        const r2 = r2Res.status === 'fulfilled' ? r2Res.value : null;
-        state.gammaData = ga;
-        state.r2Data = r2;
+        // Fetch full gamma analysis from Yahoo OI Service (no R2 dependency)
+        const gaRes = await apiCall(`/api/gamma-analysis/${state.ticker}/${state.selectedExpiry}`);
+        const gaData = await gaRes.json();
+        const a = gaData.analysis || {};
+        const spot = gaData.spot || state.spot;
 
-        // Update state from live API + R2 data
-        const analysis = r2?.gammaData?.analysis || {};
-        const iv = r2?.gammaData?.ivData;
-        state.putWall = ga.putWallStrike || state.putWall;
-        state.callWall = ga.callWallStrike || state.callWall;
-        state.gexPutWall = analysis.put_wall != null ? Number(analysis.put_wall) : null;
-        state.gexCallWall = analysis.call_wall != null ? Number(analysis.call_wall) : null;
-        state.atmIv = iv?.atmIv || null;
-        state.confScore = analysis.confidence_score ?? null;
-        state.oiConf = analysis.oi_confidence ?? null;
-        state.volConf = analysis.volume_confidence ?? null;
-        state.deltaConf = analysis.delta_confidence ?? null;
+        // Also fetch OI by strike for the chart
+        const oiRes = await apiCall(`/api/gamma/${state.ticker}/${state.selectedExpiry}`);
+        const oiData = await oiRes.json();
+
+        state.gammaData = oiData;
+        // Build r2-compatible shape for gammaChart.js
+        state.r2Data = {
+          gammaData: {
+            analysis: {
+              put_wall: a.gexWalls?.putStrike,
+              call_wall: a.gexWalls?.callStrike,
+              band_width_pct: a.bandWidthPct,
+              position_in_band_pct: a.positionInBandPct,
+              confidence_score: a.confidenceScore,
+              oi_confidence: a.oiConfidence,
+              delta_confidence: a.deltaConfidence,
+              volume_confidence: a.volumeConfidence,
+              contracts_analyzed: a.contractsAnalyzed,
+              topStrikes: (a.topStrikes || []).map(s => ({
+                strike: s.strike,
+                gamma_exposure: s.gammaExposure,
+                call_oi: s.callOI,
+                put_oi: s.putOI,
+                call_volume: s.callVolume,
+                put_volume: s.putVolume,
+              })),
+            },
+            ivData: {
+              atmIv: a.atmIv,
+              ivLevel: a.ivLevel,
+            },
+          }
+        };
+
+        // Update state
+        state.putWall = a.oiWalls?.putStrike || oiData.putWallStrike || state.putWall;
+        state.callWall = a.oiWalls?.callStrike || oiData.callWallStrike || state.callWall;
+        state.gexPutWall = a.gexWalls?.putStrike || null;
+        state.gexCallWall = a.gexWalls?.callStrike || null;
+        state.atmIv = a.atmIv || null;
+        state.confScore = a.confidenceScore ?? null;
+        state.oiConf = a.oiConfidence ?? null;
+        state.volConf = a.volumeConfidence ?? null;
+        state.deltaConf = a.deltaConfidence ?? null;
 
         renderWallCards();
 
-        // Render gamma chart in deep-dive (hidden by default)
-        renderGammaAnalysis(ga, r2, ga.spot || state.spot);
+        // Render gamma chart in deep-dive
+        renderGammaAnalysis(oiData, state.r2Data, spot);
       } catch (_) {}
     }
 

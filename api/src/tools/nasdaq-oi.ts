@@ -165,3 +165,143 @@ export function findGammaWalls(chain: OIChain, spotPrice: number, topN = 5): {
 
   return { walls, putWallStrike, callWallStrike, spotInsideBand };
 }
+
+// ── Full Gamma Analysis (computed from Yahoo OI Service, no R2) ─────────
+
+export interface GammaAnalysis {
+  oiWalls: { putStrike: number | null; callStrike: number | null };
+  gexWalls: { putStrike: number | null; callStrike: number | null };
+  bandWidthPct: number;
+  positionInBandPct: number;
+  confidenceScore: number;
+  oiConfidence: number;
+  volumeConfidence: number;
+  deltaConfidence: number;
+  contractsAnalyzed: number;
+  atmIv: number | null;
+  ivLevel: string;
+  topStrikes: { strike: number; gammaExposure: number; callOI: number; putOI: number; callVolume: number; putVolume: number }[];
+  spotInsideBand: boolean;
+}
+
+/**
+ * Compute full gamma analysis from Yahoo OI Service.
+ * No R2 dependency — works for ANY optionable ticker.
+ */
+export async function fetchFullGammaAnalysis(ticker: string, expiry: string, spotPrice: number): Promise<GammaAnalysis> {
+  const url = `${YAHOO_OI_URL}/api/options/${ticker.toUpperCase()}/${expiry}`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+  if (!res.ok) throw new Error(`Yahoo OI Service ${res.status}: ${url}`);
+  const data = await res.json() as any;
+
+  const calls: any[] = data.calls || [];
+  const puts: any[] = data.puts || [];
+  const spot = spotPrice || data.currentPrice || 0;
+
+  // Build per-strike analysis
+  const strikeMap = new Map<number, {
+    strike: number; callOI: number; putOI: number;
+    callVolume: number; putVolume: number;
+    callIV: number; putIV: number;
+    callDelta: number; putDelta: number;
+    gammaExposure: number;
+  }>();
+
+  for (const c of calls) {
+    const s = c.strike;
+    if (!strikeMap.has(s)) strikeMap.set(s, { strike: s, callOI: 0, putOI: 0, callVolume: 0, putVolume: 0, callIV: 0, putIV: 0, callDelta: 0, putDelta: 0, gammaExposure: 0 });
+    const entry = strikeMap.get(s)!;
+    entry.callOI = c.openInterest || 0;
+    entry.callVolume = c.volume || 0;
+    entry.callIV = c.impliedVolatility || 0;
+    // Approximate gamma from IV + moneyness (Black-Scholes gamma approximation)
+    const moneyness = Math.abs(Math.log(spot / s));
+    const approxGamma = moneyness < 0.3 ? 0.01 * (1 - moneyness * 3) : 0.001;
+    entry.gammaExposure += (c.openInterest || 0) * approxGamma * spot * spot * 0.01;
+  }
+
+  for (const p of puts) {
+    const s = p.strike;
+    if (!strikeMap.has(s)) strikeMap.set(s, { strike: s, callOI: 0, putOI: 0, callVolume: 0, putVolume: 0, callIV: 0, putIV: 0, callDelta: 0, putDelta: 0, gammaExposure: 0 });
+    const entry = strikeMap.get(s)!;
+    entry.putOI = p.openInterest || 0;
+    entry.putVolume = p.volume || 0;
+    entry.putIV = p.impliedVolatility || 0;
+    const moneyness = Math.abs(Math.log(spot / s));
+    const approxGamma = moneyness < 0.3 ? 0.01 * (1 - moneyness * 3) : 0.001;
+    entry.gammaExposure += (p.openInterest || 0) * approxGamma * spot * spot * 0.01;
+  }
+
+  const strikes = [...strikeMap.values()].sort((a, b) => a.strike - b.strike);
+  const contractsAnalyzed = calls.length + puts.length;
+
+  // OI walls (raw OI concentration)
+  const putSideOI = strikes.filter(s => s.strike < spot).sort((a, b) => b.putOI - a.putOI);
+  const callSideOI = strikes.filter(s => s.strike > spot).sort((a, b) => b.callOI - a.callOI);
+  const oiWalls = {
+    putStrike: putSideOI[0]?.strike ?? null,
+    callStrike: callSideOI[0]?.strike ?? null,
+  };
+
+  // GEX walls (gamma-weighted)
+  const putSideGEX = strikes.filter(s => s.strike < spot && s.putOI > s.callOI).sort((a, b) => b.gammaExposure - a.gammaExposure);
+  const callSideGEX = strikes.filter(s => s.strike > spot && s.callOI > s.putOI).sort((a, b) => b.gammaExposure - a.gammaExposure);
+  const gexWalls = {
+    putStrike: putSideGEX[0]?.strike ?? oiWalls.putStrike,
+    callStrike: callSideGEX[0]?.strike ?? oiWalls.callStrike,
+  };
+
+  // Band metrics
+  const pw = gexWalls.putStrike ?? spot * 0.95;
+  const cw = gexWalls.callStrike ?? spot * 1.05;
+  const bandWidthPct = spot > 0 ? ((cw - pw) / spot) * 100 : 0;
+  const positionInBandPct = (cw - pw) > 0 ? Math.round(((spot - pw) / (cw - pw)) * 100) : 50;
+  const spotInsideBand = spot > pw && spot < cw;
+
+  // Confidence scores
+  const totalOI = strikes.reduce((s, x) => s + x.callOI + x.putOI, 0);
+  const totalVolume = strikes.reduce((s, x) => s + x.callVolume + x.putVolume, 0);
+  const oiConfidence = Math.min(1, totalOI / 5000); // normalize to 5k OI
+  const volumeConfidence = Math.min(1, totalVolume / 2000);
+  // Delta confidence: how concentrated is OI near the walls vs spread thin
+  const wallOI = (putSideOI[0]?.putOI || 0) + (callSideOI[0]?.callOI || 0);
+  const deltaConfidence = totalOI > 0 ? Math.min(1, (wallOI / totalOI) * 3) : 0;
+  const confidenceScore = oiConfidence * 0.5 + volumeConfidence * 0.2 + deltaConfidence * 0.3;
+
+  // ATM IV: find the nearest-to-money call + put, average their IV
+  const sortedByDist = strikes.map(s => ({ ...s, dist: Math.abs(s.strike - spot) })).sort((a, b) => a.dist - b.dist);
+  const atm = sortedByDist[0];
+  let atmIv: number | null = null;
+  if (atm) {
+    const ivs = [atm.callIV, atm.putIV].filter(v => v > 0);
+    atmIv = ivs.length ? +(ivs.reduce((a, b) => a + b, 0) / ivs.length * 100).toFixed(1) : null;
+  }
+  const ivLevel = atmIv ? (atmIv > 50 ? 'high' : atmIv > 25 ? 'normal' : 'low') : 'unknown';
+
+  // Top strikes by gamma exposure
+  const topStrikes = [...strikes]
+    .sort((a, b) => b.gammaExposure - a.gammaExposure)
+    .slice(0, 20)
+    .map(s => ({
+      strike: s.strike,
+      gammaExposure: +s.gammaExposure.toFixed(0),
+      callOI: s.callOI,
+      putOI: s.putOI,
+      callVolume: s.callVolume,
+      putVolume: s.putVolume,
+    }));
+
+  return {
+    oiWalls, gexWalls,
+    bandWidthPct: +bandWidthPct.toFixed(1),
+    positionInBandPct,
+    confidenceScore: +confidenceScore.toFixed(3),
+    oiConfidence: +oiConfidence.toFixed(3),
+    volumeConfidence: +volumeConfidence.toFixed(3),
+    deltaConfidence: +deltaConfidence.toFixed(3),
+    contractsAnalyzed,
+    atmIv, ivLevel,
+    topStrikes,
+    spotInsideBand,
+  };
+}
