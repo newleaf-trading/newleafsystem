@@ -11,6 +11,7 @@ import { registerAIPicksRoutes } from './routes/ai-picks.js';
 import { registerAIStrikesRoutes } from './routes/ai-strikes.js';
 import { registerAIEventsRoutes } from './routes/ai-events.js';
 import { registerAIAdjustRoutes } from './routes/ai-adjust.js';
+import { registerPublishRoutes } from './routes/publish.js';
 import { LLMRouter } from './llm/router.js';
 import { JobStore } from './state/store.js';
 import { VerificationOrchestrator } from './orchestrator.js';
@@ -66,6 +67,7 @@ export function createApp() {
   registerAIStrikesRoutes(fastify, llm);
   registerAIEventsRoutes(fastify, llm);
   registerAIAdjustRoutes(fastify, llm);
+  registerPublishRoutes(fastify);
 
   return fastify;
 }

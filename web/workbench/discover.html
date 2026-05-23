@@ -439,6 +439,8 @@
     <div class="pn-col"><div class="pn-circle" data-stage="4">4</div><div class="pn-label">Verify</div></div>
     <div class="pn-line" data-line="4"></div>
     <div class="pn-col"><div class="pn-circle" data-stage="5">5</div><div class="pn-label">Verdict</div></div>
+    <div class="pn-line" data-line="5"></div>
+    <div class="pn-col"><div class="pn-circle" data-stage="6">6</div><div class="pn-label">Publish</div></div>
   </div>
 
   <div class="main">
@@ -768,6 +770,11 @@
     <!-- ===== STAGE 5: Verdict ===== -->
     <div class="stage hidden" id="stage-5">
       <div id="verdict-content"></div>
+    </div>
+
+    <!-- ===== STAGE 6: Full Analysis & Publish ===== -->
+    <div class="stage hidden" id="stage-6">
+      <div id="s6-content"></div>
     </div>
   </div>
 
@@ -2288,7 +2295,7 @@
         <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
           <button class="btn-primary" onclick="goToStage(3)" style="padding:10px 20px">Adjust strikes</button>
           <button class="btn-primary" onclick="handleSaveTrace()" style="padding:10px 20px;background:var(--white);color:var(--ink);border:1px solid var(--border)">Save trace + watch</button>
-          <button class="btn-primary" id="publish-btn" onclick="handlePublishToPicks()" style="padding:10px 20px">Publish to Picks</button>
+          <button class="btn-primary" onclick="goToStage(6);renderStage6()" style="padding:10px 20px">View Full Analysis &amp; Publish &#8594;</button>
         </div>
         <div id="publish-status" class="hidden" style="padding:10px 14px;border-radius:8px;font-size:12px;margin-top:8px;border:1px solid var(--border)"></div>
         <div style="font-size:10px;color:var(--ink-faint);margin-top:10px;text-align:center">
@@ -2489,6 +2496,152 @@
     }
 
     /* ================================================================
+       STAGE 6: FULL ANALYSIS & PUBLISH
+       ================================================================ */
+    function renderStage6() {
+      const v = state.verdict || {};
+      const ev = state.evidence || {};
+      const nc = computeNetCredit();
+      const ml = computeMaxLoss(nc);
+      const bk = computeBreakevens();
+      const totalCredit = nc * 100 * state.qty;
+      const legsStr = state.legs.map(l => `${l.side === 'short' ? 'Sell' : 'Buy'} $${l.strike} ${l.type}`).join(' / ');
+      const confColor = v.verdictClass === 'pass' ? 'var(--green)' : v.verdictClass === 'fail' ? 'var(--red)' : 'var(--yellow)';
+
+      $('#s6-content').innerHTML = `
+        <div class="panel" style="padding:18px 22px">
+          <div style="font-size:20px;font-weight:800;color:var(--forest);margin-bottom:4px">Full Analysis Summary</div>
+          <div style="font-size:12px;color:var(--ink-muted)">Everything collected during your 5-step analysis, ready to publish.</div>
+        </div>
+
+        <!-- Verdict recap -->
+        <div class="panel" style="padding:14px 18px;margin-top:10px;display:flex;align-items:center;gap:16px;border-left:4px solid ${confColor}">
+          <div style="width:52px;height:52px;border-radius:50%;border:3px solid ${confColor};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;font-family:var(--mono);color:${confColor};flex-shrink:0">${v.confidence || '--'}</div>
+          <div style="flex:1">
+            <div style="font-size:16px;font-weight:700">${v.verdictWord || 'No verdict'}</div>
+            <div style="font-size:12px;color:var(--ink-muted);margin-top:2px">${v.summary || ''}</div>
+          </div>
+        </div>
+
+        <!-- Trade details -->
+        <div class="panel" style="padding:14px 18px;margin-top:10px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px">${state.selectedStrategy?.strategy || 'Trade'} &mdash; ${state.ticker}</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+            <div style="text-align:center"><div style="font-size:9px;color:var(--ink-muted);text-transform:uppercase">Credit</div><div style="font-size:15px;font-weight:700;font-family:var(--mono);color:var(--green)">${totalCredit >= 0 ? '+' : ''}$${Math.abs(totalCredit).toFixed(0)}</div><div style="font-size:9px;color:var(--ink-faint)">$${Math.abs(nc).toFixed(2)}/share × ${state.qty}</div></div>
+            <div style="text-align:center"><div style="font-size:9px;color:var(--ink-muted);text-transform:uppercase">Max Loss</div><div style="font-size:15px;font-weight:700;font-family:var(--mono);color:var(--red)">-$${ml.toFixed(0)}</div></div>
+            <div style="text-align:center"><div style="font-size:9px;color:var(--ink-muted);text-transform:uppercase">Expiry</div><div style="font-size:14px;font-weight:600">${state.selectedExpiry}</div></div>
+            <div style="text-align:center"><div style="font-size:9px;color:var(--ink-muted);text-transform:uppercase">Breakevens</div><div style="font-size:14px;font-weight:600">${bk.map(b => '$' + b.toFixed(0)).join(' / ') || 'N/A'}</div></div>
+          </div>
+          <div style="font-size:11px;color:var(--ink-muted)">${legsStr}</div>
+        </div>
+
+        <!-- Collected data sections -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+          <div class="panel" style="padding:14px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600;margin-bottom:8px">Market Snapshot</div>
+            <div style="font-size:12px;line-height:1.8">
+              <div>Spot: <strong>$${state.spot?.toFixed(2) || '---'}</strong></div>
+              <div>RSI: <strong>${state.rsi?.toFixed(1) || '---'}</strong> &middot; ADX: <strong>${state.adx?.toFixed(1) || '---'}</strong></div>
+              <div>ATM IV: <strong>${state.atmIv ? state.atmIv.toFixed(1) + '%' : '---'}</strong></div>
+              <div>GEX Walls: <strong>$${state.gexPutWall || '---'}</strong> / <strong>$${state.gexCallWall || '---'}</strong></div>
+              <div>Confidence: <strong>${state.confScore ? Math.round(state.confScore * 100) + '%' : '---'}</strong></div>
+            </div>
+          </div>
+          <div class="panel" style="padding:14px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600;margin-bottom:8px">AI Market Read</div>
+            <div style="font-size:12px;line-height:1.6;color:var(--ink-muted)">${state.aiRead || 'Not available'}</div>
+          </div>
+        </div>
+
+        <!-- Verification summary -->
+        <div class="panel" style="padding:14px 18px;margin-top:10px">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600;margin-bottom:8px">Verification Desk Summary</div>
+          <div style="font-size:12px;color:var(--ink-muted);line-height:1.6">
+            ${ev.technical ? '<div><strong>Technical:</strong> ' + (ev.technical.summary || 'N/A') + '</div>' : ''}
+            ${ev.gamma ? '<div><strong>Gamma:</strong> ' + (ev.gamma.summary || 'N/A') + '</div>' : ''}
+            ${ev.iv ? '<div><strong>IV/Skew:</strong> ' + (ev.iv.summary || 'N/A') + '</div>' : ''}
+            ${ev.sentiment ? '<div><strong>Sentiment:</strong> ' + (ev.sentiment.summary || 'N/A') + '</div>' : ''}
+          </div>
+        </div>
+
+        <!-- Publish actions -->
+        <div class="panel" style="padding:18px;margin-top:14px;text-align:center;background:var(--teal-bg);border-color:var(--teal)">
+          <div style="font-size:15px;font-weight:700;color:var(--teal-text);margin-bottom:6px">Ready to publish</div>
+          <div style="font-size:12px;color:var(--ink-muted);margin-bottom:14px">This will create a tile in Invest, a pick in Picks, and a publication record in Desk — all from the analysis above.</div>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <button class="btn-primary" onclick="publishFromDiscover()" id="s6-publish-btn" style="padding:12px 28px;font-size:14px">Publish to Picks &amp; Invest</button>
+            <button class="btn-primary" onclick="handleSaveTrace()" style="padding:12px 20px;background:var(--white);color:var(--ink);border:1px solid var(--border)">Save to Desk only</button>
+          </div>
+          <div id="s6-publish-status" style="margin-top:10px;font-size:12px"></div>
+        </div>
+
+        <div style="font-size:10px;color:var(--ink-faint);margin-top:10px;text-align:center">
+          $${state.totalCost.toFixed(3)} &middot; ${state.totalTime.toFixed(1)}s &middot; ${state.totalTokens.toLocaleString()} tokens
+        </div>
+      `;
+    }
+
+    async function publishFromDiscover() {
+      const btn = $('#s6-publish-btn');
+      const statusEl = $('#s6-publish-status');
+      if (!btn) return;
+      btn.disabled = true; btn.textContent = 'Publishing...';
+
+      try {
+        const nc = computeNetCredit();
+        const ml = computeMaxLoss(nc);
+        const bk = computeBreakevens();
+
+        const payload = {
+          ticker: state.ticker,
+          strategy: state.selectedStrategy?.strategy || state.selectedStrategy?.name || 'Iron Condor',
+          direction: state.selectedStrategy?.direction || 'neutral',
+          spotPrice: state.spot,
+          expiry: state.selectedExpiry,
+          dte: Math.round((new Date(state.selectedExpiry + 'T16:00:00').getTime() - Date.now()) / 86400000),
+          legs: state.legs.map(l => ({ action: l.side === 'short' ? 'SELL' : 'BUY', type: l.type.toUpperCase(), strike: l.strike, premium: l.mid, delta: l.delta || 0 })),
+          greeks: {},
+          netCredit: nc,
+          maxProfit: Math.abs(nc * 100 * state.qty),
+          maxLoss: ml,
+          rewardRisk: ml > 0 ? Math.abs(nc * 100 * state.qty) / ml : 0,
+          pop: state.legs.length ? 50 + Math.round(nc * 10) : 0,
+          breakevens: bk,
+          gammaData: { put_wall: state.gexPutWall || state.putWall, call_wall: state.gexCallWall || state.callWall },
+          gammaAnalysis: { oiWalls: { putStrike: state.putWall, callStrike: state.callWall }, gexWalls: { putStrike: state.gexPutWall, callStrike: state.gexCallWall }, confidenceScore: state.confScore, atmIv: state.atmIv },
+          indicators: state.indicators || {},
+          aiRead: state.aiRead,
+          verdict: state.verifyData?.verdict || state.verdict,
+          evidence: state.evidence,
+          debate: state.debateRounds,
+          riskReport: state.riskReport,
+          sentiment: state.verifyData?.sentiment || null,
+          analysis: state.verifyData || null,
+        };
+
+        const res = await apiCall('/api/publish-from-analysis', { method: 'POST', body: payload });
+        const data = await res.json();
+
+        if (data.success) {
+          btn.textContent = 'Published!';
+          btn.style.background = 'var(--green)';
+          statusEl.innerHTML = `
+            <div style="padding:10px;background:var(--pass-bg);border-radius:8px;color:var(--pass-text)">
+              Published as <strong>${data.tileId}</strong><br>
+              <a href="${data.urls.picks}" target="_blank" style="color:var(--teal)">View on Picks</a> &middot;
+              <a href="${data.urls.invest}" target="_blank" style="color:var(--teal)">View on Invest</a> &middot;
+              <a href="https://newleaf-desk.web.app/pick/${data.tileId}" target="_blank" style="color:var(--teal)">View on Desk</a>
+            </div>`;
+        } else {
+          throw new Error(data.error || 'Publish failed');
+        }
+      } catch (err) {
+        btn.disabled = false; btn.textContent = 'Publish to Picks & Invest';
+        statusEl.innerHTML = `<div style="padding:8px;background:var(--fail-bg);border-radius:6px;color:var(--fail-text)">Error: ${err.message}</div>`;
+      }
+    }
+
+    /* ================================================================
        EXPOSE MODULE FUNCTIONS TO GLOBAL SCOPE (for onclick= attributes)
        ================================================================ */
     window.handleLoad = handleLoad;
@@ -2508,6 +2661,8 @@
     window.onSliderDone = onSliderDone;
     window.updateLeg = updateLeg;
     window.toggleAllTranscripts = toggleAllTranscripts;
+    window.renderStage6 = renderStage6;
+    window.publishFromDiscover = publishFromDiscover;
 
     /* ================================================================
        INIT
