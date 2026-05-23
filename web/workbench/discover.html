@@ -606,10 +606,13 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
     /* ================================================================
        DISCOVER.HTML — Guided "ticker to verified trade" journey
        ================================================================ */
+    import { computeNetCredit as _computeNC, computeMaxLoss as _computeML, computeBreakevens as _computeBE, pnlAt as _pnlAt } from './public/js/legMath.js';
+    import { drawPayoffChart as _drawPayoff } from './public/js/payoffChart.js';
+    import { renderGammaAnalysis as _renderGamma } from './public/js/gammaChart.js';
     const $ = s => document.querySelector(s);
     const $$ = s => document.querySelectorAll(s);
     const show = el => el && el.classList.remove('hidden');
@@ -1018,186 +1021,10 @@
       const el = document.getElementById('gamma-chart-content');
       if ((!ga.oiByStrike || !ga.oiByStrike.length) && !r2) { hide($('#gamma-section')); return; }
       show($('#gamma-section'));
-
-      const a = r2?.gammaData?.analysis || {};
-      const iv = r2?.gammaData?.ivData || {};
-      const hasR2 = a.contracts_analyzed > 0;
-      const conf = (v, lbl) => `<div class="ip-cell"><span class="ip-cell-lbl">${lbl}</span><span class="ip-cell-val">${Math.round((v||0)*100)}%</span><div class="ip-bar"><div class="ip-bar-fill" style="width:${Math.round((v||0)*100)}%;background:${v>=0.6?'#2d7d4f':v>=0.3?'#a0620c':'#c0392b'}"></div></div></div>`;
-      const topStrikes = (a.topStrikes || []).slice(0, 6);
-      const maxGex = Math.max(...topStrikes.map(s => Math.abs(s.gamma_exposure || 0)), 1);
-
-      el.innerHTML = `
-        <div class="ip-section">
-          <div class="ip-section-title">Gamma Walls</div>
-          <div class="ip-section-desc">Where market makers hold their largest hedging positions. The stock tends to stay between these walls.</div>
-          <div class="ip-grid cols-4">
-            <div class="ip-cell"><span class="ip-cell-lbl">Put Wall</span><span class="ip-cell-val green">$${hasR2 && a.put_wall != null ? Number(a.put_wall).toFixed(2) : ga.putWallStrike || '—'}</span></div>
-            <div class="ip-cell"><span class="ip-cell-lbl">Call Wall</span><span class="ip-cell-val red">$${hasR2 && a.call_wall != null ? Number(a.call_wall).toFixed(2) : ga.callWallStrike || '—'}</span></div>
-            <div class="ip-cell"><span class="ip-cell-lbl">Band Width</span><span class="ip-cell-val">${hasR2 ? (a.band_width_pct||0).toFixed(1) + '%' : '—'}</span></div>
-            <div class="ip-cell"><span class="ip-cell-lbl">Position in Band</span><span class="ip-cell-val">${hasR2 ? (a.position_in_band_pct ?? '—') + '%' : '—'}</span></div>
-          </div>
-        </div>
-        ${hasR2 ? `<div class="ip-section">
-          <div class="ip-section-title">Confidence Breakdown</div>
-          <div class="ip-section-desc">How reliable is this gamma wall reading?</div>
-          <div class="ip-grid cols-4">
-            ${conf(a.confidence_score, 'Overall')}
-            ${conf(a.oi_confidence, 'Open Interest')}
-            ${conf(a.delta_confidence, 'Delta')}
-            ${conf(a.volume_confidence, 'Volume')}
-          </div>
-        </div>` : ''}
-        ${iv.atmIv ? `<div class="ip-section">
-          <div class="ip-section-title">IV Data</div>
-          <div class="ip-section-desc">Implied volatility reflects how expensive options are right now.</div>
-          <div class="ip-grid">
-            <div class="ip-cell"><span class="ip-cell-lbl">ATM IV</span><span class="ip-cell-val gold">${iv.atmIv.toFixed(1)}%</span></div>
-            <div class="ip-cell"><span class="ip-cell-lbl">IV Level</span><span class="ip-cell-val">${iv.ivLevel || '—'}</span></div>
-            <div class="ip-cell"><span class="ip-cell-lbl">Contracts Analyzed</span><span class="ip-cell-val">${a.contracts_analyzed ?? '—'}</span></div>
-          </div>
-        </div>` : ''}
-        <div class="ip-section">
-          <div class="ip-section-title">Gamma Exposure by Strike</div>
-          <div class="ip-section-desc">Each bar shows gamma exposure (GEX) at a strike. Green = call-dominant (dealers sell when price rises), Red = put-dominant (dealers buy when price falls).</div>
-          <canvas id="gamma-canvas" style="width:100%;height:240px;display:block"></canvas>
-          <div style="display:flex;gap:16px;margin-top:8px;justify-content:center">
-            <span style="font-size:10px;color:#2d7d4f">&#9632; Call-dominant</span>
-            <span style="font-size:10px;color:#c0392b">&#9632; Put-dominant</span>
-            <span style="font-size:10px;color:#C9A96E">&#9482; Spot</span>
-            <span style="font-size:10px;color:#0d6e56">| Put wall</span>
-            <span style="font-size:10px;color:#b03030">| Call wall</span>
-          </div>
-        </div>
-        ${topStrikes.length ? `<div class="ip-section">
-          <div class="ip-section-title">Top Gamma Strikes</div>
-          ${topStrikes.map(s => `<div class="ip-strike-row">
-            <span class="ip-strike-lbl">$${s.strike}</span>
-            <div class="ip-strike-bar"><div class="ip-strike-fill" style="width:${Math.round(Math.abs(s.gamma_exposure)/maxGex*100)}%"></div></div>
-            <span style="font-size:10px;color:#666">C:${(s.call_oi/1000).toFixed(0)}k</span>
-            <span style="font-size:10px;color:#666">P:${(s.put_oi/1000).toFixed(0)}k</span>
-          </div>`).join('')}
-        </div>` : ''}
-        <div class="wall-summary" style="margin-top:8px">
-          ${ga.putWallStrike ? '<span class="wall-tag put">Put Wall: $' + ga.putWallStrike + '</span>' : ''}
-          ${ga.callWallStrike ? '<span class="wall-tag call">Call Wall: $' + ga.callWallStrike + '</span>' : ''}
-          <span class="wall-tag band">${ga.spotInsideBand ? 'Spot Inside Band' : 'Spot Outside Band'}</span>
-        </div>
-      `;
-
-      // Draw GEX chart
-      requestAnimationFrame(() => {
-        const strikes = hasR2 ? [...(a.topStrikes || [])].sort((a, b) => a.strike - b.strike) : null;
-        if (strikes && strikes.length) {
-          drawGexChart(strikes, a, spot);
-        } else if (ga.oiByStrike && ga.oiByStrike.length) {
-          drawOIChart(ga, spot);
-        }
-      });
+      _renderGamma(el, ga, r2, spot);
+      return;
     }
-
-    function drawGexChart(strikes, analysis, spot) {
-      const canvas = document.getElementById('gamma-canvas');
-      if (!canvas || !strikes.length) return;
-      const DPR = window.devicePixelRatio || 1;
-      const W = canvas.offsetWidth || 600;
-      const H = 240;
-      canvas.width = W * DPR; canvas.height = H * DPR;
-      canvas.style.height = H + 'px';
-      const ctx = canvas.getContext('2d');
-      ctx.scale(DPR, DPR);
-      ctx.clearRect(0, 0, W, H);
-
-      const PAD_L = 50, PAD_R = 16, PAD_T = 16, PAD_B = 36;
-      const chartW = W - PAD_L - PAD_R;
-      const chartH = H - PAD_T - PAD_B;
-      const maxGex = Math.max(...strikes.map(s => Math.abs(s.gamma_exposure || 0)), 1);
-      const minStrike = strikes[0].strike;
-      const maxStrike = strikes[strikes.length - 1].strike;
-      const strikeRange = maxStrike - minStrike || 1;
-      const barW = Math.max(4, Math.min(18, (chartW / strikes.length) * 0.7));
-      const xPos = s => PAD_L + ((s - minStrike) / strikeRange) * chartW;
-
-      // Grid
-      ctx.strokeStyle = '#f0ece0'; ctx.lineWidth = 0.5;
-      for (let i = 0; i <= 4; i++) {
-        const y = PAD_T + (chartH / 4) * i;
-        ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(W - PAD_R, y); ctx.stroke();
-      }
-      // Y labels
-      ctx.fillStyle = '#999'; ctx.font = '500 9px Inter, sans-serif'; ctx.textAlign = 'right';
-      for (let i = 0; i <= 4; i++) {
-        const y = PAD_T + (chartH / 4) * i;
-        const val = maxGex * (1 - i / 4);
-        ctx.fillText(val >= 1e6 ? (val/1e6).toFixed(0)+'M' : val >= 1e3 ? (val/1e3).toFixed(0)+'K' : val.toFixed(0), PAD_L - 6, y + 3);
-      }
-      // Baseline
-      ctx.strokeStyle = '#d9d4c0'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(PAD_L, PAD_T + chartH); ctx.lineTo(W - PAD_R, PAD_T + chartH); ctx.stroke();
-
-      // Bars
-      strikes.forEach(s => {
-        const x = xPos(s.strike);
-        const barH = (Math.abs(s.gamma_exposure || 0) / maxGex) * chartH;
-        ctx.fillStyle = (s.call_oi || 0) >= (s.put_oi || 0) ? 'rgba(45,125,79,0.75)' : 'rgba(192,57,43,0.75)';
-        ctx.fillRect(x - barW/2, PAD_T + chartH - barH, barW, barH);
-        ctx.fillStyle = '#666'; ctx.font = '600 9px Inter, sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('$' + s.strike, x, PAD_T + chartH + 14);
-      });
-
-      // Put wall
-      if (analysis.put_wall) {
-        const x = xPos(analysis.put_wall);
-        if (x >= PAD_L && x <= W - PAD_R) {
-          ctx.strokeStyle = '#0d6e56'; ctx.lineWidth = 2; ctx.setLineDash([]);
-          ctx.beginPath(); ctx.moveTo(x, PAD_T); ctx.lineTo(x, PAD_T + chartH); ctx.stroke();
-          ctx.fillStyle = '#0d6e56'; ctx.font = '700 10px Inter'; ctx.textAlign = 'center';
-          ctx.fillText('PUT $' + analysis.put_wall, x, PAD_T + chartH + 28);
-        }
-      }
-      // Call wall
-      if (analysis.call_wall) {
-        const x = xPos(analysis.call_wall);
-        if (x >= PAD_L && x <= W - PAD_R) {
-          ctx.strokeStyle = '#b03030'; ctx.lineWidth = 2; ctx.setLineDash([]);
-          ctx.beginPath(); ctx.moveTo(x, PAD_T); ctx.lineTo(x, PAD_T + chartH); ctx.stroke();
-          ctx.fillStyle = '#b03030'; ctx.font = '700 10px Inter'; ctx.textAlign = 'center';
-          ctx.fillText('CALL $' + analysis.call_wall, x, PAD_T + chartH + 28);
-        }
-      }
-      // Spot
-      if (spot && spot >= minStrike && spot <= maxStrike) {
-        const x = xPos(spot);
-        ctx.strokeStyle = '#C9A96E'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
-        ctx.beginPath(); ctx.moveTo(x, PAD_T); ctx.lineTo(x, PAD_T + chartH); ctx.stroke();
-        ctx.setLineDash([]); ctx.fillStyle = '#C9A96E'; ctx.font = '700 10px Inter'; ctx.textAlign = 'center';
-        ctx.fillText('$' + spot.toFixed(0), x, PAD_T - 4);
-      }
-    }
-
-    function drawOIChart(ga, spot) {
-      // Fallback: simple OI chart when R2 data unavailable
-      const canvas = document.getElementById('gamma-canvas');
-      if (!canvas) return;
-      const data = ga.oiByStrike; const n = data.length; if (!n) return;
-      const DPR = window.devicePixelRatio || 1;
-      const W = canvas.offsetWidth || 600, H = 240;
-      canvas.width = W * DPR; canvas.height = H * DPR;
-      canvas.style.height = H + 'px';
-      const ctx = canvas.getContext('2d');
-      ctx.scale(DPR, DPR);
-      let maxOI = 1;
-      data.forEach(s => { maxOI = Math.max(maxOI, s.callOI, s.putOI); });
-      const ml=10,mr=10,mt=20,mb=40, cw=W-ml-mr, ch=H-mt-mb;
-      const barW = Math.max(2, Math.min(12, (cw/n)*0.35)), gap = cw/n, centerY = mt + ch*0.5;
-      ctx.beginPath(); ctx.moveTo(ml, centerY); ctx.lineTo(W-mr, centerY);
-      ctx.strokeStyle='rgba(15,61,46,0.15)'; ctx.lineWidth=1; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
-      data.forEach((s, k) => {
-        const x = ml + gap*k + gap*0.5;
-        const putH = (s.putOI/maxOI)*(ch*0.45), callH = (s.callOI/maxOI)*(ch*0.45);
-        ctx.fillStyle = 'rgba(239,68,68,0.45)'; ctx.fillRect(x-barW/2, centerY+1, barW, putH);
-        ctx.fillStyle = 'rgba(16,185,129,0.45)'; ctx.fillRect(x-barW/2, centerY-callH-1, barW, callH);
-      });
-    }
+    // (Inline renderGammaAnalysis / drawGexChart / drawOIChart deleted — now in shared/gammaChart.js)
 
     // Strategy type selection
     document.querySelectorAll('.strat-type-card').forEach(function(card) {
@@ -1606,61 +1433,10 @@
       renderStage3();
     }
 
-    function computeNetCredit() {
-      let nc = 0;
-      state.legs.forEach(l => { nc += l.side === 'short' ? l.mid : -l.mid; });
-      return nc;
-    }
-
-    function computeMaxLoss(netCredit) {
-      // Use P&L function to find actual max loss across price range
-      const legs = state.legs;
-      if (!legs.length) return 0;
-      const strikes = legs.map(l => l.strike);
-      const lo = Math.min(...strikes) - 30;
-      const hi = Math.max(...strikes) + 30;
-      const nc = netCredit ?? computeNetCredit();
-      let minPnl = Infinity;
-      for (let i = 0; i <= 500; i++) {
-        const price = lo + (hi - lo) * i / 500;
-        let pnl = nc * 100 * state.qty;
-        legs.forEach(l => {
-          const val = l.type === 'call' ? Math.max(0, price - l.strike) : Math.max(0, l.strike - price);
-          pnl += (l.side === 'long' ? val : -val) * 100 * state.qty;
-        });
-        if (pnl < minPnl) minPnl = pnl;
-      }
-      return Math.abs(minPnl);
-    }
-
-    function computeBreakevens() {
-      const legs = state.legs;
-      const strikes = legs.map(l => l.strike);
-      const lo = Math.min(...strikes) - 20;
-      const hi = Math.max(...strikes) + 20;
-      const nc = computeNetCredit();
-
-      function pnlAt(price) {
-        let pnl = nc * 100 * state.qty;
-        legs.forEach(l => {
-          let val = l.type === 'call' ? Math.max(0, price - l.strike) : Math.max(0, l.strike - price);
-          pnl += (l.side === 'long' ? val : -val) * 100 * state.qty;
-        });
-        return pnl;
-      }
-
-      const breakevens = [];
-      const steps = 500;
-      for (let i = 1; i <= steps; i++) {
-        const p0 = lo + (hi - lo) * (i - 1) / steps;
-        const p1 = lo + (hi - lo) * i / steps;
-        const v0 = pnlAt(p0), v1 = pnlAt(p1);
-        if ((v0 >= 0) !== (v1 >= 0)) {
-          breakevens.push(p0 + (0 - v0) * (p1 - p0) / (v1 - v0));
-        }
-      }
-      return breakevens;
-    }
+    // Delegated to shared/legMath.js
+    function computeNetCredit() { return _computeNC(state.legs); }
+    function computeMaxLoss(netCredit) { return _computeML(state.legs, state.qty, netCredit); }
+    function computeBreakevens() { return _computeBE(state.legs, state.qty); }
 
     function updateQty(input) {
       state.qty = Math.max(1, parseInt(input.value) || 1);
@@ -1668,145 +1444,18 @@
       renderStage3();
     }
 
+    // Delegated to shared/payoffChart.js
     function drawPnLChart() {
-      const canvas = $('#pnl-canvas');
-      const ctx = canvas.getContext('2d');
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.parentElement.getBoundingClientRect();
-      const W = rect.width - 32;
-      const H = 220;
-      canvas.width = W * dpr;
-      canvas.height = H * dpr;
-      canvas.style.width = W + 'px';
-      canvas.style.height = H + 'px';
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, W, H);
-
-      const legs = state.legs;
-      if (!legs.length) return;
-
-      const strikes = legs.map(l => l.strike);
-      const minS = Math.min(...strikes), maxS = Math.max(...strikes);
-      const width = maxS - minS;
-      const pad = Math.max(width * 0.6, 10);
-      const lo = minS - pad, hi = maxS + pad;
-      const steps = 200;
-      const nc = computeNetCredit();
-      const qty = state.qty;
-
-      function pnlAt(price) {
-        let pnl = nc * 100 * qty;
-        legs.forEach(l => {
-          let val = l.type === 'call' ? Math.max(0, price - l.strike) : Math.max(0, l.strike - price);
-          pnl += (l.side === 'long' ? val : -val) * 100 * qty;
-        });
-        return pnl;
-      }
-
-      const points = [];
-      for (let i = 0; i <= steps; i++) {
-        const price = lo + (hi - lo) * i / steps;
-        points.push({ price, pnl: pnlAt(price) });
-      }
-
-      const maxPnl = Math.max(...points.map(p => p.pnl));
-      const minPnl = Math.min(...points.map(p => p.pnl));
-      const pnlRange = Math.max(maxPnl - minPnl, 1);
-
-      const ml = 55, mr = 20, mt = 20, mb = 30;
-      const cw = W - ml - mr, ch = H - mt - mb;
-      function x(price) { return ml + (price - lo) / (hi - lo) * cw; }
-      function y(pnl) { return mt + (1 - (pnl - minPnl) / pnlRange) * ch; }
-
-      // Profit zone
-      ctx.beginPath();
-      ctx.moveTo(x(points[0].price), y(0));
-      points.forEach(p => ctx.lineTo(x(p.price), p.pnl >= 0 ? y(p.pnl) : y(0)));
-      ctx.lineTo(x(points[points.length - 1].price), y(0));
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(59,109,17,0.18)';
-      ctx.fill();
-
-      // Loss zone
-      ctx.beginPath();
-      ctx.moveTo(x(points[0].price), y(0));
-      points.forEach(p => ctx.lineTo(x(p.price), p.pnl <= 0 ? y(p.pnl) : y(0)));
-      ctx.lineTo(x(points[points.length - 1].price), y(0));
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(163,45,45,0.14)';
-      ctx.fill();
-
-      // Zero line
-      if (minPnl < 0 && maxPnl > 0) {
-        ctx.beginPath();
-        ctx.moveTo(ml, y(0)); ctx.lineTo(W - mr, y(0));
-        ctx.strokeStyle = 'rgba(15,61,46,0.15)'; ctx.lineWidth = 1;
-        ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]);
-        ctx.fillStyle = '#6b6b60'; ctx.font = '10px "Inter", system-ui';
-        ctx.fillText('$0', ml - 20, y(0) + 3);
-      }
-
-      // P&L line
-      ctx.beginPath();
-      points.forEach((p, i) => i === 0 ? ctx.moveTo(x(p.price), y(p.pnl)) : ctx.lineTo(x(p.price), y(p.pnl)));
-      ctx.strokeStyle = '#185FA5'; ctx.lineWidth = 2; ctx.stroke();
-
-      // Spot price line
-      if (state.spot >= lo && state.spot <= hi) {
-        ctx.beginPath();
-        ctx.moveTo(x(state.spot), mt); ctx.lineTo(x(state.spot), H - mb);
-        ctx.strokeStyle = '#0d6e56'; ctx.lineWidth = 1;
-        ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]);
-        ctx.fillStyle = '#0d6e56'; ctx.font = 'bold 11px "Inter", system-ui';
-        ctx.fillText('$' + state.spot.toFixed(0), x(state.spot) - 15, mt - 5);
-      }
-
-      // Breakevens — draw above x-axis so they don't clash with price labels
-      const breakevens = computeBreakevens();
-      breakevens.forEach(be => {
-        const bx = x(be);
-        ctx.beginPath();
-        ctx.moveTo(bx, mt); ctx.lineTo(bx, H - mb);
-        ctx.strokeStyle = '#9b9b8e'; ctx.lineWidth = 1;
-        ctx.setLineDash([2, 4]); ctx.stroke(); ctx.setLineDash([]);
-        // Label above the axis line with a small pill background
-        const label = 'BE $' + be.toFixed(0);
-        ctx.font = 'bold 10px "Inter", system-ui';
-        const tw = ctx.measureText(label).width;
-        const lx = bx - tw / 2;
-        const ly = H - mb + 26;
-        ctx.fillStyle = '#0B2D23';
-        ctx.fillRect(lx - 3, ly - 10, tw + 6, 13);
-        ctx.fillStyle = '#F7F5F0';
-        ctx.fillText(label, lx, ly);
-      });
-
-      // Strike markers
-      legs.forEach(l => {
-        if (l.strike >= lo && l.strike <= hi) {
-          ctx.beginPath();
-          ctx.moveTo(x(l.strike), H - mb - 8); ctx.lineTo(x(l.strike), H - mb);
-          ctx.strokeStyle = '#BA7517'; ctx.lineWidth = 2; ctx.stroke();
-          ctx.fillStyle = '#BA7517'; ctx.font = 'bold 9px "Inter", system-ui';
-          ctx.fillText(l.strike, x(l.strike) - 8, H - mb - 10);
-        }
-      });
-
-      // X-axis labels — skip any that overlap with a breakeven label
-      ctx.fillStyle = '#6b6b60'; ctx.font = '10px "Inter", system-ui';
-      for (let i = 0; i <= 6; i++) {
-        const price = lo + (hi - lo) * i / 6;
-        const tooClose = breakevens.some(be => Math.abs(x(price) - x(be)) < 40);
-        if (tooClose) continue;
-        ctx.fillText('$' + price.toFixed(0), x(price) - 12, H - mb + 15);
-      }
-
-      // Y-axis labels
-      for (let i = 0; i <= 4; i++) {
-        const pnl = minPnl + pnlRange * i / 4;
-        ctx.fillText((pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(0), 2, y(pnl) + 3);
-      }
+      _drawPayoff($('#pnl-canvas'), { legs: state.legs, qty: state.qty, spot: state.spot, height: 220 });
     }
+
+    // Stage 5 P&L chart (smaller)
+    function drawS5PnLChart() {
+      const canvas = document.getElementById('s5-pnl-canvas');
+      if (canvas) _drawPayoff(canvas, { legs: state.legs, qty: state.qty, spot: state.spot, height: 160 });
+    }
+
+    // (Old inline drawPnLChart removed — now in shared/payoffChart.js)
 
     /* ================================================================
        STAGE 4: LIVE VERIFICATION
@@ -2202,61 +1851,8 @@
       setTimeout(() => drawS5PnlChart(), 50);
     }
 
-    function drawS5PnlChart() {
-      const canvas = $('#s5-pnl-canvas');
-      if (!canvas || !state.legs.length) return;
-      const ctx = canvas.getContext('2d');
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.parentElement.getBoundingClientRect();
-      const W = rect.width; const H = 160;
-      canvas.width = W * dpr; canvas.height = H * dpr;
-      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, W, H);
-
-      const legs = state.legs;
-      const strikes = legs.map(l => l.strike);
-      const nc = computeNetCredit();
-      const pad = Math.max((Math.max(...strikes) - Math.min(...strikes)) * 0.6, 15);
-      const lo = Math.min(...strikes) - pad, hi = Math.max(...strikes) + pad;
-
-      function pnlAt(price) {
-        let pnl = nc * 100 * state.qty;
-        legs.forEach(l => {
-          const val = l.type === 'call' ? Math.max(0, price - l.strike) : Math.max(0, l.strike - price);
-          pnl += (l.side === 'long' ? val : -val) * 100 * state.qty;
-        });
-        return pnl;
-      }
-
-      const pts = []; for (let i = 0; i <= 200; i++) pts.push({ price: lo + (hi - lo) * i / 200, pnl: pnlAt(lo + (hi - lo) * i / 200) });
-      const maxP = Math.max(...pts.map(p => p.pnl)), minP = Math.min(...pts.map(p => p.pnl));
-      const range = Math.max(maxP - minP, 1);
-      const ml = 40, mr = 10, mt = 10, mb = 18;
-      const cw = W - ml - mr, ch = H - mt - mb;
-      const x = p => ml + (p - lo) / (hi - lo) * cw;
-      const y = p => mt + (1 - (p - minP) / range) * ch;
-
-      // Profit fill
-      ctx.beginPath(); ctx.moveTo(x(pts[0].price), y(0));
-      pts.forEach(p => ctx.lineTo(x(p.price), p.pnl >= 0 ? y(p.pnl) : y(0)));
-      ctx.lineTo(x(pts[pts.length-1].price), y(0)); ctx.closePath();
-      ctx.fillStyle = 'rgba(59,109,17,0.2)'; ctx.fill();
-      // Loss fill
-      ctx.beginPath(); ctx.moveTo(x(pts[0].price), y(0));
-      pts.forEach(p => ctx.lineTo(x(p.price), p.pnl <= 0 ? y(p.pnl) : y(0)));
-      ctx.lineTo(x(pts[pts.length-1].price), y(0)); ctx.closePath();
-      ctx.fillStyle = 'rgba(163,45,45,0.15)'; ctx.fill();
-      // Zero line
-      if (minP < 0 && maxP > 0) { ctx.beginPath(); ctx.moveTo(ml, y(0)); ctx.lineTo(W-mr, y(0)); ctx.strokeStyle = 'rgba(15,61,46,0.15)'; ctx.lineWidth = 1; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]); }
-      // P&L line
-      ctx.beginPath(); pts.forEach((p,i) => i===0 ? ctx.moveTo(x(p.price), y(p.pnl)) : ctx.lineTo(x(p.price), y(p.pnl)));
-      ctx.strokeStyle = '#0d6e56'; ctx.lineWidth = 1.5; ctx.stroke();
-      // Spot marker
-      ctx.beginPath(); ctx.moveTo(x(state.spot), mt); ctx.lineTo(x(state.spot), H-mb);
-      ctx.strokeStyle = '#0d6e5680'; ctx.lineWidth = 1; ctx.setLineDash([2,3]); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = '#0d6e56'; ctx.font = 'bold 9px system-ui'; ctx.fillText('$'+state.spot.toFixed(0), x(state.spot)-10, mt+10);
-    }
+    // Delegated to shared/payoffChart.js (reuses drawS5PnLChart defined above)
+    function drawS5PnlChart() { drawS5PnLChart(); }
 
     async function handleMutation(index) {
       var card = document.getElementById('mutation-' + index);
