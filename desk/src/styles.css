@@ -1,0 +1,119 @@
+:root {
+  --forest: #1a5632;
+  --leaf: #2d8a4e;
+  --leaf-50: #ecfdf5;
+  --leaf-100: #d1fae5;
+  --gold: #c9a96e;
+  --gold-bg: #fef9f0;
+  --bg: #f8f7f5;
+  --card: #ffffff;
+  --border: #e8e5e0;
+  --text: #1a1a1a;
+  --text-secondary: #6b7280;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'Inter', -apple-system, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); }
+
+/* ── Loading & Login ─────────────────────────────── */
+.dk-loading { display: flex; justify-content: center; align-items: center; height: 100vh; color: var(--text-secondary); font-size: 14px; }
+.dk-login { display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--bg); }
+.dk-login-card { text-align: center; background: var(--card); padding: 48px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+.dk-login-card p { color: var(--text-secondary); margin: 8px 0 24px; font-size: 14px; }
+
+/* ── Logo ────────────────────────────────────────── */
+.dk-logo { font-size: 20px; font-weight: 700; color: var(--forest); }
+.dk-logo span { color: var(--gold); font-weight: 800; }
+
+/* ── Layout ──────────────────────────────────────── */
+.dk-app { min-height: 100vh; }
+.dk-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+.dk-header-right { display: flex; align-items: center; gap: 12px; }
+.dk-user { font-size: 12px; color: var(--text-secondary); }
+.dk-main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+/* ── Buttons ─────────────────────────────────────── */
+.dk-btn { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--sans); transition: all 0.15s; }
+.dk-btn:hover { border-color: #ccc; background: #f5f5f5; }
+.dk-btn-primary { background: var(--forest); color: white; border-color: var(--forest); }
+.dk-btn-primary:hover { background: #164a2b; }
+.dk-btn-sm { padding: 5px 10px; font-size: 11px; }
+.dk-btn-gold { background: var(--gold); color: white; border-color: var(--gold); }
+.dk-btn-gold:hover { background: #b8944f; }
+.dk-btn-icon { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ── Week View ───────────────────────────────────── */
+.dk-week-header { margin-bottom: 24px; }
+.dk-week-header h1 { font-size: 24px; font-weight: 800; color: var(--forest); }
+.dk-week-header p { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.dk-week-nav { display: flex; gap: 8px; margin: 16px 0; }
+.dk-week-selector { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); font-size: 13px; font-family: var(--mono); cursor: pointer; }
+.dk-week-selector.active { background: var(--forest); color: white; border-color: var(--forest); }
+
+/* ── Pick Cards Grid ─────────────────────────────── */
+.dk-picks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; }
+
+.dk-pick-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: box-shadow 0.2s; }
+.dk-pick-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+
+.dk-pick-card-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); background: #fafaf8; }
+.dk-pick-symbol { font-size: 18px; font-weight: 700; }
+.dk-pick-strategy { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 12px; background: var(--leaf-50); color: var(--leaf); text-transform: uppercase; letter-spacing: 0.5px; }
+.dk-pick-price { font-family: var(--mono); font-size: 13px; color: var(--text-secondary); }
+
+.dk-pick-card-body { padding: 16px 20px; }
+
+.dk-pick-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+.dk-metric { text-align: center; }
+.dk-metric-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); font-weight: 600; }
+.dk-metric-value { font-size: 14px; font-weight: 700; font-family: var(--mono); margin-top: 2px; }
+.dk-metric-value.green { color: #16a34a; }
+.dk-metric-value.red { color: #dc2626; }
+
+/* ── Asset Status ────────────────────────────────── */
+.dk-assets { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; }
+.dk-asset-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: #f8f7f5; border-radius: 6px; font-size: 12px; }
+.dk-asset-name { font-weight: 500; }
+.dk-asset-status { font-size: 11px; font-weight: 600; }
+.dk-asset-status.ready { color: #16a34a; }
+.dk-asset-status.pending { color: var(--gold); }
+.dk-asset-status.missing { color: #9ca3af; }
+
+.dk-asset-actions { display: flex; gap: 6px; }
+.dk-asset-btn { padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border); background: white; font-size: 10px; cursor: pointer; font-family: var(--sans); }
+.dk-asset-btn:hover { background: var(--leaf-50); border-color: var(--leaf); }
+
+/* ── Social Preview ──────────────────────────────── */
+.dk-social { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
+.dk-social-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+.dk-social-tab { padding: 5px 12px; border-radius: 6px; border: none; background: none; font-size: 11px; font-weight: 500; cursor: pointer; color: var(--text-secondary); }
+.dk-social-tab.active { background: var(--forest); color: white; }
+.dk-social-preview { background: #f8f7f5; border-radius: 8px; padding: 14px; font-size: 12px; line-height: 1.7; white-space: pre-wrap; min-height: 80px; max-height: 200px; overflow-y: auto; }
+.dk-social-actions { display: flex; gap: 8px; margin-top: 8px; }
+
+/* ── Links Row ───────────────────────────────────── */
+.dk-links { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.dk-link { font-size: 11px; color: var(--leaf); text-decoration: none; padding: 4px 10px; border: 1px solid var(--leaf-100); border-radius: 6px; background: var(--leaf-50); }
+.dk-link:hover { background: var(--leaf-100); }
+
+/* ── Pick Detail ─────────────────────────────────── */
+.dk-detail-header { margin-bottom: 24px; }
+.dk-detail-header h1 { font-size: 24px; font-weight: 800; }
+.dk-back { font-size: 12px; color: var(--text-secondary); text-decoration: none; display: inline-block; margin-bottom: 8px; }
+.dk-back:hover { color: var(--forest); }
+
+.dk-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.dk-detail-section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.dk-detail-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--forest); }
+
+.dk-json-block { background: #1e293b; color: #e2e8f0; padding: 14px; border-radius: 8px; font-family: var(--mono); font-size: 11px; overflow-x: auto; max-height: 400px; overflow-y: auto; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+
+.dk-copy-toast { position: fixed; bottom: 24px; right: 24px; background: var(--forest); color: white; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; z-index: 1000; animation: fadeIn 0.2s; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 900px) {
+  .dk-picks-grid { grid-template-columns: 1fr; }
+  .dk-detail-grid { grid-template-columns: 1fr; }
+}
