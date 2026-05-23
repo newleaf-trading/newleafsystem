@@ -4,6 +4,7 @@ import { auth, signInWithGoogle, signOut } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { WeekView } from './pages/WeekView';
 import { PickDetail } from './pages/PickDetail';
+import { UsageReport } from './pages/UsageReport';
 import './styles.css';
 
 function App() {
@@ -39,6 +40,10 @@ function App() {
         <header className="dk-header">
           <div className="dk-header-left">
             <div className="dk-logo">NewLeaf <span>Desk</span></div>
+            <nav style={{ display: 'flex', gap: 16, marginLeft: 24 }}>
+              <a href="/" style={{ fontSize: 12, color: '#6b7280', textDecoration: 'none' }}>Picks</a>
+              <a href="/usage" style={{ fontSize: 12, color: '#6b7280', textDecoration: 'none' }}>Usage</a>
+            </nav>
           </div>
           <div className="dk-header-right">
             <span className="dk-user">{user.email}</span>
@@ -49,6 +54,7 @@ function App() {
           <Routes>
             <Route path="/" element={<WeekView />} />
             <Route path="/pick/:tileId" element={<PickDetail />} />
+            <Route path="/usage" element={<UsageReport />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>

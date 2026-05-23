@@ -1050,23 +1050,12 @@
       const ticker = $('#ticker-input').value.trim().toUpperCase();
       if (!ticker) return;
 
-      // Rate limit check
-      if (!isDemo && window.checkUsageLimit) {
-        try {
-          var usage = await window.checkUsageLimit();
-          if (!usage.allowed) {
-            alert('Daily limit reached (' + usage.used + '/' + usage.limit + '). Try again tomorrow.');
-            return;
-          }
-        } catch(e) { console.warn('Usage check failed:', e); }
-      }
-
+      // Snapshot is free — no rate limit check here (metering on verify/recommend only)
       state.ticker = ticker;
       const btn = $('#load-btn');
       btn.textContent = '...'; btn.disabled = true;
 
-      // Track usage
-      if (!isDemo && window.trackUsage) window.trackUsage('snapshot', ticker).catch(function(){});
+      // Snapshot is free — don't consume daily credits (metering is on verify/recommend only)
 
       try {
         // Snapshot
@@ -1536,6 +1525,12 @@
             state.atr14 = data.indicators.atr14 ?? state.atr14;
           }
           addCost(data.cost);
+          // Track recommend usage (metered)
+          if (!isDemo && window.trackUsage) window.trackUsage('recommend', state.ticker, {
+            models: (data.cost?.calls || []).map(c => c.model).filter(Boolean),
+            cost: data.cost?.totalCost || 0,
+            tokens: (data.cost?.totalInputTokens || 0) + (data.cost?.totalOutputTokens || 0),
+          }).catch(function(){});
         }
 
         state.strategies = strategies;
@@ -2038,8 +2033,7 @@
           }
         } catch(e) { console.warn('Usage check failed:', e); }
       }
-      // Track usage
-      if (!isDemo && window.trackUsage) window.trackUsage('verify', state.ticker).catch(function(){});
+      // Track usage (metered — consumes daily credits)
 
       // Fire the /verify API call immediately (runs in parallel with the animation)
       let verifyPromise;
@@ -2153,6 +2147,13 @@
           state.totalTokens = (vData.cost?.totalInputTokens || 0) + (vData.cost?.totalOutputTokens || 0);
           state.totalTime = (vData.durationMs || 0) / 1000;
           addCost(vData.cost);
+          // Track with model + cost details
+          const usedModels = (vData.cost?.calls || []).map(c => c.model).filter(Boolean);
+          if (!isDemo && window.trackUsage) window.trackUsage('verify', state.ticker, {
+            models: [...new Set(usedModels)],
+            cost: vData.cost?.totalCost || 0,
+            tokens: state.totalTokens,
+          }).catch(function(){});
         } catch (err) {
           state.verdict = { verdictWord: 'Error', confidence: 0, verdictClass: 'fail', summary: 'Verification failed: ' + err.message };
         }
@@ -2756,11 +2757,15 @@ window.checkUsageLimit = async function() {
 };
 
 // Log a usage event and increment daily counter
-window.trackUsage = async function(action, ticker) {
+// opts: { models: ['claude-sonnet', ...], cost: 0.05, tokens: 12000 }
+window.trackUsage = async function(action, ticker, opts) {
   if (!auth.currentUser) return;
   const email = auth.currentUser.email;
   const day = todayKey();
   const uid = userDocId(email);
+  const models = opts?.models || [];
+  const cost = opts?.cost || 0;
+  const tokens = opts?.tokens || 0;
 
   // Increment daily counter
   const dailyRef = doc(db, 'discover_usage', uid, 'daily', day);
@@ -2771,12 +2776,21 @@ window.trackUsage = async function(action, ticker) {
     await setDoc(dailyRef, { count: 1, email, date: day, lastUsedAt: serverTimestamp() });
   }
 
+  // Log individual event with model + cost
+  const eventsRef = collection(db, 'discover_usage', uid, 'events');
+  await addDoc(eventsRef, {
+    action, ticker, models, cost, tokens,
+    date: day, timestamp: serverTimestamp(),
+  });
+
   // Update user profile (lifetime stats)
   const userRef = doc(db, 'discover_usage', uid);
   const userSnap = await getDoc(userRef);
   if (userSnap.exists()) {
     await updateDoc(userRef, {
       totalRequests: increment(1),
+      totalCost: increment(cost),
+      totalTokens: increment(tokens),
       lastActiveAt: serverTimestamp(),
       lastTicker: ticker || '',
       lastAction: action || ''
@@ -2793,11 +2807,8 @@ window.trackUsage = async function(action, ticker) {
     });
   }
 
-  // Log individual event
-  await addDoc(collection(db, 'discover_usage', uid, 'events'), {
-    action, ticker: ticker || '', timestamp: serverTimestamp(), date: day
-  });
 };
+// (Individual event logging is now inside trackUsage above)
 
 // Strip undefined values — Firestore rejects them
 function stripUndefined(value) {
