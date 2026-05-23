@@ -419,71 +419,122 @@
 
     <!-- ===== STAGE 1: Snapshot ===== -->
     <div class="stage" id="stage-1">
-      <div class="panel">
-        <div class="panel-title">Ticker Snapshot</div>
-
-        <!-- Strategy strip -->
-        <div class="strat-strip">
-          <span class="strat-strip-label">Strategy:</span>
-          <div class="strat-chip strat-type-card" data-strat="iron_condor">
-            <svg viewBox="0 0 80 32"><polyline points="0,28 15,28 25,4 55,4 65,28 80,28" fill="none" stroke="var(--pass-text)" stroke-width="2.5"/></svg>
-            <span class="strat-chip-name">Iron Condor</span>
-          </div>
-          <div class="strat-chip strat-type-card" data-strat="iron_butterfly">
-            <svg viewBox="0 0 80 32"><polyline points="0,28 25,28 40,4 55,28 80,28" fill="none" stroke="var(--pass-text)" stroke-width="2.5"/></svg>
-            <span class="strat-chip-name">Iron Butterfly</span>
-          </div>
-          <div class="strat-chip strat-type-card" data-strat="vertical_spread">
-            <svg viewBox="0 0 80 32"><polyline points="0,28 30,28 50,4 80,4" fill="none" stroke="var(--accent)" stroke-width="2.5"/></svg>
-            <span class="strat-chip-name">Bull Put</span>
-          </div>
-          <div class="strat-chip strat-type-card" data-strat="bear_call_spread">
-            <svg viewBox="0 0 80 32"><polyline points="0,4 30,4 50,28 80,28" fill="none" stroke="var(--fail-text)" stroke-width="2.5"/></svg>
-            <span class="strat-chip-name">Bear Call</span>
-          </div>
-          <div class="strat-chip strat-type-card" data-strat="short_strangle">
-            <svg viewBox="0 0 80 32"><polyline points="0,28 20,28 30,4 50,4 60,28 80,28" fill="none" stroke="var(--concern-text)" stroke-width="2.5"/></svg>
-            <span class="strat-chip-name">Strangle</span>
-          </div>
-          <div class="strat-chip strat-type-card" data-strat="broken_wing_butterfly">
-            <svg viewBox="0 0 80 32"><polyline points="0,22 20,28 35,4 50,28 65,22 80,22" fill="none" stroke="#a78bfa" stroke-width="2.5"/></svg>
-            <span class="strat-chip-name">BWB</span>
-          </div>
-          <!-- Calendar and Diagonal removed: discover's leg shape has no per-leg expiry,
-               so these produce wrong payoff charts. Requires BS-aware payoff + multi-expiry
-               leg data. Available in the free strategy-builder which has BS support.
-               Re-add when the leg data contract is unified (see CONTRACTS.md). -->
-        </div>
-
-        <div class="demo-toggles" id="demo-toggles" style="display:none">
+      <!-- Input row -->
+      <div class="panel" style="padding:16px 20px">
+        <div class="demo-toggles" id="demo-toggles" style="display:none;margin-bottom:8px">
           <button class="demo-toggle active" data-ticker="SHOP" onclick="loadDemoTicker('SHOP')">SHOP</button>
           <button class="demo-toggle" data-ticker="NET" onclick="loadDemoTicker('NET')">NET</button>
         </div>
+        <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+          <div style="flex:1;min-width:180px">
+            <label style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted);margin-bottom:4px;display:block">Ticker</label>
+            <input type="text" id="ticker-input" placeholder="AAPL" style="text-transform:uppercase;width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:var(--mono)" />
+          </div>
+          <div style="min-width:160px" id="expiry-wrap" class="hidden">
+            <label style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted);margin-bottom:4px;display:block">Expiration</label>
+            <select id="expiry-select" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--mono)"><option value="">Select expiry...</option></select>
+          </div>
+          <button class="btn-primary" id="load-btn" onclick="handleLoad()" style="padding:8px 20px;white-space:nowrap">Load</button>
+        </div>
+      </div>
 
-        <label>Ticker</label>
-        <div class="inline-row" style="margin-bottom:12px">
-          <input type="text" id="ticker-input" placeholder="AAPL" style="text-transform:uppercase;flex:1" />
-          <button class="btn-sm btn-primary" id="load-btn" onclick="handleLoad()">Load</button>
+      <div id="snapshot-content" class="hidden">
+        <!-- AI Read — most prominent -->
+        <div class="panel" id="ai-read-panel" style="border-left:3px solid var(--teal);padding:14px 18px;margin-top:12px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="background:var(--teal);color:white;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.06em">AI Read</span>
+            <span style="font-size:10px;color:var(--ink-faint)">Market synthesis</span>
+          </div>
+          <div id="ai-read-card" style="font-size:14px;line-height:1.65;color:var(--ink)">Loading AI market read...</div>
         </div>
 
-        <div id="snapshot-content" class="hidden">
-          <div class="metric-strip" id="metric-strip"></div>
-          <div class="ai-read-card" id="ai-read-card"></div>
+        <!-- Stat tiles -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px" id="stat-tiles">
+          <div class="panel" style="padding:12px;text-align:center"><div class="m-label">SPOT</div><div class="m-value" id="stat-spot">---</div></div>
+          <div class="panel" style="padding:12px;text-align:center"><div class="m-label">RSI (14)</div><div class="m-value" id="stat-rsi">---</div></div>
+          <div class="panel" style="padding:12px;text-align:center"><div class="m-label">ADX</div><div class="m-value" id="stat-adx">---</div></div>
+          <div class="panel" style="padding:12px;text-align:center"><div class="m-label">ATR 14</div><div class="m-value" id="stat-atr">---</div></div>
+          <div class="panel" style="padding:12px;text-align:center"><div class="m-label">ATM IV</div><div class="m-value" id="stat-iv">---</div></div>
+        </div>
 
-          <label>Expiration</label>
-          <select id="expiry-select"><option value="">Select expiry...</option></select>
-
-          <div class="gamma-section hidden" id="gamma-section">
-            <div class="gamma-title">Gamma Wall Analysis</div>
-            <div id="gamma-chart-content"></div>
-          </div>
-
-          <div class="stage-footer">
-            <span class="cost-hint" id="stage1-cost">AI: ~$0.008 &middot; 1 model call &nbsp;|&nbsp; Manual: free</span>
-            <div style="display:flex;gap:8px">
-              <button class="btn-primary" id="find-strategies-btn" disabled onclick="goToStage(2)" style="white-space:nowrap">AI Find strategies &#8594;</button>
-              <button class="btn-primary" id="go-drill-btn">Build trade &#8594;</button>
+        <!-- Dual Gamma Wall cards -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px" id="wall-cards-row" class="hidden">
+          <!-- OI Walls (secondary) -->
+          <div class="panel" style="padding:14px" title="Raw Open Interest concentration — the strike with the highest total OI on each side of spot. Wider view of where most contracts are stacked.">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+              <span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted);font-weight:600">OI Walls</span>
+              <span style="font-size:8px;color:var(--ink-faint);border:1px solid var(--border);border-radius:3px;padding:1px 5px">secondary</span>
             </div>
+            <div style="display:flex;justify-content:space-between">
+              <div><div style="font-size:9px;color:var(--ink-faint);text-transform:uppercase">Put Wall</div><div style="font-size:16px;font-weight:700;color:var(--green);font-family:var(--mono)" id="oi-put-wall">---</div></div>
+              <div style="text-align:right"><div style="font-size:9px;color:var(--ink-faint);text-transform:uppercase">Call Wall</div><div style="font-size:16px;font-weight:700;color:var(--red);font-family:var(--mono)" id="oi-call-wall">---</div></div>
+            </div>
+          </div>
+          <!-- GEX Walls (primary) -->
+          <div class="panel" style="padding:14px;border-color:var(--teal);border-width:1.5px" title="Gamma-weighted walls — where dealer hedging flows are strongest. Uses multi-factor scoring (OI 60% + delta 30% + volume 10%). Tighter, more actionable range.">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+              <span style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--teal-text);font-weight:600">GEX Walls &middot; dealer hedging</span>
+              <span style="font-size:8px;color:white;background:var(--teal);border-radius:3px;padding:1px 6px;font-weight:700">primary</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <div><div style="font-size:9px;color:var(--ink-faint);text-transform:uppercase">Put Wall</div><div style="font-size:16px;font-weight:700;color:var(--green);font-family:var(--mono)" id="gex-put-wall">---</div></div>
+              <div style="text-align:right"><div style="font-size:9px;color:var(--ink-faint);text-transform:uppercase">Call Wall</div><div style="font-size:16px;font-weight:700;color:var(--red);font-family:var(--mono)" id="gex-call-wall">---</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gamma-Read Confidence -->
+        <div class="panel hidden" id="gamma-confidence-panel" style="padding:14px;margin-top:12px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+            <div style="font-size:28px;font-weight:800;font-family:var(--mono);color:var(--ink)" id="conf-pct">--</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--ink)" id="conf-verdict">---</div>
+              <div style="font-size:11px;color:var(--ink-muted)" id="conf-explain">---</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px" id="conf-sub-bars"></div>
+        </div>
+
+        <!-- Deep-dive analysis row -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px" id="deep-dive-row" class="hidden">
+          <div class="panel" style="padding:14px;cursor:pointer;transition:box-shadow 0.2s" onclick="openDeepDive('gamma')" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600;margin-bottom:4px">Gamma Walls</div>
+            <div style="font-size:12px;color:var(--ink-muted)">GEX by strike, OI breakdown, top gamma strikes</div>
+          </div>
+          <div class="panel" style="padding:14px;cursor:pointer;transition:box-shadow 0.2s" onclick="openDeepDive('technical')" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600;margin-bottom:4px">Technical</div>
+            <div style="font-size:12px;color:var(--ink-muted)">RSI, MACD, Bollinger Bands, SMA trend</div>
+          </div>
+          <div class="panel" style="padding:14px;cursor:pointer;transition:box-shadow 0.2s" onclick="openDeepDive('iv')" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600;margin-bottom:4px">IV &amp; Skew</div>
+            <div style="font-size:12px;color:var(--ink-muted)">ATM IV, IV level, term structure</div>
+          </div>
+        </div>
+
+        <!-- Gamma deep-dive modal content (hidden, shown on click) -->
+        <div class="panel hidden" id="gamma-deep-dive" style="margin-top:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div class="panel-title" style="margin:0">Gamma Wall Analysis</div>
+            <button onclick="hide($('#gamma-deep-dive'))" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink-muted)">&times;</button>
+          </div>
+          <div id="gamma-chart-content"></div>
+        </div>
+
+        <!-- Strategy strip + CTA -->
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+          <div class="strat-strip">
+            <span class="strat-strip-label">Strategy:</span>
+            <div class="strat-chip strat-type-card" data-strat="iron_condor"><svg viewBox="0 0 80 32"><polyline points="0,28 15,28 25,4 55,4 65,28 80,28" fill="none" stroke="var(--pass-text)" stroke-width="2.5"/></svg><span class="strat-chip-name">Iron Condor</span></div>
+            <div class="strat-chip strat-type-card" data-strat="iron_butterfly"><svg viewBox="0 0 80 32"><polyline points="0,28 25,28 40,4 55,28 80,28" fill="none" stroke="var(--pass-text)" stroke-width="2.5"/></svg><span class="strat-chip-name">Iron Butterfly</span></div>
+            <div class="strat-chip strat-type-card" data-strat="vertical_spread"><svg viewBox="0 0 80 32"><polyline points="0,28 30,28 50,4 80,4" fill="none" stroke="var(--accent)" stroke-width="2.5"/></svg><span class="strat-chip-name">Bull Put</span></div>
+            <div class="strat-chip strat-type-card" data-strat="bear_call_spread"><svg viewBox="0 0 80 32"><polyline points="0,4 30,4 50,28 80,28" fill="none" stroke="var(--fail-text)" stroke-width="2.5"/></svg><span class="strat-chip-name">Bear Call</span></div>
+            <div class="strat-chip strat-type-card" data-strat="short_strangle"><svg viewBox="0 0 80 32"><polyline points="0,28 20,28 30,4 50,4 60,28 80,28" fill="none" stroke="var(--concern-text)" stroke-width="2.5"/></svg><span class="strat-chip-name">Strangle</span></div>
+            <div class="strat-chip strat-type-card" data-strat="broken_wing_butterfly"><svg viewBox="0 0 80 32"><polyline points="0,22 20,28 35,4 50,28 65,22 80,22" fill="none" stroke="#a78bfa" stroke-width="2.5"/></svg><span class="strat-chip-name">BWB</span></div>
+          </div>
+          <div class="stage-footer" style="margin-top:10px">
+            <span class="cost-hint" id="stage1-cost">AI: ~$0.008 &middot; 1 model call &nbsp;|&nbsp; Manual: free</span>
+            <button class="btn-primary" id="find-strategies-btn" disabled onclick="goToStage(2)" style="white-space:nowrap;padding:10px 24px;font-size:14px">Find strategies &#8594;</button>
+            <button class="btn-primary" id="go-drill-btn" style="padding:10px 20px">Build trade &#8594;</button>
           </div>
         </div>
       </div>
@@ -945,17 +996,22 @@
           });
         }
 
-        // Render metric strip
-        const earningsLabel = state.earningsDaysOut ? `${state.earningsDaysOut}d` : 'N/A';
-        const wallsLabel = state.putWall && state.callWall ? `$${state.putWall} / $${state.callWall}` : '---';
-        $('#metric-strip').innerHTML = [
-          { label: 'SPOT', value: `$${state.spot.toFixed(2)}` },
-          { label: 'RSI', value: state.rsi ? state.rsi.toFixed(1) : '---' },
-          { label: 'ADX', value: state.adx ? state.adx.toFixed(1) : '---' },
-          { label: 'ATR 14', value: state.atr14 ? `$${state.atr14.toFixed(2)}` : '---' },
-          { label: 'GAMMA WALLS', value: wallsLabel },
-          { label: 'EARNINGS', value: earningsLabel }
-        ].map(m => `<div class="metric-item"><div class="m-label">${m.label}</div><div class="m-value">${m.value}</div></div>`).join('');
+        // Render stat tiles
+        $('#stat-spot').textContent = `$${state.spot.toFixed(2)}`;
+        $('#stat-rsi').textContent = state.rsi ? state.rsi.toFixed(1) : '---';
+        $('#stat-adx').textContent = state.adx ? state.adx.toFixed(1) : '---';
+        $('#stat-atr').textContent = state.atr14 ? `$${state.atr14.toFixed(2)}` : '---';
+        // ATM IV populated after R2 fetch (in loadGammaChart)
+
+        // OI walls (from API gamma response — populated in handleLoad for demo, or after expiry select for live)
+        if (state.putWall || state.callWall) {
+          $('#oi-put-wall').textContent = state.putWall ? `$${state.putWall}` : '---';
+          $('#oi-call-wall').textContent = state.callWall ? `$${state.callWall}` : '---';
+          show($('#wall-cards-row'));
+        }
+
+        // Show expiry selector inline
+        show($('#expiry-wrap'));
 
         // AI Read — shows placeholder until the background call resolves
         $('#ai-read-card').textContent = aiReadText || 'Loading AI market read...';
@@ -1001,7 +1057,6 @@
     async function loadGammaChart() {
       if (!state.ticker || !state.selectedExpiry) return;
       try {
-        // Fetch from API (OI by strike) + R2 (full gamma analysis with GEX)
         const [apiRes, r2Res] = await Promise.allSettled([
           apiCall(`/api/gamma/${state.ticker}/${state.selectedExpiry}`).then(r => r.json()),
           fetch(`${R2_BASE}/reports/${state.ticker}/latest.json`).then(r => r.ok ? r.json() : null),
@@ -1009,16 +1064,69 @@
         const ga = apiRes.status === 'fulfilled' ? apiRes.value : {};
         const r2 = r2Res.status === 'fulfilled' ? r2Res.value : null;
         state.gammaData = ga;
+        state.r2Data = r2;
+
+        // OI walls (from API)
+        $('#oi-put-wall').textContent = ga.putWallStrike ? `$${ga.putWallStrike}` : '---';
+        $('#oi-call-wall').textContent = ga.callWallStrike ? `$${ga.callWallStrike}` : '---';
+
+        // GEX walls (from R2)
+        const analysis = r2?.gammaData?.analysis || {};
+        if (analysis.put_wall != null) {
+          $('#gex-put-wall').textContent = `$${Number(analysis.put_wall).toFixed(0)}`;
+          $('#gex-call-wall').textContent = analysis.call_wall != null ? `$${Number(analysis.call_wall).toFixed(0)}` : '---';
+        } else {
+          // Fallback GEX to OI
+          $('#gex-put-wall').textContent = ga.putWallStrike ? `$${ga.putWallStrike}` : '---';
+          $('#gex-call-wall').textContent = ga.callWallStrike ? `$${ga.callWallStrike}` : '---';
+        }
+        show($('#wall-cards-row'));
+
+        // ATM IV (from R2)
+        const iv = r2?.gammaData?.ivData;
+        if (iv?.atmIv) {
+          $('#stat-iv').textContent = iv.atmIv.toFixed(1) + '%';
+        }
+
+        // Confidence panel
+        const confScore = analysis.confidence_score;
+        if (confScore != null) {
+          const pct = Math.round(confScore * 100);
+          $('#conf-pct').textContent = pct + '%';
+          // Verdict word
+          let verdict, explain;
+          if (pct >= 70) { verdict = 'High — walls strongly defended'; explain = 'OI, delta, and volume all confirm these levels.'; }
+          else if (pct >= 40) { verdict = 'Moderate — walls reasonably defended'; explain = 'Some signals disagree; check sub-bars below.'; }
+          else { verdict = 'Low — walls weakly defended'; explain = 'Limited data or conflicting signals. Treat walls as approximate.'; }
+          $('#conf-verdict').textContent = verdict;
+          $('#conf-explain').textContent = explain;
+
+          const bar = (val, lbl) => `<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-muted);margin-bottom:3px">${lbl}</div><div style="height:6px;background:#f0ece0;border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.round((val||0)*100)}%;border-radius:3px;background:${val>=0.6?'#2d7d4f':val>=0.3?'#d97706':'#c0392b'}"></div></div><div style="font-size:10px;font-weight:600;margin-top:2px">${Math.round((val||0)*100)}%</div></div>`;
+          $('#conf-sub-bars').innerHTML = bar(analysis.oi_confidence, 'Open Interest') + bar(analysis.volume_confidence, 'Volume') + bar(analysis.delta_confidence, 'Delta');
+          show($('#gamma-confidence-panel'));
+        }
+
+        // Show deep-dive row
+        show($('#deep-dive-row'));
+
+        // Render gamma chart in deep-dive (hidden by default)
         renderGammaAnalysis(ga, r2, ga.spot || state.spot);
       } catch (_) {}
     }
 
+    function openDeepDive(type) {
+      if (type === 'gamma') {
+        const el = $('#gamma-deep-dive');
+        el.classList.toggle('hidden');
+      }
+      // technical and iv modals — TODO: build in later stages
+    }
+
     function renderGammaAnalysis(ga, r2, spot) {
       const el = document.getElementById('gamma-chart-content');
-      if ((!ga.oiByStrike || !ga.oiByStrike.length) && !r2) { hide($('#gamma-section')); return; }
-      show($('#gamma-section'));
+      if (!el) return;
+      if ((!ga.oiByStrike || !ga.oiByStrike.length) && !r2) return;
       _renderGamma(el, ga, r2, spot);
-      return;
     }
     // (Inline renderGammaAnalysis / drawGexChart / drawOIChart deleted — now in shared/gammaChart.js)
 
