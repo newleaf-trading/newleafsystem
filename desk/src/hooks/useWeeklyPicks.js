@@ -53,24 +53,22 @@ export function useWeeklyPicks(weekId) {
 
         const symbol = tile.symbol || '';
         const strategy = (tile.strategy || '').replace(/\s+/g, '-');
+        const picksUrl = `https://newleafsystem.com/picks/analysis/${symbol.toLowerCase()}`;
+        const investUrl = `https://newleafsystem.com/invest/position/${tileId}`;
 
         return {
           tileId,
           tile,
           analysis,
           hasAnalysis: !!analysis,
-          // Asset URLs
           assets: {
             pdfUrl: `${R2_BASE}/reports/pdf/${symbol}/${symbol}-${strategy}-latest.pdf`,
-            picksUrl: `https://newleafsystem.com/picks/analysis/${symbol.toLowerCase()}`,
-            investUrl: `https://newleafsystem.com/invest/position/${tileId}`,
+            picksUrl,
+            investUrl,
             r2DataUrl: `${R2_BASE}/reports/${symbol}/latest.json`,
           },
-          // Social copy (from analysis if available)
           socialCopy: analysis?.socialCopy || null,
-          // Sentiment
           sentiment: tile.sentiment || analysis?._sentiment || null,
-          // Provenance
           provenance: {
             model: analysis?.model_used || tile?.model_used || 'unknown',
             promptVersion: analysis?.prompt_version || null,
@@ -78,10 +76,9 @@ export function useWeeklyPicks(weekId) {
             timestamp: analysis?.generation_timestamp || tile?.generation_timestamp || null,
             commitSha: analysis?.code_commit_sha || null,
           },
-          // Publication channels
           channels: publication?.channels || {
-            picks:     { status: 'complete', url: assets?.picksUrl },
-            invest:    { status: 'complete', url: assets?.investUrl },
+            picks:     { status: 'complete', url: picksUrl },
+            invest:    { status: 'complete', url: investUrl },
             pdf:       { status: 'tbd' },
             youtube:   { status: 'tbd' },
             linkedin:  { status: 'tbd' },
