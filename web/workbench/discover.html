@@ -627,22 +627,51 @@
 
     <!-- ===== STAGE 3: Drill In ===== -->
     <div class="stage hidden" id="stage-3">
-      <div class="panel">
-        <div class="drill-header">
-          <div class="drill-title" id="drill-title"></div>
-          <div class="drill-sub" id="drill-sub"></div>
+      <!-- Header -->
+      <div class="panel" style="padding:14px 18px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:18px;font-weight:700" id="drill-title"></div>
+            <div style="font-size:12px;color:var(--ink-muted)" id="drill-sub"></div>
+          </div>
+          <div id="drill-valid-status" style="font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px"></div>
         </div>
-        <div class="drill-metrics" id="drill-metrics"></div>
+      </div>
+
+      <!-- Outcome metrics with unit captions -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px" id="drill-metrics"></div>
+
+      <!-- Payoff chart -->
+      <div class="panel" style="padding:14px;margin-top:10px">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-muted);font-weight:600;margin-bottom:8px">P&amp;L at Expiration</div>
         <div class="pnl-chart-wrap"><canvas id="pnl-canvas" height="220"></canvas></div>
+      </div>
+
+      <!-- Strike sliders -->
+      <div class="panel" style="padding:14px;margin-top:10px">
         <div class="strike-sliders" id="strike-sliders"></div>
-        <table class="legs-table">
-          <thead><tr><th>Side</th><th>Strike</th><th>Type</th><th>Mid</th><th>IV</th><th>Qty</th></tr></thead>
+      </div>
+
+      <!-- Legs table -->
+      <div class="panel" style="padding:14px;margin-top:10px">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-muted);font-weight:600;margin-bottom:8px">Legs breakdown</div>
+        <table class="legs-table" style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="border-bottom:1px solid var(--border)">
+            <th style="padding:6px 8px;text-align:left;font-size:9px;color:var(--ink-muted);text-transform:uppercase">Side</th>
+            <th style="padding:6px 8px;text-align:left;font-size:9px;color:var(--ink-muted);text-transform:uppercase">Strike</th>
+            <th style="padding:6px 8px;text-align:left;font-size:9px;color:var(--ink-muted);text-transform:uppercase">Type</th>
+            <th style="padding:6px 8px;text-align:right;font-size:9px;color:var(--ink-muted);text-transform:uppercase">Mid (/share)</th>
+            <th style="padding:6px 8px;text-align:right;font-size:9px;color:var(--ink-muted);text-transform:uppercase">IV</th>
+            <th style="padding:6px 8px;text-align:right;font-size:9px;color:var(--ink-muted);text-transform:uppercase">Qty</th>
+          </tr></thead>
           <tbody id="legs-body"></tbody>
         </table>
-        <div class="stage-footer">
-          <span class="cost-hint">~$0.05 &middot; 7 agents &middot; ~30s</span>
-          <button class="btn-primary" id="verify-btn" onclick="goToStage(4)">Verify trade &#8594;</button>
-        </div>
+      </div>
+
+      <!-- Footer: cost + verify CTA -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+        <span style="font-size:11px;color:var(--ink-faint)">~$0.05 &middot; 8 agents &middot; ~30s</span>
+        <button class="btn-primary" id="verify-btn" onclick="goToStage(4)" style="padding:10px 24px;font-size:14px">Verify trade &#8594;</button>
       </div>
     </div>
 
@@ -1635,27 +1664,54 @@
       const s = state.selectedStrategy;
       if (!s) return;
 
-      $('#drill-title').textContent = s.strategy;
-      $('#drill-sub').textContent = `${state.ticker} \u00b7 ${state.selectedExpiry}`;
+      const stratName = s.name || s.strategy || 'Trade';
+      $('#drill-title').textContent = stratName;
+      $('#drill-sub').textContent = `${state.ticker} \u00b7 ${state.selectedExpiry} \u00b7 ${state.qty} contracts`;
 
-      // Compute metrics
-      const netCredit = computeNetCredit();
-      const maxLoss = computeMaxLoss(netCredit);
-      const rr = typeof maxLoss === 'number' && maxLoss > 0
-        ? (Math.abs(netCredit * 100 * state.qty) / maxLoss).toFixed(2) + ':1'
-        : 'N/A';
-
-      // Breakevens
+      // Compute metrics via shared legMath.js
+      const nc = computeNetCredit();
+      const ml = computeMaxLoss(nc);
       const breakevens = computeBreakevens();
       const beStr = breakevens.length ? breakevens.map(b => '$' + b.toFixed(0)).join(' / ') : 'N/A';
+      const perShare = nc;
+      const perContract = nc * 100;
+      const totalCredit = nc * 100 * state.qty;
+      const rr = typeof ml === 'number' && ml > 0 ? (Math.abs(totalCredit) / ml).toFixed(2) : 'N/A';
+      // Estimate PoP from breakeven range vs spot
+      const estimatedPop = breakevens.length >= 2
+        ? Math.round(Math.min(95, Math.max(30, 100 * (breakevens[1] - breakevens[0]) / (state.spot * 0.4))))
+        : (nc > 0 ? '~' + Math.round(Math.min(90, 50 + nc * 20)) : '---');
 
-      const totalCredit = netCredit * 100 * state.qty;
-      $('#drill-metrics').innerHTML = [
-        { label: 'NET CREDIT', value: (totalCredit >= 0 ? '+' : '-') + '$' + Math.abs(totalCredit).toLocaleString('en-US', { maximumFractionDigits: 0 }), cls: totalCredit >= 0 ? 'green' : 'red' },
-        { label: 'MAX LOSS', value: typeof maxLoss === 'number' ? '-$' + maxLoss.toLocaleString('en-US', { maximumFractionDigits: 0 }) : 'N/A', cls: 'red' },
-        { label: 'R:R', value: rr, cls: '' },
-        { label: 'BREAKEVENS', value: beStr, cls: '' }
-      ].map(m => `<div class="drill-metric"><div class="dm-label">${m.label}</div><div class="dm-value ${m.cls}">${m.value}</div></div>`).join('');
+      // Valid setup status
+      const valid = nc > 0 && state.legs.length >= 2;
+      const legsOrdered = state.legs.every((l, i) => i === 0 || l.strike >= state.legs[i-1].strike);
+      const statusEl = $('#drill-valid-status');
+      if (valid && legsOrdered) {
+        statusEl.textContent = '\u2713 Valid setup \u2014 net credit $' + nc.toFixed(2) + '/share \u00b7 legs in order';
+        statusEl.style.cssText = 'font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px;background:var(--pass-bg);color:var(--pass-text)';
+      } else if (nc <= 0) {
+        statusEl.textContent = '\u26A0 Net debit $' + Math.abs(nc).toFixed(2) + '/share';
+        statusEl.style.cssText = 'font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px;background:var(--concern-bg);color:var(--concern-text)';
+      } else {
+        statusEl.textContent = '\u26A0 Check leg order';
+        statusEl.style.cssText = 'font-size:12px;font-weight:600;padding:6px 12px;border-radius:6px;background:var(--concern-bg);color:var(--concern-text)';
+      }
+
+      // Metrics with unit captions
+      const metric = (label, value, unit, color) =>
+        `<div class="panel" style="padding:12px;text-align:center">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-muted);font-weight:600">${label}</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);margin-top:4px;color:${color || 'var(--ink)'}">${value}</div>
+          <div style="font-size:9px;color:var(--ink-faint);margin-top:2px">${unit}</div>
+        </div>`;
+
+      $('#drill-metrics').innerHTML =
+        metric('Max Profit', (totalCredit >= 0 ? '+' : '') + '$' + Math.abs(totalCredit).toLocaleString('en-US', {maximumFractionDigits:0}),
+          `$${Math.abs(perShare).toFixed(2)}/share \u00d7 ${state.qty} contracts`, totalCredit >= 0 ? 'var(--green)' : 'var(--red)') +
+        metric('Max Loss', typeof ml === 'number' ? '-$' + ml.toLocaleString('en-US', {maximumFractionDigits:0}) : 'N/A',
+          'defined risk', 'var(--red)') +
+        metric('PoP', estimatedPop + '%', 'probability of profit', '') +
+        metric('Breakevens', beStr, 'at expiration', '');
 
       // Build strike options from chain
       var strikeOpts = (state.chainData || []).map(function(c) { return c.strike; }).sort(function(a,b){return a-b;});
@@ -2422,6 +2478,9 @@
     window.selectPreset = selectPreset;
     window.s2BuildTrade = s2BuildTrade;
     window.selectStrategy = selectStrategy;
+    window.onSliderMove = onSliderMove;
+    window.onSliderDone = onSliderDone;
+    window.updateLeg = updateLeg;
 
     /* ================================================================
        INIT
