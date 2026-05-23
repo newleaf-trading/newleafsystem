@@ -449,14 +449,10 @@
             <svg viewBox="0 0 80 32"><polyline points="0,22 20,28 35,4 50,28 65,22 80,22" fill="none" stroke="#a78bfa" stroke-width="2.5"/></svg>
             <span class="strat-chip-name">BWB</span>
           </div>
-          <div class="strat-chip strat-type-card" data-strat="calendar">
-            <svg viewBox="0 0 80 32"><path d="M0,28 Q20,28 30,8 Q40,-4 50,8 Q60,28 80,28" fill="none" stroke="var(--info-text)" stroke-width="2.5"/></svg>
-            <span class="strat-chip-name">Calendar</span>
-          </div>
-          <div class="strat-chip strat-type-card" data-strat="diagonal">
-            <svg viewBox="0 0 80 32"><path d="M0,28 Q25,28 35,8 Q45,-2 55,10 Q70,28 80,22" fill="none" stroke="#f59e0b" stroke-width="2.5"/></svg>
-            <span class="strat-chip-name">Diagonal</span>
-          </div>
+          <!-- Calendar and Diagonal removed: discover's leg shape has no per-leg expiry,
+               so these produce wrong payoff charts. Requires BS-aware payoff + multi-expiry
+               leg data. Available in the free strategy-builder which has BS support.
+               Re-add when the leg data contract is unified (see CONTRACTS.md). -->
         </div>
 
         <div class="demo-toggles" id="demo-toggles" style="display:none">
@@ -1106,10 +1102,7 @@
           { side: 'short', type: 'put', strike: find(-3).strike },
           { side: 'short', type: 'call', strike: find(+3).strike },
         ]; break;
-        case 'calendar': legs = [
-          { side: 'short', type: 'call', strike: find(0).strike },
-          { side: 'long', type: 'call', strike: find(0).strike },
-        ]; break;
+        // case 'calendar': removed — requires per-leg expiry + BS payoff (see CONTRACTS.md)
         case 'bear_call_spread': legs = [
           { side: 'short', type: 'call', strike: find(+1).strike },
           { side: 'long', type: 'call', strike: find(+3).strike },
@@ -1120,10 +1113,7 @@
           { side: 'short', type: 'call', strike: find(0).strike },
           { side: 'long', type: 'call', strike: find(+2).strike },
         ]; break;
-        case 'diagonal': legs = [
-          { side: 'short', type: 'call', strike: find(+1).strike },
-          { side: 'long', type: 'call', strike: find(-1).strike },
-        ]; break;
+        // case 'diagonal': removed — requires per-leg expiry + BS payoff (see CONTRACTS.md)
         default: legs = [
           { side: 'short', type: 'call', strike: find(+1).strike },
           { side: 'long', type: 'call', strike: find(-1).strike },
