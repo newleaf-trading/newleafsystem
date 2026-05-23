@@ -682,6 +682,37 @@ async function main() {
   log('');
   log(`  The pick is now live in the React app at /trading/position/${tileId}`);
   log(`  and visible on /picks/ for the current week.`);
+
+  // ── Step 11: Write publication tracking record ─────────────────────────
+  log('  📋 Writing publication record...');
+  const pubRecord = {
+    tileId,
+    symbol: SYMBOL,
+    strategy: result.strategy,
+    weekId,
+    spotPrice: snapshot.price,
+    maxProfit: result.maxProfit,
+    maxLoss: result.maxLoss,
+    rewardRisk: result.rewardRisk,
+    oddsOfProfit: result.oddsOfProfit,
+    netCredit: result.netCredit,
+    expiry: result.expiry,
+    dte: result.dte,
+    thesis: analysis.strategyRationale?.whyThisStrategy || '',
+    channels: {
+      picks:     { status: 'complete', url: `https://newleafsystem.com/picks/analysis/${SYMBOL.toLowerCase()}`, updatedAt: new Date().toISOString() },
+      invest:    { status: 'complete', url: `https://newleafsystem.com/invest/position/${tileId}`, updatedAt: new Date().toISOString() },
+      pdf:       { status: 'tbd', url: null, updatedAt: null },
+      youtube:   { status: 'tbd', url: null, updatedAt: null },
+      linkedin:  { status: 'tbd', url: null, updatedAt: null },
+      twitter:   { status: 'tbd', url: null, updatedAt: null },
+      instagram: { status: 'tbd', url: null, updatedAt: null },
+      email:     { status: 'tbd', url: null, updatedAt: null },
+    },
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+  await db.collection('publications').doc(tileId).set(pubRecord);
+  log(`     publications/${tileId} ✅`);
   sep();
   log('');
 }

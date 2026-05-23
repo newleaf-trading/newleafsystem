@@ -4,7 +4,7 @@ import { PickCard } from '../components/PickCard';
 
 export function WeekView() {
   const [weekId, setWeekId] = useState(getISOWeek());
-  const { picks, weekData, loading, error, reload } = useWeeklyPicks(weekId);
+  const { picks, weekData, loading, error, reload, updateChannelStatus } = useWeeklyPicks(weekId);
 
   // Generate recent weeks for navigation
   const weeks = [];
@@ -65,7 +65,7 @@ export function WeekView() {
       {/* Pick cards grid */}
       <div className="dk-picks-grid">
         {picks.map(pick => (
-          <PickCard key={pick.tileId} pick={pick} />
+          <PickCard key={pick.tileId} pick={pick} onChannelUpdate={updateChannelStatus} />
         ))}
       </div>
     </div>

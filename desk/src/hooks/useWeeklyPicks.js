@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { collection, doc, getDoc, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const R2_BASE = 'https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev';
@@ -39,13 +39,15 @@ export function useWeeklyPicks(weekId) {
       // Fetch full tile + analysis for each pick
       const tileIds = data.tileIds || [];
       const enriched = await Promise.all(tileIds.map(async (tileId) => {
-        const [tileSnap, analysisSnap] = await Promise.all([
+        const [tileSnap, analysisSnap, pubSnap] = await Promise.all([
           getDoc(doc(db, 'tiles', tileId)),
           getDoc(doc(db, 'analyses', tileId)),
+          getDoc(doc(db, 'publications', tileId)),
         ]);
 
         const tile = tileSnap.exists() ? { id: tileSnap.id, ...tileSnap.data() } : null;
         const analysis = analysisSnap.exists() ? analysisSnap.data() : null;
+        const publication = pubSnap.exists() ? pubSnap.data() : null;
 
         if (!tile) return null;
 
@@ -76,6 +78,17 @@ export function useWeeklyPicks(weekId) {
             timestamp: analysis?.generation_timestamp || tile?.generation_timestamp || null,
             commitSha: analysis?.code_commit_sha || null,
           },
+          // Publication channels
+          channels: publication?.channels || {
+            picks:     { status: 'complete', url: assets?.picksUrl },
+            invest:    { status: 'complete', url: assets?.investUrl },
+            pdf:       { status: 'tbd' },
+            youtube:   { status: 'tbd' },
+            linkedin:  { status: 'tbd' },
+            twitter:   { status: 'tbd' },
+            instagram: { status: 'tbd' },
+            email:     { status: 'tbd' },
+          },
         };
       }));
 
@@ -89,7 +102,16 @@ export function useWeeklyPicks(weekId) {
 
   useEffect(() => { load(); }, [load]);
 
-  return { picks, weekData, loading, error, reload: load, currentWeek };
+  const updateChannelStatus = useCallback(async (tileId, channel, status, url = null) => {
+    const ref = doc(db, 'publications', tileId);
+    const snap = await getDoc(ref);
+    const data = snap.exists() ? snap.data() : { channels: {} };
+    data.channels[channel] = { status, url, updatedAt: new Date().toISOString() };
+    await setDoc(ref, data, { merge: true });
+    await load(); // refresh
+  }, [load]);
+
+  return { picks, weekData, loading, error, reload: load, currentWeek, updateChannelStatus };
 }
 
 export { getISOWeek };
