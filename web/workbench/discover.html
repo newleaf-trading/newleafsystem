@@ -1446,7 +1446,14 @@
     /* ================================================================
        STAGE 2: RANKED STRATEGIES
        ================================================================ */
+    let _s2Loading = false;
     async function enterStage2() {
+      if (_s2Loading || state.strategies.length) {
+        // Already loaded or loading — just render
+        if (state.strategies.length) renderStrategyCards(state.strategies);
+        return;
+      }
+      _s2Loading = true;
       // Default to AI mode
       setS2Mode('ai');
       const container = $('#strategy-cards');
@@ -1467,6 +1474,7 @@
               body: { ticker: state.ticker, expiry: state.selectedExpiry, modelMode: 'budget-qwq' }
             })
           ]);
+          if (!recRes.ok) throw new Error(`API returned ${recRes.status} — ${recRes.status === 429 ? 'rate limited, try again in a minute' : recRes.statusText}`);
           const chainJson = await chainRes.json();
           state.chainData = chainJson.strikes || [];
           const data = await recRes.json();
@@ -1498,6 +1506,8 @@
         renderStrategyCards(strategies);
       } catch (err) {
         container.innerHTML = `<div style="color:var(--red);padding:16px">Error: ${err.message}</div>`;
+      } finally {
+        _s2Loading = false;
       }
     }
 
@@ -1566,8 +1576,9 @@
         $('#s2-ai-btn').style.cssText = 'flex:1;padding:12px;font-size:13px';
         $('#s2-manual-btn').classList.remove('active');
         $('#s2-manual-btn').style.cssText = 'flex:1;padding:12px;font-size:13px;background:var(--white);color:var(--ink);border:1px solid var(--border)';
-        // Trigger AI ranking if not already loaded
-        if (!state.strategies.length) enterStage2();
+        // Render existing strategies or trigger fetch
+        if (state.strategies.length) renderStrategyCards(state.strategies);
+        else enterStage2();
       } else {
         hide($('#s2-ai-mode')); show($('#s2-manual-mode'));
         $('#s2-manual-btn').classList.add('active');
