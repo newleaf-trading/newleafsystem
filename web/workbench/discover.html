@@ -250,6 +250,23 @@
     .gamma-section { margin: 16px 0; }
     .gamma-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 8px; }
     .gamma-canvas-wrap { position: relative; border-radius: 6px; overflow: hidden; background: var(--white); border: 1px solid var(--border); }
+    .ip-section{margin-bottom:18px}.ip-section:last-child{margin-bottom:0}
+    .ip-section-title{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#9b9b8e;margin-bottom:2px;padding-bottom:4px;border-bottom:1px solid #f0ece0}
+    .ip-section-desc{font-size:11px;color:#999;line-height:1.45;margin-bottom:10px;font-style:italic}
+    .ip-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .ip-grid.cols-2{grid-template-columns:repeat(2,1fr)}
+    .ip-grid.cols-4{grid-template-columns:repeat(4,1fr)}
+    .ip-cell{display:flex;flex-direction:column;gap:1px}
+    .ip-cell-lbl{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:#9b9b8e}
+    .ip-cell-val{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:#0B0F14}
+    .ip-cell-val.green{color:#2d7d4f}.ip-cell-val.red{color:#c0392b}.ip-cell-val.gold{color:#a0620c}
+    .ip-bar{height:6px;background:#f0ece0;border-radius:3px;overflow:hidden;margin-top:4px}
+    .ip-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+    .ip-strike-row{display:grid;grid-template-columns:60px 1fr 80px 80px;gap:8px;align-items:center;padding:4px 0;font-size:11px;border-bottom:1px solid #f8f5ef}
+    .ip-strike-row:last-child{border-bottom:none}
+    .ip-strike-lbl{font-family:'Space Mono',monospace;font-weight:700}
+    .ip-strike-bar{height:5px;background:#f0ece0;border-radius:3px;overflow:hidden}
+    .ip-strike-fill{height:100%;border-radius:3px;background:#0d6e56}
     .wall-summary { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
     .wall-tag { font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
     .wall-tag.put { background: var(--fail-bg); color: var(--fail-text); }
@@ -981,119 +998,206 @@
       if (state.selectedExpiry) loadGammaChart();
     });
 
+    const R2_BASE = 'https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev';
+
     async function loadGammaChart() {
       if (!state.ticker || !state.selectedExpiry) return;
       try {
-        const res = await apiCall(`/api/gamma/${state.ticker}/${state.selectedExpiry}`);
-        const ga = await res.json();
+        // Fetch from API (OI by strike) + R2 (full gamma analysis with GEX)
+        const [apiRes, r2Res] = await Promise.allSettled([
+          apiCall(`/api/gamma/${state.ticker}/${state.selectedExpiry}`).then(r => r.json()),
+          fetch(`${R2_BASE}/reports/${state.ticker}/latest.json`).then(r => r.ok ? r.json() : null),
+        ]);
+        const ga = apiRes.status === 'fulfilled' ? apiRes.value : {};
+        const r2 = r2Res.status === 'fulfilled' ? r2Res.value : null;
         state.gammaData = ga;
-        renderGammaWalls(ga, ga.spot || state.spot);
+        renderGammaAnalysis(ga, r2, ga.spot || state.spot);
       } catch (_) {}
     }
 
-    function renderGammaWalls(ga, spot) {
-      var container = document.getElementById('gamma-chart-content');
-      if (!ga.oiByStrike || !ga.oiByStrike.length) { hide($('#gamma-section')); return; }
-
-      // Build canvas + wall tags
-      container.innerHTML = '<div class="gamma-canvas-wrap"><canvas id="gamma-canvas" height="240"></canvas></div>' +
-        '<div class="wall-summary">' +
-        (ga.putWallStrike ? '<span class="wall-tag put">Put Wall: $' + ga.putWallStrike + '</span>' : '') +
-        (ga.callWallStrike ? '<span class="wall-tag call">Call Wall: $' + ga.callWallStrike + '</span>' : '') +
-        '<span class="wall-tag band">' + (ga.spotInsideBand ? 'Spot Inside Band' : 'Spot Outside Band') + '</span>' +
-        '</div>';
+    function renderGammaAnalysis(ga, r2, spot) {
+      const el = document.getElementById('gamma-chart-content');
+      if ((!ga.oiByStrike || !ga.oiByStrike.length) && !r2) { hide($('#gamma-section')); return; }
       show($('#gamma-section'));
 
-      // Draw vertical bar chart on canvas
-      var canvas = document.getElementById('gamma-canvas');
+      const a = r2?.gammaData?.analysis || {};
+      const iv = r2?.gammaData?.ivData || {};
+      const hasR2 = a.contracts_analyzed > 0;
+      const conf = (v, lbl) => `<div class="ip-cell"><span class="ip-cell-lbl">${lbl}</span><span class="ip-cell-val">${Math.round((v||0)*100)}%</span><div class="ip-bar"><div class="ip-bar-fill" style="width:${Math.round((v||0)*100)}%;background:${v>=0.6?'#2d7d4f':v>=0.3?'#a0620c':'#c0392b'}"></div></div></div>`;
+      const topStrikes = (a.topStrikes || []).slice(0, 6);
+      const maxGex = Math.max(...topStrikes.map(s => Math.abs(s.gamma_exposure || 0)), 1);
+
+      el.innerHTML = `
+        <div class="ip-section">
+          <div class="ip-section-title">Gamma Walls</div>
+          <div class="ip-section-desc">Where market makers hold their largest hedging positions. The stock tends to stay between these walls.</div>
+          <div class="ip-grid cols-4">
+            <div class="ip-cell"><span class="ip-cell-lbl">Put Wall</span><span class="ip-cell-val green">$${hasR2 && a.put_wall != null ? Number(a.put_wall).toFixed(2) : ga.putWallStrike || '—'}</span></div>
+            <div class="ip-cell"><span class="ip-cell-lbl">Call Wall</span><span class="ip-cell-val red">$${hasR2 && a.call_wall != null ? Number(a.call_wall).toFixed(2) : ga.callWallStrike || '—'}</span></div>
+            <div class="ip-cell"><span class="ip-cell-lbl">Band Width</span><span class="ip-cell-val">${hasR2 ? (a.band_width_pct||0).toFixed(1) + '%' : '—'}</span></div>
+            <div class="ip-cell"><span class="ip-cell-lbl">Position in Band</span><span class="ip-cell-val">${hasR2 ? (a.position_in_band_pct ?? '—') + '%' : '—'}</span></div>
+          </div>
+        </div>
+        ${hasR2 ? `<div class="ip-section">
+          <div class="ip-section-title">Confidence Breakdown</div>
+          <div class="ip-section-desc">How reliable is this gamma wall reading?</div>
+          <div class="ip-grid cols-4">
+            ${conf(a.confidence_score, 'Overall')}
+            ${conf(a.oi_confidence, 'Open Interest')}
+            ${conf(a.delta_confidence, 'Delta')}
+            ${conf(a.volume_confidence, 'Volume')}
+          </div>
+        </div>` : ''}
+        ${iv.atmIv ? `<div class="ip-section">
+          <div class="ip-section-title">IV Data</div>
+          <div class="ip-section-desc">Implied volatility reflects how expensive options are right now.</div>
+          <div class="ip-grid">
+            <div class="ip-cell"><span class="ip-cell-lbl">ATM IV</span><span class="ip-cell-val gold">${iv.atmIv.toFixed(1)}%</span></div>
+            <div class="ip-cell"><span class="ip-cell-lbl">IV Level</span><span class="ip-cell-val">${iv.ivLevel || '—'}</span></div>
+            <div class="ip-cell"><span class="ip-cell-lbl">Contracts Analyzed</span><span class="ip-cell-val">${a.contracts_analyzed ?? '—'}</span></div>
+          </div>
+        </div>` : ''}
+        <div class="ip-section">
+          <div class="ip-section-title">Gamma Exposure by Strike</div>
+          <div class="ip-section-desc">Each bar shows gamma exposure (GEX) at a strike. Green = call-dominant (dealers sell when price rises), Red = put-dominant (dealers buy when price falls).</div>
+          <canvas id="gamma-canvas" style="width:100%;height:240px;display:block"></canvas>
+          <div style="display:flex;gap:16px;margin-top:8px;justify-content:center">
+            <span style="font-size:10px;color:#2d7d4f">&#9632; Call-dominant</span>
+            <span style="font-size:10px;color:#c0392b">&#9632; Put-dominant</span>
+            <span style="font-size:10px;color:#C9A96E">&#9482; Spot</span>
+            <span style="font-size:10px;color:#0d6e56">| Put wall</span>
+            <span style="font-size:10px;color:#b03030">| Call wall</span>
+          </div>
+        </div>
+        ${topStrikes.length ? `<div class="ip-section">
+          <div class="ip-section-title">Top Gamma Strikes</div>
+          ${topStrikes.map(s => `<div class="ip-strike-row">
+            <span class="ip-strike-lbl">$${s.strike}</span>
+            <div class="ip-strike-bar"><div class="ip-strike-fill" style="width:${Math.round(Math.abs(s.gamma_exposure)/maxGex*100)}%"></div></div>
+            <span style="font-size:10px;color:#666">C:${(s.call_oi/1000).toFixed(0)}k</span>
+            <span style="font-size:10px;color:#666">P:${(s.put_oi/1000).toFixed(0)}k</span>
+          </div>`).join('')}
+        </div>` : ''}
+        <div class="wall-summary" style="margin-top:8px">
+          ${ga.putWallStrike ? '<span class="wall-tag put">Put Wall: $' + ga.putWallStrike + '</span>' : ''}
+          ${ga.callWallStrike ? '<span class="wall-tag call">Call Wall: $' + ga.callWallStrike + '</span>' : ''}
+          <span class="wall-tag band">${ga.spotInsideBand ? 'Spot Inside Band' : 'Spot Outside Band'}</span>
+        </div>
+      `;
+
+      // Draw GEX chart
+      requestAnimationFrame(() => {
+        const strikes = hasR2 ? [...(a.topStrikes || [])].sort((a, b) => a.strike - b.strike) : null;
+        if (strikes && strikes.length) {
+          drawGexChart(strikes, a, spot);
+        } else if (ga.oiByStrike && ga.oiByStrike.length) {
+          drawOIChart(ga, spot);
+        }
+      });
+    }
+
+    function drawGexChart(strikes, analysis, spot) {
+      const canvas = document.getElementById('gamma-canvas');
+      if (!canvas || !strikes.length) return;
+      const DPR = window.devicePixelRatio || 1;
+      const W = canvas.offsetWidth || 600;
+      const H = 240;
+      canvas.width = W * DPR; canvas.height = H * DPR;
+      canvas.style.height = H + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.scale(DPR, DPR);
+      ctx.clearRect(0, 0, W, H);
+
+      const PAD_L = 50, PAD_R = 16, PAD_T = 16, PAD_B = 36;
+      const chartW = W - PAD_L - PAD_R;
+      const chartH = H - PAD_T - PAD_B;
+      const maxGex = Math.max(...strikes.map(s => Math.abs(s.gamma_exposure || 0)), 1);
+      const minStrike = strikes[0].strike;
+      const maxStrike = strikes[strikes.length - 1].strike;
+      const strikeRange = maxStrike - minStrike || 1;
+      const barW = Math.max(4, Math.min(18, (chartW / strikes.length) * 0.7));
+      const xPos = s => PAD_L + ((s - minStrike) / strikeRange) * chartW;
+
+      // Grid
+      ctx.strokeStyle = '#f0ece0'; ctx.lineWidth = 0.5;
+      for (let i = 0; i <= 4; i++) {
+        const y = PAD_T + (chartH / 4) * i;
+        ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(W - PAD_R, y); ctx.stroke();
+      }
+      // Y labels
+      ctx.fillStyle = '#999'; ctx.font = '500 9px Inter, sans-serif'; ctx.textAlign = 'right';
+      for (let i = 0; i <= 4; i++) {
+        const y = PAD_T + (chartH / 4) * i;
+        const val = maxGex * (1 - i / 4);
+        ctx.fillText(val >= 1e6 ? (val/1e6).toFixed(0)+'M' : val >= 1e3 ? (val/1e3).toFixed(0)+'K' : val.toFixed(0), PAD_L - 6, y + 3);
+      }
+      // Baseline
+      ctx.strokeStyle = '#d9d4c0'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(PAD_L, PAD_T + chartH); ctx.lineTo(W - PAD_R, PAD_T + chartH); ctx.stroke();
+
+      // Bars
+      strikes.forEach(s => {
+        const x = xPos(s.strike);
+        const barH = (Math.abs(s.gamma_exposure || 0) / maxGex) * chartH;
+        ctx.fillStyle = (s.call_oi || 0) >= (s.put_oi || 0) ? 'rgba(45,125,79,0.75)' : 'rgba(192,57,43,0.75)';
+        ctx.fillRect(x - barW/2, PAD_T + chartH - barH, barW, barH);
+        ctx.fillStyle = '#666'; ctx.font = '600 9px Inter, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('$' + s.strike, x, PAD_T + chartH + 14);
+      });
+
+      // Put wall
+      if (analysis.put_wall) {
+        const x = xPos(analysis.put_wall);
+        if (x >= PAD_L && x <= W - PAD_R) {
+          ctx.strokeStyle = '#0d6e56'; ctx.lineWidth = 2; ctx.setLineDash([]);
+          ctx.beginPath(); ctx.moveTo(x, PAD_T); ctx.lineTo(x, PAD_T + chartH); ctx.stroke();
+          ctx.fillStyle = '#0d6e56'; ctx.font = '700 10px Inter'; ctx.textAlign = 'center';
+          ctx.fillText('PUT $' + analysis.put_wall, x, PAD_T + chartH + 28);
+        }
+      }
+      // Call wall
+      if (analysis.call_wall) {
+        const x = xPos(analysis.call_wall);
+        if (x >= PAD_L && x <= W - PAD_R) {
+          ctx.strokeStyle = '#b03030'; ctx.lineWidth = 2; ctx.setLineDash([]);
+          ctx.beginPath(); ctx.moveTo(x, PAD_T); ctx.lineTo(x, PAD_T + chartH); ctx.stroke();
+          ctx.fillStyle = '#b03030'; ctx.font = '700 10px Inter'; ctx.textAlign = 'center';
+          ctx.fillText('CALL $' + analysis.call_wall, x, PAD_T + chartH + 28);
+        }
+      }
+      // Spot
+      if (spot && spot >= minStrike && spot <= maxStrike) {
+        const x = xPos(spot);
+        ctx.strokeStyle = '#C9A96E'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+        ctx.beginPath(); ctx.moveTo(x, PAD_T); ctx.lineTo(x, PAD_T + chartH); ctx.stroke();
+        ctx.setLineDash([]); ctx.fillStyle = '#C9A96E'; ctx.font = '700 10px Inter'; ctx.textAlign = 'center';
+        ctx.fillText('$' + spot.toFixed(0), x, PAD_T - 4);
+      }
+    }
+
+    function drawOIChart(ga, spot) {
+      // Fallback: simple OI chart when R2 data unavailable
+      const canvas = document.getElementById('gamma-canvas');
       if (!canvas) return;
-      var dpr = window.devicePixelRatio || 1;
-      var rect = canvas.parentElement.getBoundingClientRect();
-      var W = rect.width, H = 240;
-      canvas.width = W * dpr; canvas.height = H * dpr;
-      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-      var ctx = canvas.getContext('2d');
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      var data = ga.oiByStrike;
-      var n = data.length;
-      if (n === 0) return;
-
-      var maxOI = 1;
-      for (var i = 0; i < n; i++) { maxOI = Math.max(maxOI, data[i].callOI, data[i].putOI); }
-
-      var wallStrikes = {};
-      if (ga.walls) ga.walls.forEach(function(w) { wallStrikes[w.strike] = true; });
-
-      var ml = 10, mr = 10, mt = 20, mb = 40;
-      var cw = W - ml - mr, ch = H - mt - mb;
-      var barW = Math.max(2, Math.min(12, (cw / n) * 0.35));
-      var gap = cw / n;
-
-      // Find spot index for centering
-      var spotIdx = 0, spotDist = Infinity;
-      for (var j = 0; j < n; j++) {
-        var d = Math.abs(data[j].strike - spot);
-        if (d < spotDist) { spotDist = d; spotIdx = j; }
-      }
-
-      // Draw bars — put bars go down from center, call bars go up
-      var centerY = mt + ch * 0.5;
-
-      // Center line
-      ctx.beginPath();
-      ctx.moveTo(ml, centerY); ctx.lineTo(W - mr, centerY);
-      ctx.strokeStyle = 'rgba(15,61,46,0.15)'; ctx.lineWidth = 1;
-      ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]);
-
-      // Labels
-      ctx.fillStyle = '#ef4444'; ctx.font = 'bold 9px system-ui';
-      ctx.fillText('Put OI', ml + 2, centerY + 12);
-      ctx.fillStyle = '#10b981';
-      ctx.textAlign = 'right';
-      ctx.fillText('Call OI', W - mr - 2, centerY - 5);
-      ctx.textAlign = 'left';
-
-      for (var k = 0; k < n; k++) {
-        var s = data[k];
-        var x = ml + gap * k + gap * 0.5;
-        var putH = (s.putOI / maxOI) * (ch * 0.45);
-        var callH = (s.callOI / maxOI) * (ch * 0.45);
-        var isWall = wallStrikes[s.strike];
-        var isSpot = Math.abs(s.strike - spot) < (data.length > 20 ? 2 : 1);
-
-        // Put bar (below center)
-        ctx.fillStyle = isWall ? 'rgba(239,68,68,0.7)' : 'rgba(239,68,68,0.35)';
-        ctx.fillRect(x - barW * 0.5, centerY + 1, barW, putH);
-
-        // Call bar (above center)
-        ctx.fillStyle = isWall ? 'rgba(16,185,129,0.7)' : 'rgba(16,185,129,0.35)';
-        ctx.fillRect(x - barW * 0.5, centerY - callH - 1, barW, callH);
-
-        // Strike labels — show every Nth + walls + spot
-        var showLabel = isWall || isSpot || (n <= 25) || (k % Math.ceil(n / 15) === 0);
-        if (showLabel) {
-          ctx.save();
-          ctx.translate(x, H - mb + 4);
-          ctx.rotate(-Math.PI / 4);
-          ctx.fillStyle = isSpot ? '#0d6e56' : isWall ? '#e5b449' : '#6b6b60';
-          ctx.font = (isSpot || isWall ? 'bold ' : '') + '8px system-ui';
-          ctx.textAlign = 'right';
-          ctx.fillText('$' + s.strike, 0, 0);
-          ctx.restore();
-        }
-
-        // Spot marker line
-        if (isSpot) {
-          ctx.beginPath();
-          ctx.moveTo(x, mt); ctx.lineTo(x, centerY);
-          ctx.strokeStyle = 'rgba(13,110,86,0.4)'; ctx.lineWidth = 1;
-          ctx.setLineDash([2, 2]); ctx.stroke(); ctx.setLineDash([]);
-          ctx.fillStyle = '#0d6e56'; ctx.font = 'bold 10px system-ui'; ctx.textAlign = 'center';
-          ctx.fillText('$' + spot.toFixed(0), x, mt - 4);
-          ctx.textAlign = 'left';
-        }
-      }
+      const data = ga.oiByStrike; const n = data.length; if (!n) return;
+      const DPR = window.devicePixelRatio || 1;
+      const W = canvas.offsetWidth || 600, H = 240;
+      canvas.width = W * DPR; canvas.height = H * DPR;
+      canvas.style.height = H + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.scale(DPR, DPR);
+      let maxOI = 1;
+      data.forEach(s => { maxOI = Math.max(maxOI, s.callOI, s.putOI); });
+      const ml=10,mr=10,mt=20,mb=40, cw=W-ml-mr, ch=H-mt-mb;
+      const barW = Math.max(2, Math.min(12, (cw/n)*0.35)), gap = cw/n, centerY = mt + ch*0.5;
+      ctx.beginPath(); ctx.moveTo(ml, centerY); ctx.lineTo(W-mr, centerY);
+      ctx.strokeStyle='rgba(15,61,46,0.15)'; ctx.lineWidth=1; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+      data.forEach((s, k) => {
+        const x = ml + gap*k + gap*0.5;
+        const putH = (s.putOI/maxOI)*(ch*0.45), callH = (s.callOI/maxOI)*(ch*0.45);
+        ctx.fillStyle = 'rgba(239,68,68,0.45)'; ctx.fillRect(x-barW/2, centerY+1, barW, putH);
+        ctx.fillStyle = 'rgba(16,185,129,0.45)'; ctx.fillRect(x-barW/2, centerY-callH-1, barW, callH);
+      });
     }
 
     // Strategy type selection
