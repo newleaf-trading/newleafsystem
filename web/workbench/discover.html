@@ -56,17 +56,13 @@
 
     /* Main container */
     .main { max-width: 1100px; margin: 0 auto; padding: 16px 24px 80px; }
-    .stage-1-layout { display: grid; grid-template-columns: 200px 1fr; gap: 16px; }
-    .stage-1-sidebar { position: sticky; top: 60px; align-self: start; max-width: 200px; }
-    .stage-1-sidebar .panel { padding: 10px; }
-    .sidebar-title { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 8px; }
-    .sidebar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-    .strat-sidebar-card.strat-type-card { padding: 6px 4px; }
-    .strat-sidebar-card .stc-icon { height: 24px; margin-bottom: 2px; }
-    .strat-sidebar-card .stc-icon svg { height: 24px; width: 100%; }
-    .strat-sidebar-card .stc-name { font-size: 10px; font-weight: 600; line-height: 1.2; }
-    .strat-sidebar-card .stc-desc { font-size: 8px; color: var(--ink-muted); margin-top: 1px; }
-    @media (max-width: 768px) { .stage-1-layout { grid-template-columns: 1fr; } .stage-1-sidebar { position: static; max-width: none; } .sidebar-grid { grid-template-columns: repeat(4, 1fr); } }
+    .strat-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+    .strat-strip-label { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); margin-right: 4px; white-space: nowrap; }
+    .strat-chip { display: flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--white); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .strat-chip:hover { border-color: var(--teal); background: rgba(13,110,86,0.03); }
+    .strat-chip.selected { border-color: var(--teal); background: var(--teal-bg); box-shadow: 0 0 8px rgba(13,110,86,0.1); }
+    .strat-chip svg { width: 32px; height: 14px; flex-shrink: 0; }
+    .strat-chip-name { font-size: 11px; font-weight: 600; }
     .panel { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(15,61,46,.04); }
     .panel-title { font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); margin-bottom: 16px; }
 
@@ -423,90 +419,74 @@
 
     <!-- ===== STAGE 1: Snapshot ===== -->
     <div class="stage" id="stage-1">
-      <div class="stage-1-layout">
-        <!-- Left sidebar: Strategy selection -->
-        <div class="stage-1-sidebar">
-          <div class="panel" style="padding:14px">
-            <div class="sidebar-title">Strategy Type</div>
-            <div class="sidebar-grid">
-              <div class="strat-sidebar-card strat-type-card" data-strat="iron_condor">
-                <div class="stc-icon"><svg viewBox="0 0 80 32"><polyline points="0,28 15,28 25,4 55,4 65,28 80,28" fill="none" stroke="var(--pass-text)" stroke-width="2"/><line x1="0" y1="16" x2="80" y2="16" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/></svg></div>
-                <div class="stc-name">Iron Condor</div>
-                <div class="stc-desc">Neutral &middot; range</div>
-              </div>
-              <div class="strat-sidebar-card strat-type-card" data-strat="iron_butterfly">
-                <div class="stc-icon"><svg viewBox="0 0 80 32"><polyline points="0,28 25,28 40,4 55,28 80,28" fill="none" stroke="var(--pass-text)" stroke-width="2"/><line x1="0" y1="16" x2="80" y2="16" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/></svg></div>
-                <div class="stc-name">Iron Butterfly</div>
-                <div class="stc-desc">Neutral &middot; high credit</div>
-              </div>
-              <div class="strat-sidebar-card strat-type-card" data-strat="vertical_spread">
-                <div class="stc-icon"><svg viewBox="0 0 80 32"><polyline points="0,28 30,28 50,4 80,4" fill="none" stroke="var(--accent)" stroke-width="2"/><line x1="0" y1="16" x2="80" y2="16" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/></svg></div>
-                <div class="stc-name">Bull Put Spread</div>
-                <div class="stc-desc">Bullish &middot; credit</div>
-              </div>
-              <div class="strat-sidebar-card strat-type-card" data-strat="bear_call_spread">
-                <div class="stc-icon"><svg viewBox="0 0 80 32"><polyline points="0,4 30,4 50,28 80,28" fill="none" stroke="var(--fail-text)" stroke-width="2"/><line x1="0" y1="16" x2="80" y2="16" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/></svg></div>
-                <div class="stc-name">Bear Call Spread</div>
-                <div class="stc-desc">Bearish &middot; credit</div>
-              </div>
-              <div class="strat-sidebar-card strat-type-card" data-strat="short_strangle">
-                <div class="stc-icon"><svg viewBox="0 0 80 32"><polyline points="0,28 20,28 30,4 50,4 60,28 80,28" fill="none" stroke="var(--concern-text)" stroke-width="2"/><line x1="0" y1="16" x2="80" y2="16" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/></svg></div>
-                <div class="stc-name">Strangle</div>
-                <div class="stc-desc">Neutral &middot; wide</div>
-              </div>
-              <div class="strat-sidebar-card strat-type-card" data-strat="broken_wing_butterfly">
-                <div class="stc-icon"><svg viewBox="0 0 80 32"><polyline points="0,22 20,28 35,4 50,28 65,22 80,22" fill="none" stroke="#a78bfa" stroke-width="2"/><line x1="0" y1="16" x2="80" y2="16" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/></svg></div>
-                <div class="stc-name">BWB</div>
-                <div class="stc-desc">Asymmetric</div>
-              </div>
-              <div class="strat-sidebar-card strat-type-card" data-strat="calendar">
-                <div class="stc-icon"><svg viewBox="0 0 80 32"><path d="M0,28 Q20,28 30,8 Q40,-4 50,8 Q60,28 80,28" fill="none" stroke="var(--info-text)" stroke-width="2"/><line x1="0" y1="16" x2="80" y2="16" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/></svg></div>
-                <div class="stc-name">Calendar</div>
-                <div class="stc-desc">Time decay</div>
-              </div>
-              <div class="strat-sidebar-card strat-type-card" data-strat="diagonal">
-                <div class="stc-icon"><svg viewBox="0 0 80 32"><path d="M0,28 Q25,28 35,8 Q45,-2 55,10 Q70,28 80,22" fill="none" stroke="#f59e0b" stroke-width="2"/><line x1="0" y1="16" x2="80" y2="16" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2"/></svg></div>
-                <div class="stc-name">Diagonal</div>
-                <div class="stc-desc">Directional</div>
-              </div>
-            </div>
-            <div style="margin-top:12px">
-              <button class="btn-primary" id="find-strategies-btn" disabled onclick="goToStage(2)" style="white-space:nowrap;width:100%;font-size:12px">AI Find strategies &#8594;</button>
-            </div>
-            <div style="margin-top:8px">
-              <button class="btn-primary" id="go-drill-btn" style="width:100%;font-size:12px">Build trade &#8594;</button>
-            </div>
-            <div class="cost-hint" id="stage1-cost" style="margin-top:8px;text-align:center;font-size:10px">AI: ~$0.008 &middot; 1 model call</div>
+      <div class="panel">
+        <div class="panel-title">Ticker Snapshot</div>
+
+        <!-- Strategy strip -->
+        <div class="strat-strip">
+          <span class="strat-strip-label">Strategy:</span>
+          <div class="strat-chip strat-type-card" data-strat="iron_condor">
+            <svg viewBox="0 0 80 32"><polyline points="0,28 15,28 25,4 55,4 65,28 80,28" fill="none" stroke="var(--pass-text)" stroke-width="2.5"/></svg>
+            <span class="strat-chip-name">Iron Condor</span>
+          </div>
+          <div class="strat-chip strat-type-card" data-strat="iron_butterfly">
+            <svg viewBox="0 0 80 32"><polyline points="0,28 25,28 40,4 55,28 80,28" fill="none" stroke="var(--pass-text)" stroke-width="2.5"/></svg>
+            <span class="strat-chip-name">Iron Butterfly</span>
+          </div>
+          <div class="strat-chip strat-type-card" data-strat="vertical_spread">
+            <svg viewBox="0 0 80 32"><polyline points="0,28 30,28 50,4 80,4" fill="none" stroke="var(--accent)" stroke-width="2.5"/></svg>
+            <span class="strat-chip-name">Bull Put</span>
+          </div>
+          <div class="strat-chip strat-type-card" data-strat="bear_call_spread">
+            <svg viewBox="0 0 80 32"><polyline points="0,4 30,4 50,28 80,28" fill="none" stroke="var(--fail-text)" stroke-width="2.5"/></svg>
+            <span class="strat-chip-name">Bear Call</span>
+          </div>
+          <div class="strat-chip strat-type-card" data-strat="short_strangle">
+            <svg viewBox="0 0 80 32"><polyline points="0,28 20,28 30,4 50,4 60,28 80,28" fill="none" stroke="var(--concern-text)" stroke-width="2.5"/></svg>
+            <span class="strat-chip-name">Strangle</span>
+          </div>
+          <div class="strat-chip strat-type-card" data-strat="broken_wing_butterfly">
+            <svg viewBox="0 0 80 32"><polyline points="0,22 20,28 35,4 50,28 65,22 80,22" fill="none" stroke="#a78bfa" stroke-width="2.5"/></svg>
+            <span class="strat-chip-name">BWB</span>
+          </div>
+          <div class="strat-chip strat-type-card" data-strat="calendar">
+            <svg viewBox="0 0 80 32"><path d="M0,28 Q20,28 30,8 Q40,-4 50,8 Q60,28 80,28" fill="none" stroke="var(--info-text)" stroke-width="2.5"/></svg>
+            <span class="strat-chip-name">Calendar</span>
+          </div>
+          <div class="strat-chip strat-type-card" data-strat="diagonal">
+            <svg viewBox="0 0 80 32"><path d="M0,28 Q25,28 35,8 Q45,-2 55,10 Q70,28 80,22" fill="none" stroke="#f59e0b" stroke-width="2.5"/></svg>
+            <span class="strat-chip-name">Diagonal</span>
           </div>
         </div>
 
-        <!-- Right: Snapshot + Gamma -->
-        <div style="min-width:0">
-          <div class="panel">
-            <div class="panel-title">Ticker Snapshot</div>
+        <div class="demo-toggles" id="demo-toggles" style="display:none">
+          <button class="demo-toggle active" data-ticker="SHOP" onclick="loadDemoTicker('SHOP')">SHOP</button>
+          <button class="demo-toggle" data-ticker="NET" onclick="loadDemoTicker('NET')">NET</button>
+        </div>
 
-            <div class="demo-toggles" id="demo-toggles" style="display:none">
-              <button class="demo-toggle active" data-ticker="SHOP" onclick="loadDemoTicker('SHOP')">SHOP</button>
-              <button class="demo-toggle" data-ticker="NET" onclick="loadDemoTicker('NET')">NET</button>
-            </div>
+        <label>Ticker</label>
+        <div class="inline-row" style="margin-bottom:12px">
+          <input type="text" id="ticker-input" placeholder="AAPL" style="text-transform:uppercase;flex:1" />
+          <button class="btn-sm btn-primary" id="load-btn" onclick="handleLoad()">Load</button>
+        </div>
 
-            <label>Ticker</label>
-            <div class="inline-row" style="margin-bottom:12px">
-              <input type="text" id="ticker-input" placeholder="AAPL" style="text-transform:uppercase;flex:1" />
-              <button class="btn-sm btn-primary" id="load-btn" onclick="handleLoad()">Load</button>
-            </div>
+        <div id="snapshot-content" class="hidden">
+          <div class="metric-strip" id="metric-strip"></div>
+          <div class="ai-read-card" id="ai-read-card"></div>
 
-            <div id="snapshot-content" class="hidden">
-              <div class="metric-strip" id="metric-strip"></div>
-              <div class="ai-read-card" id="ai-read-card"></div>
+          <label>Expiration</label>
+          <select id="expiry-select"><option value="">Select expiry...</option></select>
 
-              <label>Expiration</label>
-              <select id="expiry-select"><option value="">Select expiry...</option></select>
+          <div class="gamma-section hidden" id="gamma-section">
+            <div class="gamma-title">Gamma Wall Analysis</div>
+            <div id="gamma-chart-content"></div>
+          </div>
 
-              <div class="gamma-section hidden" id="gamma-section">
-                <div class="gamma-title">Gamma Wall Analysis</div>
-                <div id="gamma-chart-content"></div>
-              </div>
+          <div class="stage-footer">
+            <span class="cost-hint" id="stage1-cost">AI: ~$0.008 &middot; 1 model call &nbsp;|&nbsp; Manual: free</span>
+            <div style="display:flex;gap:8px">
+              <button class="btn-primary" id="find-strategies-btn" disabled onclick="goToStage(2)" style="white-space:nowrap">AI Find strategies &#8594;</button>
+              <button class="btn-primary" id="go-drill-btn">Build trade &#8594;</button>
             </div>
           </div>
         </div>
