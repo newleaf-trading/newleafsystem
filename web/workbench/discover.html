@@ -2149,11 +2149,14 @@
           addCost(vData.cost);
           // Track with model + cost details
           const usedModels = (vData.cost?.calls || []).map(c => c.model).filter(Boolean);
-          if (!isDemo && window.trackUsage) window.trackUsage('verify', state.ticker, {
-            models: [...new Set(usedModels)],
-            cost: vData.cost?.totalCost || 0,
-            tokens: state.totalTokens,
-          }).catch(function(){});
+          if (!isDemo && window.trackUsage) {
+            console.log('[Usage] Tracking verify:', state.ticker, 'models:', usedModels, 'cost:', vData.cost?.totalCost);
+            window.trackUsage('verify', state.ticker, {
+              models: usedModels.length ? [...new Set(usedModels)] : ['pipeline'],
+              cost: vData.cost?.totalCost || state.totalCost || 0.05,
+              tokens: state.totalTokens || 10000,
+            }).catch(e => console.error('[Usage] Track failed:', e));
+          }
         } catch (err) {
           state.verdict = { verdictWord: 'Error', confidence: 0, verdictClass: 'fail', summary: 'Verification failed: ' + err.message };
         }
