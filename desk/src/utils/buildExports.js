@@ -92,64 +92,52 @@ export function buildHeyGenScript(pick) {
 }
 
 /**
- * Build PDF report data JSON from pick data.
- * This is the flattened format expected by generate-report.py (v3 template).
+ * Build enriched pick JSON — the full format used by the PDF pipeline
+ * and matching the structure at output/{week}/enriched/{SYM}-iron-condor.json
  */
 export function buildPdfData(pick) {
-  const { tile, analysis } = pick;
+  const { tileId, tile, analysis } = pick;
   const symbol = tile.symbol || '';
-  const strategy = tile.strategy || '';
-  const spot = tile.underlyingPrice || tile.currentPrice || tile.price || 0;
-  const legs = tile.legs || [];
+  const sentiment = tile.sentiment || analysis?._sentiment || null;
   const rationale = analysis?.strategyRationale;
   const ti = analysis?.technicalIndicators;
-  const risk = analysis?.riskAnalysis;
-  const theta = analysis?.thetaDecaySchedule;
-  const sentiment = tile.sentiment || analysis?._sentiment || null;
-
-  const COMPANY_NAMES = {
-    AAPL: 'Apple', MSFT: 'Microsoft', AMZN: 'Amazon', NVDA: 'Nvidia',
-    GOOG: 'Alphabet', META: 'Meta', TSLA: 'Tesla', BABA: 'Alibaba',
-    BIDU: 'Baidu', GLD: 'SPDR Gold', BA: 'Boeing', CRM: 'Salesforce',
-    UBER: 'Uber', ADBE: 'Adobe', AMD: 'AMD', NFLX: 'Netflix',
-    JPM: 'JPMorgan', GS: 'Goldman Sachs', COIN: 'Coinbase',
-  };
-
-  const sortedLegs = [...legs].sort((a, b) => a.strike - b.strike);
-  const puts = sortedLegs.filter(l => l.type === 'put');
-  const calls = sortedLegs.filter(l => l.type === 'call');
 
   return {
-    _format: 'pdf-report-data-v3',
-    _generatedAt: new Date().toISOString(),
-    SYMBOL: symbol,
-    COMPANY_NAME: COMPANY_NAMES[symbol] || symbol,
-    STRATEGY_NAME: strategy,
-    CURRENT_PRICE: `$${spot.toFixed(2)}`,
-    EXPIRATION_DATE: tile.expiry || '',
-    DAYS_TO_EXPIRY: tile.dte || 0,
-    REPORT_DATE: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-    REPORT_TIME: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }),
-    NET_CREDIT: (tile.netCredit || 0).toFixed(2),
-    MAX_PROFIT: `$${(tile.maxProfit || 0).toFixed(0)}`,
-    MAX_LOSS: `$${(tile.maxLoss || 0).toFixed(0)}`,
-    MAX_PROFIT_DESC: `per contract ($${(tile.netCredit || 0).toFixed(2)} credit)`,
-    MAX_LOSS_DESC: 'per contract (defined risk)',
-    WIN_RATE: tile.oddsOfProfit || 0,
-    WIN_RATE_DESC: 'probability of profit',
-    RISK_REWARD: `${(tile.rewardRisk || 0).toFixed(2)}:1`,
-    RISK_REWARD_DESC: 'premium collected vs. max risk',
-    LONG_PUT_STRIKE: puts[0]?.strike || '',
-    SHORT_PUT_STRIKE: puts[1]?.strike || puts[0]?.strike || '',
-    SHORT_CALL_STRIKE: calls[0]?.strike || '',
-    LONG_CALL_STRIKE: calls[1]?.strike || calls[0]?.strike || '',
-    TRADE_CONFIG: `${symbol} ${strategy} — ${legs.map(l => `${l.action === 'sell' ? 'Sell' : 'Buy'} $${l.strike}${l.type[0].toUpperCase()}`).join(' / ')} — Exp. ${tile.expiry || 'N/A'}`,
-    THESIS_POINTS: rationale ? `<li>${rationale.whyThisStrategy}</li><li>${rationale.whyTheseStrikes || ''}</li><li>${rationale.whyThisExpiry || ''}</li>` : '',
-    MARKET_ENVIRONMENT: rationale?.whyThisStrategy || '',
-    RSI_VALUE: ti?.rsi?.value || 'N/A',
-    IV_VALUE: ti?.impliedVolatility?.currentIV ? `${ti.impliedVolatility.currentIV}%` : 'N/A',
-    PUT_GAMMA_WALL: tile.gammaData?.put_wall ? `$${tile.gammaData.put_wall}` : 'N/A',
-    CALL_GAMMA_WALL: tile.gammaData?.call_wall ? `$${tile.gammaData.call_wall}` : 'N/A',
-    GAMMA_WALL_EXPLANATION: ti?.supportResistance?.support?.[0]?.description || 'Gamma walls provide dealer hedging support.',
+    tileId,
+    symbol,
+    companyName: tile.companyName || symbol,
+    strategy: tile.strategy || '',
+    direction: tile.direction || 'neutral',
+    spotPrice: tile.underlyingPrice || tile.currentPrice || tile.price || 0,
+    expiry: tile.expiry || tile.expirationDate || '',
+    dte: tile.dte || tile.daysToExpiry || 0,
+    legs: tile.legs || [],
+    greeks: tile.greeks || {},
+    gammaData: tile.gammaData || {},
+    maxProfit: tile.maxProfit || 0,
+    maxLoss: tile.maxLoss || 0,
+    netCredit: tile.netCredit || 0,
+    rewardRisk: tile.rewardRisk || 0,
+    oddsOfProfit: tile.oddsOfProfit || tile.probOfProfit || 0,
+    thesis: rationale?.whyThisStrategy || '',
+    keyLevels: {
+      putWall: tile.gammaData?.put_wall || null,
+      callWall: tile.gammaData?.call_wall || null,
+      support: (ti?.supportResistance?.support || []).map(s => s.level),
+      resistance: (ti?.supportResistance?.resistance || []).map(r => r.level),
+    },
+    ivContext: {
+      currentIV: ti?.impliedVolatility?.currentIV || null,
+      ivRank: ti?.impliedVolatility?.ivRank || null,
+      signal: ti?.impliedVolatility?.description || null,
+    },
+    riskSummary: analysis?.riskAnalysis?.maxPainScenario || '',
+    exitPlan: {
+      profitTarget: analysis?.thetaDecaySchedule?.earlyCloseRecommendation || '',
+      managementPlan: analysis?.riskAnalysis?.managementPlan || '',
+    },
+    sentiment: sentiment || null,
+    analysis: analysis || null,
+    generatedAt: new Date().toISOString(),
   };
 }
