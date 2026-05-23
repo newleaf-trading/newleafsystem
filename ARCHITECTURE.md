@@ -8,19 +8,24 @@ This file describes the structure of the `newleafsystem` monorepo and the rules 
 
 ## Repo structure
 
-This is a **monorepo** at `/Users/manish/newleafsystem/`. Four subfolders, each is its own logical app:
+This is a **monorepo** at `/Users/manish/newleafsystem/`. Five main folders:
 
 ```
 newleafsystem/
 ├── web/                       — React web app (Picks site, Invest app, Workbench)
-├── api/                       — LLM Router + endpoints (TypeScript, Express)
-├── pipeline/                  — Yahoo OI service + cron schedulers
-└── generaterecommendations/   — Pick generation + tile creation
+├── api/                       — LLM Router + endpoints (TypeScript, Fastify)
+├── pipeline/                  — Cron schedulers + data pipeline (Node.js)
+├── generaterecommendations/   — Pick generation + tile creation
+├── services/
+│   └── yahoo-oi/              — Yahoo OI Service (Python Flask, deployed to Cloud Run)
+├── shared/
+│   └── indicators/            — Pure-math technical indicators (JS, used by api/)
+└── docs/                      — Architecture docs, testing guide
 ```
 
-These four subfolders are **logically separate apps** that share a single git history. They are NOT npm workspaces. They are NOT a Turborepo. Each subfolder has its own `package.json`, its own dependencies, its own `.env` files, its own runtime concerns.
+The four app folders (`web/`, `api/`, `pipeline/`, `generaterecommendations/`) are **logically separate apps** that share a single git history. They are NOT npm workspaces. They are NOT a Turborepo. Each has its own `package.json`, dependencies, `.env` files, and runtime.
 
-Treat each subfolder as if it were its own repo, with the convention that all four share one git remote and one commit history.
+`services/` contains independently deployable microservices. `shared/` contains libraries imported by other folders.
 
 ---
 
@@ -56,20 +61,35 @@ The AI gateway. TypeScript + Express. Deploys as a Firebase function serving `cl
 
 ### `pipeline/`
 
-The always-on data and scheduling layer.
+The scheduling and data pipeline layer. **Pure orchestration — no services.**
 
 **What lives here:**
-- **Yahoo OI service** (`yahoo-svc/`) — Python service serving Open Interest data from `yfinance` on `localhost:5300`. The only real OI source in the ecosystem.
 - **Schedulers** — cron-equivalent jobs run by a macOS LaunchAgent (`com.newleaf.pipeline`), implemented via `node-cron` in `index.js`. Includes the 15-minute fast-pipeline scan, OI enrichment, daily catchup, health checks.
+- **Data pipeline** (`newleaf-pipeline.js`) — scans watchlist, fetches OI from Yahoo OI Service (Cloud Run), enriches with gamma analysis, uploads to R2.
 - **Watchlist and metadata** — `watchlist.json`, `company-metadata.json`.
 
 **Rules for this subfolder:**
+- **No services.** Pipeline is a scheduler — it calls URLs, not runs servers. The Yahoo OI Service lives in `services/yahoo-oi/`.
 - **No direct LLM SDK imports.** If a scheduled job needs LLM work, it calls `api/` endpoints.
-- **No direct calls to the Claude CLI** (`spawnSync('claude', ...)`). Legacy pattern; route through `api/`.
-- **The Yahoo OI service is load-bearing.** Other subfolders' tools depend on its response shape. Coordinate changes carefully.
 - **Idempotency.** Scheduled jobs may run twice (retry, network flake). Every job should be safe to re-run.
 
 **Note on current state:** the active production LaunchAgent currently points at `/Users/manish/dev/newleaf-pipeline/` (legacy path). Cutting it over to `/Users/manish/newleafsystem/pipeline/` is an open task.
+
+### `services/yahoo-oi/`
+
+Python Flask microservice serving Open Interest data from yfinance. Deployed independently to Cloud Run.
+
+**Endpoints:**
+- `GET /api/options/{symbol}` — available expiry dates + current price
+- `GET /api/options/{symbol}/{expiry}` — full chain with real OI, volume per strike
+
+**Access:**
+- **Production:** `https://yahoo-options-svc-m2cty2vxuq-uc.a.run.app`
+- **Development:** `http://localhost:5300` (run `python3 option_api.py`)
+
+**Why Python?** Yahoo Finance blocks direct Node.js calls. This Python wrapper (yfinance) is the only reliable OI data source.
+
+**Consumed by:** `api/src/tools/nasdaq-oi.ts` (primary OI source, with Nasdaq.com scraping as fallback), `pipeline/newleaf-pipeline.js` (direct HTTP calls to Cloud Run URL).
 
 ### `generaterecommendations/`
 
@@ -153,7 +173,7 @@ Marginal verdicts go to a review queue. **There is no analyst override path.** T
 
 ### Data sources
 
-- **Open Interest:** Yahoo Finance via `pipeline/yahoo-svc/`. Two modes: local at `localhost:5300`, or **Cloud Run** at `https://yahoo-options-svc-m2cty2vxuq-uc.a.run.app`. Single source of truth for OI data.
+- **Open Interest:** Yahoo OI Service at `services/yahoo-oi/`, deployed to Cloud Run (`https://yahoo-options-svc-m2cty2vxuq-uc.a.run.app`). `api/src/tools/nasdaq-oi.ts` uses Cloud Run as primary source, falls back to Nasdaq.com scraping if unavailable.
 - **Spot, chains, bars, dividends:** Alpaca Markets via `api/src/tools/alpaca.ts`.
 - **News/sentiment:** 4-engine sentiment (Claude + Grok + Gemini + Reddit) in `api/src/tools/sentiment.ts`, all routed through the LLM router. genrecs calls via `/api/sentiment/:ticker`.
 - **Technical indicators:** Computed in `api/src/tools/indicators.ts` using `shared/indicators/`. MACD, RSI, Bollinger, SMA all computed from real price data. genrecs calls via `/api/indicators/:ticker` and injects as ground truth into LLM prompts.

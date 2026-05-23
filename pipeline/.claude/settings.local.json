@@ -13,7 +13,16 @@
       "Bash(kill 61985)",
       "Bash(kill 61982)",
       "Bash(curl -sf \"https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev/reports/NVDA/latest.json\")",
-      "Bash(curl -sf \"https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev/reports/NVDA/2026-05-20.json\")"
+      "Bash(curl -sf \"https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev/reports/NVDA/2026-05-20.json\")",
+      "Read(//Users/manish/newleafsystem/**)",
+      "Bash(firebase --version)",
+      "Bash(gcloud --version)",
+      "Bash(firebase deploy:*)",
+      "Bash(curl:*)",
+      "Bash(firebase functions:log --only yahoo_options_svc)",
+      "Bash(firebase functions:log --only yahoo_options_svc --limit 30)",
+      "Bash(firebase functions:log)",
+      "Bash(node -e ':*)"
     ]
   }
 }

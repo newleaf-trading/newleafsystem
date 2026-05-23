@@ -6,8 +6,8 @@ In-process scheduler for market data collection. Replaces system crontab with no
 
 Runs three main jobs on schedule:
 1. **Fast pipeline** (every 15 min, market hours) — Alpaca prices + IV for 111 symbols -> R2
-2. **Daily OI enrichment** (9:32am ET) — Nasdaq OI data + gamma wall recalc -> R2 + Firestore sync
-3. **Health check** (every 5 min) — Pipeline status monitoring
+2. **Daily OI enrichment** (9:32am ET) — Nasdaq OI data (Yahoo Cloud Function fallback) + gamma wall recalc -> R2 + Firestore sync
+3. **Health check** (every 5 min) — Pipeline status + server.cjs monitoring
 
 ## Architecture
 
@@ -37,11 +37,15 @@ newleaf-pipeline/
     alpacaOptionsChain.js       # Alpaca chain fetch helpers
     gammaMetrics.js             # Gamma exposure calculations
     optionsHelpers.js           # Shared options utilities
-  yahoo-svc/                    # Yahoo OI fallback service (Python Flask)
+  yahoo-svc/                    # Yahoo OI fallback — deployed as Firebase Cloud Function
     option_api.py               # Flask API: expiries + option chains with OI via yfinance
     greeks_calculator.py        # Black-Scholes Greeks calculator
-    requirements.txt            # Python deps: yfinance, flask, flask-cors
-    start.sh                    # Launch script: PORT=5300 python3 option_api.py
+    main.py                     # Firebase Cloud Function entry point (wraps Flask app)
+    firebase.json               # Firebase deployment config (python310, 2nd gen)
+    .firebaserc                 # Firebase project: newleaf-trading
+    requirements.txt            # Python deps: firebase-functions, yfinance, flask, etc.
+    Dockerfile                  # Alternative Cloud Run deployment (not used)
+    start.sh                    # Local dev only — not used in production
   reports/                      # Local report cache (per-symbol JSON, gitignored)
   output/                       # Pipeline logs and run status
 ```
@@ -64,9 +68,9 @@ npm run daily                # Full daily pipeline
 npm run oi                   # OI enrichment only
 npm run sync                 # Sync R2 -> Firestore
 
-# Yahoo OI service (fallback)
-cd yahoo-svc && ./start.sh   # Start on port 5300
-curl http://localhost:5300/health
+# Yahoo OI service (Firebase Cloud Function)
+cd yahoo-svc && firebase deploy --only functions   # Redeploy
+curl https://yahoo-options-svc-m2cty2vxuq-uc.a.run.app/health
 
 # Utilities
 node upload-to-r2.js reports/AAPL/latest.json reports/AAPL/latest.json
@@ -77,7 +81,7 @@ node upload-to-r2.js reports/AAPL/latest.json reports/AAPL/latest.json
 ```
 Alpaca API (prices, Greeks)
   + Nasdaq API (OI, volume)    ──primary──┐
-  + Yahoo svc (OI fallback)    ──fallback─┤
+  + Yahoo Cloud Fn (OI fallback)──fallback─┤
                                           v
                                newleaf-pipeline.js
                                           │
@@ -96,12 +100,13 @@ The pipeline uses a two-tier fallback for Open Interest data:
    - Per-expiry OI: `GET /api/quote/{SYMBOL}/option-chain?assetclass=stocks&limit=200&expireDate={YYYY-MM-DD}`
    - Rate limited: ~80 symbols before 429 responses. Exponential backoff (3s/6s/12s/24s).
 
-2. **Yahoo svc** (fallback) — Python Flask service using yfinance, port 5300
+2. **Yahoo Cloud Function** (fallback) — Firebase Cloud Function (2nd gen, Python 3.10)
+   - Base URL: `https://yahoo-options-svc-m2cty2vxuq-uc.a.run.app`
    - Expiries: `GET /api/options/{SYMBOL}` -> `{ expirations: [], currentPrice }`
    - Per-expiry OI: `GET /api/options/{SYMBOL}/{EXPIRY}` -> `{ calls: [], puts: [], summary }`
-   - Must be started separately: `cd yahoo-svc && ./start.sh`
-   - Checked at startup; cached as `_yahooAvailable` flag
+   - Always available (no local startup needed), URL configured in `config.json → yahoosvc.url`
    - Only called when Nasdaq returns empty OI for a given expiry
+   - Redeploy: `cd yahoo-svc && firebase deploy --only functions`
 
 **Fallback logic** (per-symbol, per-expiry):
 - If Nasdaq expiries fail -> try Yahoo expiries -> if both fail, throw
@@ -145,25 +150,29 @@ https://api.nasdaq.com/api/quote/{TICKER}/option-chain?assetclass={stocks|etf}&l
 - Returns: strike, call/put OI, volume, bid/ask, last price
 - Rate limits aggressively (~80 symbols per batch)
 
-## Yahoo OI Service
+## Yahoo OI Service (Firebase Cloud Function)
 
-Located in `yahoo-svc/`. Python Flask app using yfinance:
+Deployed as a Firebase Cloud Function (2nd gen, Python 3.10) in project `newleaf-trading`.
+Source code in `yahoo-svc/` — always use the cloud version, never run locally.
+
 ```
+Base URL: https://yahoo-options-svc-m2cty2vxuq-uc.a.run.app
+
 GET /health                          -> { status: "healthy" }
 GET /api/options/{SYMBOL}            -> { expirations: [], currentPrice }
 GET /api/options/{SYMBOL}/{EXPIRY}   -> { calls: [], puts: [], summary }
 ```
 
-- Port: 5300 (configurable via PORT env var)
-- Single-threaded Flask (prevents yfinance thread exhaustion)
+- **Deployment**: `cd yahoo-svc && firebase deploy --only functions`
+- 1024 MB memory, 120s timeout, max 2 instances, scales to zero when idle
+- Single concurrency (yfinance is not thread-safe)
 - OI data is T-1 (yesterday's close), same freshness as Nasdaq
-- Start: `cd yahoo-svc && ./start.sh`
+- CORS enabled for all origins (GET only)
 
 ## Known Issues
 
 - `saveATMContracts is not a function` — ATM contract saver not wired up (non-fatal, logged)
 - Nasdaq rate limits after ~80 symbols in a single batch run
-- Yahoo svc must be started manually (not auto-started by scheduler)
 - `parseNasdaqExpiryGroup()` uses UTC noon to avoid timezone off-by-one date parsing
 
 ## Critical Rules
@@ -171,4 +180,4 @@ GET /api/options/{SYMBOL}/{EXPIRY}   -> { calls: [], puts: [], summary }
 - **Never modify reports/ directly** — generated by pipeline, uploaded to R2
 - **Concurrency must stay <= 2 for daily/full mode** — Nasdaq rate limit protection
 - **Always test with single symbol first** before running full watchlist
-- **Yahoo svc is optional** — pipeline works without it, Nasdaq is primary
+- **Yahoo Cloud Function is always available** — Nasdaq is primary, Yahoo is auto-fallback

@@ -6,3 +6,5 @@ reports/
 !reports/.gitkeep
 *.log
 .DS_Store
+yahoo-svc/venv/
+yahoo-svc/__pycache__/

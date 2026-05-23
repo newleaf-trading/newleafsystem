@@ -335,7 +335,7 @@ let _yahooAvailable = null; // null = untested, true/false = cached at startup
 
 async function checkYahooSvc(svcUrl) {
   try {
-    const res = await fetch(svcUrl + '/health', { signal: AbortSignal.timeout(3000) });
+    const res = await fetch(svcUrl + '/health', { signal: AbortSignal.timeout(15000) });
     return res.ok;
   } catch(_) { return false; }
 }
@@ -343,7 +343,7 @@ async function checkYahooSvc(svcUrl) {
 async function yahooGet(svcUrl, endpoint, retries=2) {
   for (let i=0; i<=retries; i++) {
     try {
-      const res = await fetch(svcUrl+endpoint, { headers:{'Accept':'application/json'}, signal:AbortSignal.timeout(25000) });
+      const res = await fetch(svcUrl+endpoint, { headers:{'Accept':'application/json'}, signal:AbortSignal.timeout(60000) });
       if (res.status===429) { await sleep(2000*(i+1)); continue; }
       if (!res.ok) throw new Error(`Yahoo svc ${res.status}: ${endpoint}`);
       return await res.json();
@@ -838,7 +838,7 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
     }
   } else {
     // FULL/DAILY: Alpaca + OI (Nasdaq primary, Yahoo fallback)
-    const svcUrl = cfg.yahoosvc?.url || 'http://localhost:5300';
+    const svcUrl = cfg.yahoosvc?.url || 'https://yahoo-options-svc-m2cty2vxuq-uc.a.run.app';
     try {
       let nasdaqFailed = false;
 
@@ -1246,7 +1246,7 @@ async function main() {
 
   // Check OI data sources (not needed for intraday mode)
   if (!intradayMode) {
-    const svcUrl = cfg.yahoosvc?.url || 'http://localhost:5300';
+    const svcUrl = cfg.yahoosvc?.url || 'https://yahoo-options-svc-m2cty2vxuq-uc.a.run.app';
 
     // Check Nasdaq
     let nasdaqOk = false;
@@ -1261,18 +1261,19 @@ async function main() {
       console.log(C.red(`  ✗ Nasdaq API not reachable`));
     }
 
-    // Check Yahoo svc
+    // Check Yahoo Cloud Function
     _yahooAvailable = await checkYahooSvc(svcUrl);
     if (_yahooAvailable) {
-      console.log(C.green(`  ✓ Yahoo svc running at ${svcUrl}`));
+      console.log(C.green(`  ✓ Yahoo Cloud Function available`));
     } else {
-      console.log(C.dim(`  ⚠ Yahoo svc not running at ${svcUrl} (fallback unavailable)`));
+      console.log(C.dim(`  ⚠ Yahoo Cloud Function not reachable at ${svcUrl}`));
     }
 
     // Exit only if BOTH are down
     if (!nasdaqOk && !_yahooAvailable) {
       console.error(C.red(`\n  ✗ No OI data source available`));
-      console.error(C.dim(`    Start Yahoo: cd yahoo-svc && ./start.sh`));
+      console.error(C.dim(`    Check Yahoo Cloud Function: ${svcUrl}/health`));
+      console.error(C.dim(`    Redeploy: cd yahoo-svc && firebase deploy --only functions`));
       console.error(C.dim(`    Or check internet for Nasdaq\n`));
       process.exit(1);
     }

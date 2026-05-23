@@ -23,12 +23,9 @@ const path = require('path');
 const fs = require('fs');
 
 const ONCE = process.argv.includes('--once');
-const YAHOO_SVC_DIR = path.resolve(__dirname, 'yahoo-svc');
 const NEWLEAF_DIR = path.resolve(__dirname, '..', 'newleafsystem');
 const NODE_BIN = process.execPath;
-const YAHOO_PORT = 5300;
 const SERVER_PORT = 3000;
-let yahooProc = null;
 let serverProc = null;
 
 // ── server.cjs management ────────────────────────────────────────────────────
@@ -80,58 +77,10 @@ async function ensureServer() {
   return false;
 }
 
-// ── Yahoo svc management ─────────────────────────────────────────────────────
-async function isYahooRunning() {
-  try {
-    const res = await fetch(`http://localhost:${YAHOO_PORT}/health`, { signal: AbortSignal.timeout(3000) });
-    return res.ok;
-  } catch(_) { return false; }
-}
-
-async function ensureYahooSvc() {
-  if (await isYahooRunning()) {
-    console.log(`[${nowET()}] Yahoo svc already running on port ${YAHOO_PORT}`);
-    return true;
-  }
-
-  const apiFile = path.join(YAHOO_SVC_DIR, 'option_api.py');
-  if (!fs.existsSync(apiFile)) {
-    console.error(`[${nowET()}] Yahoo svc not found at ${YAHOO_SVC_DIR}`);
-    return false;
-  }
-
-  console.log(`[${nowET()}] Starting Yahoo svc on port ${YAHOO_PORT}...`);
-  yahooProc = spawn('python3', [apiFile], {
-    cwd: YAHOO_SVC_DIR,
-    env: { ...process.env, PORT: String(YAHOO_PORT) },
-    stdio: ['ignore', 'pipe', 'pipe'],
-    detached: false,
-  });
-
-  yahooProc.stdout.on('data', (d) => {
-    const line = d.toString().trim();
-    if (line) console.log(`[yahoo-svc] ${line}`);
-  });
-  yahooProc.stderr.on('data', (d) => {
-    const line = d.toString().trim();
-    if (line && !line.includes('WARNING')) console.error(`[yahoo-svc] ${line}`);
-  });
-  yahooProc.on('exit', (code) => {
-    console.log(`[${nowET()}] Yahoo svc exited (code ${code})`);
-    yahooProc = null;
-  });
-
-  // Wait up to 15s for it to come up (Flask + yfinance import can be slow)
-  for (let i = 0; i < 30; i++) {
-    await new Promise(r => setTimeout(r, 500));
-    if (await isYahooRunning()) {
-      console.log(`[${nowET()}] Yahoo svc started successfully`);
-      return true;
-    }
-  }
-  console.error(`[${nowET()}] Yahoo svc failed to start within 15s`);
-  return false;
-}
+// ── Yahoo svc ────────────────────────────────────────────────────────────────
+// Yahoo Options Service is deployed as a Firebase Cloud Function (2nd gen).
+// URL configured in config.json → yahoosvc.url
+// Source code kept in yahoo-svc/ for redeployment: firebase deploy --only functions
 
 // ── Market hours check (ET) ───────────────────────────────────────────────────
 function isDST(date) {
@@ -195,9 +144,8 @@ if (ONCE) {
 } else {
   // ── Scheduled mode ────────────────────────────────────────────────────────────
 
-  // Start all services on scheduler boot
+  // Start services on scheduler boot
   ensureServer().catch(console.error);
-  ensureYahooSvc().catch(console.error);
 
   // Fast pipeline: every 15 min, Mon-Fri, market hours only
   cron.schedule('*/15 * * * 1-5', async () => {
@@ -205,20 +153,11 @@ if (ONCE) {
     await runJob('pipeline-fast.js', ['--watchlist']).catch(console.error);
   });
 
-  // Pre-market Yahoo svc check: 9:25am ET (5 min before market open)
-  // Ensures Yahoo is running before the daily OI job at 9:32am
-  cron.schedule('25 14 * * 1-5', async () => {
-    console.log(`[${nowET()}] Pre-market: ensuring Yahoo svc is running...`);
-    await ensureYahooSvc().catch(console.error);
-  });
-
   // Daily OI enrichment + watchlist + Firestore sync: 9:32am ET
   // Using 13:32 UTC (summer) / 14:32 UTC (winter) — node-cron runs in local TZ
   // Since machine is in UK (BST/GMT), use 14:32 for BST (= 9:32 ET in summer)
   cron.schedule('32 14 * * 1-5', async () => {
     console.log(`[${nowET()}] === Daily OI Enrichment Sequence ===`);
-    // Ensure Yahoo is up as fallback before OI enrichment
-    await ensureYahooSvc().catch(console.error);
     await runJob('pipeline-oi-enrichment.js', ['--watchlist']).catch(console.error);
     await runJob('pipeline-watchlist.js').catch(console.error);
     await runJob('sync-r2-to-firestore-fixed.mjs').catch(console.error);
@@ -232,11 +171,6 @@ if (ONCE) {
       console.log(`[${nowET()}] server.cjs down, restarting...`);
       await ensureServer().catch(console.error);
     }
-    // Check and restart Yahoo svc if down
-    if (!(await isYahooRunning())) {
-      console.log(`[${nowET()}] Yahoo svc down, restarting...`);
-      await ensureYahooSvc().catch(console.error);
-    }
     // Run health check script (pipeline freshness, R2 status)
     const healthScript = path.join(__dirname, 'check-scheduler-health.sh');
     if (fs.existsSync(healthScript)) {
@@ -247,7 +181,6 @@ if (ONCE) {
   // Cleanup child processes on scheduler exit
   function cleanup() {
     if (serverProc) { console.log('Stopping server.cjs...'); serverProc.kill(); }
-    if (yahooProc) { console.log('Stopping Yahoo svc...'); yahooProc.kill(); }
   }
   process.on('SIGINT', () => { console.log(''); cleanup(); process.exit(0); });
   process.on('SIGTERM', () => { cleanup(); process.exit(0); });
@@ -256,7 +189,8 @@ if (ONCE) {
   console.log('╔══════════════════════════════════════════════════════════════╗');
   console.log('║         NewLeaf Pipeline Scheduler — Started                ║');
   console.log('╠══════════════════════════════════════════════════════════════╣');
-  console.log('║  Services:        server.cjs (:3000) + Yahoo svc (:5300)   ║');
+  console.log('║  Services:        server.cjs (:3000)                        ║');
+  console.log('║  Yahoo OI:        Firebase Cloud Function (remote)          ║');
   console.log('║  Fast pipeline:   */15 min (market hours, Mon-Fri)         ║');
   console.log('║  Pre-market:      9:25am ET (ensure all services up)       ║');
   console.log('║  Daily OI+sync:   9:32am ET (Mon-Fri)                      ║');

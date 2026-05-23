@@ -1,0 +1,10 @@
+{
+  "functions": [
+    {
+      "source": ".",
+      "codebase": "yahoo-options-svc",
+      "runtime": "python310",
+      "ignore": ["venv", "__pycache__", ".git"]
+    }
+  ]
+}
