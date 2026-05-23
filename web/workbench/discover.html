@@ -56,18 +56,17 @@
 
     /* Main container */
     .main { max-width: 1100px; margin: 0 auto; padding: 16px 24px 80px; }
-    .stage-1-layout { display: grid; grid-template-columns: 220px 1fr; gap: 16px; overflow: hidden; }
-    .stage-1-sidebar { position: sticky; top: 60px; align-self: start; min-width: 0; }
-    .sidebar-title { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 10px; }
-    .sidebar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-    .strat-sidebar-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 10px 8px; cursor: pointer; text-align: center; transition: all 0.15s; }
-    .strat-sidebar-card:hover { border-color: var(--ink-muted); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .strat-sidebar-card.selected { border-color: var(--accent); background: var(--accent-light); }
-    .strat-sidebar-card .stc-icon { height: 28px; margin-bottom: 4px; }
-    .strat-sidebar-card .stc-icon svg { height: 28px; width: 100%; }
-    .strat-sidebar-card .stc-name { font-size: 11px; font-weight: 600; line-height: 1.2; }
-    .strat-sidebar-card .stc-desc { font-size: 9px; color: var(--ink-muted); margin-top: 2px; }
-    @media (max-width: 768px) { .stage-1-layout { grid-template-columns: 1fr; } .stage-1-sidebar { position: static; } .sidebar-grid { grid-template-columns: repeat(4, 1fr); } }
+    .stage-1-layout { display: grid; grid-template-columns: 200px 1fr; gap: 16px; }
+    .stage-1-sidebar { position: sticky; top: 60px; align-self: start; max-width: 200px; }
+    .stage-1-sidebar .panel { padding: 10px; }
+    .sidebar-title { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 8px; }
+    .sidebar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .strat-sidebar-card.strat-type-card { padding: 6px 4px; }
+    .strat-sidebar-card .stc-icon { height: 24px; margin-bottom: 2px; }
+    .strat-sidebar-card .stc-icon svg { height: 24px; width: 100%; }
+    .strat-sidebar-card .stc-name { font-size: 10px; font-weight: 600; line-height: 1.2; }
+    .strat-sidebar-card .stc-desc { font-size: 8px; color: var(--ink-muted); margin-top: 1px; }
+    @media (max-width: 768px) { .stage-1-layout { grid-template-columns: 1fr; } .stage-1-sidebar { position: static; max-width: none; } .sidebar-grid { grid-template-columns: repeat(4, 1fr); } }
     .panel { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(15,61,46,.04); }
     .panel-title { font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); margin-bottom: 16px; }
 
