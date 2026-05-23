@@ -2138,6 +2138,19 @@
     }
 
     /* ================================================================
+       EXPOSE MODULE FUNCTIONS TO GLOBAL SCOPE (for onclick= attributes)
+       ================================================================ */
+    window.handleLoad = handleLoad;
+    window.goToStage = goToStage;
+    window.loadDemoTicker = loadDemoTicker;
+    window.toggleTraces = toggleTraces;
+    window.openDeepDive = openDeepDive;
+    window.updateQty = updateQty;
+    window.handleMutation = handleMutation;
+    window.handlePublishToPicks = handlePublishToPicks;
+    window.handleSaveTrace = handleSaveTrace;
+
+    /* ================================================================
        INIT
        ================================================================ */
     renderTracesBanner();
