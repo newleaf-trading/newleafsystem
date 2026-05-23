@@ -2740,7 +2740,8 @@ document.getElementById('auth-gate-signin')?.addEventListener('click', async () 
 window.fbServerTimestamp = () => serverTimestamp();
 
 // ── Usage tracking & rate limiting ──────────────────────────────────────
-const DAILY_LIMIT = 5;
+// Default limit; overridden by user's tier-based dailyLimit from Firestore
+let DAILY_LIMIT = 5;
 
 function todayKey() {
   return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
@@ -2754,11 +2755,18 @@ function userDocId(email) {
 window.checkUsageLimit = async function() {
   if (!auth.currentUser) return { allowed: false, used: 0, limit: DAILY_LIMIT };
   const email = auth.currentUser.email;
+  const uid = userDocId(email);
   const day = todayKey();
-  const docRef = doc(db, 'discover_usage', userDocId(email), 'daily', day);
-  const snap = await getDoc(docRef);
-  const used = snap.exists() ? (snap.data().count || 0) : 0;
-  return { allowed: used < DAILY_LIMIT, used, limit: DAILY_LIMIT };
+  // Read user's tier-based limit
+  try {
+    const userSnap = await getDoc(doc(db, 'discover_usage', uid));
+    if (userSnap.exists() && userSnap.data().dailyLimit != null) {
+      DAILY_LIMIT = userSnap.data().dailyLimit;
+    }
+  } catch {}
+  const dailySnap = await getDoc(doc(db, 'discover_usage', uid, 'daily', day));
+  const used = dailySnap.exists() ? (dailySnap.data().count || 0) : 0;
+  return { allowed: used < DAILY_LIMIT, used, limit: DAILY_LIMIT, tier: DAILY_LIMIT === 25 ? 'institutional' : DAILY_LIMIT === 5 ? 'trader' : DAILY_LIMIT === 3 ? 'starter' : 'explorer' };
 };
 
 // Log a usage event and increment daily counter

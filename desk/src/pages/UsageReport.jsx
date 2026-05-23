@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../firebase';
+
+const TIERS = [
+  { id: 'explorer', label: 'Explorer', color: '#6b7280', bg: '#f3f4f6', limit: 0 },
+  { id: 'starter', label: 'Starter', color: '#92400e', bg: '#fef3c7', limit: 3 },
+  { id: 'trader', label: 'Trader', color: '#166534', bg: '#dcfce7', limit: 5 },
+  { id: 'institutional', label: 'Institutional', color: '#1e40af', bg: '#dbeafe', limit: 25 },
+];
 
 export function UsageReport() {
   const [users, setUsers] = useState([]);
@@ -41,6 +48,15 @@ export function UsageReport() {
 
   useEffect(() => { loadUsers(); }, [loadUsers]);
 
+  const updateTier = async (userId, tier) => {
+    try {
+      await updateDoc(doc(db, 'discover_usage', userId), { tier, dailyLimit: TIERS.find(t => t.id === tier)?.limit || 5 });
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, tier, dailyLimit: TIERS.find(t => t.id === tier)?.limit || 5 } : u));
+    } catch (err) {
+      console.error('Failed to update tier:', err);
+    }
+  };
+
   const selectUser = (user) => {
     setSelectedUser(user);
     loadEvents(user.id);
@@ -74,6 +90,8 @@ export function UsageReport() {
             <thead>
               <tr style={{ borderBottom: '1px solid #e8e5e0' }}>
                 <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, color: '#9ca3af', textTransform: 'uppercase' }}>Email</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, color: '#9ca3af', textTransform: 'uppercase' }}>Tier</th>
+                <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: 10, color: '#9ca3af', textTransform: 'uppercase' }}>Daily Limit</th>
                 <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: 10, color: '#9ca3af', textTransform: 'uppercase' }}>Requests</th>
                 <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: 10, color: '#9ca3af', textTransform: 'uppercase' }}>Cost</th>
                 <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: 10, color: '#9ca3af', textTransform: 'uppercase' }}>Tokens</th>
@@ -85,6 +103,20 @@ export function UsageReport() {
               {users.map(u => (
                 <tr key={u.id} onClick={() => selectUser(u)} style={{ cursor: 'pointer', borderBottom: '1px solid #f0eeeb', background: selectedUser?.id === u.id ? '#ecfdf5' : '' }}>
                   <td style={{ padding: '8px 12px', fontWeight: 600 }}>{u.email}</td>
+                  <td style={{ padding: '8px 12px' }} onClick={e => e.stopPropagation()}>
+                    <select
+                      value={u.tier || 'explorer'}
+                      onChange={e => updateTier(u.id, e.target.value)}
+                      style={{
+                        padding: '3px 8px', borderRadius: 6, border: '1px solid #e8e5e0', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                        background: TIERS.find(t => t.id === (u.tier || 'explorer'))?.bg || '#f3f4f6',
+                        color: TIERS.find(t => t.id === (u.tier || 'explorer'))?.color || '#6b7280',
+                      }}
+                    >
+                      {TIERS.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                    </select>
+                  </td>
+                  <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11 }}>{u.dailyLimit ?? TIERS.find(t => t.id === (u.tier || 'explorer'))?.limit ?? 0}/day</td>
                   <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace" }}>{u.totalRequests || 0}</td>
                   <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace" }}>${(u.totalCost || 0).toFixed(3)}</td>
                   <td style={{ padding: '8px 12px', textAlign: 'right', fontFamily: "'IBM Plex Mono', monospace" }}>{(u.totalTokens || 0).toLocaleString()}</td>
