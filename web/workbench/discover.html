@@ -2114,8 +2114,8 @@
         updateBadge();
       } else {
         // Show "rendering verdict" if the API is still in-flight
-        $('#vp-pct').textContent = 'Rendering verdict...';
-        $('#vp-fill').style.background = 'linear-gradient(90deg, var(--teal), var(--forest-mid))';
+        const phaseLabel = $('#vp-phase-label');
+        if (phaseLabel) phaseLabel.textContent = 'Rendering verdict...';
         try {
           const vData = await verifyPromise;
           state.verifyData = vData; // store full response for stage 5
