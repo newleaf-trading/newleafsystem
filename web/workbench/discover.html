@@ -2147,19 +2147,21 @@
           state.totalTokens = (vData.cost?.totalInputTokens || 0) + (vData.cost?.totalOutputTokens || 0);
           state.totalTime = (vData.durationMs || 0) / 1000;
           addCost(vData.cost);
-          // Track with model + cost details
-          const usedModels = (vData.cost?.calls || []).map(c => c.model).filter(Boolean);
-          if (!isDemo && window.trackUsage) {
-            console.log('[Usage] Tracking verify:', state.ticker, 'models:', usedModels, 'cost:', vData.cost?.totalCost);
-            window.trackUsage('verify', state.ticker, {
-              models: usedModels.length ? [...new Set(usedModels)] : ['pipeline'],
-              cost: vData.cost?.totalCost || state.totalCost || 0.05,
-              tokens: state.totalTokens || 10000,
-            }).catch(e => console.error('[Usage] Track failed:', e));
-          }
         } catch (err) {
           state.verdict = { verdictWord: 'Error', confidence: 0, verdictClass: 'fail', summary: 'Verification failed: ' + err.message };
         }
+      }
+
+      // Track usage regardless of success/failure (if we got this far, credits were consumed)
+      if (!isDemo && window.trackUsage) {
+        try {
+          const models = state.verifyData?.cost?.calls?.map(c => c.model).filter(Boolean) || ['pipeline'];
+          const cost = state.verifyData?.cost?.totalCost || state.totalCost || 0.05;
+          const tokens = state.totalTokens || 10000;
+          console.log('[Usage] Tracking verify for', state.ticker, '| models:', models, '| cost:', cost);
+          await window.trackUsage('verify', state.ticker, { models: [...new Set(models)], cost, tokens });
+          console.log('[Usage] Track success');
+        } catch (e) { console.error('[Usage] Track error:', e); }
       }
 
       // Brief pause then go to verdict
