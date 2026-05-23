@@ -45,12 +45,12 @@ React web app served at `newleafsystem.com`. Three products live here:
 
 ### `api/`
 
-The AI gateway. TypeScript + Express. Deploys as a Firebase function serving `cloudfunctions.net/api`.
+The AI gateway. TypeScript + Fastify. Deploys as a Firebase Cloud Function. Target domain: `api.newleafsystem.com` (via Cloudflare proxy to `us-central1-newleaf-trading.cloudfunctions.net`).
 
 **What lives here:**
 - **LLM Router** (`src/llm/router.ts`) — single point of truth for which model handles which request. All LLM calls — Claude, GPT, Gemini, Grok, DeepSeek, QWQ, Qwen — go through here.
-- **Tools** (`src/tools/`) — Alpaca client, technical indicators (RSI, ADX, Bollinger, etc.), sentiment engines, gamma analysis, etc.
-- **Endpoints** (`src/routes/`) — `/verify`, `/recommend`, `/snapshot`, `/api/ai-read`, `/api/sentiment`, etc.
+- **Tools** (`src/tools/`) — Alpaca client, technical indicators (via `shared/indicators/`), 4-engine sentiment, full gamma analysis (via Yahoo OI Service), etc.
+- **Endpoints** (`src/routes/`) — `/api/snapshot`, `/api/indicators`, `/api/gamma-analysis`, `/api/chain`, `/api/sentiment`, `/api/ai-read`, `/api/recommend`, `/verify`, `/api/llm/call`, `/admin/*`. Full reference: `docs/api-reference.html`.
 - **Orchestrators** — multi-agent flows like the 8-agent verify pipeline.
 
 **Rules for this subfolder:**
@@ -173,7 +173,7 @@ Marginal verdicts go to a review queue. **There is no analyst override path.** T
 
 ### Data sources
 
-- **Open Interest:** Yahoo OI Service at `services/yahoo-oi/`, deployed to Cloud Run (`https://yahoo-options-svc-m2cty2vxuq-uc.a.run.app`). `api/src/tools/nasdaq-oi.ts` uses Cloud Run as primary source, falls back to Nasdaq.com scraping if unavailable.
+- **Open Interest + Gamma Analysis:** Yahoo OI Service at `services/yahoo-oi/`, deployed to Cloud Run. Accessed exclusively through `api/` endpoints (`/api/gamma` and `/api/gamma-analysis`). The `/api/gamma-analysis` endpoint computes GEX walls, ATM IV, and confidence scores server-side for ANY ticker — no R2 pipeline dependency. Frontend never calls Yahoo OI Service directly.
 - **Spot, chains, bars, dividends:** Alpaca Markets via `api/src/tools/alpaca.ts`.
 - **News/sentiment:** 4-engine sentiment (Claude + Grok + Gemini + Reddit) in `api/src/tools/sentiment.ts`, all routed through the LLM router. genrecs calls via `/api/sentiment/:ticker`.
 - **Technical indicators:** Computed in `api/src/tools/indicators.ts` using `shared/indicators/`. MACD, RSI, Bollinger, SMA all computed from real price data. genrecs calls via `/api/indicators/:ticker` and injects as ground truth into LLM prompts.

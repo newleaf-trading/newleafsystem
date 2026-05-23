@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf System — API Reference</title>
+<style>
+  :root { --forest: #1a5632; --leaf: #2d8a4e; --gold: #c9a96e; --bg: #fafaf8; --card: #fff; --border: #e8e5e0; --text: #1a1a1a; --gray: #6b7280; --mono: 'SF Mono', 'Fira Code', monospace; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+  h1 { font-size: 28px; font-weight: 800; color: var(--forest); margin-bottom: 8px; }
+  h2 { font-size: 20px; font-weight: 700; color: var(--forest); margin: 36px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+  h3 { font-size: 16px; font-weight: 600; margin: 24px 0 10px; }
+  .subtitle { font-size: 14px; color: var(--gray); margin-bottom: 32px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+  th { text-align: left; padding: 8px 12px; background: #f3f2ef; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); border-bottom: 1px solid var(--border); }
+  td { padding: 8px 12px; border-bottom: 1px solid #f0eeeb; vertical-align: top; }
+  code { font-family: var(--mono); font-size: 12px; background: #f3f2ef; padding: 2px 6px; border-radius: 4px; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 8px; font-family: var(--mono); font-size: 12px; overflow-x: auto; margin: 12px 0; line-height: 1.7; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge-get { background: #dbeafe; color: #1d4ed8; }
+  .badge-post { background: #dcfce7; color: #166534; }
+  .badge-delete { background: #fee2e2; color: #991b1b; }
+  .badge-tier { background: #fef3c7; color: #92400e; font-size: 10px; }
+  .endpoint { margin-bottom: 24px; }
+  .endpoint-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .endpoint-path { font-family: var(--mono); font-size: 14px; font-weight: 600; }
+  .consumer { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #ede9fe; color: #5b21b6; }
+  .new { background: #dcfce7; color: #166534; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>NewLeaf System — API Reference</h1>
+<p class="subtitle">Complete endpoint documentation with consumers, data flow, and deployment &nbsp;|&nbsp; Updated 23 May 2026</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Deployment</h2>
+
+<div class="card">
+<h3>Current</h3>
+<table>
+  <tr><td><strong>Dev</strong></td><td><code>http://localhost:5400</code></td><td><code>cd api && npm run dev</code></td></tr>
+  <tr><td><strong>Production</strong></td><td><code>https://us-central1-newleaf-trading.cloudfunctions.net/api</code></td><td>Firebase Cloud Functions v2</td></tr>
+</table>
+
+<h3>Target (Cloudflare)</h3>
+<table>
+  <tr><td><strong>Domain</strong></td><td><code>api.newleafsystem.com</code></td><td>Cloudflare DNS + proxy</td></tr>
+  <tr><td><strong>Origin</strong></td><td><code>us-central1-newleaf-trading.cloudfunctions.net</code></td><td>Firebase Cloud Functions</td></tr>
+  <tr><td><strong>Benefits</strong></td><td colspan="2">DDoS protection, caching, rate limiting, custom domain, SSL termination</td></tr>
+</table>
+
+<h3>Setup Steps for api.newleafsystem.com</h3>
+<pre>
+# 1. In Cloudflare Dashboard → DNS → Add Record:
+   Type: CNAME
+   Name: api
+   Target: us-central1-newleaf-trading.cloudfunctions.net
+   Proxy: ON (orange cloud)
+
+# 2. In Cloudflare → SSL/TLS:
+   Mode: Full (strict)
+
+# 3. In Cloudflare → Rules → Page Rules (or Transform Rules):
+   # Forward /api/* to the Cloud Functions origin
+   # The CF proxy handles SSL termination + caching
+
+# 4. In Firebase Console → Hosting → Custom Domain:
+   Add api.newleafsystem.com
+   Verify ownership via Cloudflare DNS TXT record
+
+# 5. Update frontend configs:
+   # web/workbench/discover.html:
+   window.__CONFIG__ = { API_URL: "https://api.newleafsystem.com", ... }
+
+   # generaterecommendations/.env:
+   NEWLEAF_API_URL=https://api.newleafsystem.com
+
+   # desk/.env or config:
+   VITE_API_BASE_URL=https://api.newleafsystem.com
+
+# 6. Optional: Cloudflare Rate Limiting
+   Path: /api/*
+   Rate: 60 requests/minute per IP
+   Path: /verify
+   Rate: 5 requests/minute per IP (expensive)
+</pre>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Authentication</h2>
+
+<div class="card">
+<p>All endpoints require an API key via the <code>X-API-Key</code> header.</p>
+<pre>
+curl -H "X-API-Key: your-key-here" https://api.newleafsystem.com/api/snapshot/AAPL
+</pre>
+<table>
+  <thead><tr><th>Tier</th><th>Access Level</th><th>Use Case</th></tr></thead>
+  <tbody>
+    <tr><td><code>free</code></td><td>Snapshot only</td><td>Public landing page widgets</td></tr>
+    <tr><td><code>basic</code></td><td>All market data + AI endpoints</td><td>Workbench, genrecs scripts</td></tr>
+    <tr><td><code>premium</code></td><td>All + verify pipeline</td><td>Premium discover page</td></tr>
+    <tr><td><code>admin</code></td><td>All + admin endpoints</td><td>Admin dashboard</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Market Data Endpoints</h2>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="badge badge-get">GET</span>
+    <span class="endpoint-path">/api/snapshot/:ticker</span>
+    <span class="badge badge-tier">free</span>
+    <span class="consumer">web/workbench</span>
+    <span class="consumer">genrecs</span>
+  </div>
+  <p>Current price, daily bar, latest quote, and available option expirations.</p>
+  <p><strong>Source:</strong> Alpaca Markets API</p>
+  <p><strong>Consumers:</strong> discover.html (Step 1 ticker load), strategy-builder.html, publish-pick.cjs</p>
+  <pre>{ "snapshot": { "price": 308.41, "change": 2.15, ... }, "expirations": ["2026-06-05", ...] }</pre>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="badge badge-get">GET</span>
+    <span class="endpoint-path">/api/chain/:ticker/:expiry</span>
+    <span class="badge badge-tier">basic</span>
+    <span class="consumer">web/workbench</span>
+  </div>
+  <p>Options chain grouped by strike with bid/ask/mid/IV/delta for calls and puts.</p>
+  <p><strong>Source:</strong> Alpaca Markets API</p>
+  <p><strong>Consumers:</strong> discover.html (Step 2 strategy building, Step 3 legs enrichment)</p>
+  <pre>{ "strikes": [{ "strike": 300, "call": { "bid": 12.5, "ask": 13.0, "mid": 12.75, "iv": 0.28, "delta": 0.55 }, "put": {...} }] }</pre>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="badge badge-get">GET</span>
+    <span class="endpoint-path">/api/indicators/:ticker</span>
+    <span class="badge badge-tier">basic</span>
+    <span class="consumer">web/workbench</span>
+    <span class="consumer">genrecs</span>
+  </div>
+  <p>Computed technical indicators from 250 daily closing prices.</p>
+  <p><strong>Source:</strong> Alpaca bars → <code>shared/indicators/</code> computation</p>
+  <p><strong>Consumers:</strong> discover.html (Step 1 stat tiles), genrecs/indicators-fetch.cjs (ground truth for LLM prompts)</p>
+  <pre>{ "indicators": { "rsi14": 55.3, "macdLine": 1.234, "macdSignal": 0.987, "macdHistogram": 0.247, "sma20": 195.3, "bollingerUpper": 202.1, "bollingerLower": 188.5, "adx14": 22.5, "atr14": 3.45, ... } }</pre>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="badge badge-get">GET</span>
+    <span class="endpoint-path">/api/gamma/:ticker/:expiry</span>
+    <span class="badge badge-tier">basic</span>
+    <span class="consumer">web/workbench</span>
+  </div>
+  <p>OI-based gamma walls and per-strike open interest breakdown.</p>
+  <p><strong>Source:</strong> Yahoo OI Service (Cloud Run) → Nasdaq fallback</p>
+  <p><strong>Consumers:</strong> discover.html (OI wall card), strategy-builder.html gamma popup</p>
+  <pre>{ "putWallStrike": 275, "callWallStrike": 320, "spotInsideBand": true, "oiByStrike": [...], "walls": [...], "spot": 308.41 }</pre>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="badge badge-get">GET</span>
+    <span class="endpoint-path">/api/gamma-analysis/:ticker/:expiry</span>
+    <span class="badge badge-tier">basic</span>
+    <span class="consumer">web/workbench</span>
+    <span class="new">NEW</span>
+  </div>
+  <p>Full gamma analysis: dual walls (OI + GEX), ATM IV, confidence scores, top gamma strikes. Works for ANY optionable ticker — no R2/pipeline dependency.</p>
+  <p><strong>Source:</strong> Yahoo OI Service (Cloud Run) → computed in <code>api/src/tools/nasdaq-oi.ts</code></p>
+  <p><strong>Consumers:</strong> discover.html (Step 1: GEX wall card, ATM IV tile, confidence panel, deep-dive gamma chart)</p>
+  <pre>{ "analysis": {
+  "oiWalls": { "putStrike": 275, "callStrike": 320 },
+  "gexWalls": { "putStrike": 300, "callStrike": 310 },
+  "bandWidthPct": 3.2, "positionInBandPct": 85,
+  "confidenceScore": 0.72, "oiConfidence": 0.95, "volumeConfidence": 0.61, "deltaConfidence": 0.48,
+  "atmIv": 28.5, "ivLevel": "normal", "contractsAnalyzed": 472,
+  "topStrikes": [{ "strike": 305, "gammaExposure": 14496527, "callOI": 8844, "putOI": 340, ... }],
+  "spotInsideBand": true
+}, "spot": 308.41 }</pre>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="badge badge-get">GET</span>
+    <span class="endpoint-path">/api/sentiment/:ticker</span>
+    <span class="badge badge-tier">basic</span>
+    <span class="consumer">web/workbench</span>
+    <span class="consumer">genrecs</span>
+  </div>
+  <p>4-engine composite sentiment: Claude + Grok + Gemini + Reddit/StockTwits. All LLM engines route through the LLM router.</p>
+  <p><strong>Source:</strong> LLM Router (Claude/Grok/Gemini) + Reddit/StockTwits HTTP</p>
+  <p><strong>Consumers:</strong> genrecs/sentiment-fetch.cjs (publish-pick, analyse-tiles), discover.html (future)</p>
+  <pre>{ "composite": { "score": 72, "label": "bullish", "confidence": 0.85 }, "engines": { "claude": {...}, "grok": {...}, "gemini": {...}, "reddit": {...} }, "cost": {...} }</pre>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="badge badge-get">GET</span>
+    <span class="endpoint-path">/api/bars/:ticker</span>
+    <span class="badge badge-tier">basic</span>
+    <span class="consumer">api internal</span>
+  </div>
+  <p>Historical daily bars (up to 365 days). Used internally by indicators computation.</p>
+  <p><strong>Source:</strong> Alpaca Markets API</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>AI / LLM Endpoints</h2>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="badge badge-post">POST</span>
+    <span class="endpoint-path">/api/llm/call</span>
+    <span class="badge badge-tier">basic</span>
+    <span class="consumer">genrecs</span>
+  </div>
+  <p>Generic LLM call. Body: <code>{ model, system, user, maxTokens }</code>. Routes through LLM router with cost tracking.</p>
+  <p><strong>Consumers:</strong> genrecs/llm-call.cjs (publish-pick, analyse-tiles, process-wip-picks, generate-social-copy)</p>
+  <pre>{ "response": "...", "model": "claude-sonnet", "cost": { "totalCost": 0.028, "totalInputTokens": 1480, "totalOutputTokens": 1575 } }</pre>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="badge badge-post">POST</span>
+    <span class="endpoint-path">/api/ai-read</span>
+    <span class="badge badge-tier">premium</span>
+    <span class="consumer">web/workbench</span>
+  </div>
+  <p>One-sentence AI market read. Body: <code>{ ticker, spot, ivRank, rsi, adx, trend, putWall, callWall }</code>.</p>
+  <p><strong>Consumers:</strong> discover.html (Step 1 AI Read callout)</p>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="badge badge-post">POST</span>
+    <span class="endpoint-path">/api/recommend</span>
+    <span class="badge badge-tier">premium</span>
+    <span class="consumer">web/workbench</span>
+  </div>
+  <p>AI strategy ranking. Returns 3 scored strategies with rationale. Body: <code>{ ticker, expiry, modelMode }</code>.</p>
+  <p><strong>Consumers:</strong> discover.html (Step 2 AI mode — ranked strategy cards)</p>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="badge badge-post">POST</span>
+    <span class="endpoint-path">/verify</span>
+    <span class="badge badge-tier">premium</span>
+    <span class="consumer">web/workbench</span>
+  </div>
+  <p>8-agent verification pipeline (~30s, ~$0.05). Body: <code>{ ticker, structure, legs, netCredit, source, modelMode }</code>.</p>
+  <p><strong>Consumers:</strong> discover.html (Step 4 AI Verification Desk → Step 5 Verdict)</p>
+  <pre>{ "verdict": { "call": "pass", "confidence": 72, "rationale": "..." },
+  "evidence": { "technical": {...}, "gamma": {...}, "iv": {...}, "sentiment": {...} },
+  "debate": { "rounds": [...] }, "suggestedFix": {...},
+  "cost": { "totalCost": 0.05, "totalInputTokens": 8500 } }</pre>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="badge badge-post">POST</span>
+    <span class="endpoint-path">/api/adjust</span>
+    <span class="badge badge-tier">premium</span>
+    <span class="consumer">web/invest</span>
+  </div>
+  <p>Position adjustment recommendations for existing trades.</p>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="badge badge-post">POST</span>
+    <span class="endpoint-path">/api/event-risk</span>
+    <span class="badge badge-tier">premium</span>
+    <span class="consumer">web/invest</span>
+  </div>
+  <p>Event risk analysis for positions (earnings, ex-div, macro).</p>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="badge badge-post">POST</span>
+    <span class="endpoint-path">/api/strike-compare</span>
+    <span class="badge badge-tier">basic</span>
+    <span class="consumer">web/invest</span>
+  </div>
+  <p>Strike comparison analysis between alternative setups.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Admin Endpoints</h2>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="badge badge-get">GET</span>
+    <span class="endpoint-path">/admin/model-assignments</span>
+    <span class="badge badge-tier">admin</span>
+    <span class="consumer">web/invest admin</span>
+  </div>
+  <p>All 18 LLM model assignments with current model, alternatives, and env override names.</p>
+  <p><strong>Consumers:</strong> AdminPage Models tab, desk ModelAssignmentsPanel</p>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="badge badge-get">GET</span>
+    <span class="endpoint-path">/admin/usage-summary</span>
+    <span class="badge badge-tier">admin</span>
+    <span class="consumer">web/invest admin</span>
+  </div>
+  <p>Session LLM usage grouped by model (calls, tokens, cost).</p>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-header">
+    <span class="badge badge-get">GET</span>
+    <span class="endpoint-path">/health</span>
+    <span class="badge badge-tier">free</span>
+  </div>
+  <p>Health check with env status (which API keys are configured).</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Internal Services</h2>
+
+<div class="card">
+<h3>Yahoo OI Service (Cloud Run)</h3>
+<table>
+  <tr><td><strong>URL</strong></td><td><code>https://yahoo-options-svc-m2cty2vxuq-uc.a.run.app</code></td></tr>
+  <tr><td><strong>Source</strong></td><td><code>services/yahoo-oi/</code></td></tr>
+  <tr><td><strong>Called by</strong></td><td><code>api/src/tools/nasdaq-oi.ts</code> (behind <code>/api/gamma</code> and <code>/api/gamma-analysis</code>)</td></tr>
+  <tr><td><strong>NOT called by</strong></td><td>Frontend (never directly — always through api/)</td></tr>
+</table>
+<p>Endpoints: <code>GET /api/options/{symbol}</code>, <code>GET /api/options/{symbol}/{expiry}</code></p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Consumer Map</h2>
+
+<table>
+  <thead><tr><th>Consumer</th><th>Endpoints Used</th><th>Auth</th></tr></thead>
+  <tbody>
+    <tr><td><strong>discover.html</strong> (premium workbench)</td><td>/api/snapshot, /api/indicators, /api/gamma-analysis, /api/chain, /api/ai-read, /api/recommend, /verify</td><td>API key + Firebase Auth + daily limit</td></tr>
+    <tr><td><strong>strategy-builder.html</strong> (free workbench)</td><td>None (uses R2 only)</td><td>None</td></tr>
+    <tr><td><strong>Invest app</strong> (web/src/trading)</td><td>/api/adjust, /api/event-risk, /api/strike-compare, /api/verdict-explain</td><td>API key</td></tr>
+    <tr><td><strong>genrecs scripts</strong></td><td>/api/indicators, /api/sentiment, /api/llm/call</td><td>API key (NEWLEAF_API_KEY env)</td></tr>
+    <tr><td><strong>Admin page</strong></td><td>/admin/model-assignments, /admin/usage-summary, /admin/keys</td><td>API key (admin tier)</td></tr>
+    <tr><td><strong>Desk app</strong></td><td>/admin/model-assignments, /admin/usage-summary</td><td>API key (admin tier)</td></tr>
+    <tr><td><strong>Pipeline</strong></td><td>None (calls Yahoo OI Service directly via Cloud Run URL)</td><td>None</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Data Flow Diagram</h2>
+
+<pre>
+  Browser (discover.html)
+    │
+    ├─ /api/snapshot/:ticker           → Alpaca (spot, quote, daily bar)
+    ├─ /api/indicators/:ticker         → Alpaca bars → shared/indicators/ → RSI, MACD, BB, SMA
+    ├─ /api/gamma-analysis/:ticker/:e  → Yahoo OI Service → GEX walls, ATM IV, confidence
+    ├─ /api/chain/:ticker/:expiry      → Alpaca (options chain)
+    ├─ /api/ai-read                    → LLM Router (qwq) → one-sentence synthesis
+    ├─ /api/recommend                  → LLM Router (claude-sonnet) → 3 ranked strategies
+    └─ /verify                         → 8-agent pipeline (4 analysts + 2 debate + 2 synthesis)
+                                          → LLM Router (deepseek, claude-sonnet, claude-haiku)
+                                          → verdict + evidence + debate + mutations
+
+  genrecs (publish-pick.cjs)
+    │
+    ├─ /api/indicators/:ticker         → ground truth for LLM prompts (F1)
+    ├─ /api/sentiment/:ticker          → 4-engine composite (F3)
+    └─ /api/llm/call                   → analysis generation (F4)
+
+  Yahoo OI Service (internal)
+    │
+    └─ https://yahoo-options-svc-...   → yfinance → real OI, IV, volume per strike
+       Called ONLY by api/src/tools/nasdaq-oi.ts
+       Never called directly by frontend
+</pre>
+
+</div>
+</body>
+</html>
