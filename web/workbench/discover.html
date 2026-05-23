@@ -63,6 +63,38 @@
     .strat-chip.selected { border-color: var(--teal); background: var(--teal-bg); box-shadow: 0 0 8px rgba(13,110,86,0.1); }
     .strat-chip svg { width: 32px; height: 14px; flex-shrink: 0; }
     .strat-chip-name { font-size: 11px; font-weight: 600; }
+
+    /* Verification seats */
+    .vp-seat { background:var(--cream);border-radius:8px;padding:10px 12px;transition:all 0.3s; }
+    .vp-seat.processing { background:#fffbeb;border:1px solid #fcd34d; }
+    .vp-seat.done { background:var(--white);border:1px solid var(--border); }
+    .vp-seat-head { display:flex;justify-content:space-between;align-items:center;margin-bottom:6px; }
+    .vp-seat-head span:first-child { font-size:12px;font-weight:600; }
+    .vp-seat-tier { font-size:8px;padding:2px 6px;border-radius:3px;background:var(--cream-dark);color:var(--ink-muted);font-weight:600; }
+    .vp-seat-finding { font-size:11px;color:var(--ink-muted);line-height:1.5; }
+    .vp-seat-finding.active { color:var(--ink);font-style:italic; }
+    .vp-seat-tag { margin-top:6px; }
+    .vp-seat-tag span { font-size:9px;padding:2px 7px;border-radius:4px;font-weight:600; }
+    .vp-seat-tag .tag-supportive { background:var(--pass-bg);color:var(--pass-text); }
+    .vp-seat-tag .tag-caution { background:var(--concern-bg);color:var(--concern-text); }
+    .vp-seat-tag .tag-neutral { background:var(--cream-dark);color:var(--ink-muted); }
+    .vp-seat-transcript { font-size:11px;color:var(--ink-muted);line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);max-height:200px;overflow-y:auto; }
+    .vp-seat-expand { font-size:10px;color:var(--teal);cursor:pointer;margin-top:4px;background:none;border:none;text-decoration:underline; }
+
+    /* Verdict */
+    .v5-banner { padding:24px;border-radius:10px;text-align:center;margin-bottom:14px; }
+    .v5-banner.pass { background:var(--pass-bg);border:1.5px solid var(--pass-border); }
+    .v5-banner.concern { background:var(--concern-bg);border:1.5px solid var(--concern-border); }
+    .v5-banner.fail { background:var(--fail-bg);border:1.5px solid var(--fail-border); }
+    .v5-pill { display:inline-block;font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px; }
+    .v5-pill.pass { background:var(--pass-text);color:white; }
+    .v5-pill.concern { background:var(--concern-text);color:white; }
+    .v5-pill.fail { background:var(--fail-text);color:white; }
+    .v5-ring { width:64px;height:64px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;font-family:var(--mono);margin:10px auto; }
+    .v5-scale { display:flex;height:6px;border-radius:3px;overflow:hidden;margin:12px auto;max-width:300px; }
+    .v5-scale div { flex:1; }
+    .v5-desk-row { display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px; }
+    .v5-desk-row:last-child { border-bottom:none; }
     .panel { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(15,61,46,.04); }
     .panel-title { font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); margin-bottom: 16px; }
 
@@ -675,85 +707,65 @@
       </div>
     </div>
 
-    <!-- ===== STAGE 4: Live Verification ===== -->
+    <!-- ===== STAGE 4: AI Verification Desk ===== -->
     <div class="stage hidden" id="stage-4">
-      <div class="panel">
-        <div class="vp-header">
-          <h3>Verification in Progress</h3>
-          <div class="vp-progress-wrap">
-            <span class="vp-elapsed" id="elapsed-timer">0.0s</span>
-            <div class="vp-progress-bar"><div class="vp-progress-fill" id="vp-fill"></div></div>
-            <span class="vp-pct" id="vp-pct">0%</span>
+      <!-- Header -->
+      <div class="panel" style="padding:14px 18px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:18px;font-weight:700">AI Verification Desk</div>
+            <div style="font-size:12px;color:var(--ink-muted)">8 independent AI agents analyze your trade from every angle</div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span style="font-size:9px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.06em" id="vp-phase-label">Phase 1 of 3</span>
+            <span style="font-size:11px;font-family:var(--mono);color:var(--teal)" id="elapsed-timer">0.0s</span>
           </div>
         </div>
-        <div class="vp-timeline">
-          <div class="vp-glow" id="vp-glow"></div>
-
-          <div class="vp-phase" data-phase="1">
-            <div class="vp-phase-dot"></div>
-            <div class="vp-phase-title">Phase 1 &mdash; Analysts</div>
-            <div class="vp-agents">
-              <div class="vp-agent waiting" data-agent="technical">
-                <div class="va-row1"><span class="va-icon">&#x1F4C8;</span><span class="va-name">Technical</span></div>
-                <div class="va-model" style="color:var(--info-text)">Sonnet</div>
-                <div class="va-thinking"></div><div class="va-result"></div><div class="va-bar"></div>
-              </div>
-              <div class="vp-agent waiting" data-agent="gamma">
-                <div class="va-row1"><span class="va-icon">&#x1F6E1;</span><span class="va-name">Gamma</span></div>
-                <div class="va-model" style="color:var(--info-text)">Sonnet</div>
-                <div class="va-thinking"></div><div class="va-result"></div><div class="va-bar"></div>
-              </div>
-              <div class="vp-agent waiting" data-agent="iv">
-                <div class="va-row1"><span class="va-icon">&#x1F4CA;</span><span class="va-name">IV / Skew</span></div>
-                <div class="va-model" style="color:var(--pass-text)">Haiku</div>
-                <div class="va-thinking"></div><div class="va-result"></div><div class="va-bar"></div>
-              </div>
-              <div class="vp-agent waiting" data-agent="sentiment">
-                <div class="va-row1"><span class="va-icon">&#x1F4F0;</span><span class="va-name">Sentiment</span></div>
-                <div class="va-model" style="color:var(--pass-text)">DeepSeek</div>
-                <div class="va-thinking"></div><div class="va-result"></div><div class="va-bar"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="vp-phase" data-phase="2">
-            <div class="vp-phase-dot"></div>
-            <div class="vp-phase-title">Phase 2 &mdash; Debate</div>
-            <div class="vp-agents">
-              <div class="vp-agent waiting" data-agent="bull">
-                <div class="va-row1"><span class="va-icon">&#x1F4AA;</span><span class="va-name">Bull Researcher</span></div>
-                <div class="va-model" style="color:#a78bfa">NewLeaf-Plus</div>
-                <div class="va-thinking"></div><div class="va-result"></div><div class="va-bar"></div>
-              </div>
-              <div class="vp-agent waiting" data-agent="bear">
-                <div class="va-row1"><span class="va-icon">&#x26A0;</span><span class="va-name">Bear Researcher</span></div>
-                <div class="va-model" style="color:#a78bfa">NewLeaf-Plus</div>
-                <div class="va-thinking"></div><div class="va-result"></div><div class="va-bar"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="vp-phase" data-phase="3">
-            <div class="vp-phase-dot"></div>
-            <div class="vp-phase-title">Phase 3 &mdash; Risk &amp; Verdict</div>
-            <div class="vp-agents">
-              <div class="vp-agent waiting" data-agent="risk">
-                <div class="va-row1"><span class="va-icon">&#x1F4B0;</span><span class="va-name">Risk Manager</span></div>
-                <div class="va-model" style="color:var(--concern-text)">Sonnet</div>
-                <div class="va-thinking"></div><div class="va-result"></div><div class="va-bar"></div>
-              </div>
-              <div class="vp-agent waiting" data-agent="judge">
-                <div class="va-row1"><span class="va-icon">&#x2696;</span><span class="va-name">Judge</span></div>
-                <div class="va-model" style="color:var(--info-text)">Sonnet</div>
-                <div class="va-thinking"></div><div class="va-result"></div><div class="va-bar"></div>
-              </div>
-            </div>
-          </div>
+        <!-- Model tier strip -->
+        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+          <span style="font-size:9px;padding:2px 8px;border-radius:4px;background:var(--teal-bg);color:var(--teal-text);font-weight:600">NewLeaf Max</span>
+          <span style="font-size:9px;padding:2px 8px;border-radius:4px;background:var(--info-bg);color:var(--info-text);font-weight:600">NewLeaf Pro</span>
+          <span style="font-size:9px;padding:2px 8px;border-radius:4px;background:var(--concern-bg);color:var(--concern-text);font-weight:600">NewLeaf Edge</span>
+          <span style="font-size:9px;padding:2px 8px;border-radius:4px;background:#ede9fe;color:#5b21b6;font-weight:600">NewLeaf Fast</span>
+          <span style="font-size:9px;color:var(--ink-faint);align-self:center">Multi-model diversity for balanced analysis</span>
         </div>
+      </div>
+
+      <!-- Phase 1: Analysts -->
+      <div class="panel vp-phase-panel" data-phase="1" style="padding:14px 18px;margin-top:10px">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--teal);font-weight:600;margin-bottom:10px">Phase 1 — Analysts</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="vp-seat" data-agent="technical"><div class="vp-seat-head"><span>&#x1F4C8; Technical</span><span class="vp-seat-tier">NewLeaf Max</span></div><div class="vp-seat-finding" id="vp-find-technical">Waiting...</div><div class="vp-seat-tag" id="vp-tag-technical"></div><div class="vp-seat-transcript hidden" id="vp-tx-technical"></div></div>
+          <div class="vp-seat" data-agent="gamma"><div class="vp-seat-head"><span>&#x1F6E1; Gamma</span><span class="vp-seat-tier">NewLeaf Pro</span></div><div class="vp-seat-finding" id="vp-find-gamma">Waiting...</div><div class="vp-seat-tag" id="vp-tag-gamma"></div><div class="vp-seat-transcript hidden" id="vp-tx-gamma"></div></div>
+          <div class="vp-seat" data-agent="iv"><div class="vp-seat-head"><span>&#x1F4CA; IV / Skew</span><span class="vp-seat-tier">NewLeaf Fast</span></div><div class="vp-seat-finding" id="vp-find-iv">Waiting...</div><div class="vp-seat-tag" id="vp-tag-iv"></div><div class="vp-seat-transcript hidden" id="vp-tx-iv"></div></div>
+          <div class="vp-seat" data-agent="sentiment"><div class="vp-seat-head"><span>&#x1F4F0; Sentiment</span><span class="vp-seat-tier">NewLeaf Edge</span></div><div class="vp-seat-finding" id="vp-find-sentiment">Waiting...</div><div class="vp-seat-tag" id="vp-tag-sentiment"></div><div class="vp-seat-transcript hidden" id="vp-tx-sentiment"></div></div>
+        </div>
+      </div>
+
+      <!-- Phase 2: Debate -->
+      <div class="panel vp-phase-panel" data-phase="2" style="padding:14px 18px;margin-top:10px;opacity:0.4" id="vp-phase2">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--teal);font-weight:600;margin-bottom:10px">Phase 2 — Debate</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="vp-seat" data-agent="bull" style="border-left:3px solid var(--green)"><div class="vp-seat-head"><span>&#x1F4AA; Bull Researcher</span><span class="vp-seat-tier">NewLeaf Max</span></div><div class="vp-seat-finding" id="vp-find-bull">Waiting...</div><div class="vp-seat-transcript hidden" id="vp-tx-bull"></div></div>
+          <div class="vp-seat" data-agent="bear" style="border-left:3px solid var(--red)"><div class="vp-seat-head"><span>&#x26A0; Bear Researcher</span><span class="vp-seat-tier">NewLeaf Max</span></div><div class="vp-seat-finding" id="vp-find-bear">Waiting...</div><div class="vp-seat-transcript hidden" id="vp-tx-bear"></div></div>
+        </div>
+      </div>
+
+      <!-- Phase 3: Risk & Verdict -->
+      <div class="panel vp-phase-panel" data-phase="3" style="padding:14px 18px;margin-top:10px;opacity:0.4" id="vp-phase3">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--teal);font-weight:600;margin-bottom:10px">Phase 3 — Risk &amp; Verdict</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="vp-seat" data-agent="risk"><div class="vp-seat-head"><span>&#x1F4B0; Risk Manager</span><span class="vp-seat-tier">NewLeaf Pro</span></div><div class="vp-seat-finding" id="vp-find-risk">Waiting...</div><div class="vp-seat-transcript hidden" id="vp-tx-risk"></div></div>
+          <div class="vp-seat" data-agent="judge"><div class="vp-seat-head"><span>&#x2696; Judge</span><span class="vp-seat-tier">NewLeaf Max</span></div><div class="vp-seat-finding" id="vp-find-judge">Waiting...</div><div class="vp-seat-transcript hidden" id="vp-tx-judge"></div></div>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:10px">
+        <button onclick="toggleAllTranscripts()" style="background:none;border:none;color:var(--teal);font-size:11px;cursor:pointer;text-decoration:underline" id="vp-expand-all">Expand all transcripts</button>
       </div>
     </div>
 
-    <!-- ===== STAGE 5: Verdict & Mutate ===== -->
+    <!-- ===== STAGE 5: Verdict ===== -->
     <div class="stage hidden" id="stage-5">
       <div id="verdict-content"></div>
     </div>
@@ -1908,19 +1920,61 @@
     let verifyTimer = null;
     let verifyStart = 0;
 
+    function toggleAllTranscripts() {
+      const txEls = $$('#stage-4 .vp-seat-transcript');
+      const anyVisible = Array.from(txEls).some(e => !e.classList.contains('hidden'));
+      txEls.forEach(e => e.classList.toggle('hidden', anyVisible));
+      const btn = $('#vp-expand-all');
+      if (btn) btn.textContent = anyVisible ? 'Expand all transcripts' : 'Collapse all transcripts';
+    }
+
+    function setSeatState(agent, state, finding, tag, transcript) {
+      const el = $(`#vp-find-${agent}`);
+      const tagEl = $(`#vp-tag-${agent}`);
+      const txEl = $(`#vp-tx-${agent}`);
+      const seat = el?.closest('.vp-seat');
+      if (!seat) return;
+      seat.className = 'vp-seat ' + (state || '');
+      if (finding) {
+        el.textContent = finding;
+        el.className = 'vp-seat-finding' + (state === 'processing' ? ' active' : '');
+      }
+      if (tag && tagEl) {
+        const cls = tag === 'supportive' ? 'tag-supportive' : tag === 'caution' ? 'tag-caution' : 'tag-neutral';
+        tagEl.innerHTML = `<span class="${cls}">${tag}</span>`;
+      }
+      if (transcript && txEl) {
+        txEl.textContent = transcript;
+        txEl.innerHTML += '<br><button class="vp-seat-expand" onclick="this.parentElement.classList.toggle(\'hidden\')">collapse</button>';
+      }
+    }
+
+    function setPhaseActive(phase) {
+      const label = $('#vp-phase-label');
+      if (label) label.textContent = `Phase ${phase} of 3`;
+      // Activate panels
+      for (let p = 1; p <= 3; p++) {
+        const panel = $(`.vp-phase-panel[data-phase="${p}"]`);
+        if (!panel) continue;
+        panel.style.opacity = p <= phase ? '1' : '0.4';
+      }
+    }
+
     function enterStage4() {
-      // Reset all agents
-      $$('#stage-4 .vp-agent').forEach(a => { a.className = 'vp-agent waiting'; a.querySelector('.va-thinking').textContent = ''; a.querySelector('.va-result').textContent = ''; });
-      $$('#stage-4 .vp-phase').forEach(p => p.className = 'vp-phase');
-      $('#vp-fill').style.width = '0%';
-      $('#vp-pct').textContent = '0%';
+      // Reset seats
+      ['technical','gamma','iv','sentiment','bull','bear','risk','judge'].forEach(a => {
+        setSeatState(a, '', 'Waiting...', null, null);
+        const tagEl = $(`#vp-tag-${a}`);
+        if (tagEl) tagEl.innerHTML = '';
+        const txEl = $(`#vp-tx-${a}`);
+        if (txEl) { txEl.textContent = ''; txEl.classList.add('hidden'); }
+      });
+      setPhaseActive(1);
       $('#elapsed-timer').textContent = '0.0s';
-      $('#vp-glow').style.height = '0%';
 
       verifyStart = Date.now();
       verifyTimer = setInterval(() => {
-        const elapsed = (Date.now() - verifyStart) / 1000;
-        $('#elapsed-timer').textContent = elapsed.toFixed(1) + 's';
+        $('#elapsed-timer').textContent = ((Date.now() - verifyStart) / 1000).toFixed(1) + 's';
       }, 100);
 
       runVerificationAnimation();
@@ -1957,88 +2011,52 @@
         }).then(r => r.json());
       }
 
+      const AGENT_TAGS = { technical: 'supportive', gamma: 'supportive', iv: 'caution', sentiment: 'neutral', bull: 'supportive', bear: 'caution', risk: 'caution', judge: 'neutral' };
+
       const timeline = [
-        // Phase 1: Analysts (staggered start, finish 3-7s)
         { agent: 'technical', phase: 1, startAt: 300, doneAt: 3200, result: AGENT_RESULTS.technical },
         { agent: 'gamma', phase: 1, startAt: 500, doneAt: 4100, result: AGENT_RESULTS.gamma },
         { agent: 'iv', phase: 1, startAt: 800, doneAt: 5500, result: AGENT_RESULTS.iv },
         { agent: 'sentiment', phase: 1, startAt: 1100, doneAt: 6800, result: AGENT_RESULTS.sentiment },
-        // Phase 2: Debate (7-15s)
         { agent: 'bull', phase: 2, startAt: 7200, doneAt: 12000, result: AGENT_RESULTS.bull },
         { agent: 'bear', phase: 2, startAt: 7500, doneAt: 13500, result: AGENT_RESULTS.bear },
-        // Phase 3: Risk + Judge (15-24s)
         { agent: 'risk', phase: 3, startAt: 15000, doneAt: 20000, result: AGENT_RESULTS.risk },
         { agent: 'judge', phase: 3, startAt: 15500, doneAt: 23500, result: AGENT_RESULTS.judge }
       ];
 
-      const totalDuration = 24000;
       const startTime = Date.now();
       let activePhase = 0;
-
-      // Rotating thinking messages
       const thinkingIntervals = {};
 
       for (const step of timeline) {
-        // Wait until start time
         const waitStart = step.startAt - (Date.now() - startTime);
         if (waitStart > 0) await sleep(waitStart);
 
-        // Set phase active
         if (step.phase !== activePhase) {
-          if (activePhase > 0) {
-            const prevPhase = $(`#stage-4 .vp-phase[data-phase="${activePhase}"]`);
-            if (prevPhase) prevPhase.className = 'vp-phase done';
-          }
           activePhase = step.phase;
-          const phaseEl = $(`#stage-4 .vp-phase[data-phase="${step.phase}"]`);
-          if (phaseEl) phaseEl.className = 'vp-phase active';
+          setPhaseActive(activePhase);
         }
 
-        // Start processing
-        const agentEl = $(`#stage-4 .vp-agent[data-agent="${step.agent}"]`);
-        if (!agentEl) continue;
-        agentEl.className = 'vp-agent processing';
-
-        // Rotating thinking
-        const msgs = THINKING_MESSAGES[step.agent] || ['Thinking...'];
+        // Processing state with rotating messages
+        const msgs = THINKING_MESSAGES[step.agent] || ['Analyzing...'];
         let msgIdx = 0;
-        agentEl.querySelector('.va-thinking').textContent = msgs[0];
+        setSeatState(step.agent, 'processing', msgs[0]);
         thinkingIntervals[step.agent] = setInterval(() => {
           msgIdx = (msgIdx + 1) % msgs.length;
-          agentEl.querySelector('.va-thinking').textContent = msgs[msgIdx];
+          setSeatState(step.agent, 'processing', msgs[msgIdx]);
         }, 1500);
-
-        // Update progress
-        const pct = Math.min(100, Math.round(((Date.now() - startTime) / totalDuration) * 100));
-        $('#vp-fill').style.width = pct + '%';
-        $('#vp-pct').textContent = pct + '%';
-        const glowPct = Math.min(100, Math.round(((step.phase - 1) / 3) * 100 + 15));
-        $('#vp-glow').style.height = glowPct + '%';
       }
 
-      // Now wait for each agent to finish in order
+      // Complete each agent
       for (const step of timeline) {
         const waitDone = step.doneAt - (Date.now() - startTime);
         if (waitDone > 0) await sleep(waitDone);
 
-        const agentEl = $(`#stage-4 .vp-agent[data-agent="${step.agent}"]`);
-        if (!agentEl) continue;
         clearInterval(thinkingIntervals[step.agent]);
-        agentEl.className = 'vp-agent done';
-        agentEl.querySelector('.va-result').textContent = step.result;
-
-        // Update progress
-        const pct = Math.min(100, Math.round(((Date.now() - startTime) / totalDuration) * 100));
-        $('#vp-fill').style.width = pct + '%';
-        $('#vp-pct').textContent = pct + '%';
+        setSeatState(step.agent, 'done', step.result, AGENT_TAGS[step.agent]);
       }
 
-      // Mark final phase as done
-      const lastPhase = $(`#stage-4 .vp-phase[data-phase="3"]`);
-      if (lastPhase) lastPhase.className = 'vp-phase done';
-      $('#vp-fill').style.width = '100%';
-      $('#vp-pct').textContent = '100%';
-      $('#vp-glow').style.height = '100%';
+      setPhaseActive(3);
 
       clearInterval(verifyTimer);
       state.totalTime = (Date.now() - verifyStart) / 1000;
@@ -2115,7 +2133,25 @@
       const nc = computeNetCredit();
       const ml = computeMaxLoss(nc);
       const bk = computeBreakevens();
+      const totalCredit = nc * 100 * state.qty;
       const legsStr = state.legs.map(l => `${l.side === 'short' ? 'S' : 'L'} ${l.strike}${l.type[0].toUpperCase()}`).join(' / ');
+
+      // Desk summary: tally supportive vs caution
+      const agents = [
+        { name: 'Technical', data: ev.technical, summary: ev.technical?.summary || AGENT_RESULTS.technical },
+        { name: 'Gamma', data: ev.gamma, summary: ev.gamma?.summary || AGENT_RESULTS.gamma },
+        { name: 'IV/Skew', data: ev.iv, summary: ev.iv?.summary || AGENT_RESULTS.iv },
+        { name: 'Sentiment', data: ev.sentiment, summary: ev.sentiment?.summary || AGENT_RESULTS.sentiment },
+      ];
+      const supportive = agents.filter(a => {
+        const s = (a.summary || '').toLowerCase();
+        return s.includes('bullish') || s.includes('support') || s.includes('favorable') || s.includes('rich') || s.includes('contained');
+      }).length;
+      const cautious = agents.length - supportive;
+
+      const ringColor = v.verdictClass === 'pass' ? 'var(--green)' : v.verdictClass === 'fail' ? 'var(--red)' : 'var(--yellow)';
+      const confPct = v.confidence || 0;
+      const scalePos = Math.max(0, Math.min(100, confPct));
 
       // Trade summary with P&L chart
       const tradeSummary = `
@@ -2243,30 +2279,106 @@
       ` : '';
 
       $('#verdict-content').innerHTML = `
-        <div class="verdict-card ${v.verdictClass}">
-          <div class="verdict-confidence">
-            <div class="verdict-conf-num">${v.confidence}</div>
-            <div class="verdict-conf-label">Confidence</div>
+        <!-- Verdict banner -->
+        <div class="v5-banner ${v.verdictClass}">
+          <span class="v5-pill ${v.verdictClass}">${v.verdictClass === 'pass' ? 'Pass' : v.verdictClass === 'fail' ? 'Fail' : 'Caution'}</span>
+          <div style="font-size:22px;font-weight:800;margin:6px 0">${v.verdictWord}</div>
+          <div style="font-size:13px;color:var(--ink-mid);max-width:600px;margin:0 auto;line-height:1.5">${v.summary}</div>
+          <div class="v5-ring" style="border:3px solid ${ringColor};color:${ringColor}">${confPct}</div>
+          <div style="font-size:10px;color:var(--ink-muted);margin-top:-4px">Confidence score</div>
+          <div class="v5-scale">
+            <div style="background:var(--red)"></div>
+            <div style="background:var(--yellow)"></div>
+            <div style="background:var(--green)"></div>
           </div>
-          <div class="verdict-word">${v.verdictWord}</div>
-          <div class="verdict-summary">${v.summary}</div>
+          <div style="position:relative;max-width:300px;margin:-10px auto 0;height:4px">
+            <div style="position:absolute;left:${scalePos}%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:var(--ink);top:-2px"></div>
+          </div>
         </div>
 
-        ${tradeSummary}
-        ${mutationsHtml}
-        ${evidenceHtml}
-        ${sentHtml}
-        ${riskHtml}
-        ${debateHtml}
-
-        <div id="publish-status" class="hidden" style="padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:10px;border:1px solid var(--border)"></div>
-        <div class="actions-row">
-          <button class="btn-primary" id="publish-btn" onclick="handlePublishToPicks()">Publish to Picks &#8594;</button>
-          <button class="btn-secondary" onclick="handleSaveTrace()">Save trace + watch</button>
+        <!-- Trade card -->
+        <div class="panel" style="padding:14px 18px;margin-top:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div>
+              <div style="font-size:15px;font-weight:700">${state.selectedStrategy?.strategy || 'Trade'}</div>
+              <div style="font-size:11px;color:var(--ink-muted)">${state.ticker} \u00b7 ${state.selectedExpiry} \u00b7 ${state.qty} contracts \u00b7 ${legsStr}</div>
+            </div>
+            <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:${totalCredit>=0?'var(--green)':'var(--red)'}">
+              ${totalCredit>=0?'+':''}$${Math.abs(totalCredit).toFixed(0)}
+            </div>
+          </div>
+          <div class="pnl-chart-wrap"><canvas id="s5-pnl-canvas" height="160"></canvas></div>
         </div>
 
-        <div class="cost-summary">
-          $${state.totalCost.toFixed(3)} &middot; ${state.totalTime.toFixed(1)}s &middot; ${state.totalTokens.toLocaleString()} tokens
+        <!-- What the desk found -->
+        <div class="panel" style="padding:14px 18px;margin-top:12px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:10px">What the desk found</div>
+          <div style="display:flex;gap:12px;margin-bottom:12px">
+            <span style="font-size:12px;padding:4px 10px;border-radius:6px;background:var(--pass-bg);color:var(--pass-text);font-weight:600">${supportive} supportive</span>
+            <span style="font-size:12px;padding:4px 10px;border-radius:6px;background:var(--concern-bg);color:var(--concern-text);font-weight:600">${cautious} caution</span>
+          </div>
+          ${agents.map(a => {
+            const isSupportive = (a.summary || '').toLowerCase().match(/bullish|support|favorable|rich|contained/);
+            const tagCls = isSupportive ? 'tag-supportive' : 'tag-caution';
+            const tagWord = isSupportive ? 'supportive' : 'caution';
+            return `<div class="v5-desk-row">
+              <span style="font-weight:600;min-width:80px">${a.name}</span>
+              <span style="flex:1;color:var(--ink-muted)">${a.summary}</span>
+              <span class="vp-seat-tag"><span class="${tagCls}">${tagWord}</span></span>
+            </div>`;
+          }).join('')}
+          <div style="font-size:12px;color:var(--ink-muted);margin-top:12px;line-height:1.6;padding:10px;background:var(--cream);border-radius:6px">
+            <strong>How the ${confPct} was reached:</strong> ${v.summary || 'The desk weighed analyst evidence, debate arguments, and risk factors to produce the confidence score.'}
+          </div>
+          <div style="margin-top:8px;text-align:center">
+            <button onclick="goToStage(4)" style="background:none;border:none;color:var(--teal);font-size:11px;cursor:pointer;text-decoration:underline">View full transcripts in Step 4</button>
+          </div>
+        </div>
+
+        <!-- Mutations -->
+        ${state.mutations?.length ? `<div class="panel" style="padding:14px 18px;margin-top:12px">
+          <div style="font-size:14px;font-weight:700;margin-bottom:10px">One-click mutations</div>
+          <div style="display:grid;grid-template-columns:repeat(${Math.min(state.mutations.length,3)},1fr);gap:8px">
+            ${state.mutations.map((m, i) => `
+              <div class="panel" style="padding:12px;cursor:pointer;text-align:center;transition:all 0.15s;${i===0?'border-color:var(--teal);':''}${m.applied?'opacity:0.5;':''}" id="mutation-${i}" onclick="handleMutation(${i})">
+                ${i===0?'<div style="font-size:8px;background:var(--teal);color:white;padding:1px 6px;border-radius:3px;display:inline-block;margin-bottom:4px;font-weight:700">BEST</div>':''}
+                <div style="font-size:12px;font-weight:600">${m.label}</div>
+                <div style="font-size:14px;font-family:var(--mono);margin-top:4px">
+                  <span style="color:var(--ink-muted)">${m.from}</span>
+                  <span style="color:var(--green)"> \u2192 ${m.to}</span>
+                  <span style="font-size:10px;color:var(--green);font-weight:700"> \u25B2 +${m.to - m.from}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>` : ''}
+
+        <!-- Bull/Bear debate -->
+        ${state.debateRounds?.length || state.debate ? `<div class="panel" style="padding:14px 18px;margin-top:12px">
+          <details>
+            <summary style="font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">Bull vs Bear debate</summary>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+              <div style="padding:10px;background:rgba(26,140,94,0.06);border-radius:8px;border-left:3px solid var(--green)">
+                <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:4px">Bull Researcher</div>
+                <div style="font-size:11px;color:var(--ink-muted);line-height:1.5">${state.debate?.bullWonOn || state.debate?.bull?.wonOn || 'Premium richness supports the structure'}</div>
+              </div>
+              <div style="padding:10px;background:rgba(192,57,43,0.06);border-radius:8px;border-left:3px solid var(--red)">
+                <div style="font-size:11px;font-weight:600;color:var(--red);margin-bottom:4px">Bear Researcher</div>
+                <div style="font-size:11px;color:var(--ink-muted);line-height:1.5">${state.debate?.bearWonOn || state.debate?.bear?.wonOn || 'Risk factors require attention'}</div>
+              </div>
+            </div>
+          </details>
+        </div>` : ''}
+
+        <!-- Actions -->
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+          <button class="btn-primary" onclick="goToStage(3)" style="padding:10px 20px">Adjust strikes</button>
+          <button class="btn-primary" onclick="handleSaveTrace()" style="padding:10px 20px;background:var(--white);color:var(--ink);border:1px solid var(--border)">Save trace + watch</button>
+          <button class="btn-primary" id="publish-btn" onclick="handlePublishToPicks()" style="padding:10px 20px">Publish to Picks</button>
+        </div>
+        <div id="publish-status" class="hidden" style="padding:10px 14px;border-radius:8px;font-size:12px;margin-top:8px;border:1px solid var(--border)"></div>
+        <div style="font-size:10px;color:var(--ink-faint);margin-top:10px;text-align:center">
+          $${state.totalCost.toFixed(3)} \u00b7 ${state.totalTime.toFixed(1)}s \u00b7 ${state.totalTokens.toLocaleString()} tokens
         </div>
       `;
 
@@ -2481,6 +2593,7 @@
     window.onSliderMove = onSliderMove;
     window.onSliderDone = onSliderDone;
     window.updateLeg = updateLeg;
+    window.toggleAllTranscripts = toggleAllTranscripts;
 
     /* ================================================================
        INIT
