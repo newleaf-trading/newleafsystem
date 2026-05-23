@@ -18,12 +18,57 @@ export function UsageReport() {
   const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const snap = await getDocs(collection(db, 'discover_usage'));
-      const data = snap.docs
-        .filter(d => d.data().email)
-        .map(d => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => (b.totalRequests || 0) - (a.totalRequests || 0));
-      setUsers(data);
+      // Load from both collections and merge
+      const [usageSnap, authSnap] = await Promise.all([
+        getDocs(collection(db, 'discover_usage')),
+        getDocs(collection(db, 'users')),
+      ]);
+
+      // Build usage map keyed by email
+      const usageByEmail = {};
+      usageSnap.docs.filter(d => d.data().email).forEach(d => {
+        const data = d.data();
+        usageByEmail[data.email] = { id: d.id, ...data };
+      });
+
+      // Build merged user list from auth users
+      const merged = [];
+      const seenEmails = new Set();
+
+      authSnap.docs.forEach(d => {
+        const data = d.data();
+        const email = data.email || '';
+        if (!email || seenEmails.has(email)) return;
+        seenEmails.add(email);
+        const usage = usageByEmail[email] || {};
+        merged.push({
+          id: usage.id || email.replace(/[^a-zA-Z0-9]/g, '_'),
+          email,
+          displayName: data.displayName || '',
+          uid: d.id,
+          tier: usage.tier || null,
+          dailyLimit: usage.dailyLimit ?? null,
+          totalRequests: usage.totalRequests || 0,
+          totalCost: usage.totalCost || 0,
+          totalTokens: usage.totalTokens || 0,
+          lastActiveAt: usage.lastActiveAt || data.lastLoginAt || null,
+          lastTicker: usage.lastTicker || '',
+          lastAction: usage.lastAction || '',
+          firstSeenAt: usage.firstSeenAt || data.createdAt || null,
+          hasUsage: !!usageByEmail[email],
+        });
+      });
+
+      // Add any discover_usage users not in auth (shouldn't happen but safe)
+      Object.values(usageByEmail).forEach(u => {
+        if (!seenEmails.has(u.email)) {
+          seenEmails.add(u.email);
+          merged.push({ ...u, hasUsage: true });
+        }
+      });
+
+      merged.sort((a, b) => (b.totalRequests || 0) - (a.totalRequests || 0));
+      setUsers(merged);
     } catch (err) {
       console.error('Failed to load users:', err);
     } finally {
