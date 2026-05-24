@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf System — Deployment &amp; Caching Diagram</title>
+<style>
+  :root { --forest: #1a5632; --leaf: #2d8a4e; --gold: #c9a96e; --bg: #fafaf8; --card: #fff; --border: #e8e5e0; --text: #1a1a1a; --gray: #6b7280; --mono: 'SF Mono', 'Fira Code', monospace; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+  h1 { font-size: 28px; font-weight: 800; color: var(--forest); margin-bottom: 8px; }
+  h2 { font-size: 20px; font-weight: 700; color: var(--forest); margin: 36px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+  h3 { font-size: 16px; font-weight: 600; margin: 24px 0 10px; }
+  .subtitle { font-size: 14px; color: var(--gray); margin-bottom: 32px; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 20px; border-radius: 10px; font-family: var(--mono); font-size: 11px; overflow-x: auto; margin: 16px 0; line-height: 1.8; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+  th { text-align: left; padding: 8px 12px; background: #f3f2ef; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); border-bottom: 1px solid var(--border); }
+  td { padding: 8px 12px; border-bottom: 1px solid #f0eeeb; vertical-align: top; }
+  code { font-family: var(--mono); font-size: 12px; background: #f3f2ef; padding: 2px 6px; border-radius: 4px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 700; }
+  .b-fn { background: #fef3c7; color: #92400e; }
+  .b-cr { background: #dbeafe; color: #1e40af; }
+  .b-host { background: #dcfce7; color: #166534; }
+  .b-ext { background: #ede9fe; color: #5b21b6; }
+  .b-cache { background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7; }
+  .b-nocache { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>NewLeaf System — Deployment &amp; Caching Diagram</h1>
+<p class="subtitle">Technology stack, deployment targets, caching strategy, and data flow &nbsp;|&nbsp; Updated 24 May 2026</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Deployment Architecture</h2>
+
+<pre>
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │  BROWSERS                                                                   │
+  │  newleafsystem.com  /picks  /invest  /workbench  /login  /signup           │
+  │  newleaf-desk.web.app                                                      │
+  └──────────────────────────┬──────────────────────────────────────────────────┘
+                             │ HTTPS
+  ┌──────────────────────────▼──────────────────────────────────────────────────┐
+  │  FIREBASE HOSTING  ×2                                          [CDN EDGE]  │
+  │                                                                            │
+  │  ┌─────────────────────────┐    ┌──────────────────────────┐               │
+  │  │  newleafsystem.com      │    │  newleaf-desk.web.app    │               │
+  │  │  React SPA (Vite)       │    │  React SPA (Vite)        │               │
+  │  │  Static workbench HTML  │    │  Publishing dashboard    │               │
+  │  │                         │    │                          │               │
+  │  │  Cache: CDN edge cache  │    │  Cache: CDN edge cache   │               │
+  │  │  for static assets      │    │  for static assets       │               │
+  │  │  (JS/CSS: 1hr,          │    │                          │               │
+  │  │   HTML: no-cache)       │    │                          │               │
+  │  └─────────┬───────────────┘    └──────────┬───────────────┘               │
+  │            │                               │                               │
+  └────────────┼───────────────────────────────┼───────────────────────────────┘
+               │ HTTP (API calls)              │ HTTP (Firestore reads)
+  ┌────────────▼───────────────────────────────▼───────────────────────────────┐
+  │  FIREBASE CLOUD FUNCTIONS v2  (us-central1)                    [SERVERLESS]│
+  │  Target: api.newleafsystem.com (via Cloudflare)                            │
+  │                                                                            │
+  │  ┌──────────────────────────────────────────────────────────────────────┐  │
+  │  │  api/ — TypeScript + Fastify                                         │  │
+  │  │  Runtime: Node.js 22 | Memory: 1 GB | Timeout: 540s                 │  │
+  │  │                                                                      │  │
+  │  │  ┌────────────────────────────────────────────────────────────────┐  │  │
+  │  │  │  LLM Router (10 models, 6 providers)                          │  │  │
+  │  │  │  Claude Sonnet/Haiku | GPT-4 | Grok | Gemini Pro/Flash       │  │  │
+  │  │  │  DeepSeek/R1 | Qwen QwQ/Max                                  │  │  │
+  │  │  │                                                               │  │  │
+  │  │  │  Cache: NONE (LLM calls are unique per prompt)                │  │  │
+  │  │  └────────────────────────────────────────────────────────────────┘  │  │
+  │  │                                                                      │  │
+  │  │  Endpoints:                                                          │  │
+  │  │  GET  /api/snapshot/:ticker        Cache: NONE (real-time price)     │  │
+  │  │  GET  /api/indicators/:ticker      Cache: NONE (computed on demand)  │  │
+  │  │  GET  /api/chain/:ticker/:expiry   Cache: NONE (real-time chain)     │  │
+  │  │  GET  /api/gamma/:ticker/:expiry   Cache: NONE (delegates to Yahoo)  │  │
+  │  │  GET  /api/gamma-analysis/...      Cache: NONE (delegates to Yahoo)  │  │
+  │  │  GET  /api/sentiment/:ticker       Cache: NONE (4 LLM calls)        │  │
+  │  │  POST /api/ai-read                 Cache: NONE (unique per request)  │  │
+  │  │  POST /api/recommend               Cache: NONE (unique per request)  │  │
+  │  │  POST /api/llm/call                Cache: NONE (generic LLM proxy)   │  │
+  │  │  POST /verify                      Cache: NONE (8-agent pipeline)    │  │
+  │  │  POST /api/publish-from-analysis   Cache: NONE (writes to Firestore) │  │
+  │  │  GET  /admin/model-assignments     Cache: NONE (reads from config)   │  │
+  │  │  GET  /admin/usage-summary         Cache: NONE (in-memory session)   │  │
+  │  └──────────────────────────────────────────────────────────────────────┘  │
+  │                                                                            │
+  │  Secrets: Firebase Secret Manager (12 API keys)                            │
+  │  Auth: X-API-Key header, RBAC tiers (free/basic/premium/admin)            │
+  └────────────────────────┬───────────────────────────────────────────────────┘
+                           │ HTTP (Yahoo OI data)
+  ┌────────────────────────▼───────────────────────────────────────────────────┐
+  │  CLOUD RUN  (us-central1)                                      [CONTAINER]│
+  │                                                                            │
+  │  ┌──────────────────────────────────────────────────────────────────────┐  │
+  │  │  Yahoo OI Service (services/yahoo-oi/)                               │  │
+  │  │  Runtime: Python 3.11 + Flask + gunicorn                            │  │
+  │  │  URL: yahoo-options-svc-m2cty2vxuq-uc.a.run.app                    │  │
+  │  │                                                                      │  │
+  │  │  Container: 1 worker × 4 threads | Memory: 512 MB                   │  │
+  │  │  Concurrency: 10 requests/instance | Max instances: 3               │  │
+  │  │                                                                      │  │
+  │  │  ┌────────────────────────────────────────────────────────────┐      │  │
+  │  │  │  IN-MEMORY CACHE — 60 MINUTE TTL                          │      │  │
+  │  │  │                                                            │      │  │
+  │  │  │  Key: "chain:{SYMBOL}:{EXPIRY}"                           │      │  │
+  │  │  │  Value: full option chain (calls + puts + OI + IV)        │      │  │
+  │  │  │  TTL: 3600s (60 min) — OI updates once daily              │      │  │
+  │  │  │  Max entries: 200                                          │      │  │
+  │  │  │                                                            │      │  │
+  │  │  │  Key: "expirations:{SYMBOL}"                              │      │  │
+  │  │  │  Value: expiry dates + current price                      │      │  │
+  │  │  │  TTL: 3600s (60 min)                                      │      │  │
+  │  │  │                                                            │      │  │
+  │  │  │  First call: ~2s (Yahoo Finance via yfinance)             │      │  │
+  │  │  │  Cache hit:  ~5ms (instant from memory)                   │      │  │
+  │  │  └────────────────────────────────────────────────────────────┘      │  │
+  │  │                                                                      │  │
+  │  │  Endpoints:                                                          │  │
+  │  │  GET /api/options/{symbol}          Cache: 60 MIN                    │  │
+  │  │  GET /api/options/{symbol}/{expiry} Cache: 60 MIN                    │  │
+  │  │  GET /health                        Cache: NONE                      │  │
+  │  └──────────────────────────────────────────────────────────────────────┘  │
+  └────────────────────────┬───────────────────────────────────────────────────┘
+                           │ yfinance HTTP calls
+  ┌────────────────────────▼───────────────────────────────────────────────────┐
+  │  EXTERNAL SERVICES                                                         │
+  │                                                                            │
+  │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────────────┐ │
+  │  │  Yahoo Finance   │  │  Alpaca Markets  │  │  LLM Providers (×6)     │ │
+  │  │  (via yfinance)  │  │  (REST API)      │  │  Anthropic, OpenAI,     │ │
+  │  │                  │  │                  │  │  xAI, Google, DeepSeek, │ │
+  │  │  OI, IV, volume  │  │  Spot prices     │  │  DashScope              │ │
+  │  │  per strike      │  │  Option chains   │  │                         │ │
+  │  │                  │  │  Historical bars  │  │  Cache: NONE            │ │
+  │  │  Rate limited    │  │  Greeks           │  │  (unique prompts)       │ │
+  │  │  (aggressive)    │  │                  │  │                         │ │
+  │  │                  │  │  Cache: NONE     │  │                         │ │
+  │  └──────────────────┘  └──────────────────┘  └──────────────────────────┘ │
+  │                                                                            │
+  │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────────────┐ │
+  │  │  Reddit API      │  │  StockTwits API  │  │  Serper API             │ │
+  │  │  (no auth)       │  │  (no auth)       │  │  (search)               │ │
+  │  │  Cache: NONE     │  │  Cache: NONE     │  │  Cache: NONE            │ │
+  │  └──────────────────┘  └──────────────────┘  └──────────────────────────┘ │
+  └────────────────────────────────────────────────────────────────────────────┘
+
+  ┌────────────────────────────────────────────────────────────────────────────┐
+  │  DATA STORES                                                               │
+  │                                                                            │
+  │  ┌─────────────────────────────┐  ┌────────────────────────────────────┐  │
+  │  │  Firestore (newleafdb)      │  │  Cloudflare R2 (newleaf bucket)   │  │
+  │  │  Firebase managed           │  │  Object storage                    │  │
+  │  │                             │  │                                    │  │
+  │  │  tiles, analyses,           │  │  reports/{SYM}/latest.json        │  │
+  │  │  weeklyPicks, publications, │  │  reports/pdf/{SYM}/*.pdf          │  │
+  │  │  users, discover_usage,     │  │  reports/manifest.json            │  │
+  │  │  apiKeys                    │  │  pipeline-status/                  │  │
+  │  │                             │  │                                    │  │
+  │  │  Cache: Firestore built-in  │  │  Cache: R2 CDN (public, cached)  │  │
+  │  │  (client SDK auto-caches)   │  │  Cache-Control: 1hr for assets   │  │
+  │  └─────────────────────────────┘  └────────────────────────────────────┘  │
+  │                                                                            │
+  │  ┌─────────────────────────────┐                                          │
+  │  │  Firebase Auth              │                                          │
+  │  │  Google + Email/Password    │                                          │
+  │  │  Session: browser-managed   │                                          │
+  │  └─────────────────────────────┘                                          │
+  └────────────────────────────────────────────────────────────────────────────┘
+
+  ┌────────────────────────────────────────────────────────────────────────────┐
+  │  LOCAL / SCHEDULED (not deployed)                                          │
+  │                                                                            │
+  │  ┌─────────────────────────────┐  ┌────────────────────────────────────┐  │
+  │  │  pipeline/ (Node.js)        │  │  generaterecommendations/ (CJS)   │  │
+  │  │  macOS LaunchAgent cron     │  │  CLI scripts for pick publishing  │  │
+  │  │  15-min scan, OI enrichment │  │  Calls api/ over HTTP for LLM,   │  │
+  │  │  Uploads to R2              │  │  sentiment, indicators            │  │
+  │  │  Cache: NONE                │  │  Cache: NONE                      │  │
+  │  └─────────────────────────────┘  └────────────────────────────────────┘  │
+  └────────────────────────────────────────────────────────────────────────────┘
+</pre>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Technology Stack</h2>
+
+<table>
+  <thead><tr><th>Component</th><th>Technology</th><th>Deploy Target</th><th>Type</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Web SPA</strong></td><td>React 18 + Vite 5</td><td><span class="badge b-host">Firebase Hosting</span></td><td>Static SPA with SSR prerender</td></tr>
+    <tr><td><strong>Workbench</strong></td><td>Vanilla HTML/JS + Highcharts</td><td><span class="badge b-host">Firebase Hosting</span></td><td>Static HTML (workbench/*.html)</td></tr>
+    <tr><td><strong>Desk App</strong></td><td>React 18 + Vite 5</td><td><span class="badge b-host">Firebase Hosting</span></td><td>Static SPA</td></tr>
+    <tr><td><strong>API</strong></td><td>TypeScript + Fastify</td><td><span class="badge b-fn">Cloud Functions v2</span></td><td>Serverless (Node.js 22)</td></tr>
+    <tr><td><strong>Yahoo OI Service</strong></td><td>Python 3.11 + Flask + gunicorn</td><td><span class="badge b-cr">Cloud Run</span></td><td>Container (Docker)</td></tr>
+    <tr><td><strong>Pipeline</strong></td><td>Node.js + node-cron</td><td>Local (LaunchAgent)</td><td>Scheduled scripts</td></tr>
+    <tr><td><strong>GenRecs</strong></td><td>Node.js (CommonJS)</td><td>Local (CLI)</td><td>CLI scripts → API over HTTP</td></tr>
+    <tr><td><strong>Shared Indicators</strong></td><td>Plain JavaScript (ESM/CJS)</td><td>Bundled with API</td><td>Library</td></tr>
+    <tr><td><strong>Database</strong></td><td>Firestore</td><td><span class="badge b-fn">Firebase</span></td><td>Document database</td></tr>
+    <tr><td><strong>Object Storage</strong></td><td>Cloudflare R2</td><td><span class="badge b-ext">Cloudflare</span></td><td>S3-compatible storage</td></tr>
+    <tr><td><strong>Auth</strong></td><td>Firebase Auth</td><td><span class="badge b-fn">Firebase</span></td><td>Google + email/password</td></tr>
+    <tr><td><strong>DNS/CDN (planned)</strong></td><td>Cloudflare</td><td><span class="badge b-ext">Cloudflare</span></td><td>Proxy + DDoS + rate limiting</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Caching Strategy</h2>
+
+<div class="grid-2">
+<div class="card">
+<h3><span class="badge b-cache">CACHED</span> &nbsp; Yahoo OI Service</h3>
+<table>
+  <tr><td><strong>What</strong></td><td>Option chain data (OI, IV, volume per strike)</td></tr>
+  <tr><td><strong>Where</strong></td><td>In-memory (Python dict) in Cloud Run container</td></tr>
+  <tr><td><strong>TTL</strong></td><td>60 minutes</td></tr>
+  <tr><td><strong>Why 60 min</strong></td><td>OI updates once daily after market close (~5:30 PM ET). During trading hours, OI is yesterday's number. 60 min is very conservative.</td></tr>
+  <tr><td><strong>Cold miss</strong></td><td>~2 seconds (yfinance call to Yahoo Finance)</td></tr>
+  <tr><td><strong>Cache hit</strong></td><td>~5 milliseconds</td></tr>
+  <tr><td><strong>Max entries</strong></td><td>200 (auto-prune oldest)</td></tr>
+  <tr><td><strong>Invalidation</strong></td><td>TTL-based only. Container restart clears cache.</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h3><span class="badge b-cache">CACHED</span> &nbsp; Firebase Hosting (CDN)</h3>
+<table>
+  <tr><td><strong>What</strong></td><td>Static assets (JS, CSS, images, fonts)</td></tr>
+  <tr><td><strong>Where</strong></td><td>Firebase CDN edge nodes worldwide</td></tr>
+  <tr><td><strong>TTL</strong></td><td>JS/CSS: 1 hour | Images/fonts: 1 week | HTML: no-cache</td></tr>
+  <tr><td><strong>Why</strong></td><td>Vite builds produce hashed filenames — safe to cache long. HTML always fresh for SPA routing.</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h3><span class="badge b-cache">CACHED</span> &nbsp; Cloudflare R2</h3>
+<table>
+  <tr><td><strong>What</strong></td><td>Pipeline reports, PDFs, manifests</td></tr>
+  <tr><td><strong>Where</strong></td><td>Cloudflare edge (public bucket with CDN)</td></tr>
+  <tr><td><strong>TTL</strong></td><td>Cache-Control: 1 hour for JSON, immutable for PDFs</td></tr>
+  <tr><td><strong>Why</strong></td><td>Pipeline uploads once daily. Reports are stable.</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h3><span class="badge b-cache">CACHED</span> &nbsp; Firestore Client SDK</h3>
+<table>
+  <tr><td><strong>What</strong></td><td>Tiles, analyses, weeklyPicks, user data</td></tr>
+  <tr><td><strong>Where</strong></td><td>Browser (Firestore SDK auto-caches with offline persistence)</td></tr>
+  <tr><td><strong>TTL</strong></td><td>Automatic (real-time listeners stay fresh; queries cache for offline)</td></tr>
+</table>
+</div>
+</div>
+
+<h3>What is NOT cached (and why)</h3>
+
+<table>
+  <thead><tr><th>Service</th><th>Why not cached</th><th>Should we add cache?</th></tr></thead>
+  <tbody>
+    <tr><td><code>/api/snapshot/:ticker</code></td><td>Real-time price — must be current</td><td>Maybe 30s edge cache via Cloudflare</td></tr>
+    <tr><td><code>/api/indicators/:ticker</code></td><td>Computed from 250 daily bars — stable intraday</td><td><strong>Yes — 5 min cache recommended</strong> (bars don't change intraday)</td></tr>
+    <tr><td><code>/api/chain/:ticker/:expiry</code></td><td>Real-time bid/ask + IV changes with every trade</td><td>Maybe 60s for the workbench</td></tr>
+    <tr><td><code>/api/gamma/:ticker/:expiry</code></td><td>Delegates to Yahoo OI (which IS cached)</td><td>Implicitly cached via Yahoo OI Service</td></tr>
+    <tr><td><code>/api/gamma-analysis/...</code></td><td>Computes BS gamma from Yahoo data (cached upstream)</td><td>Implicitly cached via Yahoo OI Service</td></tr>
+    <tr><td><code>/api/sentiment/:ticker</code></td><td>4 LLM calls — unique, expensive ($0.01-0.03)</td><td>Maybe 30 min — sentiment doesn't change fast</td></tr>
+    <tr><td><code>POST /api/ai-read</code></td><td>LLM synthesis — unique per market state</td><td>No — context changes with every call</td></tr>
+    <tr><td><code>POST /api/recommend</code></td><td>LLM strategy ranking — unique per ticker+expiry</td><td>Maybe 10 min — same ticker+expiry gets same result</td></tr>
+    <tr><td><code>POST /verify</code></td><td>8-agent pipeline — expensive ($0.05), unique</td><td><strong>Yes — verdict cache by legs hash (30 min)</strong></td></tr>
+    <tr><td>LLM Router calls</td><td>Every prompt is unique</td><td>No</td></tr>
+    <tr><td>Alpaca Market Data</td><td>Real-time prices and chains</td><td>Maybe 30s for snapshot</td></tr>
+    <tr><td>Reddit/StockTwits</td><td>Social data changes frequently</td><td>Maybe 15 min</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Request Flow with Caching</h2>
+
+<pre>
+  User loads AAPL on discover.html:
+
+  1. GET /api/snapshot/AAPL
+     └─→ API → Alpaca (real-time)                          NO CACHE    ~500ms
+
+  2. GET /api/indicators/AAPL
+     └─→ API → Alpaca 250 bars → shared/indicators/        NO CACHE    ~800ms
+         (could be cached 5 min — bars don't change intraday)
+
+  3. GET /api/gamma-analysis/AAPL/2026-06-12
+     └─→ API → Yahoo OI Service (Cloud Run)
+              └─→ Cache HIT?  → return in ~5ms             CACHED 60m
+              └─→ Cache MISS? → yfinance → Yahoo Finance   ~2000ms
+                               → cache result
+              → API computes BS gamma, walls, confidence    ~50ms
+
+  4. POST /api/ai-read { ticker, spot, rsi, ... }
+     └─→ API → LLM Router → QwQ (DashScope)               NO CACHE    ~3000ms
+
+  5. User clicks "Find strategies"
+     POST /api/recommend { ticker, expiry }
+     └─→ API → LLM Router → Claude Sonnet                  NO CACHE    ~5000ms
+
+  6. User clicks "Verify trade"
+     POST /verify { ticker, legs, ... }
+     └─→ API → 8-agent pipeline
+              → 4 analysts parallel → LLM Router            NO CACHE    ~24s
+              → 2 debate agents    → LLM Router                         $0.05
+              → risk + judge       → LLM Router
+         (could cache by legs hash for 30 min)
+
+  Total for full flow: ~35s, ~$0.07
+  With recommended caching: ~25s, ~$0.06
+</pre>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Recommended Cache Additions</h2>
+
+<table>
+  <thead><tr><th>What</th><th>Where</th><th>TTL</th><th>Impact</th><th>Priority</th></tr></thead>
+  <tbody>
+    <tr><td><code>/api/indicators/:ticker</code></td><td>API in-memory or Cloudflare edge</td><td>5 min</td><td>Saves ~800ms per snapshot load. Bars are daily — recomputing every request is wasteful.</td><td>High</td></tr>
+    <tr><td><code>/api/sentiment/:ticker</code></td><td>API in-memory</td><td>30 min</td><td>Saves $0.01-0.03 per call + 30s latency. Sentiment doesn't shift in 30 min.</td><td>High</td></tr>
+    <tr><td><code>POST /verify</code> (by legs hash)</td><td>API in-memory or Firestore</td><td>30 min</td><td>Saves $0.05 + 24s if same trade re-verified. Don't burn daily credits on re-verifies.</td><td>High</td></tr>
+    <tr><td><code>/api/snapshot/:ticker</code></td><td>Cloudflare edge</td><td>30s</td><td>Saves Alpaca call. Price is ~30s stale — acceptable for analysis.</td><td>Medium</td></tr>
+    <tr><td><code>POST /api/recommend</code></td><td>API in-memory (by ticker+expiry)</td><td>10 min</td><td>Same ticker+expiry gets same strategies. Saves $0.01 + 5s.</td><td>Medium</td></tr>
+  </tbody>
+</table>
+
+</div>
+</body>
+</html>
