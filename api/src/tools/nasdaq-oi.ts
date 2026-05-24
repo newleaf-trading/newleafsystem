@@ -198,38 +198,61 @@ export async function fetchFullGammaAnalysis(ticker: string, expiry: string, spo
   const puts: any[] = data.puts || [];
   const spot = spotPrice || data.currentPrice || 0;
 
-  // Build per-strike analysis
+  // Black-Scholes gamma: N'(d1) / (S * σ * √T)
+  // where d1 = [ln(S/K) + (σ²/2)*T] / (σ*√T), N'(x) = (1/√2π)*e^(-x²/2)
+  const daysToExpiry = Math.max(1, Math.round((new Date(expiry).getTime() - Date.now()) / 86400000));
+  const T = daysToExpiry / 365;
+  const sqrtT = Math.sqrt(T);
+  const sqrt2pi = Math.sqrt(2 * Math.PI);
+
+  function bsGamma(strike: number, iv: number): number {
+    if (!iv || iv <= 0 || !spot || spot <= 0) return 0;
+    const sigma = iv; // already decimal (e.g. 0.35)
+    const d1 = (Math.log(spot / strike) + (sigma * sigma / 2) * T) / (sigma * sqrtT);
+    const nPrimeD1 = Math.exp(-d1 * d1 / 2) / sqrt2pi;
+    return nPrimeD1 / (spot * sigma * sqrtT);
+  }
+
+  // Build per-strike analysis with proper BS gamma
   const strikeMap = new Map<number, {
     strike: number; callOI: number; putOI: number;
     callVolume: number; putVolume: number;
     callIV: number; putIV: number;
-    callDelta: number; putDelta: number;
+    callGex: number; putGex: number; netGex: number;
     gammaExposure: number;
   }>();
 
   for (const c of calls) {
     const s = c.strike;
-    if (!strikeMap.has(s)) strikeMap.set(s, { strike: s, callOI: 0, putOI: 0, callVolume: 0, putVolume: 0, callIV: 0, putIV: 0, callDelta: 0, putDelta: 0, gammaExposure: 0 });
+    if (!strikeMap.has(s)) strikeMap.set(s, { strike: s, callOI: 0, putOI: 0, callVolume: 0, putVolume: 0, callIV: 0, putIV: 0, callGex: 0, putGex: 0, netGex: 0, gammaExposure: 0 });
     const entry = strikeMap.get(s)!;
     entry.callOI = c.openInterest || 0;
     entry.callVolume = c.volume || 0;
     entry.callIV = c.impliedVolatility || 0;
-    // Approximate gamma from IV + moneyness (Black-Scholes gamma approximation)
-    const moneyness = Math.abs(Math.log(spot / s));
-    const approxGamma = moneyness < 0.3 ? 0.01 * (1 - moneyness * 3) : 0.001;
-    entry.gammaExposure += (c.openInterest || 0) * approxGamma * spot * spot * 0.01;
+    const gamma = bsGamma(s, c.impliedVolatility || 0);
+    const size = (c.openInterest || 0) > 0 ? c.openInterest : (c.volume || 0);
+    const gex = gamma * size * spot * spot * 0.01;
+    entry.callGex += gex;
+    entry.gammaExposure += gex;
   }
 
   for (const p of puts) {
     const s = p.strike;
-    if (!strikeMap.has(s)) strikeMap.set(s, { strike: s, callOI: 0, putOI: 0, callVolume: 0, putVolume: 0, callIV: 0, putIV: 0, callDelta: 0, putDelta: 0, gammaExposure: 0 });
+    if (!strikeMap.has(s)) strikeMap.set(s, { strike: s, callOI: 0, putOI: 0, callVolume: 0, putVolume: 0, callIV: 0, putIV: 0, callGex: 0, putGex: 0, netGex: 0, gammaExposure: 0 });
     const entry = strikeMap.get(s)!;
     entry.putOI = p.openInterest || 0;
     entry.putVolume = p.volume || 0;
     entry.putIV = p.impliedVolatility || 0;
-    const moneyness = Math.abs(Math.log(spot / s));
-    const approxGamma = moneyness < 0.3 ? 0.01 * (1 - moneyness * 3) : 0.001;
-    entry.gammaExposure += (p.openInterest || 0) * approxGamma * spot * spot * 0.01;
+    const gamma = bsGamma(s, p.impliedVolatility || 0);
+    const size = (p.openInterest || 0) > 0 ? p.openInterest : (p.volume || 0);
+    const gex = gamma * size * spot * spot * 0.01;
+    entry.putGex -= gex; // negative for puts (dealers buy when price falls)
+    entry.gammaExposure += gex; // absolute for wall detection
+  }
+
+  // Compute netGex for each strike
+  for (const entry of strikeMap.values()) {
+    entry.netGex = entry.callGex + entry.putGex;
   }
 
   const strikes = [...strikeMap.values()].sort((a, b) => a.strike - b.strike);
@@ -278,13 +301,16 @@ export async function fetchFullGammaAnalysis(ticker: string, expiry: string, spo
   }
   const ivLevel = atmIv ? (atmIv > 50 ? 'high' : atmIv > 25 ? 'normal' : 'low') : 'unknown';
 
-  // Top strikes by gamma exposure
+  // Top strikes by gamma exposure (with call/put/net GEX)
   const topStrikes = [...strikes]
     .sort((a, b) => b.gammaExposure - a.gammaExposure)
     .slice(0, 20)
     .map(s => ({
       strike: s.strike,
       gammaExposure: +s.gammaExposure.toFixed(0),
+      callGex: +s.callGex.toFixed(0),
+      putGex: +s.putGex.toFixed(0),
+      netGex: +s.netGex.toFixed(0),
       callOI: s.callOI,
       putOI: s.putOI,
       callVolume: s.callVolume,

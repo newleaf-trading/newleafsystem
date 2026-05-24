@@ -377,6 +377,7 @@
       .pn-line { width: 30px; }
     }
   </style>
+  <script src="https://code.highcharts.com/highcharts.js"></script>
 </head>
 <body>
   <header>
@@ -1332,8 +1333,84 @@
     function renderGammaAnalysis(ga, r2, spot) {
       const el = document.getElementById('gamma-chart-content');
       if (!el) return;
-      if ((!ga.oiByStrike || !ga.oiByStrike.length) && !r2) return;
-      _renderGamma(el, ga, r2, spot);
+
+      // Use the r2-shaped data which now comes from /api/gamma-analysis
+      const analysis = r2?.gammaData?.analysis || {};
+      const topStrikes = (analysis.topStrikes || []).sort((a, b) => a.strike - b.strike);
+
+      if (!topStrikes.length && (!ga.oiByStrike || !ga.oiByStrike.length)) {
+        _renderGamma(el, ga, r2, spot); // fallback to canvas
+        return;
+      }
+
+      // Render Highcharts GEX chart if data available
+      if (topStrikes.length && typeof Highcharts !== 'undefined') {
+        // Build the info panels (walls, confidence, IV) using the shared renderer
+        _renderGamma(el, ga, r2, spot);
+
+        // Replace the canvas with a Highcharts container
+        const canvas = document.getElementById('gamma-canvas');
+        if (canvas) {
+          const hcDiv = document.createElement('div');
+          hcDiv.id = 'gamma-hc';
+          hcDiv.style.width = '100%';
+          hcDiv.style.height = '380px';
+          canvas.replaceWith(hcDiv);
+
+          const categories = topStrikes.map(s => '$' + s.strike);
+          const hasNetGex = topStrikes.some(s => s.netGex != null);
+          const values = hasNetGex
+            ? topStrikes.map(s => s.netGex || 0)
+            : topStrikes.map(s => s.gammaExposure || 0);
+          const colors = values.map(v => v >= 0 ? '#22c55e' : '#ef4444');
+
+          // Find wall/spot indices
+          const findIdx = (price) => {
+            if (!price) return null;
+            let best = 0, bestDist = Infinity;
+            topStrikes.forEach((s, i) => { const d = Math.abs(s.strike - price); if (d < bestDist) { bestDist = d; best = i; } });
+            return best;
+          };
+
+          const plotLines = [
+            analysis.put_wall && { value: findIdx(analysis.put_wall), color: '#ef4444', width: 2, dashStyle: 'Dash', label: { text: 'Put $' + analysis.put_wall, style: { color: '#ef4444', fontWeight: '700', fontSize: '10px' } }, zIndex: 5 },
+            analysis.call_wall && { value: findIdx(analysis.call_wall), color: '#22c55e', width: 2, dashStyle: 'Dash', label: { text: 'Call $' + analysis.call_wall, style: { color: '#22c55e', fontWeight: '700', fontSize: '10px' } }, zIndex: 5 },
+            spot && { value: findIdx(spot), color: '#0B2D23', width: 2.5, dashStyle: 'Solid', label: { text: 'Spot $' + spot.toFixed(0), style: { color: '#0B2D23', fontWeight: '800', fontSize: '10px' } }, zIndex: 6 },
+          ].filter(Boolean);
+
+          Highcharts.chart('gamma-hc', {
+            chart: { type: 'column', height: 380, style: { fontFamily: 'Inter, sans-serif' }, backgroundColor: 'transparent' },
+            title: { text: null },
+            credits: { enabled: false },
+            legend: { enabled: false },
+            xAxis: { categories, crosshair: true, lineColor: '#e2e8f0', tickColor: '#e2e8f0', labels: { rotation: -45, style: { color: '#64748b', fontSize: '10px', fontWeight: '600' } }, plotLines },
+            yAxis: {
+              title: { text: null }, gridLineColor: '#f1f5f9',
+              labels: { style: { color: '#94a3b8', fontSize: '10px' }, formatter: function() { const abs = Math.abs(this.value); if (abs >= 1e6) return (this.value/1e6).toFixed(1)+'M'; if (abs >= 1e3) return (this.value/1e3).toFixed(0)+'K'; return this.value; } },
+              plotLines: [{ value: 0, color: '#94a3b8', width: 1, zIndex: 2 }],
+            },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.95)', borderColor: 'transparent', borderRadius: 8,
+              style: { color: '#fff', fontSize: '12px' },
+              formatter: function() {
+                const s = topStrikes[this.point.index];
+                const fmt = (v) => { const abs = Math.abs(v); if (abs >= 1e6) return (v/1e6).toFixed(2)+'M'; if (abs >= 1e3) return (v/1e3).toFixed(1)+'K'; return v.toFixed(0); };
+                let html = '<b>' + this.x + '</b><br/>';
+                if (s.callGex != null) html += 'Call GEX: <span style="color:#22c55e"><b>' + fmt(s.callGex) + '</b></span><br/>';
+                if (s.putGex != null) html += 'Put GEX: <span style="color:#ef4444"><b>' + fmt(s.putGex) + '</b></span><br/>';
+                if (s.netGex != null) html += 'Net GEX: <b>' + fmt(s.netGex) + '</b><br/>';
+                html += 'Call OI: ' + (s.call_oi || s.callOI || 0).toLocaleString() + '<br/>';
+                html += 'Put OI: ' + (s.put_oi || s.putOI || 0).toLocaleString();
+                return html;
+              },
+            },
+            plotOptions: { column: { borderRadius: 3, borderWidth: 0, colorByPoint: true, groupPadding: 0.05, pointPadding: 0.05 } },
+            series: [{ name: 'Net GEX', data: values.map((v, i) => ({ y: v, color: colors[i] })) }],
+          });
+        }
+      } else {
+        _renderGamma(el, ga, r2, spot); // fallback to canvas
+      }
     }
     // (Inline renderGammaAnalysis / drawGexChart / drawOIChart deleted — now in shared/gammaChart.js)
 
