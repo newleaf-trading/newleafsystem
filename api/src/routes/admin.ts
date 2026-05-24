@@ -4,6 +4,7 @@ import { requireTier } from '../middleware/rbac.js';
 import type { UserRole } from '../middleware/auth.js';
 import { MODEL_ASSIGNMENTS } from '../llm/model-assignments.js';
 import type { LLMRouter } from '../llm/router.js';
+import { getAllCacheStats } from '../lib/cache.js';
 
 export function registerAdminRoutes(fastify: FastifyInstance, llm?: LLMRouter) {
   // POST /admin/keys — create a new API key
@@ -116,5 +117,10 @@ export function registerAdminRoutes(fastify: FastifyInstance, llm?: LLMRouter) {
       totalOutputTokens: usage.totalOutputTokens,
       byModel,
     };
+  });
+
+  // GET /admin/cache-stats — cache hit rates and entry counts
+  fastify.get('/admin/cache-stats', { preHandler: [requireTier('admin')] }, async () => {
+    return getAllCacheStats();
   });
 }

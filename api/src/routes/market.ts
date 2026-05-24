@@ -5,6 +5,7 @@ import { computeIndicators } from '../tools/indicators.js';
 import { fetchNasdaqOI, findGammaWalls, fetchFullGammaAnalysis } from '../tools/nasdaq-oi.js';
 import { fetchSentiment } from '../tools/sentiment.js';
 import type { LLMRouter } from '../llm/router.js';
+import { indicatorsCache, sentimentCache, gammaCache } from '../lib/cache.js';
 
 export function registerMarketRoutes(fastify: FastifyInstance, llm: LLMRouter) {
   // GET /api/snapshot/:ticker — free tier
@@ -45,13 +46,16 @@ export function registerMarketRoutes(fastify: FastifyInstance, llm: LLMRouter) {
     return { strikes: [...strikeMap.values()].sort((a, b) => a.strike - b.strike) };
   });
 
-  // GET /api/indicators/:ticker — basic tier
+  // GET /api/indicators/:ticker — basic tier (cached 5 min — bars are daily)
   fastify.get('/api/indicators/:ticker', { preHandler: [requireTier('basic')] }, async (req) => {
     const { ticker } = req.params as { ticker: string };
     const tk = ticker.toUpperCase();
+    const cached = indicatorsCache.get(tk);
+    if (cached) return { indicators: cached, cached: true };
     const bars = await getHistoricalBars(tk, 250);
     const snapshot = await getStockSnapshot(tk);
     const indicators = computeIndicators(bars, snapshot.price);
+    indicatorsCache.set(tk, indicators);
     return { indicators };
   });
 
@@ -78,22 +82,32 @@ export function registerMarketRoutes(fastify: FastifyInstance, llm: LLMRouter) {
     };
   });
 
-  // GET /api/sentiment/:ticker — basic tier (Claude + Grok + Gemini + Reddit/StockTwits)
+  // GET /api/sentiment/:ticker — basic tier (cached 30 min — news doesn't change fast)
   fastify.get('/api/sentiment/:ticker', { preHandler: [requireTier('basic')] }, async (req, reply) => {
     const { ticker } = req.params as { ticker: string };
+    const tk = ticker.toUpperCase();
+    const cached = sentimentCache.get(tk);
+    if (cached) return { ...cached, cached: true };
     llm.resetUsage();
-    const result = await fetchSentiment(ticker.toUpperCase(), llm);
+    const result = await fetchSentiment(tk, llm);
     if (!result) return reply.code(502).send({ error: 'All sentiment engines failed' });
-    return { ...result, cost: llm.getUsage() };
+    const response = { ...result, cost: llm.getUsage() };
+    sentimentCache.set(tk, response);
+    return response;
   });
 
-  // GET /api/gamma-analysis/:ticker/:expiry — full gamma analysis from Yahoo OI (no R2)
+  // GET /api/gamma-analysis/:ticker/:expiry — cached 60 min (OI updates daily)
   fastify.get('/api/gamma-analysis/:ticker/:expiry', { preHandler: [requireTier('basic')] }, async (req) => {
     const { ticker, expiry } = req.params as { ticker: string; expiry: string };
     const tk = ticker.toUpperCase();
+    const cacheKey = `${tk}:${expiry}`;
+    const cached = gammaCache.get(cacheKey);
+    if (cached) return { ...cached, cached: true };
     const snapshot = await getStockSnapshot(tk);
     const analysis = await fetchFullGammaAnalysis(tk, expiry, snapshot.price);
-    return { analysis, spot: snapshot.price };
+    const response = { analysis, spot: snapshot.price };
+    gammaCache.set(cacheKey, response);
+    return response;
   });
 
   // GET /api/bars/:ticker — basic tier (historical bars for pipeline)

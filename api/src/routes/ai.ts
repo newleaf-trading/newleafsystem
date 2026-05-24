@@ -5,16 +5,22 @@ import { StrategyAdvisor } from '../agents/advisor.js';
 import { getStockSnapshot, getOptionsSnapshot, getHistoricalBars } from '../tools/alpaca.js';
 import { computeIndicators } from '../tools/indicators.js';
 import { fetchNasdaqOI, findGammaWalls } from '../tools/nasdaq-oi.js';
+import { aiReadCache, recommendCache } from '../lib/cache.js';
+import { createHash } from 'crypto';
 
 export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
   const advisor = new StrategyAdvisor(llm);
 
-  // POST /api/ai-read — premium tier
+  // POST /api/ai-read — premium tier (cached 5 min by ticker — same market state)
   fastify.post('/api/ai-read', { preHandler: [requireTier('premium')] }, async (req) => {
     const { ticker, spot, ivRank, atr14, rsi, adx, trend, putWall, callWall, earningsDaysOut } = req.body as Record<string, any>;
     if (!ticker || !spot) return { error: 'ticker and spot required' };
 
-    const prompt = `Given ${ticker} at $${spot}, IV rank ${ivRank ?? 'N/A'}, RSI ${rsi ?? 'N/A'}, ADX ${adx ?? 'N/A'}, trend ${trend ?? 'unknown'}, ATR14 ${atr14 ?? 'N/A'}, put wall $${putWall ?? 'N/A'}, call wall $${callWall ?? 'N/A'}, earnings in ${earningsDaysOut ?? 'N/A'} days: produce one sentence market read. Format: "{Directional bias} ({key indicators}) with {premium environment} and {gamma context}. Setup favors {strategy class}." Be specific, cite real numbers. No hedging language.`;
+    const tk = (ticker as string).toUpperCase();
+    const cached = aiReadCache.get(tk);
+    if (cached) return { ...cached, cached: true };
+
+    const prompt = `Given ${tk} at $${spot}, IV rank ${ivRank ?? 'N/A'}, RSI ${rsi ?? 'N/A'}, ADX ${adx ?? 'N/A'}, trend ${trend ?? 'unknown'}, ATR14 ${atr14 ?? 'N/A'}, put wall $${putWall ?? 'N/A'}, call wall $${callWall ?? 'N/A'}, earnings in ${earningsDaysOut ?? 'N/A'} days: produce one sentence market read. Format: "{Directional bias} ({key indicators}) with {premium environment} and {gamma context}. Setup favors {strategy class}." Be specific, cite real numbers. No hedging language.`;
 
     llm.resetUsage();
     const result = await llm.call('qwq', {
@@ -22,14 +28,19 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
       user: prompt,
       maxTokens: 200,
     });
-    return { read: result, cost: llm.getUsage() };
+    const response = { read: result, cost: llm.getUsage() };
+    aiReadCache.set(tk, response);
+    return response;
   });
 
-  // POST /api/recommend — premium tier
+  // POST /api/recommend — premium tier (cached 10 min by ticker+expiry)
   fastify.post('/api/recommend', { preHandler: [requireTier('premium')] }, async (req) => {
     const { ticker, expiry, modelMode: rm } = req.body as { ticker: string; expiry: string; modelMode?: string };
     if (!ticker || !expiry) return { error: 'ticker and expiry required' };
     const tk = ticker.toUpperCase();
+    const cacheKey = `${tk}:${expiry}`;
+    const cached = recommendCache.get(cacheKey);
+    if (cached) return { ...cached, cached: true };
 
     const [snapshot, bars, contracts, oiChain] = await Promise.all([
       getStockSnapshot(tk),
@@ -67,7 +78,9 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
     const validModes = ['premium', 'budget-v3', 'budget-r1', 'budget-qwq'] as const;
     const modelMode = validModes.includes(rm as any) ? rm as typeof validModes[number] : 'budget-qwq';
     const recommendation = await advisor.recommend({ ticker: tk, expiry, snapshot, indicators, gammaAnalysis, chain, modelMode });
-    return { recommendation, snapshot, indicators, gammaAnalysis, cost: llm.getUsage() };
+    const response = { recommendation, snapshot, indicators, gammaAnalysis, cost: llm.getUsage() };
+    recommendCache.set(cacheKey, response);
+    return response;
   });
 
   // POST /api/chat — premium tier
