@@ -190,9 +190,23 @@ export interface GammaAnalysis {
  */
 export async function fetchFullGammaAnalysis(ticker: string, expiry: string, spotPrice: number): Promise<GammaAnalysis> {
   const url = `${YAHOO_OI_URL}/api/options/${ticker.toUpperCase()}/${expiry}`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
-  if (!res.ok) throw new Error(`Yahoo OI Service ${res.status}: ${url}`);
-  const data = await res.json() as any;
+
+  // Retry up to 2 times — Yahoo/yfinance rate-limits frequent calls
+  let data: any;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+      if (!res.ok) {
+        if (attempt < 2) { await new Promise(r => setTimeout(r, 1000 * (attempt + 1))); continue; }
+        throw new Error(`Yahoo OI Service ${res.status}: ${url}`);
+      }
+      data = await res.json();
+      break;
+    } catch (err: any) {
+      if (attempt < 2) { await new Promise(r => setTimeout(r, 1000 * (attempt + 1))); continue; }
+      throw err;
+    }
+  }
 
   const calls: any[] = data.calls || [];
   const puts: any[] = data.puts || [];
@@ -206,11 +220,17 @@ export async function fetchFullGammaAnalysis(ticker: string, expiry: string, spo
   const sqrt2pi = Math.sqrt(2 * Math.PI);
 
   function bsGamma(strike: number, iv: number): number {
-    if (!iv || iv <= 0 || !spot || spot <= 0) return 0;
+    if (!iv || iv <= 0 || !spot || spot <= 0 || !strike || strike <= 0) return 0;
     const sigma = iv; // already decimal (e.g. 0.35)
-    const d1 = (Math.log(spot / strike) + (sigma * sigma / 2) * T) / (sigma * sqrtT);
-    const nPrimeD1 = Math.exp(-d1 * d1 / 2) / sqrt2pi;
-    return nPrimeD1 / (spot * sigma * sqrtT);
+    const denom = sigma * sqrtT;
+    if (denom <= 0 || !isFinite(denom)) return 0;
+    try {
+      const d1 = (Math.log(spot / strike) + (sigma * sigma / 2) * T) / denom;
+      if (!isFinite(d1)) return 0;
+      const nPrimeD1 = Math.exp(-d1 * d1 / 2) / sqrt2pi;
+      const gamma = nPrimeD1 / (spot * denom);
+      return isFinite(gamma) ? gamma : 0;
+    } catch { return 0; }
   }
 
   // Build per-strike analysis with proper BS gamma
