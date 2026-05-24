@@ -217,16 +217,47 @@
 <p style="font-size:13px;color:var(--gray);margin-bottom:16px">Every LLM call analyzed for cacheability. The key insight: most calls depend on daily data (indicators, OI) or slow-changing data (news) — NOT real-time data.</p>
 
 <table>
-  <thead><tr><th>LLM Call</th><th>Model</th><th>Cost</th><th>Latency</th><th>Cached?</th><th>TTL</th><th>Why</th></tr></thead>
+  <thead><tr><th>LLM Call</th><th>Model</th><th>Cost</th><th>Latency</th><th>Cached?</th><th>TTL</th><th>Called From (Page / File)</th><th>When Triggered</th></tr></thead>
   <tbody>
-    <tr><td>AI Market Read</td><td>QwQ</td><td class="cost">$0.003</td><td>~3s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">5 min</td><td>Input is daily indicators — same ticker = same read</td></tr>
-    <tr><td>Strategy Ranking</td><td>Claude/QwQ</td><td class="cost">$0.01</td><td>~5s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">10 min</td><td>Input is chain data — same ticker+expiry = same ranking</td></tr>
-    <tr><td>Sentiment: Claude</td><td>Haiku</td><td class="cost">$0.003</td><td>~8s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">30 min</td><td>Web search results stable short-term</td></tr>
-    <tr><td>Sentiment: Grok</td><td>Grok</td><td class="cost">$0.003</td><td>~5s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">30 min</td><td>X/Twitter sentiment stable short-term</td></tr>
-    <tr><td>Sentiment: Gemini</td><td>Flash</td><td class="cost">$0.001</td><td>~4s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">30 min</td><td>Google News stable short-term</td></tr>
-    <tr><td>Verify: 8 agents</td><td>Mixed</td><td class="cost">$0.05</td><td>~24s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">30 min</td><td>Same legs = same verdict</td></tr>
-    <tr><td>GenRecs: analysis</td><td>Sonnet</td><td class="cost">$0.03</td><td>~30s</td><td><span class="badge b-nocache">NO</span></td><td>—</td><td>Unique prompt per tile (different context each time)</td></tr>
-    <tr><td>Interactive Chat</td><td>Varies</td><td class="cost">$0.01</td><td>~3s</td><td><span class="badge b-nocache">NO</span></td><td>—</td><td>Stateful conversation — each message is unique</td></tr>
+    <tr><td>AI Market Read</td><td>QwQ</td><td class="cost">$0.003</td><td>~3s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">5 min</td>
+      <td><code>discover.html</code> Step 1</td>
+      <td>User clicks "Load" on a ticker. Fires async after snapshot loads.</td></tr>
+    <tr><td>Strategy Ranking</td><td>Claude/QwQ</td><td class="cost">$0.01</td><td>~5s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">10 min</td>
+      <td><code>discover.html</code> Step 2 (AI mode)</td>
+      <td>User clicks "Find strategies →". Fetches chain + calls LLM for 3 ranked strategies.</td></tr>
+    <tr><td>Sentiment: Claude</td><td>Haiku</td><td class="cost">$0.003</td><td>~8s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">30 min</td>
+      <td><code>discover.html</code> (future)<br><code>genrecs/sentiment-fetch.cjs</code></td>
+      <td>genrecs: during publish-pick / analyse-tiles. Discover: not yet wired (uses verify sentiment instead).</td></tr>
+    <tr><td>Sentiment: Grok</td><td>Grok</td><td class="cost">$0.003</td><td>~5s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">30 min</td>
+      <td>Same as above (bundled in <code>/api/sentiment</code>)</td>
+      <td>Part of 4-engine composite — all fire in parallel.</td></tr>
+    <tr><td>Sentiment: Gemini</td><td>Flash</td><td class="cost">$0.001</td><td>~4s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">30 min</td>
+      <td>Same as above (bundled in <code>/api/sentiment</code>)</td>
+      <td>Part of 4-engine composite — all fire in parallel.</td></tr>
+    <tr><td>Verify: 8 agents</td><td>Mixed (DeepSeek, Claude, Haiku)</td><td class="cost">$0.05</td><td>~24s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">30 min</td>
+      <td><code>discover.html</code> Step 4</td>
+      <td>User clicks "Verify trade →" on Step 3. Fires 8-agent pipeline in parallel with animation.</td></tr>
+    <tr><td>GenRecs: tile analysis</td><td>Sonnet</td><td class="cost">$0.03</td><td>~30s</td><td><span class="badge b-nocache">NO</span></td><td>—</td>
+      <td><code>genrecs/publish-pick.cjs</code><br><code>genrecs/analyse-tiles.cjs</code><br><code>genrecs/process-wip-picks.cjs</code></td>
+      <td>CLI: <code>npm run publish -- SYMBOL</code>. Each tile gets a unique analysis prompt with specific legs/greeks/gamma data.</td></tr>
+    <tr><td>Interactive Chat</td><td>Varies</td><td class="cost">$0.01</td><td>~3s</td><td><span class="badge b-nocache">NO</span></td><td>—</td>
+      <td><code>strategy-builder.html</code> (chat panel)<br><code>StrategyTutorPanel.jsx</code> (Invest app)</td>
+      <td>User types a message in the AI chat. Each message has conversation context.</td></tr>
+    <tr><td>Position Adjust</td><td>Haiku</td><td class="cost">$0.005</td><td>~4s</td><td><span class="badge b-nocache">NO</span></td><td>—</td>
+      <td><code>useAIAdjust.js</code> → Invest app position detail</td>
+      <td>User clicks "Ask AI" on a live position. Advice depends on current P&L + market state.</td></tr>
+    <tr><td>Event Risk</td><td>Gemini Flash</td><td class="cost">$0.002</td><td>~3s</td><td><span class="badge b-nocache">NO</span></td><td>—</td>
+      <td><code>useEventRisk.js</code> → Invest app Risks tab</td>
+      <td>User clicks "Check Event Risks" on a position. Time-sensitive event analysis.</td></tr>
+    <tr><td>Strike Compare</td><td>Haiku</td><td class="cost">$0.003</td><td>~3s</td><td><span class="badge b-nocache">NO</span></td><td>—</td>
+      <td><code>useStrikeComparison.js</code> → Invest app</td>
+      <td>User compares alternative strike setups. Unique per comparison.</td></tr>
+    <tr><td>Verdict Explain</td><td>Haiku</td><td class="cost">$0.003</td><td>~3s</td><td><span class="badge b-nocache">NO</span></td><td>—</td>
+      <td><code>useVerdictExplanation.js</code> → Invest app</td>
+      <td>User asks for plain-English verdict explanation. One-time per verdict view.</td></tr>
+    <tr><td>Social Copy</td><td>Sonnet</td><td class="cost">$0.01</td><td>~5s</td><td><span class="badge b-nocache">NO</span></td><td>—</td>
+      <td><code>genrecs/generate-social-copy.js</code></td>
+      <td>CLI: generates LinkedIn/Twitter/Instagram copy per pick. Unique per pick.</td></tr>
   </tbody>
 </table>
 
