@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf System — Caching Strategy</title>
+<style>
+  :root { --forest: #1a5632; --leaf: #2d8a4e; --gold: #c9a96e; --bg: #fafaf8; --card: #fff; --border: #e8e5e0; --text: #1a1a1a; --gray: #6b7280; --mono: 'SF Mono', 'Fira Code', monospace; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+  h1 { font-size: 28px; font-weight: 800; color: var(--forest); margin-bottom: 8px; }
+  h2 { font-size: 20px; font-weight: 700; color: var(--forest); margin: 36px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+  h3 { font-size: 16px; font-weight: 600; margin: 20px 0 10px; }
+  .subtitle { font-size: 14px; color: var(--gray); margin-bottom: 32px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+  th { text-align: left; padding: 8px 12px; background: #f3f2ef; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gray); border-bottom: 1px solid var(--border); }
+  td { padding: 8px 12px; border-bottom: 1px solid #f0eeeb; vertical-align: top; }
+  code { font-family: var(--mono); font-size: 12px; background: #f3f2ef; padding: 2px 6px; border-radius: 4px; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 8px; font-family: var(--mono); font-size: 12px; overflow-x: auto; margin: 12px 0; line-height: 1.7; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 700; }
+  .b-cached { background: #dcfce7; color: #166534; }
+  .b-nocache { background: #fee2e2; color: #991b1b; }
+  .b-partial { background: #fef3c7; color: #92400e; }
+  .ttl { font-family: var(--mono); font-weight: 700; color: var(--forest); }
+  .saving { font-family: var(--mono); font-weight: 700; color: #16a34a; }
+  .cost { font-family: var(--mono); font-weight: 700; color: #dc2626; }
+  .flow-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin: 6px 0; font-size: 12px; }
+  .flow-arrow { text-align: center; color: var(--leaf); font-size: 18px; margin: 4px 0; }
+  .hit { color: #16a34a; font-weight: 700; }
+  .miss { color: #dc2626; font-weight: 700; }
+  @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>NewLeaf System — Caching Strategy</h1>
+<p class="subtitle">What we cache, what we don't, why, and how much we save &nbsp;|&nbsp; Updated 24 May 2026</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Cache Architecture Overview</h2>
+
+<pre>
+  Browser ─── HTTPS ───▶ Firebase Hosting (CDN edge cache)
+                              │
+                              ▼
+                         Cloudflare (planned: api.newleafsystem.com)
+                              │
+                              ▼
+                    ┌─────────────────────────────┐
+                    │  API (Cloud Functions v2)    │
+                    │                              │
+                    │  ┌────────────────────────┐  │
+                    │  │  In-Memory Cache Layer  │  │
+                    │  │                         │  │
+                    │  │  indicators   5 min     │  │
+                    │  │  aiRead       5 min     │  │
+                    │  │  recommend    10 min    │  │
+                    │  │  sentiment    30 min    │  │
+                    │  │  verify       30 min    │  │
+                    │  │  gamma        60 min    │  │
+                    │  └────────────────────────┘  │
+                    │              │                │
+                    │     cache miss only           │
+                    │              ▼                │
+                    │  ┌────────────────────────┐  │
+                    │  │  LLM Router / Alpaca   │  │
+                    │  │  / Yahoo OI Service    │  │
+                    │  └────────────────────────┘  │
+                    └──────────────┬───────────────┘
+                                   │
+                         ┌─────────▼─────────┐
+                         │  Yahoo OI Service  │
+                         │  (Cloud Run)       │
+                         │                    │
+                         │  In-Memory Cache   │
+                         │  60 min TTL        │
+                         │                    │
+                         │  cache miss only   │
+                         │       ▼            │
+                         │  Yahoo Finance     │
+                         │  (yfinance)        │
+                         └────────────────────┘
+</pre>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>6 Cache Layers — What We Cache</h2>
+
+<div class="grid-2">
+
+<!-- Cache 1: Indicators -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <h3 style="margin:0">1. Indicators</h3>
+    <span class="badge b-cached">CACHED</span>
+  </div>
+  <table>
+    <tr><td><strong>Endpoint</strong></td><td><code>GET /api/indicators/:ticker</code></td></tr>
+    <tr><td><strong>TTL</strong></td><td class="ttl">5 minutes</td></tr>
+    <tr><td><strong>Key</strong></td><td>Ticker symbol (e.g. <code>AAPL</code>)</td></tr>
+    <tr><td><strong>What</strong></td><td>RSI, MACD, Bollinger, SMA 20/50/100/200, ADX, ATR</td></tr>
+    <tr><td><strong>Why cacheable</strong></td><td>Computed from 250 <em>daily</em> bars. Bars don't change intraday. Recomputing every request wastes ~800ms + 2 Alpaca calls.</td></tr>
+    <tr><td><strong>Saving/hit</strong></td><td class="saving">~800ms latency + 2 API calls</td></tr>
+    <tr><td><strong>Max entries</strong></td><td>50</td></tr>
+  </table>
+</div>
+
+<!-- Cache 2: AI Read -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <h3 style="margin:0">2. AI Market Read</h3>
+    <span class="badge b-cached">CACHED</span>
+  </div>
+  <table>
+    <tr><td><strong>Endpoint</strong></td><td><code>POST /api/ai-read</code></td></tr>
+    <tr><td><strong>TTL</strong></td><td class="ttl">5 minutes</td></tr>
+    <tr><td><strong>Key</strong></td><td>Ticker symbol</td></tr>
+    <tr><td><strong>What</strong></td><td>One-sentence market synthesis from LLM</td></tr>
+    <tr><td><strong>Why cacheable</strong></td><td>Same ticker at the same time has the same indicators (RSI/ADX/trend are daily). The LLM would produce the same sentence.</td></tr>
+    <tr><td><strong>Saving/hit</strong></td><td class="saving">$0.003 + ~3s (1 LLM call: QwQ)</td></tr>
+    <tr><td><strong>Max entries</strong></td><td>50</td></tr>
+  </table>
+</div>
+
+<!-- Cache 3: Recommend -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <h3 style="margin:0">3. Strategy Ranking</h3>
+    <span class="badge b-cached">CACHED</span>
+  </div>
+  <table>
+    <tr><td><strong>Endpoint</strong></td><td><code>POST /api/recommend</code></td></tr>
+    <tr><td><strong>TTL</strong></td><td class="ttl">10 minutes</td></tr>
+    <tr><td><strong>Key</strong></td><td><code>{ticker}:{expiry}</code></td></tr>
+    <tr><td><strong>What</strong></td><td>3 ranked strategies with scores, legs, rationale</td></tr>
+    <tr><td><strong>Why cacheable</strong></td><td>Same ticker + expiry = same chain = same ranking. The option chain doesn't shift meaningfully in 10 minutes during normal hours.</td></tr>
+    <tr><td><strong>Saving/hit</strong></td><td class="saving">$0.01 + ~5s (1 LLM call + 4 API calls)</td></tr>
+    <tr><td><strong>Max entries</strong></td><td>30</td></tr>
+  </table>
+</div>
+
+<!-- Cache 4: Sentiment -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <h3 style="margin:0">4. Sentiment</h3>
+    <span class="badge b-cached">CACHED</span>
+  </div>
+  <table>
+    <tr><td><strong>Endpoint</strong></td><td><code>GET /api/sentiment/:ticker</code></td></tr>
+    <tr><td><strong>TTL</strong></td><td class="ttl">30 minutes</td></tr>
+    <tr><td><strong>Key</strong></td><td>Ticker symbol</td></tr>
+    <tr><td><strong>What</strong></td><td>4-engine composite (Claude + Grok + Gemini + Reddit)</td></tr>
+    <tr><td><strong>Why cacheable</strong></td><td>News and social sentiment don't change meaningfully in 30 minutes. This is the most expensive cached endpoint — 4 parallel LLM calls.</td></tr>
+    <tr><td><strong>Saving/hit</strong></td><td class="saving">$0.01–0.03 + ~30s (4 LLM calls)</td></tr>
+    <tr><td><strong>Max entries</strong></td><td>30</td></tr>
+  </table>
+</div>
+
+<!-- Cache 5: Verify -->
+<div class="card" style="border-color:var(--forest);border-width:2px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <h3 style="margin:0">5. Verify (Biggest Win)</h3>
+    <span class="badge b-cached">CACHED</span>
+  </div>
+  <table>
+    <tr><td><strong>Endpoint</strong></td><td><code>POST /verify</code></td></tr>
+    <tr><td><strong>TTL</strong></td><td class="ttl">30 minutes</td></tr>
+    <tr><td><strong>Key</strong></td><td>SHA256 of <code>{ticker + sorted legs + modelMode}</code></td></tr>
+    <tr><td><strong>What</strong></td><td>Full 8-agent verdict, evidence, debate, risk report, mutations</td></tr>
+    <tr><td><strong>Why cacheable</strong></td><td>Same trade legs = same verdict. Re-verifying an unchanged trade should NOT burn a daily credit or cost $0.05.</td></tr>
+    <tr><td><strong>Saving/hit</strong></td><td class="saving">$0.05 + ~24s + 1 daily credit (8 LLM calls)</td></tr>
+    <tr><td><strong>Max entries</strong></td><td>20</td></tr>
+  </table>
+</div>
+
+<!-- Cache 6: Gamma -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <h3 style="margin:0">6. Gamma Analysis</h3>
+    <span class="badge b-cached">CACHED &times;2</span>
+  </div>
+  <table>
+    <tr><td><strong>Endpoint</strong></td><td><code>GET /api/gamma-analysis/:ticker/:expiry</code></td></tr>
+    <tr><td><strong>TTL</strong></td><td class="ttl">60 minutes (API) + 60 minutes (Yahoo OI Service)</td></tr>
+    <tr><td><strong>Key</strong></td><td><code>{ticker}:{expiry}</code></td></tr>
+    <tr><td><strong>What</strong></td><td>GEX walls, ATM IV, confidence scores, top gamma strikes</td></tr>
+    <tr><td><strong>Why cacheable</strong></td><td>OI updates once daily after market close (~5:30 PM ET). During trading hours, OI is yesterday's number. Double-cached: API level + Yahoo OI Service level.</td></tr>
+    <tr><td><strong>Saving/hit</strong></td><td class="saving">~2s (Yahoo API call avoided)</td></tr>
+    <tr><td><strong>Max entries</strong></td><td>50 (API) + 200 (Yahoo OI Service)</td></tr>
+  </table>
+</div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>What We Don't Cache (and Why)</h2>
+
+<table>
+  <thead><tr><th>Endpoint</th><th>Status</th><th>Why Not Cached</th><th>Could We?</th></tr></thead>
+  <tbody>
+    <tr><td><code>GET /api/snapshot/:ticker</code></td><td><span class="badge b-nocache">NO CACHE</span></td><td>Real-time price — must be current for trading decisions</td><td>Maybe 30s via Cloudflare edge</td></tr>
+    <tr><td><code>GET /api/chain/:ticker/:expiry</code></td><td><span class="badge b-nocache">NO CACHE</span></td><td>Real-time bid/ask + IV changes with every trade</td><td>Maybe 60s, but stale premiums cause wrong P&L</td></tr>
+    <tr><td><code>POST /api/llm/call</code></td><td><span class="badge b-nocache">NO CACHE</span></td><td>Generic LLM proxy — arbitrary prompts from genrecs</td><td>No — each prompt is unique per tile analysis</td></tr>
+    <tr><td><code>POST /api/chat</code></td><td><span class="badge b-nocache">NO CACHE</span></td><td>Conversational — context changes with each message</td><td>No — stateful conversation</td></tr>
+    <tr><td><code>POST /api/publish-from-analysis</code></td><td><span class="badge b-nocache">NO CACHE</span></td><td>Write operation — creates Firestore documents</td><td>No — must execute every time</td></tr>
+    <tr><td><code>GET /health</code></td><td><span class="badge b-nocache">NO CACHE</span></td><td>Must reflect current server state</td><td>No</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>LLM Call Analysis</h2>
+
+<p style="font-size:13px;color:var(--gray);margin-bottom:16px">Every LLM call analyzed for cacheability. The key insight: most calls depend on daily data (indicators, OI) or slow-changing data (news) — NOT real-time data.</p>
+
+<table>
+  <thead><tr><th>LLM Call</th><th>Model</th><th>Cost</th><th>Latency</th><th>Cached?</th><th>TTL</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>AI Market Read</td><td>QwQ</td><td class="cost">$0.003</td><td>~3s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">5 min</td><td>Input is daily indicators — same ticker = same read</td></tr>
+    <tr><td>Strategy Ranking</td><td>Claude/QwQ</td><td class="cost">$0.01</td><td>~5s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">10 min</td><td>Input is chain data — same ticker+expiry = same ranking</td></tr>
+    <tr><td>Sentiment: Claude</td><td>Haiku</td><td class="cost">$0.003</td><td>~8s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">30 min</td><td>Web search results stable short-term</td></tr>
+    <tr><td>Sentiment: Grok</td><td>Grok</td><td class="cost">$0.003</td><td>~5s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">30 min</td><td>X/Twitter sentiment stable short-term</td></tr>
+    <tr><td>Sentiment: Gemini</td><td>Flash</td><td class="cost">$0.001</td><td>~4s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">30 min</td><td>Google News stable short-term</td></tr>
+    <tr><td>Verify: 8 agents</td><td>Mixed</td><td class="cost">$0.05</td><td>~24s</td><td><span class="badge b-cached">YES</span></td><td class="ttl">30 min</td><td>Same legs = same verdict</td></tr>
+    <tr><td>GenRecs: analysis</td><td>Sonnet</td><td class="cost">$0.03</td><td>~30s</td><td><span class="badge b-nocache">NO</span></td><td>—</td><td>Unique prompt per tile (different context each time)</td></tr>
+    <tr><td>Interactive Chat</td><td>Varies</td><td class="cost">$0.01</td><td>~3s</td><td><span class="badge b-nocache">NO</span></td><td>—</td><td>Stateful conversation — each message is unique</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Cost Impact</h2>
+
+<div class="grid-3">
+<div class="card" style="text-align:center">
+  <div style="font-size:10px;text-transform:uppercase;color:var(--gray);letter-spacing:0.5px">Without Cache</div>
+  <div style="font-size:28px;font-weight:800;font-family:var(--mono);color:#dc2626;margin:8px 0">$63</div>
+  <div style="font-size:12px;color:var(--gray)">/month (10 users × 3 tickers)</div>
+</div>
+<div class="card" style="text-align:center;border-color:var(--forest);border-width:2px">
+  <div style="font-size:10px;text-transform:uppercase;color:var(--gray);letter-spacing:0.5px">With Cache</div>
+  <div style="font-size:28px;font-weight:800;font-family:var(--mono);color:#16a34a;margin:8px 0">$6.30</div>
+  <div style="font-size:12px;color:var(--gray)">/month (90% savings)</div>
+</div>
+<div class="card" style="text-align:center">
+  <div style="font-size:10px;text-transform:uppercase;color:var(--gray);letter-spacing:0.5px">Savings</div>
+  <div style="font-size:28px;font-weight:800;font-family:var(--mono);color:var(--forest);margin:8px 0">90%</div>
+  <div style="font-size:12px;color:var(--gray)">~$57/month saved</div>
+</div>
+</div>
+
+<h3>Per-request breakdown</h3>
+<table>
+  <thead><tr><th>Scenario</th><th>Cost</th><th>Time</th><th>LLM Calls</th></tr></thead>
+  <tbody>
+    <tr><td>First user, new ticker (all cache miss)</td><td class="cost">~$0.07</td><td>~35s</td><td>14 calls (ai-read + recommend + 4 sentiment + 8 verify)</td></tr>
+    <tr><td>Second user, same ticker within 5 min</td><td class="saving">~$0.00</td><td>~5s</td><td>0 calls (all cache hits)</td></tr>
+    <tr><td>Same user, same ticker, different expiry</td><td class="cost">~$0.06</td><td>~30s</td><td>13 calls (recommend miss, rest from cache)</td></tr>
+    <tr><td>Re-verify same trade within 30 min</td><td class="saving">$0.00</td><td>~1s</td><td>0 calls (verify cache hit, no daily credit consumed)</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Request Flow: Cache Hit vs Miss</h2>
+
+<div class="grid-2">
+<div>
+<h3>First Request (Cold — All Miss)</h3>
+<div class="flow-box">1. <code>/api/snapshot/AAPL</code> → Alpaca <span class="miss">NO CACHE</span> ~500ms</div>
+<div class="flow-box">2. <code>/api/indicators/AAPL</code> → Alpaca bars → compute <span class="miss">MISS</span> ~800ms → <strong>cached 5 min</strong></div>
+<div class="flow-box">3. <code>/api/gamma-analysis/AAPL/2026-06-12</code> → Yahoo OI <span class="miss">MISS</span> ~2s → <strong>cached 60 min</strong></div>
+<div class="flow-box">4. <code>/api/ai-read</code> → QwQ LLM <span class="miss">MISS</span> ~3s → <strong>cached 5 min</strong></div>
+<div class="flow-box">5. <code>/api/recommend</code> → Claude LLM <span class="miss">MISS</span> ~5s → <strong>cached 10 min</strong></div>
+<div class="flow-box">6. <code>/verify</code> → 8-agent pipeline <span class="miss">MISS</span> ~24s → <strong>cached 30 min</strong></div>
+<div style="font-size:13px;margin-top:8px"><strong>Total: ~35s, ~$0.07, 14 LLM calls</strong></div>
+</div>
+
+<div>
+<h3>Second Request (Warm — All Hit)</h3>
+<div class="flow-box">1. <code>/api/snapshot/AAPL</code> → Alpaca <span class="miss">NO CACHE</span> ~500ms</div>
+<div class="flow-box">2. <code>/api/indicators/AAPL</code> → <span class="hit">CACHE HIT</span> ~1ms</div>
+<div class="flow-box">3. <code>/api/gamma-analysis/AAPL/2026-06-12</code> → <span class="hit">CACHE HIT</span> ~1ms</div>
+<div class="flow-box">4. <code>/api/ai-read</code> → <span class="hit">CACHE HIT</span> ~1ms</div>
+<div class="flow-box">5. <code>/api/recommend</code> → <span class="hit">CACHE HIT</span> ~1ms</div>
+<div class="flow-box">6. <code>/verify</code> → <span class="hit">CACHE HIT</span> ~1ms</div>
+<div style="font-size:13px;margin-top:8px"><strong>Total: ~500ms, $0.00, 0 LLM calls</strong></div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Monitoring</h2>
+
+<div class="card">
+<h3>Cache Stats Endpoint</h3>
+<pre>GET /admin/cache-stats
+
+{
+  "indicators": { "entries": 12, "hitRate": 78.5, "totalHits": 156, "totalMisses": 43, "ttlSeconds": 300 },
+  "aiRead":     { "entries": 8,  "hitRate": 65.0, "totalHits": 39,  "totalMisses": 21, "ttlSeconds": 300 },
+  "recommend":  { "entries": 5,  "hitRate": 45.0, "totalHits": 9,   "totalMisses": 11, "ttlSeconds": 600 },
+  "sentiment":  { "entries": 6,  "hitRate": 72.0, "totalHits": 18,  "totalMisses": 7,  "ttlSeconds": 1800 },
+  "verify":     { "entries": 3,  "hitRate": 33.0, "totalHits": 2,   "totalMisses": 4,  "ttlSeconds": 1800 },
+  "gamma":      { "entries": 10, "hitRate": 80.0, "totalHits": 40,  "totalMisses": 10, "ttlSeconds": 3600 }
+}</pre>
+<p style="font-size:12px;color:var(--gray);margin-top:8px">Cache responses include <code>"cached": true</code> field so the frontend can distinguish cached vs fresh data.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2>Cache Invalidation</h2>
+
+<table>
+  <thead><tr><th>Trigger</th><th>What Happens</th></tr></thead>
+  <tbody>
+    <tr><td>TTL expires</td><td>Entry removed on next access. Next request is a cache miss → fresh data fetched and cached.</td></tr>
+    <tr><td>Max entries reached</td><td>Oldest 20% pruned automatically.</td></tr>
+    <tr><td>Container restart</td><td>All in-memory caches cleared (Cloud Functions cold start). This happens naturally during deployments and scale-down.</td></tr>
+    <tr><td>Manual clear (future)</td><td>Planned: <code>POST /admin/cache-clear</code> endpoint for forced invalidation during market-moving events.</td></tr>
+  </tbody>
+</table>
+
+<div class="card" style="border-left:3px solid #d97706;margin-top:16px">
+  <h3 style="color:#92400e;margin-top:0">When NOT to rely on cache</h3>
+  <ul style="font-size:13px;margin-left:20px;margin-top:8px">
+    <li><strong>FOMC announcements</strong> — sentiment shifts instantly, 30-min cache serves stale data</li>
+    <li><strong>Earnings releases</strong> — IV crush happens in minutes, gamma walls shift</li>
+    <li><strong>Flash crashes</strong> — spot price stale in 30s cache</li>
+    <li>Future: add event-aware cache that shortens TTL during known events</li>
+  </ul>
+</div>
+
+</div>
+</body>
+</html>
