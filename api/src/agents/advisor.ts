@@ -1,13 +1,27 @@
 import { z } from 'zod';
-import type { LLMRouter } from '../llm/router.js';
+import type { LLMRouter, ModelTier } from '../llm/router.js';
+import { getModel } from '../llm/model-assignments.js';
 import type { StockSnapshot } from '../tools/alpaca.js';
-import type { TechnicalIndicators } from '../tools/indicators.js';
-import type { GammaAnalysis, LegMarketData } from '../tools/market-data.js';
-import type { OptionContract } from '../tools/alpaca.js';
+import type { BuiltLeg } from '../tools/leg-builder.js';
 
+// ── Output schemas ───────────────────────────────────────────────────────────
+
+// LLM only returns rationale + marketRead; legs are built deterministically
+const ExplanationSchema = z.object({
+  explanations: z.array(z.object({
+    strategy: z.string(),
+    rationale: z.string(),
+  })).min(1).max(3),
+  marketRead: z.string().default(''),
+});
+
+export type StrategyExplanation = z.infer<typeof ExplanationSchema>;
+
+// Legacy schema for backward compat (discover.html expects this shape)
 const RecommendationSchema = z.object({
   strategies: z.array(z.object({
-    strategy: z.enum(['iron_condor', 'broken_wing_butterfly', 'vertical_spread', 'short_strangle', 'calendar', 'diagonal']),
+    strategy: z.enum(['iron_condor', 'broken_wing_butterfly', 'vertical_spread', 'short_strangle', 'calendar', 'diagonal',
+      'bull_put_spread', 'bear_call_spread', 'iron_butterfly', 'calendar_spread']),
     legs: z.array(z.object({
       type: z.enum(['call', 'put']),
       side: z.enum(['long', 'short']),
@@ -22,116 +36,100 @@ const RecommendationSchema = z.object({
 
 export type StrategyRecommendation = z.infer<typeof RecommendationSchema>;
 
-const SYSTEM = `You are the Strategy Advisor on the NewLeaf Verification Desk. Given live market data — spot price, technicals, IV, open interest, and gamma walls — recommend the top 3 option strategies ranked by risk-adjusted suitability.
+// ── Consistency check ────────────────────────────────────────────────────────
 
-## Decision framework
+const BULLISH_WORDS = /\b(bullish|upside|rally|support|upward|rise|climb|recovery)\b/i;
+const BEARISH_WORDS = /\b(bearish|downside|decline|resistance|downward|fall|drop|selloff)\b/i;
+const NEUTRAL_WORDS = /\b(neutral|range.?bound|sideways|consolidat|flat|stable)\b/i;
 
-1. **Trend + IV environment determines structure class:**
-   - Neutral trend + high IV → Iron Condor or Short Strangle (sell premium)
-   - Neutral trend + low IV → Calendar or Diagonal (buy cheap vol)
-   - Directional trend + any IV → Vertical Spread (directional credit/debit)
-   - Neutral trend + skewed OI → Broken Wing Butterfly (asymmetric)
+function checkConsistency(strategy: string, direction: string, rationale: string): string | null {
+  const hasBullish = BULLISH_WORDS.test(rationale);
+  const hasBearish = BEARISH_WORDS.test(rationale);
 
-2. **Gamma walls determine strike placement:**
-   - Short strikes should be OUTSIDE the gamma walls (support/resistance from dealer hedging)
-   - Put wall = support level for short puts
-   - Call wall = resistance level for short calls
-   - Higher OI = stronger wall = safer short strike placement
-   - If spot is inside the put/call wall band, range-bound strategies are favored
+  if (direction === 'bullish' && hasBearish && !hasBullish) {
+    return `CONTRADICTION: Engine picked ${strategy} (bullish) but LLM explanation argues bearish: "${rationale.slice(0, 100)}"`;
+  }
+  if (direction === 'bearish' && hasBullish && !hasBearish) {
+    return `CONTRADICTION: Engine picked ${strategy} (bearish) but LLM explanation argues bullish: "${rationale.slice(0, 100)}"`;
+  }
+  if ((strategy === 'iron_condor' || strategy === 'iron_butterfly') && !NEUTRAL_WORDS.test(rationale) && (hasBullish || hasBearish)) {
+    return `TENSION: Engine picked ${strategy} (neutral) but LLM explanation has directional language: "${rationale.slice(0, 100)}"`;
+  }
+  return null;
+}
 
-3. **OI concentration determines wing placement:**
-   - High put OI at a strike = strong support → good for short put placement AT or below that strike
-   - High call OI at a strike = strong resistance → good for short call placement AT or above that strike
-   - Long wings go further out where OI drops off
+// ── System prompt: explain, don't re-rank ────────────────────────────────────
 
-4. **Score (0-100):** How well-suited this strategy is given current conditions.
+const EXPLAIN_SYSTEM = `You are the Strategy Advisor on the NewLeaf Verification Desk. The deterministic scoring engine has already selected the strategy, and legs have been constructed deterministically. Your job is to EXPLAIN why the strategy fits the current market conditions.
+
+## Rules
+1. Do NOT change the strategy selection or re-rank. The engine decided; you explain.
+2. For each strategy, write a rationale (≤40 words) explaining WHY it fits given the technicals, gamma walls, and IV environment.
+3. Write a marketRead (≤30 words) summarizing the overall regime.
+4. Do NOT pick strikes or output legs. Legs are built deterministically by the system.
 
 ## Output
 
 Return ONLY a JSON object:
 
 {
-  "strategies": [
+  "explanations": [
     {
-      "strategy": "iron_condor" | "broken_wing_butterfly" | "vertical_spread" | "short_strangle" | "calendar" | "diagonal",
-      "legs": [{ "type": "call"|"put", "side": "long"|"short", "strike": <number> }],
-      "rationale": "<why this strategy fits current conditions, ≤40 words>",
-      "score": <0-100>,
-      "netCredit": <estimated net credit from mid prices>
+      "strategy": "<the strategy code the engine selected>",
+      "rationale": "<why this strategy fits, ≤40 words>"
     }
   ],
-  "marketRead": "<≤30 words: overall market read driving these recommendations>"
-}
+  "marketRead": "<≤30 words: overall market read>"
+}`;
 
-Pick strikes from the AVAILABLE STRIKES in the chain data. Do not invent strikes that don't exist.
-Return exactly 3 strategies, sorted by score descending.`;
+// ── StrategyAdvisor class ────────────────────────────────────────────────────
 
 export class StrategyAdvisor {
   constructor(private llm: LLMRouter) {}
 
-  async recommend(opts: {
+  /**
+   * Engine-decides / LLM-explains flow.
+   * Legs are built deterministically by leg-builder.ts. The LLM only writes rationale.
+   */
+  async explain(opts: {
     ticker: string;
     expiry: string;
     snapshot: StockSnapshot;
-    indicators: TechnicalIndicators;
-    gammaAnalysis?: GammaAnalysis;
-    chain: { strike: number; call?: OptionContract; put?: OptionContract }[];
-    modelMode?: import('../types.js').ModelMode;
-  }): Promise<StrategyRecommendation> {
-    const { ticker, expiry, snapshot, indicators, gammaAnalysis, chain, modelMode } = opts;
+    enginePick: { strategy: string; direction: string; score: number; pillars: any };
+    preBuiltLegs: BuiltLeg[];
+    technicalSummary: string;
+    gammaSummary: string;
+    modelMode?: string;
+  }): Promise<{ explanation: StrategyExplanation; contradictions: string[] }> {
+    const { ticker, expiry, snapshot, enginePick, preBuiltLegs, technicalSummary, gammaSummary, modelMode } = opts;
     const dte = Math.max(0, Math.round((new Date(expiry).getTime() - Date.now()) / 86400000));
 
-    // Build available strikes summary (near ATM ±15%)
-    const range = snapshot.price * 0.15;
-    const nearStrikes = chain.filter(s =>
-      s.strike >= snapshot.price - range && s.strike <= snapshot.price + range
-    );
+    const legsSummary = preBuiltLegs.map(l =>
+      `${l.side} ${l.qty > 1 ? l.qty + 'x ' : ''}${l.type} $${l.strike}`
+    ).join(', ');
 
-    let prompt = `Recommend the top 3 option strategies for:
+    const prompt = `The engine selected **${enginePick.strategy}** (score ${enginePick.score}, direction: ${enginePick.direction}) for:
 
 ## TICKER: ${ticker}
 Spot: $${snapshot.price.toFixed(2)} (${snapshot.change >= 0 ? '+' : ''}${snapshot.changePct}%)
 Expiry: ${expiry} (${dte} DTE)
 
 ## TECHNICALS
-RSI(14): ${indicators.rsi14} | ADX(14): ${indicators.adx14}
-SMA trend: ${indicators.smaTrend} | Price vs SMAs: ${indicators.priceVsSma}
-Bollinger width: ${indicators.bollingerWidth}% | ATR(14): $${indicators.atr14}
+${technicalSummary}
+${gammaSummary}
 
-## AVAILABLE STRIKES (with IV and pricing)
-${nearStrikes.map(s => {
-  const c = s.call;
-  const p = s.put;
-  return `${s.strike}: C[bid=${c?.bid??0} ask=${c?.ask??0} iv=${c?.iv ? (c.iv*100).toFixed(0)+'%' : '--'} delta=${c?.delta?.toFixed(2)??'--'}] P[bid=${p?.bid??0} ask=${p?.ask??0} iv=${p?.iv ? (p.iv*100).toFixed(0)+'%' : '--'} delta=${p?.delta?.toFixed(2)??'--'}]`;
-}).join('\n')}`;
+## LEGS (built deterministically)
+${legsSummary}
 
-    if (gammaAnalysis) {
-      prompt += `
+Explain why ${enginePick.strategy} fits these conditions.`;
 
-## GAMMA WALLS (from Nasdaq open interest)
-Top walls by OI:
-${gammaAnalysis.walls.map(w => `  Strike ${w.strike}: OI=${w.totalOI.toLocaleString()} side=${w.side} strength=${w.strength}`).join('\n')}
-Put wall (support): ${gammaAnalysis.putWallStrike ?? 'none'}
-Call wall (resistance): ${gammaAnalysis.callWallStrike ?? 'none'}
-Spot inside band: ${gammaAnalysis.spotInsideBand}
-
-## OI BY STRIKE
-${gammaAnalysis.oiByStrike.map(s =>
-  `${s.strike}: call_OI=${s.callOI.toLocaleString()} put_OI=${s.putOI.toLocaleString()}`
-).join('\n')}`;
-    }
-
-    prompt += `
-
-Pick the 3 best strategies with specific strikes from the available chain. Explain why each fits the current market conditions.`;
-
-    const modeModelMap: Record<string, import('../llm/router.js').ModelTier> = {
-      'premium': 'qwen-max', 'budget-v3': 'deepseek', 'budget-r1': 'deepseek-r1', 'budget-qwq': 'qwq',
+    const modeModelMap: Record<string, ModelTier> = {
+      'premium': getModel('recommend'), 'budget-v3': 'deepseek', 'budget-r1': 'deepseek-r1', 'budget-qwq': 'qwen-max',
     };
-    const advisorModel = modeModelMap[modelMode ?? 'premium'] ?? 'qwq';
-    const raw = await this.llm.call(advisorModel, { system: SYSTEM, user: prompt, maxTokens: 3000 });
+    const advisorModel = modeModelMap[modelMode ?? 'premium'] ?? getModel('recommend');
+    const raw = await this.llm.call(advisorModel, { system: EXPLAIN_SYSTEM, user: prompt, maxTokens: 800 });
 
-    // Parse response — handle JSON mode (clean) and freeform (markdown fences)
+    // Parse
     let cleaned = raw.trim();
     const fenceMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
     if (fenceMatch) cleaned = fenceMatch[1].trim();
@@ -142,40 +140,59 @@ Pick the 3 best strategies with specific strikes from the available chain. Expla
     }
     const parsed = JSON.parse(cleaned);
 
-    // Normalize: models return strategies in wildly different shapes
-    const strategyMap: Record<string, string> = {
-      'iron condor': 'iron_condor', 'ironcondor': 'iron_condor', 'iron_condor': 'iron_condor',
-      'broken wing butterfly': 'broken_wing_butterfly', 'bwb': 'broken_wing_butterfly', 'broken_wing_butterfly': 'broken_wing_butterfly',
-      'vertical spread': 'vertical_spread', 'vertical': 'vertical_spread', 'vertical_spread': 'vertical_spread',
-      'bull call spread': 'vertical_spread', 'bear put spread': 'vertical_spread', 'call spread': 'vertical_spread', 'put spread': 'vertical_spread',
-      'short strangle': 'short_strangle', 'strangle': 'short_strangle', 'short_strangle': 'short_strangle',
-      'calendar': 'calendar', 'calendar spread': 'calendar',
-      'diagonal': 'diagonal', 'diagonal spread': 'diagonal',
-    };
-
-    if (parsed.strategies && Array.isArray(parsed.strategies)) {
-      parsed.strategies = parsed.strategies
-        .map((s: any) => {
-          const name = (s.strategy ?? '').toLowerCase().trim();
-          const mapped = strategyMap[name] ?? 'iron_condor';
-          const legs = Array.isArray(s.legs) ? s.legs.filter((l: any) => typeof l === 'object' && l.strike) : [];
-          let score = typeof s.score === 'number' ? s.score : 70;
-          if (score <= 10) score = score * 10; // normalize 1-10 scale to 0-100
-          return {
-            strategy: mapped,
-            legs,
-            rationale: s.rationale ?? s.description ?? s.reason ?? s.explanation ?? s.analysis ?? JSON.stringify(s).slice(0, 200),
-            score: Math.round(score),
-            netCredit: s.netCredit ?? s.net_credit ?? undefined,
-          };
-        })
-        .slice(0, 3);
-      // Ensure at least 1 strategy
-      if (parsed.strategies.length === 0) {
-        console.warn('Advisor: no valid strategies after normalization. Raw:', JSON.stringify(parsed).slice(0, 500));
-      }
+    // Normalize explanations array
+    if (parsed.explanations && Array.isArray(parsed.explanations)) {
+      parsed.explanations = parsed.explanations.map((e: any) => ({
+        strategy: e.strategy ?? enginePick.strategy,
+        rationale: e.rationale ?? e.description ?? e.reason ?? '',
+      })).slice(0, 3);
     }
     if (!parsed.marketRead) parsed.marketRead = parsed.market_read ?? parsed.summary ?? '';
-    return RecommendationSchema.parse(parsed);
+
+    const explanation = ExplanationSchema.parse(parsed);
+
+    // Consistency check
+    const contradictions: string[] = [];
+    for (const ex of explanation.explanations) {
+      const issue = checkConsistency(ex.strategy, enginePick.direction, ex.rationale);
+      if (issue) contradictions.push(issue);
+    }
+
+    return { explanation, contradictions };
+  }
+
+  /**
+   * Legacy recommend() — wraps engine-decides + LLM-explains into the old response shape
+   * for backward compatibility with discover.html.
+   * Legs come from the deterministic leg-builder, not the LLM.
+   */
+  async recommend(opts: {
+    ticker: string;
+    expiry: string;
+    snapshot: StockSnapshot;
+    enginePick: { strategy: string; direction: string; score: number; pillars: any };
+    preBuiltLegs: BuiltLeg[];
+    technicalSummary: string;
+    gammaSummary: string;
+    modelMode?: string;
+  }): Promise<StrategyRecommendation> {
+    const { explanation, contradictions } = await this.explain(opts);
+
+    if (contradictions.length > 0) {
+      console.warn('[Advisor] Consistency issues:', contradictions);
+    }
+
+    // Map to legacy shape — legs from deterministic builder, rationale from LLM
+    const strategies = explanation.explanations.map((ex, i) => ({
+      strategy: ex.strategy as any,
+      legs: opts.preBuiltLegs.map(l => ({ type: l.type, side: l.side, strike: l.strike })),
+      rationale: ex.rationale,
+      score: Math.max(0, opts.enginePick.score - i * 5),
+    }));
+
+    return RecommendationSchema.parse({
+      strategies,
+      marketRead: explanation.marketRead,
+    });
   }
 }

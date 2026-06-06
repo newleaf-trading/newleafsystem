@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pipeline Scheduler — Job Reference</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --bg: #F7F5F0; --surface: #fff; --border: rgba(15,61,46,.12); --ink: #0B0F14; --ink-muted: #6b6b60; --teal: #0d6e56; --green: #1a8c5e; --red: #c0392b; --gold: #C9A96E; --mono: 'Courier New', monospace; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--ink); padding: 40px; max-width: 960px; margin: 0 auto; line-height: 1.6; }
+    h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+    .subtitle { color: var(--ink-muted); font-size: 14px; margin-bottom: 32px; }
+    h2 { font-size: 18px; font-weight: 600; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+    h3 { font-size: 15px; font-weight: 600; margin: 20px 0 8px; }
+    p { margin-bottom: 12px; }
+    code { font-family: var(--mono); font-size: 13px; background: #eee8d5; padding: 2px 6px; border-radius: 3px; }
+    pre { font-family: var(--mono); font-size: 12px; background: #1a1a1a; color: #e0e0e0; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 12px 0; line-height: 1.5; }
+    pre .comment { color: #6b7280; }
+    pre .highlight { color: #34d399; }
+
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); padding: 8px 12px; border-bottom: 2px solid var(--border); }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: top; }
+    td:first-child { font-weight: 600; white-space: nowrap; }
+    tr:hover { background: rgba(13,110,86,0.03); }
+
+    .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-left: 6px; }
+    .badge-intraday { background: #dbeafe; color: #1e40af; }
+    .badge-daily { background: #d1fae5; color: #065f46; }
+    .badge-weekly { background: #fef3c7; color: #92400e; }
+    .badge-always { background: #f3e8ff; color: #6b21a8; }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 16px 0; }
+    .card h3 { margin-top: 0; }
+    .card .meta { font-size: 12px; color: var(--ink-muted); margin-bottom: 8px; }
+
+    .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 12px 0; font-family: var(--mono); font-size: 13px; }
+    .flow .step { background: var(--surface); border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; }
+    .flow .arrow { color: var(--ink-muted); }
+
+    .status-table td:nth-child(3) { font-family: var(--mono); font-size: 12px; }
+    .catchup { color: var(--green); font-size: 12px; }
+    .no-catchup { color: var(--red); font-size: 12px; }
+
+    .timeline { position: relative; margin: 24px 0; padding-left: 32px; }
+    .timeline::before { content: ''; position: absolute; left: 12px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+    .timeline .event { position: relative; margin-bottom: 20px; }
+    .timeline .event::before { content: ''; position: absolute; left: -24px; top: 6px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--teal); background: var(--surface); }
+    .timeline .time { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--teal); }
+    .timeline .desc { font-size: 14px; margin-top: 2px; }
+    .timeline .detail { font-size: 12px; color: var(--ink-muted); }
+  </style>
+</head>
+<body>
+
+<h1>Pipeline Scheduler</h1>
+<p class="subtitle">All scheduled jobs in the NewLeaf data pipeline &mdash; entry point: <code>pipeline/index.js</code></p>
+
+<h2>Overview</h2>
+<p>The scheduler is a long-running Node.js process using <code>node-cron</code>. It replaces system crontab and manages all data collection, enrichment, and publishing jobs. It must be running continuously on the local machine.</p>
+
+<pre>
+<span class="comment"># Start the scheduler (production)</span>
+cd pipeline && npm start
+
+<span class="comment"># One-shot mode (run fast pipeline once and exit)</span>
+node index.js --once
+
+<span class="comment"># Verify it's running</span>
+ps aux | grep "node index.js" | grep -v grep
+</pre>
+
+<h2>All Scheduled Jobs (6 total)</h2>
+
+<table class="status-table">
+  <thead>
+    <tr><th>Job</th><th>Schedule</th><th>Cron</th><th>Script</th><th>Catch-up?</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Fast Pipeline <span class="badge badge-intraday">INTRADAY</span></td>
+      <td>Every 15 min, market hours (9:30am&ndash;4pm ET), Mon&ndash;Fri</td>
+      <td>*/15 * * * 1-5</td>
+      <td><code>pipeline-fast.js --watchlist</code></td>
+      <td><span class="no-catchup">No</span></td>
+    </tr>
+    <tr>
+      <td>Daily OI Enrichment <span class="badge badge-daily">DAILY</span></td>
+      <td>9:32am ET, Mon&ndash;Fri</td>
+      <td>32 14 * * 1-5</td>
+      <td><code>pipeline-oi-enrichment.js</code> &rarr; <code>pipeline-watchlist.js</code> &rarr; <code>sync-r2-to-firestore-fixed.mjs</code></td>
+      <td><span class="catchup">Yes &mdash; health check</span></td>
+    </tr>
+    <tr>
+      <td>Daily Funnel <span class="badge badge-daily">DAILY</span></td>
+      <td>10:00am ET, Mon&ndash;Fri</td>
+      <td>0 15 * * 1-5</td>
+      <td><code>generaterecommendations/funnel-price.cjs</code></td>
+      <td><span class="no-catchup">No</span></td>
+    </tr>
+    <tr>
+      <td>Weekly Premium Snapshot <span class="badge badge-weekly">WEEKLY</span></td>
+      <td>Friday 4:30pm ET</td>
+      <td>30 21 * * 5</td>
+      <td><code>generaterecommendations/weekly-premium-snapshot.js</code></td>
+      <td><span class="catchup">Yes &mdash; health check (Fri/Sat/Sun)</span></td>
+    </tr>
+    <tr>
+      <td>Health Check <span class="badge badge-always">ALWAYS</span></td>
+      <td>Every 5 min, always</td>
+      <td>*/5 * * * *</td>
+      <td><code>check-scheduler-health.sh</code> + catch-up logic</td>
+      <td>&mdash;</td>
+    </tr>
+    <tr>
+      <td>Server.cjs <span class="badge badge-always">ALWAYS</span></td>
+      <td>On boot + auto-restart via health check</td>
+      <td>&mdash;</td>
+      <td><code>server.cjs</code> on port 3000</td>
+      <td><span class="catchup">Yes &mdash; auto-restart</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Typical Trading Day Timeline</h2>
+
+<div class="timeline">
+  <div class="event">
+    <div class="time">Pre-market</div>
+    <div class="desc">Scheduler boots, starts <code>server.cjs</code>, <code>caffeinate</code> prevents idle sleep</div>
+  </div>
+  <div class="event">
+    <div class="time">9:30 AM ET</div>
+    <div class="desc">Market opens &mdash; first fast pipeline run</div>
+    <div class="detail">Alpaca prices + IV for 111 symbols, uploaded to R2</div>
+  </div>
+  <div class="event">
+    <div class="time">9:32 AM ET</div>
+    <div class="desc">Daily OI enrichment sequence</div>
+    <div class="detail">Nasdaq OI (Yahoo fallback) &rarr; watchlist manifest &rarr; Firestore sync. ~20 min runtime.</div>
+  </div>
+  <div class="event">
+    <div class="time">10:00 AM ET</div>
+    <div class="desc">Daily funnel</div>
+    <div class="detail">Ranks scanner signals, prices top N candidates, publishes to Firestore tiles</div>
+  </div>
+  <div class="event">
+    <div class="time">9:45 AM &ndash; 4:00 PM ET</div>
+    <div class="desc">Fast pipeline continues every 15 min</div>
+    <div class="detail">Keeps R2 reports fresh with latest prices/IV during market hours</div>
+  </div>
+  <div class="event">
+    <div class="time">4:00 PM ET</div>
+    <div class="desc">Market closes &mdash; fast pipeline stops</div>
+  </div>
+  <div class="event">
+    <div class="time">4:30 PM ET (Fridays only)</div>
+    <div class="desc">Weekly premium snapshot</div>
+    <div class="detail">Captures ATM call/put premiums for all 111 symbols &rarr; <code>watchlist/premium-snapshots/{isoWeek}.json</code> on R2 + per-symbol series</div>
+  </div>
+</div>
+
+<h2>Job Details</h2>
+
+<div class="card">
+  <h3>1. Fast Pipeline <span class="badge badge-intraday">INTRADAY</span></h3>
+  <div class="meta">Script: <code>pipeline-fast.js --watchlist</code> | Concurrency: 5 parallel workers | Runtime: ~2 min</div>
+  <p>Fetches live prices, IV, and Greeks from Alpaca for all 111 watchlist symbols. Runs the scoring engine (gamma + IV + trend pillars) and uploads per-symbol reports to R2. Does <strong>not</strong> fetch OI data (that's daily only).</p>
+  <div class="flow">
+    <span class="step">Alpaca API</span><span class="arrow">&rarr;</span>
+    <span class="step">Score engine</span><span class="arrow">&rarr;</span>
+    <span class="step">reports/{SYM}/latest.json</span><span class="arrow">&rarr;</span>
+    <span class="step">R2 upload</span>
+  </div>
+</div>
+
+<div class="card">
+  <h3>2. Daily OI Enrichment <span class="badge badge-daily">DAILY</span></h3>
+  <div class="meta">Scripts: 3-step sequence | Concurrency: 2 (Nasdaq rate limit) | Runtime: ~15-25 min</div>
+  <p>Fetches Open Interest from Nasdaq (with Yahoo Cloud Function fallback), recalculates gamma walls, regenerates the watchlist manifest, and syncs to Firestore.</p>
+  <div class="flow">
+    <span class="step">Nasdaq OI + Yahoo fallback</span><span class="arrow">&rarr;</span>
+    <span class="step">Gamma walls recalc</span><span class="arrow">&rarr;</span>
+    <span class="step">R2 upload</span><span class="arrow">&rarr;</span>
+    <span class="step">Manifest regen</span><span class="arrow">&rarr;</span>
+    <span class="step">Firestore sync</span>
+  </div>
+  <p><strong>Catch-up:</strong> If the 9:32am cron fires but the machine was asleep, the health check (every 5 min) detects the missed run and executes it as soon as the market is open. Uses stamp file <code>.daily-oi-stamp</code>.</p>
+</div>
+
+<div class="card">
+  <h3>3. Daily Funnel <span class="badge badge-daily">DAILY</span></h3>
+  <div class="meta">Script: <code>generaterecommendations/funnel-price.cjs</code> | Runtime: ~5 min</div>
+  <p>Reads the latest scanner results, ranks symbols by signal strength, prices the top candidates using live Alpaca options data, and publishes to Firestore as trade tiles.</p>
+  <div class="flow">
+    <span class="step">Scanner results</span><span class="arrow">&rarr;</span>
+    <span class="step">Rank + filter</span><span class="arrow">&rarr;</span>
+    <span class="step">Price top N</span><span class="arrow">&rarr;</span>
+    <span class="step">Firestore tiles</span>
+  </div>
+</div>
+
+<div class="card">
+  <h3>4. Weekly Premium Snapshot <span class="badge badge-weekly">WEEKLY</span></h3>
+  <div class="meta">Script: <code>generaterecommendations/weekly-premium-snapshot.js</code> | Runtime: ~2 min</div>
+  <p>Captures a canonical snapshot of ATM call/put premiums (mid price, % of stock, annualized) for all 111 symbols. Used by the Movement &amp; Range page for week-over-week premium comparisons.</p>
+  <div class="flow">
+    <span class="step">Pipeline reports</span><span class="arrow">&rarr;</span>
+    <span class="step">Extract premiums</span><span class="arrow">&rarr;</span>
+    <span class="step">R2: premium-snapshots/{week}.json</span><span class="arrow">&rarr;</span>
+    <span class="step">R2: premium-series/{SYM}.json</span>
+  </div>
+  <p><strong>Catch-up:</strong> If the Friday 4:30pm cron is missed, the health check catches up on Fri/Sat/Sun. Uses stamp file <code>.weekly-snap-stamp</code>.</p>
+  <p><strong>Manual backfill:</strong> <code>node weekly-premium-snapshot.js --week 2026-W22</code></p>
+</div>
+
+<div class="card">
+  <h3>5. Health Check <span class="badge badge-always">ALWAYS</span></h3>
+  <div class="meta">Script: built-in + <code>check-scheduler-health.sh</code> | Every 5 min</div>
+  <p>Monitors system health and catches up missed jobs:</p>
+  <ul style="margin: 8px 0 0 20px; font-size: 14px;">
+    <li>Auto-restarts <code>server.cjs</code> if it crashes</li>
+    <li>Catches up daily OI enrichment if missed (market hours only)</li>
+    <li>Catches up weekly premium snapshot if missed (Fri/Sat/Sun)</li>
+    <li>Runs health check script for pipeline freshness and R2 status</li>
+  </ul>
+</div>
+
+<h2>Stamp Files</h2>
+<p>The scheduler uses stamp files to track which jobs have already run, preventing duplicate execution and enabling catch-up:</p>
+<table>
+  <thead><tr><th>File</th><th>Contents</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>.daily-oi-stamp</code></td><td>Date string, e.g. <code>2026-06-05</code></td><td>Prevents daily OI from running twice on the same day</td></tr>
+    <tr><td><code>.weekly-snap-stamp</code></td><td>ISO week, e.g. <code>2026-W23</code></td><td>Prevents weekly snapshot from running twice in the same week</td></tr>
+  </tbody>
+</table>
+
+<h2>Data Sources</h2>
+<table>
+  <thead><tr><th>Source</th><th>Used By</th><th>Rate Limits</th></tr></thead>
+  <tbody>
+    <tr><td>Alpaca API</td><td>Fast pipeline (prices, IV, Greeks)</td><td>200 req/min</td></tr>
+    <tr><td>Nasdaq API</td><td>Daily OI (open interest, volume)</td><td>~80 symbols/batch before 429s</td></tr>
+    <tr><td>Yahoo Cloud Function</td><td>Daily OI fallback</td><td>Single concurrency (yfinance not thread-safe)</td></tr>
+    <tr><td>Cloudflare R2</td><td>All jobs (upload destination)</td><td>No practical limit</td></tr>
+    <tr><td>Firestore</td><td>OI sync, funnel publish</td><td>500 writes/sec</td></tr>
+  </tbody>
+</table>
+
+<h2>Outputs</h2>
+<table>
+  <thead><tr><th>Location</th><th>Content</th><th>Written By</th></tr></thead>
+  <tbody>
+    <tr><td><code>R2: reports/{SYM}/latest.json</code></td><td>Per-symbol report (price, IV, score, gamma)</td><td>Fast pipeline + Daily OI</td></tr>
+    <tr><td><code>R2: reports/manifest.json</code></td><td>Watchlist manifest with scores</td><td>Daily OI (pipeline-watchlist.js)</td></tr>
+    <tr><td><code>R2: watchlist/premium-snapshots/{week}.json</code></td><td>Weekly premium snapshot (all 111 symbols)</td><td>Weekly snapshot</td></tr>
+    <tr><td><code>R2: watchlist/premium-series/{SYM}.json</code></td><td>Per-symbol premium time series (52 weeks)</td><td>Weekly snapshot</td></tr>
+    <tr><td><code>Firestore: gamma_analysis/{SYM}</code></td><td>Gamma wall data per symbol</td><td>Daily OI (sync step)</td></tr>
+    <tr><td><code>Firestore: tiles/{tileId}</code></td><td>Published trade positions</td><td>Daily funnel</td></tr>
+    <tr><td><code>Local: reports/{SYM}/latest.json</code></td><td>Local cache of pipeline reports</td><td>All pipeline jobs</td></tr>
+  </tbody>
+</table>
+
+<h2>Troubleshooting</h2>
+<table>
+  <thead><tr><th>Symptom</th><th>Likely Cause</th><th>Fix</th></tr></thead>
+  <tbody>
+    <tr><td>Movement &amp; Range shows 404 for premium snapshots</td><td>Weekly snapshot cron missed (machine was off on Friday)</td><td><code>node weekly-premium-snapshot.js</code> (or <code>--week 2026-WXX</code> for backfill)</td></tr>
+    <tr><td>Stale prices on R2 (hours old)</td><td>Fast pipeline not running</td><td>Check if <code>node index.js</code> is running; restart with <code>npm start</code></td></tr>
+    <tr><td>No OI data / gamma walls missing</td><td>Daily OI enrichment failed or hasn't run</td><td>Check <code>.daily-oi-stamp</code>; run <code>node pipeline-oi-enrichment.js --watchlist</code> manually</td></tr>
+    <tr><td>No new tiles published</td><td>Daily funnel didn't fire or no qualifying signals</td><td>Run <code>node ../generaterecommendations/funnel-price.cjs</code> manually</td></tr>
+    <tr><td>server.cjs not running</td><td>Crashed or never started</td><td>Health check auto-restarts; or <code>node server.cjs</code> manually</td></tr>
+    <tr><td>Nasdaq 429 errors</td><td>Rate limited after ~80 symbols</td><td>Built-in exponential backoff handles this; reduce concurrency if persistent</td></tr>
+  </tbody>
+</table>
+
+<p style="margin-top: 40px; font-size: 12px; color: var(--ink-muted);">
+  Source: <code>pipeline/index.js</code> | Last updated: June 2026
+</p>
+
+</body>
+</html>

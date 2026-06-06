@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leg Builder Test</title>
+  <script>window.__CONFIG__={API_URL:"https://us-central1-newleaf-trading.cloudfunctions.net/api",API_KEY:"nl_31ee32be43bd4f07a3520ae15c4b3162"};</script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --bg: #F7F5F0; --surface: #fff; --border: rgba(15,61,46,.12); --ink: #0B0F14; --ink-muted: #6b6b60; --teal: #0d6e56; --green: #1a8c5e; --red: #c0392b; --mono: 'Space Mono', monospace; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); padding: 24px; max-width: 1200px; margin: 0 auto; }
+    h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .subtitle { color: var(--ink-muted); font-size: 12px; margin-bottom: 24px; }
+
+    .controls { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; margin-bottom: 24px; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); }
+    .field input, .field select { font-family: var(--mono); font-size: 13px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
+    .field input { width: 120px; }
+    button.run { font-family: var(--mono); font-size: 12px; font-weight: 700; padding: 8px 20px; background: var(--teal); color: #fff; border: none; border-radius: 6px; cursor: pointer; height: 37px; }
+    button.run:hover { opacity: 0.9; }
+    button.run:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .status { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); margin-bottom: 16px; min-height: 16px; }
+    .status.error { color: var(--red); }
+
+    .results { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 800px) { .results { grid-template-columns: 1fr; } }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+    .card h2 { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); margin-bottom: 12px; }
+
+    .leg-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; }
+    .leg-table th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); padding: 4px 8px; border-bottom: 1px solid var(--border); }
+    .leg-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+    .leg-table .short { color: var(--red); }
+    .leg-table .long { color: var(--green); }
+    .leg-table .mid { font-weight: 600; }
+    .leg-table .estimated { opacity: 0.5; font-style: italic; }
+
+    .meta-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+    .meta-item { font-family: var(--mono); font-size: 11px; }
+    .meta-item .label { color: var(--ink-muted); }
+
+    .gate-list { font-family: var(--mono); font-size: 11px; line-height: 1.8; }
+    .gate-list .pass { color: var(--green); }
+    .gate-list .fail { color: var(--ink-muted); }
+
+    .rationale { font-size: 13px; line-height: 1.6; margin-top: 8px; }
+    .market-read { font-family: var(--mono); font-size: 12px; color: var(--ink-muted); padding: 8px; background: var(--bg); border-radius: 4px; margin-bottom: 12px; }
+
+    .warnings { margin-top: 8px; }
+    .warnings .warn { font-family: var(--mono); font-size: 11px; color: #d97706; padding: 4px 0; }
+
+    .json-toggle { font-family: var(--mono); font-size: 10px; color: var(--teal); cursor: pointer; margin-top: 8px; display: inline-block; }
+    .json-block { display: none; margin-top: 8px; background: var(--bg); border-radius: 4px; padding: 12px; overflow-x: auto; }
+    .json-block.open { display: block; }
+    .json-block pre { font-family: var(--mono); font-size: 10px; line-height: 1.5; white-space: pre-wrap; }
+
+    .multi-run { margin-top: 24px; }
+    .consistency-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px; margin-top: 8px; }
+    .consistency-table th { text-align: left; font-size: 10px; text-transform: uppercase; padding: 4px 8px; border-bottom: 1px solid var(--border); color: var(--ink-muted); }
+    .consistency-table td { padding: 4px 8px; border-bottom: 1px solid var(--border); }
+    .consistency-table .match { color: var(--green); }
+    .consistency-table .diff { color: var(--red); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<h1>Deterministic Leg Builder Test</h1>
+<p class="subtitle">Tests that /api/recommend returns legs snapped to real chain strikes, consistent across runs</p>
+
+<div class="controls">
+  <div class="field">
+    <label>Ticker</label>
+    <input id="ticker" value="AAPL" />
+  </div>
+  <div class="field">
+    <label>Expiry</label>
+    <input id="expiry" value="" placeholder="YYYY-MM-DD" />
+  </div>
+  <div class="field">
+    <label>Model Mode</label>
+    <select id="modelMode">
+      <option value="budget-qwq" selected>budget-qwq</option>
+      <option value="premium">premium</option>
+      <option value="budget-v3">budget-v3</option>
+      <option value="budget-r1">budget-r1</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>LLM Strategy</label>
+    <select id="useLLM">
+      <option value="false" selected>Engine only</option>
+      <option value="true">AI Strategy Selection</option>
+    </select>
+  </div>
+  <button class="run" id="runBtn" onclick="runSingle()">Run Once</button>
+  <button class="run" id="run3Btn" onclick="runConsistency()" style="background:#555">Run 3x (consistency)</button>
+</div>
+
+<div class="status" id="status"></div>
+
+<div class="results" id="results" style="display:none">
+  <!-- Strategy + Legs -->
+  <div class="card">
+    <h2>Strategy & Legs</h2>
+    <div id="strategyInfo"></div>
+    <table class="leg-table" id="legTable">
+      <thead><tr><th>Side</th><th>Type</th><th>Strike</th><th>Bid</th><th>Ask</th><th>Mid</th><th>IV</th></tr></thead>
+      <tbody id="legBody"></tbody>
+    </table>
+    <div class="meta-row" id="legMeta"></div>
+    <div class="warnings" id="legWarnings"></div>
+  </div>
+
+  <!-- Engine & Gates -->
+  <div class="card">
+    <h2>Engine Decision</h2>
+    <div id="engineInfo"></div>
+    <div class="gate-list" id="gateList"></div>
+  </div>
+
+  <!-- Rationale -->
+  <div class="card">
+    <h2>LLM Rationale</h2>
+    <div class="market-read" id="marketRead"></div>
+    <div class="rationale" id="rationale"></div>
+    <div class="meta-row" id="costInfo"></div>
+  </div>
+
+  <!-- Raw JSON -->
+  <div class="card">
+    <h2>Raw Response</h2>
+    <span class="json-toggle" onclick="toggleJson()">Show/hide JSON</span>
+    <div class="json-block" id="jsonBlock"><pre id="jsonPre"></pre></div>
+  </div>
+</div>
+
+<!-- Consistency results -->
+<div class="multi-run card" id="consistencyCard" style="display:none; margin-top: 24px;">
+  <h2>Consistency Check (3 runs, noCache)</h2>
+  <table class="consistency-table">
+    <thead><tr><th>#</th><th>Strategy</th><th>Legs</th><th>Score</th><th>Match</th><th>Time</th></tr></thead>
+    <tbody id="consistencyBody"></tbody>
+  </table>
+</div>
+
+<script>
+  const _cfg = window.__CONFIG__ || {};
+  const API = _cfg.API_URL || 'http://localhost:5400';
+  const KEY = _cfg.API_KEY || 'dev-key-change-me';
+
+  // Auto-fill expiry: next Friday
+  (function() {
+    const d = new Date();
+    d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7 || 7) + 14); // 2 weeks out
+    document.getElementById('expiry').value = d.toISOString().split('T')[0];
+  })();
+
+  async function callRecommend(ticker, expiry, opts = {}) {
+    const body = {
+      ticker, expiry,
+      modelMode: document.getElementById('modelMode').value,
+      noCache: true,
+      ...(document.getElementById('useLLM').value === 'true' ? { useLLMStrategy: true } : {}),
+      ...opts,
+    };
+    const res = await fetch(`${API}/api/recommend`, {
+      method: 'POST',
+      headers: { 'X-API-Key': KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    return res.json();
+  }
+
+  function setStatus(msg, isError) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = 'status' + (isError ? ' error' : '');
+  }
+
+  function legsKey(strat) {
+    if (!strat?.legs?.length) return 'no-legs';
+    return strat.legs.map(l => `${l.side}:${l.type}:${l.strike}`).sort().join('|');
+  }
+
+  async function runSingle() {
+    const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+    const expiry = document.getElementById('expiry').value.trim();
+    if (!ticker || !expiry) { setStatus('Enter ticker and expiry', true); return; }
+
+    document.getElementById('runBtn').disabled = true;
+    setStatus(`Fetching ${ticker} ${expiry}...`);
+    document.getElementById('results').style.display = 'none';
+
+    try {
+      const t0 = performance.now();
+      const data = await callRecommend(ticker, expiry);
+      const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
+      setStatus(`Done in ${elapsed}s | LLM cost: $${data.cost?.totalCost?.toFixed(4) ?? '?'}`);
+      renderResult(data);
+    } catch (err) {
+      setStatus(`Error: ${err.message}`, true);
+    } finally {
+      document.getElementById('runBtn').disabled = false;
+    }
+  }
+
+  function renderResult(data) {
+    document.getElementById('results').style.display = 'grid';
+    const strat = data.recommendation?.strategies?.[0];
+    const ep = data.enginePick;
+
+    // Strategy info
+    const si = document.getElementById('strategyInfo');
+    if (strat) {
+      const decision = ep?.reasoningOverride?.decision || (strat ? 'ENGINE' : 'NO_TRADE');
+      si.innerHTML = `
+        <div style="font-family:var(--mono);font-size:14px;font-weight:700;margin-bottom:8px;">
+          ${strat.strategy.replace(/_/g, ' ')}
+          <span style="color:var(--ink-muted);font-weight:400;font-size:12px;margin-left:8px;">${ep?.direction || ''} | score ${strat.score || ep?.score || '?'}</span>
+          <span style="color:${decision === 'APPROVED_TRADE' ? 'var(--green)' : decision === 'WATCHLIST_TRADE' ? '#d97706' : 'var(--ink-muted)'};font-size:11px;margin-left:8px;">${decision}</span>
+        </div>`;
+    } else {
+      si.innerHTML = `<div style="font-family:var(--mono);font-size:13px;color:var(--red);">NO TRADE / NO LEGS</div>`;
+    }
+
+    // Legs table
+    const tbody = document.getElementById('legBody');
+    tbody.innerHTML = '';
+    if (strat?.legs) {
+      for (const l of strat.legs) {
+        const isEst = l.estimated ? ' estimated' : '';
+        tbody.innerHTML += `<tr>
+          <td class="${l.side}">${l.side.toUpperCase()}${l.qty > 1 ? ' x' + l.qty : ''}</td>
+          <td>${l.type}</td>
+          <td>$${l.strike}</td>
+          <td class="${isEst}">${l.bid != null ? l.bid.toFixed(2) : '--'}</td>
+          <td class="${isEst}">${l.ask != null ? l.ask.toFixed(2) : '--'}</td>
+          <td class="mid${isEst}">${l.mid != null ? '$' + l.mid.toFixed(2) : '--'}</td>
+          <td>${l.iv != null ? (l.iv * 100).toFixed(0) + '%' : '--'}</td>
+        </tr>`;
+      }
+    }
+
+    // Net credit
+    const meta = document.getElementById('legMeta');
+    if (strat?.legs?.length) {
+      const credit = strat.legs.reduce((sum, l) => {
+        const mid = l.mid || 0;
+        return sum + (l.side === 'short' ? mid : -mid);
+      }, 0);
+      meta.innerHTML = `
+        <div class="meta-item"><span class="label">Net credit:</span> $${credit.toFixed(2)}</div>
+        <div class="meta-item"><span class="label">Spot:</span> $${data.snapshot?.price?.toFixed(2) || '?'}</div>
+      `;
+    } else { meta.innerHTML = ''; }
+
+    // Warnings from leg builder
+    const warns = document.getElementById('legWarnings');
+    const es = data.engineSnapshot;
+    const builderGate = es?.gateTrace?.find(g => g.gate === 'leg_builder');
+    warns.innerHTML = '';
+    // Show any warnings from engine snapshot
+    if (es?.gateTrace) {
+      const reasoningGate = es.gateTrace.find(g => g.gate === 'reasoning_override');
+      if (reasoningGate && !reasoningGate.passed) {
+        warns.innerHTML += `<div class="warn">${reasoningGate.reason}</div>`;
+      }
+    }
+
+    // Engine info
+    const ei = document.getElementById('engineInfo');
+    ei.innerHTML = `
+      <div class="meta-row" style="margin-bottom:8px;">
+        <div class="meta-item"><span class="label">Engine:</span> ${ep?.strategy?.replace(/_/g, ' ') || '?'}</div>
+        <div class="meta-item"><span class="label">Direction:</span> ${ep?.direction || '?'}</div>
+        <div class="meta-item"><span class="label">Score:</span> ${ep?.score || '?'}</div>
+      </div>
+      <div class="meta-row" style="margin-bottom:8px;">
+        <div class="meta-item"><span class="label">Gamma:</span> ${ep?.pillars?.gamma ?? '?'}/40</div>
+        <div class="meta-item"><span class="label">IV:</span> ${ep?.pillars?.iv ?? '?'}/35</div>
+        <div class="meta-item"><span class="label">Trend:</span> ${ep?.pillars?.trend ?? '?'}/25</div>
+      </div>`;
+
+    // Gate trace
+    const gl = document.getElementById('gateList');
+    gl.innerHTML = '';
+    if (es?.gateTrace) {
+      for (const g of es.gateTrace) {
+        gl.innerHTML += `<div class="${g.passed ? 'pass' : 'fail'}">${g.passed ? 'PASS' : 'FAIL'} ${g.gate} &mdash; ${g.reason.slice(0, 150)}</div>`;
+      }
+    }
+
+    // Rationale
+    document.getElementById('marketRead').textContent = data.recommendation?.marketRead || '';
+    document.getElementById('rationale').textContent = strat?.rationale || '(no rationale)';
+    document.getElementById('costInfo').innerHTML = `
+      <div class="meta-item"><span class="label">LLM cost:</span> $${data.cost?.totalCost?.toFixed(4) ?? '?'}</div>
+      <div class="meta-item"><span class="label">Tokens:</span> ${data.cost?.totalTokens ?? '?'}</div>
+    `;
+
+    // Raw JSON
+    document.getElementById('jsonPre').textContent = JSON.stringify(data, null, 2);
+  }
+
+  function toggleJson() {
+    document.getElementById('jsonBlock').classList.toggle('open');
+  }
+
+  async function runConsistency() {
+    const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+    const expiry = document.getElementById('expiry').value.trim();
+    if (!ticker || !expiry) { setStatus('Enter ticker and expiry', true); return; }
+
+    document.getElementById('run3Btn').disabled = true;
+    const tbody = document.getElementById('consistencyBody');
+    tbody.innerHTML = '';
+    document.getElementById('consistencyCard').style.display = 'block';
+    const runs = [];
+
+    for (let i = 0; i < 3; i++) {
+      setStatus(`Consistency run ${i + 1}/3...`);
+      try {
+        const t0 = performance.now();
+        const data = await callRecommend(ticker, expiry);
+        const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
+        const strat = data.recommendation?.strategies?.[0];
+        runs.push({ strat, data, elapsed });
+
+        const key = legsKey(strat);
+        const match = i === 0 ? '--' : (key === legsKey(runs[0].strat) ? 'MATCH' : 'DIFF');
+
+        tbody.innerHTML += `<tr>
+          <td>${i + 1}</td>
+          <td>${strat?.strategy?.replace(/_/g, ' ') || 'none'}</td>
+          <td>${strat?.legs?.map(l => `${l.side[0]}${l.type[0]}$${l.strike}`).join(' ') || 'none'}</td>
+          <td>${strat?.score || '?'}</td>
+          <td class="${match === 'MATCH' ? 'match' : match === 'DIFF' ? 'diff' : ''}">${match}</td>
+          <td>${elapsed}s</td>
+        </tr>`;
+      } catch (err) {
+        tbody.innerHTML += `<tr><td>${i + 1}</td><td colspan="5" style="color:var(--red)">${err.message}</td></tr>`;
+      }
+    }
+
+    const allMatch = runs.length === 3 && runs.every(r => legsKey(r.strat) === legsKey(runs[0].strat));
+    setStatus(allMatch ? 'All 3 runs produced identical legs' : 'Legs differed across runs', !allMatch);
+
+    // Render the last run's full details
+    if (runs.length) renderResult(runs[runs.length - 1].data);
+
+    document.getElementById('run3Btn').disabled = false;
+  }
+</script>
+</body>
+</html>

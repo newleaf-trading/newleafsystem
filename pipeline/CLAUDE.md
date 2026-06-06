@@ -4,10 +4,19 @@
 
 In-process scheduler for market data collection. Replaces system crontab with node-cron.
 
-Runs three main jobs on schedule:
-1. **Fast pipeline** (every 15 min, market hours) — Alpaca prices + IV for 111 symbols -> R2
-2. **Daily OI enrichment** (9:32am ET) — Nasdaq OI data (Yahoo Cloud Function fallback) + gamma wall recalc -> R2 + Firestore sync
-3. **Health check** (every 5 min) — Pipeline status + server.cjs monitoring
+Runs five scheduled jobs plus a health check:
+1. **Fast pipeline** (every 15 min, market hours Mon-Fri) — Alpaca prices + IV for 111 symbols -> R2
+2. **Daily OI enrichment** (9:32am ET, Mon-Fri) — Nasdaq OI data (Yahoo Cloud Function fallback) + gamma wall recalc -> R2 + Firestore sync. Catch-up via health check if missed.
+3. **Daily funnel** (10:00am ET, Mon-Fri) — Rank scanner signals, price top N, publish picks to Firestore tiles
+4. **Weekly premium snapshot** (Fri 4:30pm ET) — Captures ATM call/put premiums for all 111 symbols -> R2 as `watchlist/premium-snapshots/{isoWeek}.json`. Catch-up via health check on Fri/Sat/Sun if missed.
+5. **Health check** (every 5 min, always) — Auto-restarts server.cjs, catches up missed daily OI and weekly snapshot jobs
+
+## Scheduler Must Be Running
+
+The pipeline scheduler (`node index.js` / `npm start`) **must be running continuously** on the local machine for all jobs to fire. It uses `caffeinate` to prevent macOS idle sleep, but if the machine is shut down or the process dies, jobs will be missed. The health check catch-up mechanism recovers daily OI and weekly snapshots when the scheduler restarts, but intraday fast pipeline runs and the daily funnel are not recoverable.
+
+**To start:** `cd pipeline && npm start`
+**To verify:** Check for the `caffeinate` process and `node index.js` in `ps aux`
 
 ## Architecture
 
@@ -129,6 +138,99 @@ Each symbol gets a score (0-100) from three pillars:
 - **Trend pillar** (0-25): RSI, ADX, Bollinger Bands, trend state
 
 When OI is unavailable, gamma pillar falls back to technical proxy scoring (~22 max).
+
+## Gamma Confidence (Blended)
+
+Strategy selection gates (condor, BWB, directional) use a **blended confidence score**
+combining four signals:
+
+```
+blendedConfidence = 0.40 × OI-absolute    (liquidity — enough OI for walls to be meaningful)
+                  + 0.35 × GEX-relative   (concentration — gamma at the walls, not smeared)
+                  + 0.15 × delta          (positioning — are OI positions actively building?)
+                  + 0.10 × volume         (activity — is the market trading these strikes?)
+```
+
+**IMPORTANT: These weights are intuition-based, NOT outcome-validated.** No accuracy claims
+should be made about strategy recommendations until the weights are tuned against real
+pick_outcomes data. The blend discriminates (bell curve centered at ~0.52, strategies spread
+across 5 types) but has not been proven to predict which structure actually profits.
+
+**Condor gate** is set to 0.60, targeting the **top ~quartile** of blended confidence among
+eligible symbols (band 3-15%, 50+ contracts). Delta is currently DARK in the blend (see
+"Delta DARK" note below) — re-validate the 0.60 threshold once delta is re-enabled, checking
+that it still captures roughly the top quartile (>12% and <40% of eligible symbols).
+
+**Diagonal spread** is defined in `STRATEGIES` but its gate is **deferred** — the structure is
+valid but the gate conditions aren't met today. Requirements for activation:
+- Genuine moderate trend: ADX 15-25 (not the <20 "weak" population — those have no real lean)
+- Cheap vol: IV/RV < 1.0 (not absolute IV >= 25% — that captures IV-rich names where selling
+  premium is correct, not buying vega)
+- Revisit when a scan shows a real population (3+ symbols) meeting both conditions.
+The weak-ADX + absolute-IV gate was reverted after spot-checks showed it bought vega on
+IV-rich names (JNJ IV/RV 1.55, NVDA 1.37) and made directional bets on non-trending stocks.
+
+**Iron butterfly at ~25 symbols is correct**, not a fallback failure. These are genuinely
+range-bound / moderate-confidence / no-vol-edge / no-trend names. The spot-check proved the
+12 diagonal candidates actually belong in butterfly. Do not manufacture strategy diversity
+for its own sake.
+
+**Scoring pillar — ADX-aware (RESOLVED)**: The trendPillar in `calcScore()` now uses the
+ADX-derived `strengthMult` (1.0/0.7/0.3) to attenuate the discrete trendScore. A weak-ADX
+bullish stock gets trendPillar ≈15/25 instead of the old 20/25. The underlying trendScore
+is still discrete (0.2/0.35/0.5/0.65/0.8) but the multiplier prevents the worst
+number-vs-recommendation contradictions.
+
+**Delta DARK in confidence blend**: `deltaConfidence` is intentionally excluded from the
+gate-driving blended confidence (`DELTA_DARK = true` in `gamma-analyzer-enhanced.js`).
+Without this, the scanner would include delta once OI history accumulates (2+ daily runs),
+but discover passes `null` for `oiDeltaData` (no filesystem OI history access) — the same
+ticker would get different `blended_confidence` and potentially different strategies on each
+surface. Delta is still computed and exposed in report output (`analysis.delta_confidence`)
+for diagnostic validation but does not affect strategy selection.
+**Next plumbing fix (after outcome-tracking Layer 1)**: Give the API OI-history access
+(read from R2 or Firestore instead of local FS), then flip `DELTA_DARK = false` on BOTH
+sides simultaneously, and re-verify scanner === discover on a sample of tickers.
+
+## Accuracy Status: DISCRIMINATES but NOT OUTCOME-VALIDATED
+
+The recommendation engine produces a genuine six-strategy distribution matched to market
+regimes (condor for strong walls, BWB for wide bands, calendar for low-IV neutrals,
+directional for trending names). It discriminates — but no claim of accuracy, hit-rate, or
+win-rate is earned until:
+
+1. Synthetic `pick_outcomes` data is replaced with real trade outcomes
+2. Outcomes are measured per strategy (did condors stay in range? did calendars capture vol expansion?)
+3. Weights are tuned against actual P&L data, not intuition
+
+**Do not use** "accurate", "proven", "X% win rate", or "track record" in any premium UI or
+marketing copy that references the recommendation engine. "AI-recommended, regime-matched"
+is the honest description. Specific files to audit:
+
+- `web/workbench/projection.html` — frames 60-65% win-rate as how strategy "unfolds"
+- `web/WEEKLY_PIPELINE_ARCHITECTURE.html` — contains hardcoded "67% win rate over 9 weeks"
+- `web/src/picks/MonthlyPage.jsx`, `RecapPage.jsx` — display win-rate stats from data that
+  is currently synthetic (the `DATA_SOURCE === 'synthetic'` banner is correctly implemented
+  but must remain visible until real outcomes exist)
+- `web/src/marketing/track-record/TrackRecordPage.jsx` — "verified options picks performance"
+  claim needs the synthetic disclosure to stay prominent
+
+## Known Bug Class: "Silently Null"
+
+Watch for this pattern: **code reads a value that's silently null/0, and a downstream check
+passes vacuously.** Three instances found during the 2026-05 recommendation audit:
+
+1. **delta_confidence** — `calculateOIDelta()` returned null (no OI history), delta was 0,
+   30% of the multi-factor signal was structurally dead. No error, no log.
+2. **SMA200** — `sma(closes, 200)` returned 0 (only 172 bars), but `bullishOrder` checked
+   `sma100 > sma200` which passed because any positive > 0. Both API and pipeline affected.
+3. **BWB IV check** — `atmIv >= 0.25` always passed because atmIv was in percentage form
+   (25.24), not decimal (0.2524). The gate was a no-op.
+
+**How to catch it:** When adding a numeric threshold check, verify the upstream value is
+actually populated with real data, not a default/zero/null that vacuously satisfies the
+condition. Add explicit null guards (`if (value === null) return 'insufficient_data'`)
+rather than defaulting to 0 and letting comparisons pass silently.
 
 ## Configuration
 
