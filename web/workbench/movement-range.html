@@ -225,6 +225,10 @@ footer b{color:var(--forest)}
   </div>
   <div class="status-bar" id="status">Loading...</div>
   <div class="tbl"><div id="table-area"><div class="loading" id="loader">Loading symbols from R2...</div></div></div>
+  <!-- AI Summary popup -->
+  <div class="info-popup-overlay" id="summaryPopupOverlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+    <div class="info-popup" style="width:700px"><div class="info-popup-hdr" style="border-bottom-color:#3b82f6"><div class="info-popup-title" id="summaryPopupTitle" style="color:#1e40af">AI Setup Summary</div><button class="info-popup-close" onclick="document.getElementById('summaryPopupOverlay').style.display='none'">&times;</button></div><div class="info-popup-body" id="summaryPopupBody" style="font-size:14px;line-height:1.7;color:var(--ink)">Loading...</div></div>
+  </div>
   <!-- Analysis popup (Gamma + Technicals combined) -->
   <div class="info-popup-overlay" id="analysisPopupOverlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
     <div class="info-popup"><div class="info-popup-hdr"><div class="info-popup-title" id="analysisPopupTitle">Analysis</div><button class="info-popup-close" onclick="document.getElementById('analysisPopupOverlay').style.display='none'">&times;</button></div><div class="info-popup-body" id="analysisPopupBody">Loading...</div></div>
@@ -631,7 +635,15 @@ function renderDetailRow(r) {
         <div class="kv"><span>Suggested</span><b>${r.bias.replace(/_/g, ' ')}${r.halfBlind ? ' <span style="color:var(--amber)">(half-blind)</span>' : ''}</b></div>
         ${!d.oiAvailable ? '<div class="callout warn">Liquidity unverified — OI pending (fast pipeline run).</div>' : ''}
         ${!r.quality.earningsVerified ? '<div class="callout warn">Earnings unverified — not in calendar (may be stale).</div>' : ''}
-        <div style="margin-top:12px;background:var(--forest);border-radius:9px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:background .15s;border:2px solid var(--gold)" onclick="event.stopPropagation();showAnalysisPopup('${d.symbol}')" onmouseenter="this.style.background='var(--forest-deep)'" onmouseleave="this.style.background='var(--forest)'">
+        <div style="margin-top:12px;background:linear-gradient(135deg,#1a3a5c,#0d2b4a);border-radius:9px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:opacity .15s;border:2px solid #3b82f6" onclick="event.stopPropagation();showAISummary('${d.symbol}')" onmouseenter="this.style.opacity='0.9'" onmouseleave="this.style.opacity='1'">
+          <div style="width:36px;height:36px;border-radius:8px;background:#3b82f6;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;color:#fff">AI</div>
+          <div style="flex:1">
+            <div style="font-family:'Fraunces',serif;font-size:14px;font-weight:600;color:#e0e7ff">Setup Summary</div>
+            <div style="font-size:11px;color:#93a3b8;margin-top:2px">Plain-English explanation of this setup, scores, and why this strategy was chosen</div>
+          </div>
+          <div style="color:#60a5fa;font-size:20px;font-weight:700">&#8250;</div>
+        </div>
+        <div style="margin-top:8px;background:var(--forest);border-radius:9px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:background .15s;border:2px solid var(--gold)" onclick="event.stopPropagation();showAnalysisPopup('${d.symbol}')" onmouseenter="this.style.background='var(--forest-deep)'" onmouseleave="this.style.background='var(--forest)'"">
           <div style="width:36px;height:36px;border-radius:8px;background:var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px">&#128202;</div>
           <div style="flex:1">
             <div style="font-family:'Fraunces',serif;font-size:14px;font-weight:600;color:var(--cream)">Open Gamma &amp; Technical Analysis</div>
@@ -651,6 +663,69 @@ function exportCSV() {
   const rows = allResults.map(r => [r.d.symbol, r.d.price.toFixed(2), r.quality.total, r.rq, r.posInRange != null ? r.posInRange.toFixed(2) : '', r.regime, r.confidence, r.bias, r.biasCategory, r.halfBlind, r.nearS?.score || 0, r.nearR?.score || 0, r.nearS?.touchCount || 0, r.nearR?.touchCount || 0, r.ivRv.toFixed(2), R.premiumLabel(r.ivRv), r.distPct.toFixed(1), r.fwd?.median5d?.toFixed(4) || '', r.quality.exclusionReason || '', r.quality.gateReason || '', r.quality.liquidityVerified]);
   const csv = [hdr, ...rows].map(r => r.join(',')).join('\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'movement-range-v2.csv'; a.click();
+}
+
+// ── AI Summary (deterministic, no LLM) ──
+function showAISummary(sym) {
+  const row = allResults.find(x => x.d.symbol === sym); if (!row) return;
+  const d = row.d, ns = row.nearS, nr = row.nearR, q = row.quality, c = q.components;
+  document.getElementById('summaryPopupTitle').textContent = sym + ' — Setup Summary';
+  const el = document.getElementById('summaryPopupBody');
+
+  const prem = R.premiumLabel(row.ivRv);
+  const biasLbl = row.bias.replace(/_/g, ' ');
+  const sRate = ns ? (ns.smoothedRate * 100).toFixed(0) : null;
+  const rRate = nr ? (nr.smoothedRate * 100).toFixed(0) : null;
+  const med5 = row.fwd?.median5d;
+  const pos = row.posInRange;
+
+  // Build narrative paragraphs
+  let paras = [];
+
+  // 1. Price context
+  paras.push(`<b>${sym}</b> is trading at <b>$${d.price.toFixed(2)}</b> (${d.changePct >= 0 ? '+' : ''}${d.changePct.toFixed(1)}%). The nearest support zone is at <b>$${ns?.zone?.lo?.toFixed(0) || '?'}–$${ns?.zone?.hi?.toFixed(0) || '?'}</b> (${ns?.zone?.sources?.join(' + ') || 'unknown sources'}), and the nearest resistance zone is at <b>$${nr?.zone?.lo?.toFixed(0) || '?'}–$${nr?.zone?.hi?.toFixed(0) || '?'}</b> (${nr?.zone?.sources?.join(' + ') || 'unknown sources'}).`);
+
+  // 2. Position in range
+  if (pos != null) {
+    const posLabel = pos < 0.3 ? 'very close to support' : pos < 0.45 ? 'slightly below centre' : pos < 0.55 ? 'near the centre of the range' : pos < 0.7 ? 'slightly above centre' : 'very close to resistance';
+    paras.push(`Price sits at <b>${(pos * 100).toFixed(0)}%</b> of the range — <b>${posLabel}</b>.`);
+  }
+
+  // 3. Support quality
+  if (ns && !ns.untested) {
+    paras.push(`The support zone has been tested <b>${ns.touchCount} times</b>. Of those, price held <b>${ns.holdCount || 0} times</b> (Wilson-smoothed hold rate: <b>${sRate}%</b>). Support zone score: <b>${ns.score}/100</b>.${ns.score >= 65 ? ' This is a <span style="color:var(--green);font-weight:700">strong</span> support level.' : ns.score >= 40 ? ' This is a <span style="color:var(--amber);font-weight:700">moderate</span> support level.' : ' This is a <span style="color:var(--red);font-weight:700">weak</span> support level.'}`);
+  } else {
+    paras.push(`The nearest support zone has <b>fewer than 3 touches</b> — not enough data to judge its reliability. It is marked as <b>untested</b>.`);
+  }
+
+  // 4. Resistance quality
+  if (nr && !nr.untested) {
+    paras.push(`The resistance zone has been tested <b>${nr.touchCount} times</b> with <b>${nr.rejectCount || 0} rejections</b> (smoothed rejection rate: <b>${rRate}%</b>). Resistance zone score: <b>${nr.score}/100</b>.`);
+  }
+
+  // 5. Premium / IV context
+  paras.push(`Options are currently <b>${prem.toUpperCase()}</b> (IV/RV ratio: <b>${row.ivRv.toFixed(2)}</b>). ${prem === 'rich' ? 'Implied volatility is elevated relative to realised vol — good for <b>selling premium</b> (credit spreads).' : prem === 'cheap' ? 'Implied volatility is below realised vol — options are underpriced. This favours <b>buying premium</b> (debit spreads) over selling.' : 'IV is near parity with realised vol — no strong edge for buyers or sellers.'}`);
+
+  // 6. Forward returns
+  if (med5 != null) {
+    paras.push(`Historically, after touching this support zone, the median 5-day forward return has been <b>${med5 >= 0 ? '+' : ''}${(med5 * 100).toFixed(1)}%</b>. ${med5 > 0.02 ? 'This is a meaningful positive edge.' : med5 > 0 ? 'A modest positive lean.' : 'No clear edge after touching this level.'}`);
+  }
+
+  // 7. Regime
+  paras.push(`The regime is classified as <b>${row.regime.replace(/_/g, ' ')}</b> (confidence: ${row.confidence}). ${row.regime === 'testing_support' ? 'Price is approaching a tested support zone.' : row.regime === 'testing_resistance' ? 'Price is approaching a tested resistance zone.' : row.regime === 'range_bound' ? 'Price is contained within the support-resistance band.' : row.regime === 'trending' ? 'ADX indicates a strong trend in progress.' : 'No clear directional pattern detected.'}`);
+
+  // 8. Setup Quality breakdown
+  paras.push(`<b>Setup Quality: ${q.total}/100</b> — composed of: zone score ${c.zoneScore} (×0.30), premium richness ${c.premiumRichness} (×0.20), regime confidence ${c.regimeConfidence} (×0.15), distance geometry ${c.distanceGeometry} (×0.15), option liquidity ${c.optionLiquidity} (×0.10), forward edge ${c.forwardEdge} (×0.10)${c.eventRiskPenalty > 0 ? ', minus event risk penalty ' + c.eventRiskPenalty : ''}.${q.gateReason ? ' <span style="color:var(--amber)">Gated: ' + q.gateReason + '.</span>' : ''}`);
+
+  // 9. Strategy suggestion
+  if (row.bias !== 'no_trade') {
+    paras.push(`<b>Suggested strategy: ${biasLbl}</b>. ${row.bias.includes('bull_put') ? 'Sell a put spread below the support zone to collect premium while the level holds.' : row.bias.includes('bear_call') ? 'Sell a call spread above the resistance zone to collect premium while the level holds.' : row.bias.includes('iron_condor') ? 'Sell both a put spread below support and a call spread above resistance — profit if price stays in the range.' : row.bias.includes('bull_call') ? 'Buy a call spread — a debit trade betting on a bounce from support (chosen because IV is cheap).' : row.bias.includes('butterfly') ? 'A defined-risk structure with body near the tested zone — wider wing pushed away from price.' : biasLbl + '.'}`);
+  } else {
+    paras.push(`<b>No trade suggested</b>. ${row.quality?.gateReason || 'The setup does not meet the criteria for a high-confidence income or directional trade.'}`);
+  }
+
+  el.innerHTML = paras.map(p => `<p style="margin:10px 0">${p}</p>`).join('');
+  document.getElementById('summaryPopupOverlay').style.display = 'flex';
 }
 
 // ── Combined Analysis popup (Gamma + Technicals) ──
@@ -835,7 +910,7 @@ function drawTechChartMR(tabId, td) {
 }
 
 // Close popups on Escape
-document.addEventListener('keydown', e => { if (e.key==='Escape') { const o = document.getElementById('analysisPopupOverlay'); if (o) o.style.display='none'; }});
+document.addEventListener('keydown', e => { if (e.key==='Escape') { ['analysisPopupOverlay','summaryPopupOverlay'].forEach(id => { const o = document.getElementById(id); if (o) o.style.display='none'; }); }});
 
 loadData();
 </script>
