@@ -1,0 +1,165 @@
+.hero {
+  background: linear-gradient(145deg, #F7F4EE 0%, #EDE8DC 100%);
+  border: 1px solid rgba(15, 61, 46, 0.08);
+  border-radius: 16px;
+  padding: 28px 32px 24px;
+  margin-bottom: 24px;
+}
+
+.greeting {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  color: rgba(15, 61, 46, 0.45);
+  margin-bottom: 16px;
+}
+
+.valueRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+}
+
+.valueLabel {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(15, 61, 46, 0.4);
+  margin-bottom: 4px;
+}
+
+.valueAmount {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 42px;
+  font-weight: 700;
+  color: #0F3D2E;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.valueMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+}
+
+.dot {
+  color: rgba(15, 61, 46, 0.25);
+}
+
+.pnlPos { color: #2E7D5B; font-weight: 600; }
+.pnlNeg { color: #B5483A; font-weight: 600; }
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.statCard {
+  background: #fff;
+  border: 1px solid rgba(15, 61, 46, 0.08);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.statLabel {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(15, 61, 46, 0.4);
+  margin-bottom: 4px;
+}
+
+.statValue {
+  font-family: 'Space Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0F3D2E;
+  line-height: 1.2;
+}
+
+.statSub {
+  font-size: 11px;
+  color: rgba(15, 61, 46, 0.35);
+  margin-top: 2px;
+}
+
+.green { color: #2E7D5B; }
+.red { color: #B5483A; }
+
+.riskRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.riskLabel {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: rgba(15, 61, 46, 0.5);
+  white-space: nowrap;
+  min-width: 300px;
+}
+
+.riskBar {
+  flex: 1;
+  height: 8px;
+  background: rgba(15, 61, 46, 0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.riskFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.actionBtn {
+  font-family: 'DM Sans', 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  background: #0F3D2E;
+  color: #F7F4EE;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.actionBtn:hover { background: #0B2D23; }
+
+.actionBtnSec {
+  font-family: 'DM Sans', 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid rgba(15, 61, 46, 0.15);
+  background: transparent;
+  color: #0F3D2E;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.actionBtnSec:hover { background: rgba(15, 61, 46, 0.04); }
+
+@media (max-width: 768px) {
+  .statsGrid { grid-template-columns: repeat(2, 1fr); }
+  .valueRow { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .valueAmount { font-size: 32px; }
+  .riskRow { flex-direction: column; align-items: flex-start; }
+  .riskLabel { min-width: auto; }
+}

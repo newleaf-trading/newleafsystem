@@ -9,6 +9,8 @@ import { useVerdict, VERDICT_STATES, VERDICT_CONFIG } from '../hooks/useVerdict'
 import { calculateMetrics } from '../utils/optionsCalc';
 import { formatStrategy } from '../utils/formatters';
 import { LifecycleHero } from '../components/LifecycleHero';
+import { PortfolioSummaryHero } from '../components/PortfolioSummaryHero';
+import { AddFundsModal } from '../components/AddFundsModal';
 import { Card, StatCard } from '../../shared/components/ui/Card';
 import { VerdictBadge } from '../../shared/components/ui/VerdictBadge';
 import { PnlDisplay } from '../../shared/components/ui/PnlDisplay';
@@ -29,7 +31,7 @@ export function DashboardPage({ user, tiles, onOpenChat }) {
   const navigate = useNavigate();
   const { portfolioItems } = usePortfolio();
   const { enrichedItems: livePortfolio } = usePortfolioPnl(portfolioItems, tiles);
-  const { settings } = usePortfolioSettings();
+  const { settings, updateSettings } = usePortfolioSettings();
   const { isShortlisted } = useShortlist();
 
   // ─── Performance stats ───
@@ -38,7 +40,7 @@ export function DashboardPage({ user, tiles, onOpenChat }) {
     const active = livePortfolio.filter(p => p.status !== 'closed' && tiles.some(t => t.id === p.tileId));
     const closed = portfolioItems.filter(p => p.status === 'closed');
 
-    let totalPnl = 0;
+    let unrealizedPnl = 0;
     let capitalDeployed = 0;
     active.forEach(item => {
       const tile = tiles.find(t => t.id === item.tileId);
@@ -46,21 +48,29 @@ export function DashboardPage({ user, tiles, onOpenChat }) {
       const metrics = calculateMetrics(tile);
       const cost = tile.maxLoss || tile.technical?.maxLoss || metrics.maxLoss;
       capitalDeployed += cost * (item.quantity || 1);
-      totalPnl += (item.livePnl || item.unrealizedPnl || 0) * (item.quantity || 1);
+      unrealizedPnl += (item.livePnl || item.unrealizedPnl || 0) * (item.quantity || 1);
     });
 
-    const closedWithPnl = closed.filter(p => (p.realizedPnl || 0) !== 0);
-    const winners = closedWithPnl.filter(p => (p.realizedPnl || 0) > 0);
-    const winRate = closedWithPnl.length > 0 ? Math.round((winners.length / closedWithPnl.length) * 100) : null;
+    // Include realized P&L from closed trades
+    const realizedPnl = closed.reduce((sum, p) =>
+      sum + (p.realizedPnl ?? ((p.unrealizedPnl || 0) * (p.quantity || 1))), 0);
+    const totalPnl = unrealizedPnl + realizedPnl;
+
+    // Win rate: count ALL closed trades
+    const getClosedPnl = (p) => p.realizedPnl ?? ((p.unrealizedPnl || 0) * (p.quantity || 1));
+    const winners = closed.filter(p => getClosedPnl(p) > 0);
+    const winRate = closed.length > 0 ? Math.round((winners.length / closed.length) * 100) : null;
 
     return {
       totalPnl,
+      unrealizedPnl,
+      realizedPnl,
       totalPnlPct: totalCapital > 0 ? ((totalPnl / totalCapital) * 100).toFixed(1) : '0.0',
       capitalDeployed,
       deployedPct: totalCapital > 0 ? Math.round((capitalDeployed / totalCapital) * 100) : 0,
       activeCount: active.length,
       winRate, winCount: winners.length,
-      totalTrades: closedWithPnl.length,
+      totalTrades: closed.length,
       totalCapital,
     };
   }, [livePortfolio, portfolioItems, tiles, settings]);
@@ -92,15 +102,46 @@ export function DashboardPage({ user, tiles, onOpenChat }) {
   const hasPositions = activePositions.length > 0;
 
   const [exitsFlaggedCount, setExitsFlaggedCount] = useState(0);
+  const [showAddFunds, setShowAddFunds] = useState(false);
+  const [fundsMode, setFundsMode] = useState('add');
+  const showPortfolioHero = hasPositions || (perf.totalCapital > 0);
 
   return (
     <div className={styles.page}>
-      <LifecycleHero
-        user={user}
-        counts={{ discover: newOpps.length, exitsFlagged: exitsFlaggedCount, active: activePositions.length }}
-        capitalDeployedPct={perf.deployedPct}
-        marketStatus="closed"
-      />
+      {showPortfolioHero ? (
+        <PortfolioSummaryHero
+          user={user}
+          portfolioValue={perf.totalCapital + perf.totalPnl}
+          capital={perf.totalCapital}
+          openPnl={perf.unrealizedPnl}
+          realisedPnl={perf.realizedPnl}
+          totalPnlPct={perf.totalPnlPct}
+          activeCount={activePositions.length}
+          closedCount={perf.totalTrades}
+          winRate={perf.winRate}
+          winCount={perf.winCount}
+          capitalDeployed={perf.capitalDeployed}
+          riskBudget={perf.totalCapital * 0.10}
+          onAddFunds={() => { setFundsMode('add'); setShowAddFunds(true); }}
+          onWithdraw={() => { setFundsMode('withdraw'); setShowAddFunds(true); }}
+        />
+      ) : (
+        <LifecycleHero
+          user={user}
+          counts={{ discover: newOpps.length, exitsFlagged: exitsFlaggedCount, active: activePositions.length }}
+          capitalDeployedPct={perf.deployedPct}
+          marketStatus="closed"
+        />
+      )}
+
+      {showAddFunds && (
+        <AddFundsModal
+          currentCapital={perf.totalCapital}
+          mode={fundsMode}
+          onSave={(newTotal) => updateSettings({ totalCapital: newTotal })}
+          onClose={() => setShowAddFunds(false)}
+        />
+      )}
 
       {/* 1. URGENT POSITIONS */}
       {hasPositions ? (
