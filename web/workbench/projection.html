@@ -902,6 +902,8 @@ main { padding-top: 32px; }
       </article>
     </section>
 
+    <div id="sanityWarning" style="display:none;background:#fef3c7;border:1px solid #d97706;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#92400e;line-height:1.5"></div>
+
     <section class="scenario-section" aria-label="Preset scenarios">
       <article class="scenario-card">
         <h3>Conservative case</h3>
@@ -1206,8 +1208,12 @@ main { padding-top: 32px; }
     }
 
     function buildMonteCarlo() {
-      const runs = 80;
+      // Fixed: use Math.random() instead of broken LCG PRNG
+      // Per-trade: with prob winRate → return +avgWin%, else → return -min(avgLoss, maxLossCap)%
+      const runs = 200;
       const totalTrades = state.tradesPerYear * state.years;
+      const winProb = state.winRate / 100;
+      const cappedLoss = Math.min(state.avgLossPct, state.maxLossPct);
       const finalValues = [];
       let losingRuns = 0;
       let best = -Infinity;
@@ -1215,14 +1221,12 @@ main { padding-top: 32px; }
 
       for (let r = 0; r < runs; r++) {
         let capital = state.startCapital;
-        let seed = r * 9301 + 49297;
 
         for (let i = 1; i <= totalTrades; i++) {
-          seed = (seed * 233280 + 49297) % 100000;
-          const random = seed / 100000;
-          const isWin = random < state.winRate / 100;
-          const move = isWin ? state.avgWinPct : -Math.min(state.avgLossPct, state.maxLossPct);
-          capital *= 1 + move / 100;
+          const isWin = Math.random() < winProb;
+          const move = isWin ? state.avgWinPct : -cappedLoss;
+          capital *= (1 + move / 100);
+          if (capital < 1) { capital = 1; break; } // floor at $1
         }
 
         finalValues.push(Math.round(capital));
@@ -1236,15 +1240,11 @@ main { padding-top: 32px; }
 
       finalValues.sort((a, b) => a - b);
 
-      return {
-        median: finalValues[Math.floor(finalValues.length / 2)],
-        p10: finalValues[Math.floor(finalValues.length * 0.1)],
-        p90: finalValues[Math.floor(finalValues.length * 0.9)],
-        best,
-        worst,
-        losingRuns,
-        losingRunRate: losingRuns / runs
-      };
+      const median = finalValues[Math.floor(finalValues.length / 2)];
+      const p10 = finalValues[Math.floor(finalValues.length * 0.1)];
+      const p90 = finalValues[Math.floor(finalValues.length * 0.9)];
+
+      return { median, p10, p90, best, worst, losingRuns, losingRunRate: losingRuns / runs };
     }
 
     function buildYearlyBars(sequence) {
@@ -1373,11 +1373,30 @@ main { padding-top: 32px; }
       document.getElementById('expectedLosses').textContent = expectedLosses;
       document.getElementById('totalTrades').textContent = sequence.totalTrades;
 
+      // CAGR: annualised return
+      const cagr = state.years > 0 ? (Math.pow(sequence.finalCapital / state.startCapital, 1 / state.years) - 1) : 0;
+      const cagrLabel = state.years > 2 ? ` · CAGR ${formatPct(cagr)}` : '';
+      const horizonLabel = sequence.totalTrades > 500 ? ' (illustrative — long horizon)' : '';
+
       document.getElementById('finalPortfolio').textContent = formatCurrency(sequence.finalCapital);
-      document.getElementById('finalPortfolioHelper').textContent = `${formatPct(finalReturn)} return after ${sequence.totalTrades} trades`;
+      document.getElementById('finalPortfolioHelper').textContent = `${formatPct(finalReturn)} return after ${sequence.totalTrades} trades${cagrLabel}${horizonLabel}`;
       document.getElementById('projectedProfit').textContent = formatCurrency(finalProfit);
       document.getElementById('worstPath').textContent = formatCurrency(monteCarlo.worst);
       document.getElementById('losingPathRisk').textContent = formatPct(monteCarlo.losingRunRate);
+
+      // Sanity guard: warn if deterministic and MC median diverge by > 2x
+      const sanityEl = document.getElementById('sanityWarning');
+      if (sanityEl) {
+        const detFinal = sequence.finalCapital;
+        const mcMed = monteCarlo.median;
+        const divergence = mcMed > 0 ? Math.abs(detFinal - mcMed) / mcMed : 0;
+        if (divergence > 2) {
+          sanityEl.style.display = 'block';
+          sanityEl.textContent = `Warning: Deterministic (${formatCurrency(detFinal)}) and Monte Carlo median (${formatCurrency(mcMed)}) diverge by ${(divergence * 100).toFixed(0)}%. The compound growth model may overstate returns at this horizon.`;
+        } else {
+          sanityEl.style.display = 'none';
+        }
+      }
       document.getElementById('finalPill').textContent = `Final: ${formatCurrency(sequence.finalCapital)}`;
 
       document.getElementById('p10Value').textContent = formatCurrency(monteCarlo.p10);
