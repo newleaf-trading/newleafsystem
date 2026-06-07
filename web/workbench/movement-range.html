@@ -126,6 +126,37 @@ tr.row.open{background:#F8F5EC}
 .preset-btn.active{background:var(--gold);color:var(--forest-deep)}
 .filter-sep{width:1px;height:20px;background:var(--line);margin:0 4px}
 .sort-select{font-family:'Space Mono';font-size:11px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);cursor:pointer}
+/* Info popups */
+.info-popup-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(11,15,20,.45);z-index:900;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.info-popup{background:#fff;border-radius:12px;width:1000px;max-width:96vw;max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.info-popup-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;border-bottom:1px solid var(--line)}
+.info-popup-title{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--forest)}
+.info-popup-close{background:none;border:none;font-size:24px;color:#999;cursor:pointer;padding:0 4px;line-height:1}
+.info-popup-close:hover{color:#333}
+.info-popup-body{padding:18px 20px 22px}
+.ip-section{margin-bottom:16px}.ip-section:last-child{margin-bottom:0}
+.ip-section-title{font-family:'Space Mono';font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.ip-section-desc{font-size:11px;color:#999;line-height:1.45;margin-bottom:8px;font-style:italic}
+.ip-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ip-grid.cols-2{grid-template-columns:repeat(2,1fr)}.ip-grid.cols-4{grid-template-columns:repeat(4,1fr)}
+.ip-cell{display:flex;flex-direction:column;gap:1px}
+.ip-cell-lbl{font-family:'Space Mono';font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ip-cell-val{font-family:'Space Mono';font-size:13px;font-weight:700;color:var(--ink)}
+.ip-cell-val.green{color:var(--green)}.ip-cell-val.red{color:var(--red)}.ip-cell-val.gold{color:var(--amber)}
+.ip-cell-sub{font-size:10px;color:var(--muted)}
+.ip-bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:4px}
+.ip-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.ip-strike-row{display:grid;grid-template-columns:60px 1fr 80px 80px;gap:8px;align-items:center;padding:4px 0;font-size:11px;border-bottom:1px solid var(--line)}
+.ip-strike-row:last-child{border-bottom:none}
+.ip-strike-lbl{font-family:'Space Mono';font-weight:700}
+.ip-strike-bar{height:5px;background:var(--line);border-radius:3px;overflow:hidden}
+.ip-strike-fill{height:100%;border-radius:3px;background:var(--forest)}
+.popup-btn{font-family:'DM Sans';font-size:11.5px;font-weight:600;padding:6px 12px;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;margin-right:6px}
+.popup-btn:hover{background:var(--forest);color:var(--cream);border-color:var(--forest)}
+.ip-tabs{display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:14px}
+.ip-tab{padding:7px 16px;font-family:'Space Mono';font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none}
+.ip-tab:hover{color:var(--ink)}.ip-tab.active{color:var(--forest);border-bottom-color:var(--forest);font-weight:700}
+.ip-tab-content{display:none}.ip-tab-content.active{display:block}
 footer{margin-top:28px;font-size:11px;color:var(--muted);line-height:1.6;border-top:1px solid var(--line);padding-top:12px}
 footer b{color:var(--forest)}
 .loading{text-align:center;padding:50px;color:var(--muted);font-family:'Space Mono';font-size:12px}
@@ -194,6 +225,10 @@ footer b{color:var(--forest)}
   </div>
   <div class="status-bar" id="status">Loading...</div>
   <div class="tbl"><div id="table-area"><div class="loading" id="loader">Loading symbols from R2...</div></div></div>
+  <!-- Analysis popup (Gamma + Technicals combined) -->
+  <div class="info-popup-overlay" id="analysisPopupOverlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+    <div class="info-popup"><div class="info-popup-hdr"><div class="info-popup-title" id="analysisPopupTitle">Analysis</div><button class="info-popup-close" onclick="document.getElementById('analysisPopupOverlay').style.display='none'">&times;</button></div><div class="info-popup-body" id="analysisPopupBody">Loading...</div></div>
+  </div>
   <section class="excl" id="excl"><h3 id="excl-title">Excluded today</h3><div class="excl-groups" id="excl-groups"></div></section>
   <footer><b>What changed vs v1:</b> ① single Setup Quality score replaces eyeballing S/R bars ② levels &lt; 0.6×ATR apart merge into zones with pooled touches ③ Wilson-smoothed rates with min-3-touch gate ④ relevant-rail gate: the zone you sell against must score ≥ 65 ⑤ event-risk / illiquid / ETP exclusions visible in funnel ⑥ containment computed on merged zone band ⑦ median 5d forward return as edge column ⑧ S/R bars from v1 retained, now from Wilson-smoothed zone scores</footer>
 </main>
@@ -314,7 +349,7 @@ function parseSymbol(sym, report) {
   const totalOI = topStrikes.reduce((sum, ts) => sum + (ts.call_oi || 0) + (ts.put_oi || 0), 0);
   // Earnings: prefer calendar lookup over report (report may have null if pipeline didn't write it)
   const earningsDate = earningsCalendar[sym] || report.earningsDate || null;
-  return { symbol: sym, price: s.price, changePct: s.changePercent || 0, bars, atrPct: t.atrPct || 0.02, adx: t.adx14, rsi: t.rsi, putWall: g.analysis?.put_wall, callWall: g.analysis?.call_wall, sma50: t.sma50, sma100: t.sma100, sma200: t.sma200, bb: t.bb, atmIv: g.ivData?.atmIv || 0, rv: (t.realizedVol30d || 0) * 100, gammaConf: g.analysis?.confidence_score || 0, totalOI, oiAvailable: totalOI > 0, earningsDate };
+  return { symbol: sym, price: s.price, changePct: s.changePercent || 0, bars, atrPct: t.atrPct || 0.02, adx: t.adx14, rsi: t.rsi, putWall: g.analysis?.put_wall, callWall: g.analysis?.call_wall, sma50: t.sma50, sma100: t.sma100, sma200: t.sma200, bb: t.bb, atmIv: g.ivData?.atmIv || 0, rv: (t.realizedVol30d || 0) * 100, gammaConf: g.analysis?.confidence_score || 0, totalOI, oiAvailable: totalOI > 0, earningsDate, _gammaData: g, _techData: t };
 }
 
 function runAnalysis() {
@@ -596,6 +631,14 @@ function renderDetailRow(r) {
         <div class="kv"><span>Suggested</span><b>${r.bias.replace(/_/g, ' ')}${r.halfBlind ? ' <span style="color:var(--amber)">(half-blind)</span>' : ''}</b></div>
         ${!d.oiAvailable ? '<div class="callout warn">Liquidity unverified — OI pending (fast pipeline run).</div>' : ''}
         ${!r.quality.earningsVerified ? '<div class="callout warn">Earnings unverified — not in calendar (may be stale).</div>' : ''}
+        <div style="margin-top:12px;background:var(--forest);border-radius:9px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:background .15s;border:2px solid var(--gold)" onclick="event.stopPropagation();showAnalysisPopup('${d.symbol}')" onmouseenter="this.style.background='var(--forest-deep)'" onmouseleave="this.style.background='var(--forest)'">
+          <div style="width:36px;height:36px;border-radius:8px;background:var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px">&#128202;</div>
+          <div style="flex:1">
+            <div style="font-family:'Fraunces',serif;font-size:14px;font-weight:600;color:var(--cream)">Open Gamma &amp; Technical Analysis</div>
+            <div style="font-size:11px;color:#9DB8AB;margin-top:2px">RSI, Bollinger, MACD, SMA crossovers, gamma walls &amp; strikes</div>
+          </div>
+          <div style="color:var(--gold);font-size:20px;font-weight:700">&#8250;</div>
+        </div>
       </div>
     </div>
   </td></tr>`;
@@ -609,6 +652,190 @@ function exportCSV() {
   const csv = [hdr, ...rows].map(r => r.join(',')).join('\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'movement-range-v2.csv'; a.click();
 }
+
+// ── Combined Analysis popup (Gamma + Technicals) ──
+function findSymbolData(sym) { return allResults.find(r => r.d.symbol === sym)?.d; }
+
+function showAnalysisPopup(sym) {
+  const d = findSymbolData(sym); if (!d) return;
+  const g = d._gammaData, a = g?.analysis, iv = g?.ivData, t = d._techData;
+  document.getElementById('analysisPopupTitle').textContent = sym + ' — Gamma & Technical Analysis';
+  const el = document.getElementById('analysisPopupBody');
+
+  const conf = (v, lbl) => `<div class="ip-cell"><span class="ip-cell-lbl">${lbl}</span><span class="ip-cell-val">${Math.round((v||0)*100)}%</span><div class="ip-bar"><div class="ip-bar-fill" style="width:${Math.round((v||0)*100)}%;background:${v>=0.6?'var(--green)':v>=0.3?'var(--amber)':'var(--red)'}"></div></div></div>`;
+  const topStrikes = (a?.topStrikes || []).slice(0, 8);
+  const maxGex = Math.max(...topStrikes.map(s => Math.abs(s.gamma_exposure || 0)), 1);
+
+  // Technicals data
+  const rsiColor = t ? ((t.rsi||50)>70?'red':(t.rsi||50)<30?'green':'') : '';
+  const trendColor = t ? (t.trendEngine?.state==='Bullish'?'green':t.trendEngine?.state==='Bearish'?'red':'') : '';
+  const bb = t?.bb||{}, sr = t?.sr||{};
+  const closes = (t?.priceHistory||[]).map(p=>p.c);
+  const sma20 = closes.length>=20?closes.slice(-20).reduce((a,b)=>a+b,0)/20:null;
+  const sma50v = closes.length>=50?closes.slice(-50).reduce((a,b)=>a+b,0)/50:null;
+  const sma200 = closes.length>=200?closes.slice(-200).reduce((a,b)=>a+b,0)/200:null;
+  const cross20_50 = sma20&&sma50v?(sma20>sma50v?'golden':'death'):null;
+  const cross50_200 = sma50v&&sma200?(sma50v>sma200?'golden':'death'):null;
+  const crossBadge = (label,status,short,long) => { const isG=status==='golden',bg=isG?'var(--green-bg)':'var(--red-bg)',color=isG?'var(--green)':'var(--red)'; return `<div style="background:${bg};border-radius:6px;padding:8px 12px"><div style="font-family:Space Mono;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px">${label}</div><div style="font-size:14px;font-weight:700;color:${color}">${isG?'Golden Cross':'Death Cross'}</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Short ${short} vs Long ${long}</div></div>`; };
+
+  el.innerHTML = `
+    <div class="ip-tabs">
+      <button class="ip-tab active" data-at="gamma">Gamma</button>
+      <button class="ip-tab" data-at="overview">Overview</button>
+      <button class="ip-tab" data-at="rsi">RSI</button>
+      <button class="ip-tab" data-at="bollinger">Bollinger</button>
+      <button class="ip-tab" data-at="macd">MACD</button>
+      <button class="ip-tab" data-at="sma">Moving Avg</button>
+    </div>
+
+    <div class="ip-tab-content active" id="atGamma">
+      ${!a || a.contracts_analyzed===0 ? '<p style="color:#999">No gamma data available.</p>' : `
+      <div class="ip-section"><div class="ip-section-title">Gamma Walls</div>
+        <div class="ip-section-desc">Where market makers hold their largest hedging positions. The stock tends to stay between these walls.</div>
+        <div class="ip-grid cols-4">
+          <div class="ip-cell"><span class="ip-cell-lbl">Put Wall</span><span class="ip-cell-val green">$${a.put_wall!=null?Number(a.put_wall).toFixed(2):'--'}</span></div>
+          <div class="ip-cell"><span class="ip-cell-lbl">Call Wall</span><span class="ip-cell-val red">$${a.call_wall!=null?Number(a.call_wall).toFixed(2):'--'}</span></div>
+          <div class="ip-cell"><span class="ip-cell-lbl">Band Width</span><span class="ip-cell-val">${(a.band_width_pct||0).toFixed(1)}%</span></div>
+          <div class="ip-cell"><span class="ip-cell-lbl">Position in Band</span><span class="ip-cell-val">${a.position_in_band_pct??'--'}%</span></div>
+        </div></div>
+      <div class="ip-section"><div class="ip-section-title">Confidence Breakdown</div>
+        <div class="ip-section-desc">How reliable is this gamma wall reading?</div>
+        <div class="ip-grid cols-4">${conf(a.confidence_score,'Overall')}${conf(a.oi_confidence,'Open Interest')}${conf(a.delta_confidence,'Delta')}${conf(a.volume_confidence,'Volume')}</div></div>
+      <div class="ip-section"><div class="ip-section-title">IV Data</div>
+        <div class="ip-grid"><div class="ip-cell"><span class="ip-cell-lbl">ATM IV</span><span class="ip-cell-val gold">${iv?.atmIv!=null?iv.atmIv.toFixed(1)+'%':'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">IV Level</span><span class="ip-cell-val">${iv?.ivLevel||'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Contracts</span><span class="ip-cell-val">${a.contracts_analyzed??'--'}</span></div></div></div>
+      <div class="ip-section"><div class="ip-section-title">Gamma Exposure by Strike</div>
+        <div class="ip-section-desc">Green = call-dominant, Red = put-dominant. Short strikes ideally sit between the walls.</div>
+        <canvas id="gammaChartMR" style="width:100%;height:220px;display:block"></canvas>
+        <div style="display:flex;gap:16px;margin-top:8px;justify-content:center"><span style="font-size:10px;color:var(--green)">&#9632; Call-dom</span><span style="font-size:10px;color:var(--red)">&#9632; Put-dom</span><span style="font-size:10px;color:var(--gold)">&#9482; Spot</span></div></div>
+      ${topStrikes.length?`<div class="ip-section"><div class="ip-section-title">Top Gamma Strikes</div>${topStrikes.map(s=>`<div class="ip-strike-row"><span class="ip-strike-lbl">$${s.strike}</span><div class="ip-strike-bar"><div class="ip-strike-fill" style="width:${Math.round(Math.abs(s.gamma_exposure)/maxGex*100)}%"></div></div><span style="font-size:10px;color:#666">C:${(s.call_oi/1000).toFixed(0)}k</span><span style="font-size:10px;color:#666">P:${(s.put_oi/1000).toFixed(0)}k</span></div>`).join('')}</div>`:''}`}
+    </div>
+
+    <div class="ip-tab-content" id="atOverview">
+      ${!t ? '<p style="color:#999">No technical data available.</p>' : `
+      <div class="ip-section"><div class="ip-section-title">Momentum</div>
+        <div class="ip-section-desc">RSI above 70 = overbought, below 30 = oversold.</div>
+        <div class="ip-grid"><div class="ip-cell"><span class="ip-cell-lbl">RSI (14)</span><span class="ip-cell-val ${rsiColor}">${t.rsi!=null?t.rsi.toFixed(1):'--'}</span><span class="ip-cell-sub">${t.rsiEngine?.state||'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Trend</span><span class="ip-cell-val ${trendColor}">${t.trendEngine?.state||'--'}</span><span class="ip-cell-sub">Score ${t.trendEngine?.score!=null?t.trendEngine.score.toFixed(2):'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Volatility</span><span class="ip-cell-val">${t.volatilityEngine?.state||'--'}</span><span class="ip-cell-sub">${t.volatilityEngine?.squeeze?'Squeeze active':'No squeeze'}</span></div></div></div>
+      <div class="ip-section"><div class="ip-section-title">Bollinger Bands (20, 2)</div>
+        <div class="ip-grid cols-4"><div class="ip-cell"><span class="ip-cell-lbl">Upper</span><span class="ip-cell-val red">$${bb.upper?.toFixed(2)||'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Middle</span><span class="ip-cell-val">$${bb.middle?.toFixed(2)||'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Lower</span><span class="ip-cell-val green">$${bb.lower?.toFixed(2)||'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Width</span><span class="ip-cell-val">${bb.width?.toFixed(1)||'--'}%</span></div></div></div>
+      <div class="ip-section"><div class="ip-section-title">Moving Averages & Volatility</div>
+        <div class="ip-grid cols-4"><div class="ip-cell"><span class="ip-cell-lbl">SMA 50</span><span class="ip-cell-val ${t.aboveSMA50?'green':'red'}">$${t.sma50?.toFixed(2)||'--'}</span><span class="ip-cell-sub">${t.aboveSMA50?'Above':'Below'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">SMA 100</span><span class="ip-cell-val ${t.aboveSMA100?'green':'red'}">$${t.sma100?.toFixed(2)||'--'}</span><span class="ip-cell-sub">${t.aboveSMA100?'Above':'Below'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Realized Vol 30d</span><span class="ip-cell-val">${t.realizedVol30d!=null?(t.realizedVol30d*100).toFixed(1)+'%':'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">ATR %</span><span class="ip-cell-val">${t.atrPct!=null?(t.atrPct*100).toFixed(2)+'%':'--'}</span></div></div></div>
+      <div class="ip-section"><div class="ip-section-title">Support & Resistance</div>
+        <div class="ip-grid cols-2"><div class="ip-cell"><span class="ip-cell-lbl">Support 1</span><span class="ip-cell-val green">$${sr.support1?.toFixed(2)||'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Resistance 1</span><span class="ip-cell-val red">$${sr.resistance1?.toFixed(2)||'--'}</span></div></div></div>
+      ${cross20_50||cross50_200?`<div class="ip-section"><div class="ip-section-title">Crossover Status</div><div class="ip-grid cols-2">${cross20_50?crossBadge('SMA 20/50',cross20_50,'$'+sma20.toFixed(2),'$'+sma50v.toFixed(2)):''}${cross50_200?crossBadge('SMA 50/200',cross50_200,'$'+sma50v.toFixed(2),'$'+sma200.toFixed(2)):''}</div></div>`:''}`}
+    </div>
+
+    <div class="ip-tab-content" id="atRsi"><div class="ip-section-desc" style="margin-bottom:12px">RSI measures momentum 0-100. Above 70 = overbought, below 30 = oversold.</div><canvas id="techChartRSI_MR" style="width:100%;height:280px;display:block"></canvas></div>
+    <div class="ip-tab-content" id="atBollinger"><div class="ip-section-desc" style="margin-bottom:12px">Bollinger Bands: 2 std devs around 20-day SMA. Squeeze = big move coming.</div><canvas id="techChartBB_MR" style="width:100%;height:280px;display:block"></canvas></div>
+    <div class="ip-tab-content" id="atMacd"><div class="ip-section-desc" style="margin-bottom:12px">MACD (12, 26, 9): green histogram = bullish momentum, red = bearish.</div><canvas id="techChartMACD_MR" style="width:100%;height:280px;display:block"></canvas></div>
+    <div class="ip-tab-content" id="atSma"><div class="ip-section-desc" style="margin-bottom:12px">Golden Cross = short SMA above long SMA (uptrend). Death Cross = opposite.</div><canvas id="techChartSMA_MR" style="width:100%;height:280px;display:block"></canvas></div>
+  `;
+
+  // Tab switching
+  const tabMap = { gamma:'atGamma', overview:'atOverview', rsi:'atRsi', bollinger:'atBollinger', macd:'atMacd', sma:'atSma' };
+  el.querySelectorAll('.ip-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      el.querySelectorAll('.ip-tab').forEach(t2 => t2.classList.remove('active'));
+      el.querySelectorAll('.ip-tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tabMap[tab.dataset.at]).classList.add('active');
+      if (tab.dataset.at === 'gamma') requestAnimationFrame(() => drawGammaChartMR(a, d.price));
+      else if (t) requestAnimationFrame(() => drawTechChartMR(tab.dataset.at, t));
+    });
+  });
+
+  // Draw gamma chart on first load
+  if (a && a.contracts_analyzed > 0) requestAnimationFrame(() => drawGammaChartMR(a, d.price));
+
+  document.getElementById('analysisPopupOverlay').style.display = 'flex';
+}
+
+// Keep old functions as aliases in case anything references them
+function showGammaPopup(sym) { showAnalysisPopup(sym); }
+function showTechPopup(sym) { showAnalysisPopup(sym); }
+
+function drawGammaChartMR(analysis, spot) {
+  const canvas = document.getElementById('gammaChartMR');
+  if (!canvas || !analysis?.topStrikes?.length) return;
+  const DPR = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth || 500, H = 220;
+  canvas.width = W * DPR; canvas.height = H * DPR; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d'); ctx.scale(DPR, DPR); ctx.clearRect(0, 0, W, H);
+  const strikes = [...analysis.topStrikes].sort((a, b) => a.strike - b.strike);
+  if (!strikes.length) return;
+  const PL = 50, PR = 16, PT = 16, PB = 36, cW = W - PL - PR, cH = H - PT - PB;
+  const maxGex = Math.max(...strikes.map(s => Math.abs(s.gamma_exposure || 0)), 1);
+  const minS = strikes[0].strike, maxS = strikes[strikes.length - 1].strike, sR = maxS - minS || 1;
+  const barW = Math.max(4, Math.min(18, (cW / strikes.length) * 0.7));
+  const xP = s => PL + ((s - minS) / sR) * cW;
+  // Grid
+  ctx.strokeStyle = '#f0ece0'; ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) { const y = PT + (cH / 4) * i; ctx.beginPath(); ctx.moveTo(PL, y); ctx.lineTo(W - PR, y); ctx.stroke(); }
+  ctx.fillStyle = '#999'; ctx.font = '500 9px sans-serif'; ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) { const v = maxGex * (1 - i / 4); ctx.fillText(v >= 1e6 ? (v / 1e6).toFixed(0) + 'M' : v >= 1e3 ? (v / 1e3).toFixed(0) + 'K' : v.toFixed(0), PL - 6, PT + (cH / 4) * i + 3); }
+  // Bars
+  strikes.forEach(s => { const x = xP(s.strike), bH = (Math.abs(s.gamma_exposure || 0) / maxGex) * cH; ctx.fillStyle = (s.call_oi || 0) >= (s.put_oi || 0) ? 'rgba(45,125,79,0.75)' : 'rgba(192,57,43,0.75)'; ctx.fillRect(x - barW / 2, PT + cH - bH, barW, bH); ctx.fillStyle = '#666'; ctx.font = '600 9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('$' + s.strike, x, PT + cH + 14); });
+  // Put wall
+  if (analysis.put_wall) { const x = xP(analysis.put_wall); if (x >= PL && x <= W - PR) { ctx.strokeStyle = '#0d6e56'; ctx.lineWidth = 2; ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(x, PT); ctx.lineTo(x, PT + cH); ctx.stroke(); ctx.fillStyle = '#0d6e56'; ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('PUT $' + analysis.put_wall, x, PT + cH + 28); } }
+  // Call wall
+  if (analysis.call_wall) { const x = xP(analysis.call_wall); if (x >= PL && x <= W - PR) { ctx.strokeStyle = '#b03030'; ctx.lineWidth = 2; ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(x, PT); ctx.lineTo(x, PT + cH); ctx.stroke(); ctx.fillStyle = '#b03030'; ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('CALL $' + analysis.call_wall, x, PT + cH + 28); } }
+  // Spot
+  if (spot && spot >= minS && spot <= maxS) { const x = xP(spot); ctx.strokeStyle = '#C9A96E'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.moveTo(x, PT); ctx.lineTo(x, PT + cH); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#C9A96E'; ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('$' + spot.toFixed(0), x, PT - 4); }
+}
+
+// Old showTechPopup removed — merged into showAnalysisPopup
+
+// ── Chart drawing helpers ──
+function computeEMAMR(data, period) { const k = 2 / (period + 1); const ema = [data[0]]; for (let i = 1; i < data.length; i++) ema.push(data[i] * k + ema[i - 1] * (1 - k)); return ema; }
+
+function drawLineChartMR(canvasId, config) {
+  const canvas = document.getElementById(canvasId); if (!canvas) return;
+  const DPR = window.devicePixelRatio || 1, W = canvas.offsetWidth || 880, H = parseInt(canvas.style.height) || 260;
+  canvas.width = W * DPR; canvas.height = H * DPR; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d'); ctx.scale(DPR, DPR); ctx.clearRect(0, 0, W, H);
+  const P = { l: 55, r: 14, t: 14, b: 30 }, cW = W - P.l - P.r, cH = H - P.t - P.b, n = config.labels.length;
+  if (n < 2) return;
+  let yMin = Infinity, yMax = -Infinity;
+  config.series.forEach(s => s.data.forEach(v => { if (v != null) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; } }));
+  if (config.yZones) config.yZones.forEach(z => { yMin = Math.min(yMin, z.y); yMax = Math.max(yMax, z.y); });
+  const yPad = (yMax - yMin) * 0.08 || 1; yMin -= yPad; yMax += yPad;
+  const xPos = i => P.l + (i / (n - 1)) * cW, yPos = v => P.t + (1 - (v - yMin) / (yMax - yMin)) * cH;
+  ctx.strokeStyle = '#f0ece0'; ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) { const y = P.t + (cH / 4) * i; ctx.beginPath(); ctx.moveTo(P.l, y); ctx.lineTo(W - P.r, y); ctx.stroke(); ctx.fillStyle = '#999'; ctx.font = '500 9px sans-serif'; ctx.textAlign = 'right'; const val = yMax - ((yMax - yMin) / 4) * i; ctx.fillText(config.yFmt ? config.yFmt(val) : val.toFixed(1), P.l - 6, y + 3); }
+  if (config.yZones) config.yZones.forEach(z => { ctx.strokeStyle = z.color || '#ccc'; ctx.lineWidth = 1; ctx.setLineDash(z.dash || [4, 3]); ctx.beginPath(); ctx.moveTo(P.l, yPos(z.y)); ctx.lineTo(W - P.r, yPos(z.y)); ctx.stroke(); ctx.setLineDash([]); if (z.label) { ctx.fillStyle = z.color || '#999'; ctx.font = '600 9px sans-serif'; ctx.textAlign = 'left'; ctx.fillText(z.label, P.l + 4, yPos(z.y) - 4); } });
+  (config.fills || []).forEach(f => { const d1 = config.series.find(s => s.id === f.upper)?.data, d2 = config.series.find(s => s.id === f.lower)?.data; if (!d1 || !d2) return; ctx.fillStyle = f.color || 'rgba(0,0,0,.05)'; ctx.beginPath(); for (let i = 0; i < n; i++) { const y = d1[i] != null ? yPos(d1[i]) : null; if (y != null) { i === 0 ? ctx.moveTo(xPos(i), y) : ctx.lineTo(xPos(i), y); } } for (let i = n - 1; i >= 0; i--) { const y = d2[i] != null ? yPos(d2[i]) : null; if (y != null) ctx.lineTo(xPos(i), y); } ctx.closePath(); ctx.fill(); });
+  (config.histograms || []).forEach(h => { const barW = Math.max(1, cW / n * 0.6), zeroY = yPos(0); h.data.forEach((v, i) => { if (v == null) return; ctx.fillStyle = v >= 0 ? (h.posColor || '#2d7d4f') : (h.negColor || '#c0392b'); const y = yPos(v); ctx.fillRect(xPos(i) - barW / 2, Math.min(y, zeroY), barW, Math.abs(y - zeroY)); }); });
+  config.series.forEach(s => { if (s.hidden) return; ctx.strokeStyle = s.color || '#0B2D23'; ctx.lineWidth = s.width || 1.5; ctx.setLineDash(s.dash || []); ctx.beginPath(); let started = false; s.data.forEach((v, i) => { if (v == null) return; const x = xPos(i), y = yPos(v); started ? ctx.lineTo(x, y) : (ctx.moveTo(x, y), started = true); }); ctx.stroke(); ctx.setLineDash([]); });
+  ctx.fillStyle = '#999'; ctx.font = '500 9px sans-serif'; ctx.textAlign = 'center';
+  const step = Math.max(1, Math.floor(n / 8));
+  for (let i = 0; i < n; i += step) { if (config.labels[i]) ctx.fillText(config.labels[i], xPos(i), P.t + cH + 16); }
+}
+
+function drawTechChartMR(tabId, td) {
+  const prices = (td.priceHistory || []).map(p => p.c), dates = (td.priceHistory || []).map(p => { const d = new Date(p.t); return (d.getMonth()+1)+'/'+d.getDate(); });
+  const rsiData = td.rsiSeries || [], bbData = td.bbSeries || [];
+  if (tabId === 'rsi' && rsiData.length > 10) {
+    drawLineChartMR('techChartRSI_MR', { labels: rsiData.map(r => { const d = new Date(r.t); return (d.getMonth()+1)+'/'+d.getDate(); }), series: [{ data: rsiData.map(r => r.rsi), color: '#0B2D23', width: 2, label: 'RSI(14)' }], yZones: [{ y: 70, color: '#c0392b', dash: [4, 3], label: 'Overbought 70' }, { y: 30, color: '#2d7d4f', dash: [4, 3], label: 'Oversold 30' }] });
+  }
+  if (tabId === 'bollinger' && bbData.length > 10) {
+    const bbDates = bbData.map(b => { const d = new Date(b.t); return (d.getMonth()+1)+'/'+d.getDate(); });
+    const priceSlice = prices.slice(prices.length - bbData.length);
+    drawLineChartMR('techChartBB_MR', { labels: bbDates, series: [{ id: 'upper', data: bbData.map(b => b.upper), color: '#c0392b', width: 1, dash: [3, 2], label: 'Upper' }, { id: 'middle', data: bbData.map(b => b.middle), color: '#999', width: 1, label: 'SMA20' }, { id: 'lower', data: bbData.map(b => b.lower), color: '#2d7d4f', width: 1, dash: [3, 2], label: 'Lower' }, { data: priceSlice, color: '#0B2D23', width: 2, label: 'Price' }], fills: [{ upper: 'upper', lower: 'lower', color: 'rgba(201,169,110,0.08)' }] });
+  }
+  if (tabId === 'macd' && prices.length > 30) {
+    const ema12 = computeEMAMR(prices, 12), ema26 = computeEMAMR(prices, 26);
+    const macdLine = ema12.map((v, i) => v - ema26[i]), signal = computeEMAMR(macdLine, 9);
+    const hist = macdLine.map((v, i) => v - signal[i]);
+    drawLineChartMR('techChartMACD_MR', { labels: dates, series: [{ data: macdLine, color: '#0B2D23', width: 2, label: 'MACD' }, { data: signal, color: '#c0392b', width: 1.5, label: 'Signal' }], histograms: [{ data: hist, posColor: 'rgba(45,125,79,0.6)', negColor: 'rgba(192,57,43,0.6)', label: 'Histogram' }], yZones: [{ y: 0, color: '#999', dash: [2, 2] }] });
+  }
+  if (tabId === 'sma' && prices.length > 50) {
+    const sma20arr = prices.map((_, i) => i >= 19 ? prices.slice(i - 19, i + 1).reduce((a, b) => a + b, 0) / 20 : null);
+    const sma50arr = prices.map((_, i) => i >= 49 ? prices.slice(i - 49, i + 1).reduce((a, b) => a + b, 0) / 50 : null);
+    drawLineChartMR('techChartSMA_MR', { labels: dates, series: [{ data: prices, color: '#0B2D23', width: 2, label: 'Price' }, { data: sma20arr, color: '#2d7d4f', width: 1.5, label: 'SMA20' }, { data: sma50arr, color: '#c0392b', width: 1.5, label: 'SMA50' }] });
+  }
+}
+
+// Close popups on Escape
+document.addEventListener('keydown', e => { if (e.key==='Escape') { const o = document.getElementById('analysisPopupOverlay'); if (o) o.style.display='none'; }});
 
 loadData();
 </script>
