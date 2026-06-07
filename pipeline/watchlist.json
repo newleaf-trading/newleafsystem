@@ -1,169 +1,1784 @@
-{
-  "updatedAt": "2026-04-11T20:00:00.000Z",
-  "totalSymbols": 111,
-  "symbols": [
-    "SPY", "QQQ", "IWM", "DIA", "TLT", "XLF", "XLK", "XLE", "XLY", "XLI",
-    "XLP", "XLU", "XLB", "EEM", "FXI", "GLD", "SLV", "USO", "UNG", "GDX", "BITO",
-    "AAPL", "MSFT", "NVDA", "AMZN", "GOOG", "META", "TSLA", "AMD", "AVGO", "NFLX",
-    "ADBE", "CRM", "INTC",
-    "PLTR", "COIN", "RIOT", "MARA", "RIVN", "LCID", "SOFI", "SNAP", "SHOP",
-    "JPM", "BAC", "GS", "MS", "C", "WFC", "SCHW",
-    "XOM", "CVX", "COP", "SLB", "EOG", "MPC", "PSX", "VLO", "OXY", "HES", "HAL",
-    "CAT", "DE", "CMI", "IR", "EMR", "HON", "MMM", "BA", "LMT", "RTX", "GE",
-    "UNH", "PFE", "JNJ", "MRK", "ABBV", "LLY",
-    "WMT", "COST", "TGT", "KR", "PG", "KO", "PEP", "MDLZ", "CL", "GIS",
-    "HD", "MCD", "NKE",
-    "NUE", "FCX", "NEM", "VMC", "MLM", "APD",
-    "NEE", "DUK", "SO", "D", "AEP",
-    "BABA", "BIDU", "JD", "PDD", "NIO",
-    "UVXY", "SQQQ", "TQQQ", "ARKK"
-  ],
-  "groups": {
-    "Index & ETF": {
-      "symbols": ["SPY", "QQQ", "IWM", "DIA", "TLT", "XLF", "XLK", "XLE", "XLY", "XLI", "XLP", "XLU", "XLB", "EEM", "FXI"],
-      "sector": "Index & ETF"
-    },
-    "Commodities & Macro": {
-      "symbols": ["GLD", "SLV", "USO", "UNG", "GDX", "BITO"],
-      "sector": "Commodities"
-    },
-    "Mega Cap Tech": {
-      "symbols": ["AAPL", "MSFT", "NVDA", "AMZN", "GOOG", "META", "TSLA", "AMD", "AVGO", "NFLX", "ADBE", "CRM", "INTC"],
-      "sector": "Technology"
-    },
-    "High Beta / Retail": {
-      "symbols": ["PLTR", "COIN", "RIOT", "MARA", "RIVN", "LCID", "SOFI", "SNAP", "SHOP"],
-      "sector": "High Beta"
-    },
-    "Financials": {
-      "symbols": ["JPM", "BAC", "GS", "MS", "C", "WFC", "SCHW"],
-      "sector": "Financials"
-    },
-    "Energy": {
-      "symbols": ["XOM", "CVX", "COP", "SLB", "EOG", "MPC", "PSX", "VLO", "OXY", "HES", "HAL"],
-      "sector": "Energy"
-    },
-    "Industrials": {
-      "symbols": ["CAT", "DE", "CMI", "IR", "EMR", "HON", "MMM", "BA", "LMT", "RTX", "GE"],
-      "sector": "Industrials"
-    },
-    "Healthcare": {
-      "symbols": ["UNH", "PFE", "JNJ", "MRK", "ABBV", "LLY"],
-      "sector": "Healthcare"
-    },
-    "Consumer Staples": {
-      "symbols": ["WMT", "COST", "TGT", "KR", "PG", "KO", "PEP", "MDLZ", "CL", "GIS"],
-      "sector": "Consumer Staples"
-    },
-    "Consumer Discretionary": {
-      "symbols": ["HD", "MCD", "NKE"],
-      "sector": "Consumer Discretionary"
-    },
-    "Materials": {
-      "symbols": ["NUE", "FCX", "NEM", "VMC", "MLM", "APD"],
-      "sector": "Materials"
-    },
-    "Utilities": {
-      "symbols": ["NEE", "DUK", "SO", "D", "AEP"],
-      "sector": "Utilities"
-    },
-    "China Plays": {
-      "symbols": ["BABA", "BIDU", "JD", "PDD", "NIO"],
-      "sector": "China"
-    },
-    "Volatility": {
-      "symbols": ["UVXY", "SQQQ", "TQQQ", "ARKK"],
-      "sector": "Volatility"
-    }
+[
+  {
+    "symbol": "SPY",
+    "name": "S&P 500 ETF",
+    "sector": "Index & ETF",
+    "marketCapTier": "mid"
   },
-  "marketCapTiers": {
-    "mega": {
-      "label": "Mega Cap",
-      "min": 200000000000,
-      "description": "$200B+ - Best liquidity",
-      "optionsQuality": 5
-    },
-    "large": {
-      "label": "Large Cap",
-      "min": 10000000000,
-      "max": 200000000000,
-      "description": "$10B-$200B - Good liquidity",
-      "optionsQuality": 4
-    },
-    "mid": {
-      "label": "Mid Cap",
-      "min": 2000000000,
-      "max": 10000000000,
-      "description": "$2B-$10B - Moderate liquidity",
-      "optionsQuality": 3
-    },
-    "small": {
-      "label": "Small Cap",
-      "min": 300000000,
-      "max": 2000000000,
-      "description": "$300M-$2B - Low liquidity ⚠️",
-      "optionsQuality": 1
-    },
-    "etf": {
-      "label": "ETF/Index",
-      "description": "Index funds and ETFs",
-      "optionsQuality": 5
-    }
+  {
+    "symbol": "QQQ",
+    "name": "Nasdaq 100 ETF",
+    "sector": "Index & ETF",
+    "marketCapTier": "mid"
   },
-  "marketCapMapping": {
-    "SPY": "etf", "QQQ": "etf", "IWM": "etf", "DIA": "etf", "TLT": "etf",
-    "XLF": "etf", "XLK": "etf", "XLE": "etf", "XLY": "etf", "XLI": "etf",
-    "XLP": "etf", "XLU": "etf", "XLB": "etf", "EEM": "etf", "FXI": "etf",
-    "GLD": "etf", "SLV": "etf", "USO": "etf", "UNG": "etf", "GDX": "etf",
-    "BITO": "etf", "UVXY": "etf", "SQQQ": "etf", "TQQQ": "etf", "ARKK": "etf",
-    "AAPL": "mega", "MSFT": "mega", "NVDA": "mega", "AMZN": "mega", "GOOG": "mega",
-    "META": "mega", "TSLA": "mega", "JPM": "mega", "UNH": "mega", "JNJ": "mega",
-    "PG": "mega", "WMT": "mega", "HD": "mega", "LLY": "mega", "ADBE": "mega",
-    "AMD": "large", "AVGO": "large", "NFLX": "large", "PLTR": "large", "COIN": "large",
-    "CRM": "large", "INTC": "large",
-    "BAC": "large", "GS": "large", "MS": "large", "C": "large", "WFC": "large", "SCHW": "large",
-    "XOM": "large", "CVX": "large", "COP": "large", "CAT": "large", "DE": "large",
-    "PFE": "large", "MRK": "large", "ABBV": "large", "COST": "large", "KO": "large",
-    "PEP": "large", "MCD": "large", "NKE": "large", "NEE": "large", "BABA": "large",
-    "RIOT": "mid", "MARA": "mid", "SOFI": "mid", "SNAP": "mid", "SHOP": "mid",
-    "SLB": "mid", "EOG": "mid", "MPC": "mid", "PSX": "mid", "VLO": "mid", "OXY": "mid",
-    "HES": "mid", "HAL": "mid", "CMI": "mid", "IR": "mid", "EMR": "mid", "HON": "mid",
-    "MMM": "mid", "BA": "mid", "LMT": "mid", "RTX": "mid", "GE": "mid", "TGT": "mid",
-    "KR": "mid", "MDLZ": "mid", "CL": "mid", "GIS": "mid", "NUE": "mid", "FCX": "mid",
-    "NEM": "mid", "VMC": "mid", "MLM": "mid", "APD": "mid", "DUK": "mid", "SO": "mid",
-    "D": "mid", "AEP": "mid", "BIDU": "mid", "JD": "mid", "PDD": "mid",
-    "RIVN": "small", "LCID": "small", "NIO": "small"
+  {
+    "symbol": "IWM",
+    "name": "Russell 2000 ETF",
+    "sector": "Index & ETF",
+    "marketCapTier": "mid"
   },
-  "sectorMapping": {
-    "SPY": "Index & ETF", "QQQ": "Index & ETF", "IWM": "Index & ETF", "DIA": "Index & ETF",
-    "TLT": "Index & ETF", "XLF": "Index & ETF", "XLK": "Index & ETF", "XLE": "Index & ETF",
-    "XLY": "Index & ETF", "XLI": "Index & ETF", "XLP": "Index & ETF", "XLU": "Index & ETF",
-    "XLB": "Index & ETF", "EEM": "Index & ETF", "FXI": "Index & ETF",
-    "GLD": "Commodities", "SLV": "Commodities", "USO": "Commodities", "UNG": "Commodities",
-    "GDX": "Commodities", "BITO": "Commodities",
-    "AAPL": "Technology", "MSFT": "Technology", "NVDA": "Technology", "AMZN": "Technology",
-    "GOOG": "Technology", "META": "Technology", "TSLA": "Technology", "AMD": "Technology",
-    "AVGO": "Technology", "NFLX": "Technology",
-    "ADBE": "Technology", "CRM": "Technology", "INTC": "Technology",
-    "PLTR": "High Beta", "COIN": "High Beta", "RIOT": "High Beta", "MARA": "High Beta",
-    "RIVN": "High Beta", "LCID": "High Beta", "SOFI": "High Beta", "SNAP": "High Beta", "SHOP": "High Beta",
-    "JPM": "Financials", "BAC": "Financials", "GS": "Financials", "MS": "Financials",
-    "C": "Financials", "WFC": "Financials", "SCHW": "Financials",
-    "XOM": "Energy", "CVX": "Energy", "COP": "Energy", "SLB": "Energy", "EOG": "Energy",
-    "MPC": "Energy", "PSX": "Energy", "VLO": "Energy", "OXY": "Energy", "HES": "Energy", "HAL": "Energy",
-    "CAT": "Industrials", "DE": "Industrials", "CMI": "Industrials", "IR": "Industrials",
-    "EMR": "Industrials", "HON": "Industrials", "MMM": "Industrials", "BA": "Industrials",
-    "LMT": "Industrials", "RTX": "Industrials", "GE": "Industrials",
-    "UNH": "Healthcare", "PFE": "Healthcare", "JNJ": "Healthcare", "MRK": "Healthcare",
-    "ABBV": "Healthcare", "LLY": "Healthcare",
-    "WMT": "Consumer Staples", "COST": "Consumer Staples", "TGT": "Consumer Staples",
-    "KR": "Consumer Staples", "PG": "Consumer Staples", "KO": "Consumer Staples",
-    "PEP": "Consumer Staples", "MDLZ": "Consumer Staples", "CL": "Consumer Staples", "GIS": "Consumer Staples",
-    "HD": "Consumer Discretionary", "MCD": "Consumer Discretionary", "NKE": "Consumer Discretionary",
-    "NUE": "Materials", "FCX": "Materials", "NEM": "Materials", "VMC": "Materials",
-    "MLM": "Materials", "APD": "Materials",
-    "NEE": "Utilities", "DUK": "Utilities", "SO": "Utilities", "D": "Utilities", "AEP": "Utilities",
-    "BABA": "China", "BIDU": "China", "JD": "China", "PDD": "China", "NIO": "China",
-    "UVXY": "Volatility", "SQQQ": "Volatility", "TQQQ": "Volatility", "ARKK": "Volatility"
+  {
+    "symbol": "DIA",
+    "name": "Dow Jones ETF",
+    "sector": "Index & ETF",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "TLT",
+    "name": "20+ Year Treasury ETF",
+    "sector": "Index & ETF",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "XLF",
+    "name": "Financial Select ETF",
+    "sector": "Index & ETF",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "XLK",
+    "name": "Technology Select ETF",
+    "sector": "Index & ETF",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "XLE",
+    "name": "Energy Select ETF",
+    "sector": "Index & ETF",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "XLY",
+    "name": "Consumer Disc. ETF",
+    "sector": "Index & ETF",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "XLI",
+    "name": "Industrial Select ETF",
+    "sector": "Index & ETF",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "XLP",
+    "name": "Consumer Staples ETF",
+    "sector": "Index & ETF",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "XLU",
+    "name": "Utilities Select ETF",
+    "sector": "Index & ETF",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "XLB",
+    "name": "Materials Select ETF",
+    "sector": "Index & ETF",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "EEM",
+    "name": "Emerging Markets ETF",
+    "sector": "Index & ETF",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "FXI",
+    "name": "China Large-Cap ETF",
+    "sector": "Index & ETF",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "GLD",
+    "name": "Gold Trust ETF",
+    "sector": "Commodities",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "SLV",
+    "name": "Silver Trust ETF",
+    "sector": "Commodities",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "USO",
+    "name": "US Oil Fund ETF",
+    "sector": "Commodities",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "UNG",
+    "name": "US Natural Gas ETF",
+    "sector": "Commodities",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "GDX",
+    "name": "Gold Miners ETF",
+    "sector": "Commodities",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "BITO",
+    "name": "Bitcoin Strategy ETF",
+    "sector": "Commodities",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "AAPL",
+    "name": "Apple Inc.",
+    "sector": "Technology",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "MSFT",
+    "name": "Microsoft Corporation",
+    "sector": "Technology",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "NVDA",
+    "name": "NVIDIA Corporation",
+    "sector": "Technology",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "AMZN",
+    "name": "Amazon.com Inc.",
+    "sector": "Technology",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "GOOG",
+    "name": "Alphabet Inc.",
+    "sector": "Technology",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "META",
+    "name": "Meta Platforms Inc.",
+    "sector": "Technology",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "TSLA",
+    "name": "Tesla Inc.",
+    "sector": "Technology",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "AMD",
+    "name": "Advanced Micro Devices",
+    "sector": "Technology",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "AVGO",
+    "name": "Broadcom Inc.",
+    "sector": "Technology",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "NFLX",
+    "name": "Netflix Inc.",
+    "sector": "Technology",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "ADBE",
+    "name": "Adobe Inc.",
+    "sector": "Technology",
+    "marketCapTier": "mega"
+  },
+  {
+    "symbol": "CRM",
+    "name": "Salesforce",
+    "sector": "Technology",
+    "marketCapTier": "mega"
+  },
+  {
+    "symbol": "INTC",
+    "name": "Intel Corporation",
+    "sector": "Technology",
+    "marketCapTier": "mega"
+  },
+  {
+    "symbol": "PLTR",
+    "name": "Palantir Technologies",
+    "sector": "High Beta",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "COIN",
+    "name": "Coinbase Global",
+    "sector": "High Beta",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "RIOT",
+    "name": "Riot Platforms",
+    "sector": "High Beta",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "MARA",
+    "name": "Marathon Digital",
+    "sector": "High Beta",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "RIVN",
+    "name": "Rivian Automotive",
+    "sector": "High Beta",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "LCID",
+    "name": "Lucid Group",
+    "sector": "High Beta",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "SOFI",
+    "name": "SoFi Technologies",
+    "sector": "High Beta",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "SNAP",
+    "name": "Snap Inc.",
+    "sector": "High Beta",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "SHOP",
+    "name": "Shopify Inc.",
+    "sector": "High Beta",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "JPM",
+    "name": "JPMorgan Chase",
+    "sector": "Financials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "BAC",
+    "name": "Bank of America",
+    "sector": "Financials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "GS",
+    "name": "Goldman Sachs",
+    "sector": "Financials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "MS",
+    "name": "Morgan Stanley",
+    "sector": "Financials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "C",
+    "name": "Citigroup Inc.",
+    "sector": "Financials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "WFC",
+    "name": "Wells Fargo",
+    "sector": "Financials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "SCHW",
+    "name": "Charles Schwab",
+    "sector": "Financials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "XOM",
+    "name": "Exxon Mobil",
+    "sector": "Energy",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "CVX",
+    "name": "Chevron Corporation",
+    "sector": "Energy",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "COP",
+    "name": "ConocoPhillips",
+    "sector": "Energy",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "SLB",
+    "name": "Schlumberger",
+    "sector": "Energy",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "EOG",
+    "name": "EOG Resources",
+    "sector": "Energy",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "MPC",
+    "name": "Marathon Petroleum",
+    "sector": "Energy",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "PSX",
+    "name": "Phillips 66",
+    "sector": "Energy",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "VLO",
+    "name": "Valero Energy",
+    "sector": "Energy",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "OXY",
+    "name": "Occidental Petroleum",
+    "sector": "Energy",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "HES",
+    "name": "Hess Corporation",
+    "sector": "Energy",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "HAL",
+    "name": "Halliburton",
+    "sector": "Energy",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "CAT",
+    "name": "Caterpillar Inc.",
+    "sector": "Industrials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "DE",
+    "name": "Deere & Company",
+    "sector": "Industrials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "CMI",
+    "name": "Cummins Inc.",
+    "sector": "Industrials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "IR",
+    "name": "Ingersoll Rand",
+    "sector": "Industrials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "EMR",
+    "name": "Emerson Electric",
+    "sector": "Industrials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "HON",
+    "name": "Honeywell International",
+    "sector": "Industrials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "MMM",
+    "name": "3M Company",
+    "sector": "Industrials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "BA",
+    "name": "Boeing Company",
+    "sector": "Industrials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "LMT",
+    "name": "Lockheed Martin",
+    "sector": "Industrials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "RTX",
+    "name": "RTX Corporation",
+    "sector": "Industrials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "GE",
+    "name": "General Electric",
+    "sector": "Industrials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "UNH",
+    "name": "UnitedHealth Group",
+    "sector": "Healthcare",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "PFE",
+    "name": "Pfizer Inc.",
+    "sector": "Healthcare",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "JNJ",
+    "name": "Johnson & Johnson",
+    "sector": "Healthcare",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "MRK",
+    "name": "Merck & Co.",
+    "sector": "Healthcare",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "ABBV",
+    "name": "AbbVie Inc.",
+    "sector": "Healthcare",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "LLY",
+    "name": "Eli Lilly",
+    "sector": "Healthcare",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "WMT",
+    "name": "Walmart Inc.",
+    "sector": "Consumer Staples",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "COST",
+    "name": "Costco Wholesale",
+    "sector": "Consumer Staples",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "TGT",
+    "name": "Target Corporation",
+    "sector": "Consumer Staples",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "KR",
+    "name": "Kroger Company",
+    "sector": "Consumer Staples",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "PG",
+    "name": "Procter & Gamble",
+    "sector": "Consumer Staples",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "KO",
+    "name": "Coca-Cola Company",
+    "sector": "Consumer Staples",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "PEP",
+    "name": "PepsiCo Inc.",
+    "sector": "Consumer Staples",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "MDLZ",
+    "name": "Mondelez International",
+    "sector": "Consumer Staples",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "CL",
+    "name": "Colgate-Palmolive",
+    "sector": "Consumer Staples",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "GIS",
+    "name": "General Mills",
+    "sector": "Consumer Staples",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "HD",
+    "name": "Home Depot",
+    "sector": "Consumer Discretionary",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "MCD",
+    "name": "McDonald's Corporation",
+    "sector": "Consumer Discretionary",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "NKE",
+    "name": "Nike Inc.",
+    "sector": "Consumer Discretionary",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "NUE",
+    "name": "Nucor Corporation",
+    "sector": "Materials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "FCX",
+    "name": "Freeport-McMoRan",
+    "sector": "Materials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "NEM",
+    "name": "Newmont Corporation",
+    "sector": "Materials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "VMC",
+    "name": "Vulcan Materials",
+    "sector": "Materials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "MLM",
+    "name": "Martin Marietta",
+    "sector": "Materials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "APD",
+    "name": "Air Products",
+    "sector": "Materials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "NEE",
+    "name": "NextEra Energy",
+    "sector": "Utilities",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "DUK",
+    "name": "Duke Energy",
+    "sector": "Utilities",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "SO",
+    "name": "Southern Company",
+    "sector": "Utilities",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "D",
+    "name": "Dominion Energy",
+    "sector": "Utilities",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "AEP",
+    "name": "American Electric Power",
+    "sector": "Utilities",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "BABA",
+    "name": "Alibaba Group",
+    "sector": "China",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "BIDU",
+    "name": "Baidu Inc.",
+    "sector": "China",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "JD",
+    "name": "JD.com Inc.",
+    "sector": "China",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "PDD",
+    "name": "PDD Holdings",
+    "sector": "China",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "NIO",
+    "name": "NIO Inc.",
+    "sector": "China",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "UVXY",
+    "name": "VIX 2x ETF",
+    "sector": "Volatility",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "SQQQ",
+    "name": "Nasdaq -3x ETF",
+    "sector": "Volatility",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "TQQQ",
+    "name": "Nasdaq 3x ETF",
+    "sector": "Volatility",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "ARKK",
+    "name": "ARK Innovation ETF",
+    "sector": "Volatility",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "TSM",
+    "name": "TSMC",
+    "sector": "Technology",
+    "marketCapTier": "mega"
+  },
+  {
+    "symbol": "MU",
+    "name": "Micron Technology",
+    "sector": "Technology",
+    "marketCapTier": "mega"
+  },
+  {
+    "symbol": "ASML",
+    "name": "ASML Holding",
+    "sector": "Technology",
+    "marketCapTier": "mega"
+  },
+  {
+    "symbol": "ORCL",
+    "name": "Oracle Corporation",
+    "sector": "Technology",
+    "marketCapTier": "mega"
+  },
+  {
+    "symbol": "V",
+    "name": "Visa Inc.",
+    "sector": "Financials",
+    "marketCapTier": "mega"
+  },
+  {
+    "symbol": "CSCO",
+    "name": "Cisco Systems",
+    "sector": "Technology",
+    "marketCapTier": "mega"
+  },
+  {
+    "symbol": "MA",
+    "name": "Mastercard",
+    "sector": "Financials",
+    "marketCapTier": "mega"
+  },
+  {
+    "symbol": "LRCX",
+    "name": "Lam Research",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ARM",
+    "name": "Arm Holdings",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "AMAT",
+    "name": "Applied Materials",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "AZN",
+    "name": "AstraZeneca",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "PM",
+    "name": "Philip Morris",
+    "sector": "Consumer Staples",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "IBM",
+    "name": "IBM",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "TXN",
+    "name": "Texas Instruments",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "DELL",
+    "name": "Dell Technologies",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "KLAC",
+    "name": "KLA Corporation",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "GEV",
+    "name": "GE Vernova",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "LIN",
+    "name": "Linde",
+    "sector": "Materials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "MRVL",
+    "name": "Marvell Technology",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "QCOM",
+    "name": "Qualcomm",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "PANW",
+    "name": "Palo Alto Networks",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SAP",
+    "name": "SAP SE",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "AXP",
+    "name": "American Express",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ADI",
+    "name": "Analog Devices",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ANET",
+    "name": "Arista Networks",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "TMUS",
+    "name": "T-Mobile US",
+    "sector": "Communication",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "VZ",
+    "name": "Verizon",
+    "sector": "Communication",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "AMGN",
+    "name": "Amgen",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "APP",
+    "name": "AppLovin",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "TJX",
+    "name": "TJX Companies",
+    "sector": "Consumer Discretionary",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "DIS",
+    "name": "Walt Disney",
+    "sector": "Communication",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "CRWD",
+    "name": "CrowdStrike",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "APH",
+    "name": "Amphenol",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BLK",
+    "name": "BlackRock",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "UNP",
+    "name": "Union Pacific",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "GILD",
+    "name": "Gilead Sciences",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ABT",
+    "name": "Abbott Laboratories",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "T",
+    "name": "AT&T",
+    "sector": "Communication",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ETN",
+    "name": "Eaton Corporation",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "GLW",
+    "name": "Corning",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ISRG",
+    "name": "Intuitive Surgical",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "UBER",
+    "name": "Uber Technologies",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BX",
+    "name": "Blackstone",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "PLD",
+    "name": "Prologis",
+    "sector": "Real Estate",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "DHR",
+    "name": "Danaher",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BKNG",
+    "name": "Booking Holdings",
+    "sector": "Consumer Discretionary",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "CB",
+    "name": "Chubb Limited",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SPGI",
+    "name": "S&P Global",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "CVS",
+    "name": "CVS Health",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "MO",
+    "name": "Altria Group",
+    "sector": "Consumer Staples",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "PGR",
+    "name": "Progressive Corp",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "LOW",
+    "name": "Lowes",
+    "sector": "Consumer Discretionary",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SYK",
+    "name": "Stryker",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BMY",
+    "name": "Bristol-Myers Squibb",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "NOW",
+    "name": "ServiceNow",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "VRT",
+    "name": "Vertiv Holdings",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "VRTX",
+    "name": "Vertex Pharma",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "PH",
+    "name": "Parker-Hannifin",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ACN",
+    "name": "Accenture",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SBUX",
+    "name": "Starbucks",
+    "sector": "Consumer Discretionary",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "FTNT",
+    "name": "Fortinet",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "MDT",
+    "name": "Medtronic",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "PWR",
+    "name": "Quanta Services",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "CDNS",
+    "name": "Cadence Design",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "MAR",
+    "name": "Marriott",
+    "sector": "Consumer Discretionary",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SPOT",
+    "name": "Spotify",
+    "sector": "Communication",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "TT",
+    "name": "Trane Technologies",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "HWM",
+    "name": "Howmet Aerospace",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "GD",
+    "name": "General Dynamics",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "CME",
+    "name": "CME Group",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "MCK",
+    "name": "McKesson",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ADP",
+    "name": "ADP",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "UPS",
+    "name": "United Parcel Service",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "PNC",
+    "name": "PNC Financial",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "CEG",
+    "name": "Constellation Energy",
+    "sector": "Utilities",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "AMT",
+    "name": "American Tower",
+    "sector": "Real Estate",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ELV",
+    "name": "Elevance Health",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SNPS",
+    "name": "Synopsys",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "WM",
+    "name": "Waste Management",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "NET",
+    "name": "Cloudflare",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "WMB",
+    "name": "Williams Companies",
+    "sector": "Energy",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "JCI",
+    "name": "Johnson Controls",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "MNST",
+    "name": "Monster Beverage",
+    "sector": "Consumer Staples",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "CSX",
+    "name": "CSX Corporation",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "USB",
+    "name": "U.S. Bancorp",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "CMCSA",
+    "name": "Comcast",
+    "sector": "Communication",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "KKR",
+    "name": "KKR & Co",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "DDOG",
+    "name": "Datadog",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SNOW",
+    "name": "Snowflake",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "HCA",
+    "name": "HCA Healthcare",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "MELI",
+    "name": "MercadoLibre",
+    "sector": "Consumer Discretionary",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "INTU",
+    "name": "Intuit",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ICE",
+    "name": "Intercontinental Exchange",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SPG",
+    "name": "Simon Property Group",
+    "sector": "Real Estate",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ABNB",
+    "name": "Airbnb",
+    "sector": "Consumer Discretionary",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "FDX",
+    "name": "FedEx",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "MCO",
+    "name": "Moodys",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "HLT",
+    "name": "Hilton",
+    "sector": "Consumer Discretionary",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "NOC",
+    "name": "Northrop Grumman",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "CI",
+    "name": "Cigna Group",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "RCL",
+    "name": "Royal Caribbean",
+    "sector": "Consumer Discretionary",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SHW",
+    "name": "Sherwin-Williams",
+    "sector": "Materials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ORLY",
+    "name": "OReilly Automotive",
+    "sector": "Consumer Discretionary",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "NXPI",
+    "name": "NXP Semiconductors",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "HOOD",
+    "name": "Robinhood",
+    "sector": "Financials",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "GM",
+    "name": "General Motors",
+    "sector": "Consumer Discretionary",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ROST",
+    "name": "Ross Stores",
+    "sector": "Consumer Discretionary",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "APO",
+    "name": "Apollo Global",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "COHR",
+    "name": "Coherent Corp",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "MPWR",
+    "name": "Monolithic Power",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ITW",
+    "name": "Illinois Tool Works",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ECL",
+    "name": "Ecolab",
+    "sector": "Materials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BSX",
+    "name": "Boston Scientific",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "CTAS",
+    "name": "Cintas",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "KMI",
+    "name": "Kinder Morgan",
+    "sector": "Energy",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "NSC",
+    "name": "Norfolk Southern",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "AON",
+    "name": "Aon plc",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "TDG",
+    "name": "TransDigm",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "CIEN",
+    "name": "Ciena Corporation",
+    "sector": "Technology",
+    "marketCapTier": "mid"
+  },
+  {
+    "symbol": "DASH",
+    "name": "DoorDash",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "MSI",
+    "name": "Motorola Solutions",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BRK.B",
+    "name": "Berkshire Hathaway",
+    "sector": "Financials",
+    "marketCapTier": "mega"
+  },
+  {
+    "symbol": "HSBC",
+    "name": "HSBC Holdings",
+    "sector": "Financials",
+    "marketCapTier": "mega"
+  },
+  {
+    "symbol": "NVS",
+    "name": "Novartis",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "RY",
+    "name": "Royal Bank of Canada",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SHEL",
+    "name": "Shell plc",
+    "sector": "Energy",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "TM",
+    "name": "Toyota Motor",
+    "sector": "Consumer Discretionary",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SNDK",
+    "name": "Sandisk",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "MUFG",
+    "name": "Mitsubishi UFJ Financial",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BHP",
+    "name": "BHP Group",
+    "sector": "Materials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "TTE",
+    "name": "TotalEnergies",
+    "sector": "Energy",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "NVO",
+    "name": "Novo Nordisk",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "STX",
+    "name": "Seagate Technology",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "TD",
+    "name": "Toronto-Dominion Bank",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SAN",
+    "name": "Banco Santander",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "WDC",
+    "name": "Western Digital",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "RIO",
+    "name": "Rio Tinto",
+    "sector": "Materials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "TMO",
+    "name": "Thermo Fisher Scientific",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BUD",
+    "name": "Anheuser-Busch InBev",
+    "sector": "Consumer Staples",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SMFG",
+    "name": "Sumitomo Mitsui Financial",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "WELL",
+    "name": "Welltower",
+    "sector": "Real Estate",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SCCO",
+    "name": "Southern Copper",
+    "sector": "Materials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "UBS",
+    "name": "UBS Group",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SONY",
+    "name": "Sony Group",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BTI",
+    "name": "British American Tobacco",
+    "sector": "Consumer Staples",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BBVA",
+    "name": "BBVA",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ENB",
+    "name": "Enbridge",
+    "sector": "Energy",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "UL",
+    "name": "Unilever",
+    "sector": "Consumer Staples",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "HDB",
+    "name": "HDFC Bank",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "MFG",
+    "name": "Mizuho Financial",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BMO",
+    "name": "Bank of Montreal",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BP",
+    "name": "BP plc",
+    "sector": "Energy",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "COF",
+    "name": "Capital One Financial",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "PBR",
+    "name": "Petrobras",
+    "sector": "Energy",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "PBR.A",
+    "name": "Petrobras (Pref)",
+    "sector": "Energy",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SNY",
+    "name": "Sanofi",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "EQIX",
+    "name": "Equinix",
+    "sector": "Real Estate",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SOMN",
+    "name": "Southern Company (alt)",
+    "sector": "Utilities",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "GSK",
+    "name": "GSK plc",
+    "sector": "Healthcare",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "CM",
+    "name": "CIBC",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BN",
+    "name": "Brookfield Corporation",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BNS",
+    "name": "Bank of Nova Scotia",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BNY",
+    "name": "Bank of New York Mellon",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "CNQ",
+    "name": "Canadian Natural Resources",
+    "sector": "Energy",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "IBN",
+    "name": "ICICI Bank",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "EQNR",
+    "name": "Equinor",
+    "sector": "Energy",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ING",
+    "name": "ING Groep",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ITUB",
+    "name": "Itau Unibanco",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "NOK",
+    "name": "Nokia",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BCS",
+    "name": "Barclays",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "AEM",
+    "name": "Agnico Eagle Mines",
+    "sector": "Materials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "EPD",
+    "name": "Enterprise Products",
+    "sector": "Energy",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "NGG",
+    "name": "National Grid",
+    "sector": "Utilities",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "ASX",
+    "name": "ASE Technology",
+    "sector": "Technology",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "E",
+    "name": "Eni SpA",
+    "sector": "Energy",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "CP",
+    "name": "Canadian Pacific Kansas City",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "MRSH",
+    "name": "Marsh McLennan",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "LYG",
+    "name": "Lloyds Banking Group",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "NTES",
+    "name": "NetEase",
+    "sector": "Communication",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BE",
+    "name": "Bloom Energy",
+    "sector": "Industrials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "AMX",
+    "name": "America Movil",
+    "sector": "Communication",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "BAM",
+    "name": "Brookfield Asset Mgmt",
+    "sector": "Financials",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "SU",
+    "name": "Suncor Energy",
+    "sector": "Energy",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "CVNA",
+    "name": "Carvana",
+    "sector": "Consumer Discretionary",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "TRP",
+    "name": "TC Energy",
+    "sector": "Energy",
+    "marketCapTier": "large"
+  },
+  {
+    "symbol": "CRH",
+    "name": "CRH plc",
+    "sector": "Materials",
+    "marketCapTier": "large"
   }
-}
+]

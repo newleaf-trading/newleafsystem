@@ -5,11 +5,11 @@
 In-process scheduler for market data collection. Replaces system crontab with node-cron.
 
 Runs six scheduled jobs plus a health check:
-1. **Fast pipeline** (every 15 min, market hours Mon-Fri) — Alpaca prices + IV for 111 symbols -> R2
+1. **Fast pipeline** (every 15 min, market hours Mon-Fri) — Alpaca prices + IV for 232 symbols -> R2
 2. **Daily OI enrichment** (9:32am ET, Mon-Fri) — Nasdaq OI data (Yahoo Cloud Function fallback) + gamma wall recalc -> R2 + Firestore sync. Catch-up via health check if missed.
 3. **Daily funnel** (10:00am ET, Mon-Fri) — Rank scanner signals, price top N, publish picks to Firestore tiles
 4. **Event calendar refresh** (4:15pm ET, Mon-Fri) — Fetches next earnings dates from Yahoo Cloud Function (yfinance, per-symbol) + ex-div dates from FMP bulk API. Writes `event-calendar.json` (new format with provenance) + backward-compat `earnings-calendar.json` to web/scanner/, pipeline/, and web/workbench/. Coverage: ~79/111 earnings (ETFs excluded), ~6/111 ex-div.
-5. **Weekly premium snapshot** (Fri 4:30pm ET) — Captures ATM call/put premiums for all 111 symbols -> R2 as `watchlist/premium-snapshots/{isoWeek}.json`. Catch-up via health check on Fri/Sat/Sun if missed.
+5. **Weekly premium snapshot** (Fri 4:30pm ET) — Captures ATM call/put premiums for all 232 symbols -> R2 as `watchlist/premium-snapshots/{isoWeek}.json`. Catch-up via health check on Fri/Sat/Sun if missed.
 6. **Health check** (every 5 min, always) — Auto-restarts server.cjs, catches up missed daily OI and weekly snapshot jobs
 
 ## Scheduler Must Be Running
@@ -38,7 +38,7 @@ newleaf-pipeline/
   check-scheduler-health.sh     # Health check script
   start.sh                      # Start scheduler daemon
   config.json                   # All credentials and settings (gitignored)
-  watchlist.json                # 111 symbols to scan
+  watchlist.json                # 232 symbols to scan
   company-metadata.json         # Sector/market cap data per symbol
   lib/
     adapters/
@@ -69,7 +69,7 @@ node index.js --once         # Run fast pipeline once and exit
 
 # Manual pipeline runs
 node newleaf-pipeline.js AAPL --daily        # Single symbol, full OI
-node newleaf-pipeline.js --watchlist --daily  # All 111 symbols, full OI
+node newleaf-pipeline.js --watchlist --daily  # All 232 symbols, full OI
 node newleaf-pipeline.js --watchlist          # Intraday mode (Alpaca only, no OI)
 
 # Wrappers
@@ -236,7 +236,7 @@ rather than defaulting to 0 and letting comparisons pass silently.
 ## Configuration
 
 - `config.json` — Alpaca keys, R2 creds, sentiment API keys, watchlist, yahoosvc URL
-- `watchlist.json` — 111 symbols with sector/cap metadata
+- `watchlist.json` — 232 symbols with sector/cap metadata
 - `serviceAccountKey.json` — Firebase service account (for Firestore sync)
 - All config files are gitignored
 
