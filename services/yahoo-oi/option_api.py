@@ -132,9 +132,51 @@ def get_chain(symbol, expiry):
     except Exception as e:
         return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 400
 
+@app.route('/api/events/<symbol>')
+def get_events(symbol):
+    """Return next earnings date and ex-dividend date via yfinance."""
+    sym = symbol.upper()
+    cache_key = f'events:{sym}'
+    cached = cache_get(cache_key)
+    if cached:
+        return jsonify(cached)
+    try:
+        ticker = yf.Ticker(sym)
+        cal = ticker.calendar
+        earnings_date = None
+        ex_div_date = None
+        if isinstance(cal, dict):
+            ed = cal.get('Earnings Date')
+            if ed:
+                if isinstance(ed, list) and len(ed) > 0:
+                    earnings_date = str(ed[0].date()) if hasattr(ed[0], 'date') else str(ed[0])[:10]
+                elif hasattr(ed, 'date'):
+                    earnings_date = str(ed.date())
+            xd = cal.get('Ex-Dividend Date')
+            if xd and hasattr(xd, 'date'):
+                ex_div_date = str(xd.date())
+        elif hasattr(cal, 'to_dict'):
+            d = cal.to_dict()
+            for key in d:
+                if 'earnings' in str(key).lower() and 'date' in str(key).lower():
+                    val = list(d[key].values())
+                    if val:
+                        v = val[0]
+                        earnings_date = str(v.date()) if hasattr(v, 'date') else str(v)[:10]
+                if 'ex-div' in str(key).lower() or 'dividend' in str(key).lower():
+                    val = list(d[key].values())
+                    if val:
+                        v = val[0]
+                        ex_div_date = str(v.date()) if hasattr(v, 'date') else str(v)[:10]
+        result = {'symbol': sym, 'earningsDate': earnings_date, 'exDividendDate': ex_div_date}
+        cache_set(cache_key, result)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'symbol': sym, 'earningsDate': None, 'exDividendDate': None, 'error': str(e)})
+
 if __name__ == '__main__':
     PORT = int(__import__('os').environ.get('PORT', 5300))
     print(f"\n  NewLeaf Yahoo Options Service → http://localhost:{PORT}")
     print(f"  Cache TTL: {CACHE_TTL}s ({CACHE_TTL // 60} minutes)")
-    print(f"  Endpoints: /health  /api/options/SYMBOL  /api/options/SYMBOL/EXPIRY\n")
+    print(f"  Endpoints: /health  /api/options/SYMBOL  /api/options/SYMBOL/EXPIRY  /api/events/SYMBOL\n")
     app.run(host='0.0.0.0', port=PORT, debug=False, threaded=False, processes=1)

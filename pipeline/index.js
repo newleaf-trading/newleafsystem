@@ -22,13 +22,17 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
+const jobLock = require('./lib/jobLock.cjs');
+
 const ONCE = process.argv.includes('--once');
 const NEWLEAF_DIR = path.resolve(__dirname, '..');
 const NODE_BIN = process.execPath;
 const SERVER_PORT = 3000;
 const DAILY_OI_STAMP = path.join(__dirname, '.daily-oi-stamp');
+const DAILY_FUNNEL_STAMP = path.join(__dirname, '.daily-funnel-stamp');
 let serverProc = null;
 let caffeinateProc = null;
+let fastPipelineRunning = false;
 
 // ── server.cjs management ────────────────────────────────────────────────────
 async function isServerRunning() {
@@ -158,12 +162,20 @@ async function runWeeklySnapshot() {
 }
 
 async function runDailyOISequence() {
-  console.log(`[${nowET()}] === Daily OI Enrichment Sequence ===`);
-  await runJob('pipeline-oi-enrichment.js', ['--watchlist']).catch(console.error);
-  await runJob('pipeline-watchlist.js').catch(console.error);
-  await runJob('sync-r2-to-firestore-fixed.mjs').catch(console.error);
-  markDailyOIDone();
-  console.log(`[${nowET()}] === Daily sequence complete ===`);
+  if (!jobLock.acquire('daily-oi')) {
+    console.log(`[${nowET()}] Daily OI already running (locked), skipping`);
+    return;
+  }
+  try {
+    console.log(`[${nowET()}] === Daily OI Enrichment Sequence ===`);
+    await runJob('pipeline-oi-enrichment.js', ['--watchlist']).catch(console.error);
+    await runJob('pipeline-watchlist.js').catch(console.error);
+    await runJob('sync-r2-to-firestore-fixed.mjs').catch(console.error);
+    markDailyOIDone();
+    console.log(`[${nowET()}] === Daily sequence complete ===`);
+  } finally {
+    jobLock.release('daily-oi');
+  }
 }
 
 // ── Job runner ────────────────────────────────────────────────────────────────
@@ -217,7 +229,11 @@ if (ONCE) {
   // Fast pipeline: every 15 min, Mon-Fri, market hours only
   cron.schedule('*/15 * * * 1-5', async () => {
     if (!isMarketHours()) return;
-    await runJob('pipeline-fast.js', ['--watchlist']).catch(console.error);
+    if (fastPipelineRunning) { console.log(`[${nowET()}] Fast pipeline still running, skipping`); return; }
+    fastPipelineRunning = true;
+    try { await runJob('pipeline-fast.js', ['--watchlist']); }
+    catch (err) { console.error(`[${nowET()}] Fast pipeline error:`, err.message); }
+    finally { fastPipelineRunning = false; }
   });
 
   // Daily OI enrichment + watchlist + Firestore sync: 9:32am ET
@@ -228,15 +244,36 @@ if (ONCE) {
     await runDailyOISequence();
   });
 
+  // Pre-market service check: 9:25am ET — ensure services are up before daily jobs
+  cron.schedule('25 14 * * 1-5', async () => {
+    console.log(`[${nowET()}] === Pre-market service check ===`);
+    await ensureServer().catch(console.error);
+  });
+
   // Daily funnel: rank scanner signals → price top N → publish to tiles
   // 10:00am ET = 15:00 BST (summer) / 15:00 GMT (winter) — after market open, chains populated
   cron.schedule('0 15 * * 1-5', async () => {
+    const stamp = (() => { try { return fs.readFileSync(DAILY_FUNNEL_STAMP, 'utf8').trim(); } catch { return ''; } })();
+    if (stamp === todayET()) return; // already ran today
     console.log(`[${nowET()}] === Daily Funnel: Rank → Price → Publish ===`);
     const funnelScript = path.join(NEWLEAF_DIR, 'generaterecommendations', 'funnel-price.cjs');
     if (fs.existsSync(funnelScript)) {
       await runJob('../generaterecommendations/funnel-price.cjs').catch(console.error);
+      fs.writeFileSync(DAILY_FUNNEL_STAMP, todayET());
     } else {
       console.error(`[${nowET()}] funnel-price.cjs not found at ${funnelScript}`);
+    }
+  });
+
+  // Event calendar refresh (FMP): daily after market close, 4:15pm ET
+  // 4:15pm ET = 21:15 BST (summer) — DST shift cancels
+  cron.schedule('15 21 * * 1-5', async () => {
+    console.log(`[${nowET()}] === Event Calendar Refresh (Yahoo + FMP ex-div) ===`);
+    const script = path.join(NEWLEAF_DIR, 'scripts', 'refresh-event-calendar.js');
+    if (fs.existsSync(script)) {
+      await runJob('../scripts/refresh-event-calendar.js').catch(console.error);
+    } else {
+      console.error(`[${nowET()}] refresh-event-calendar.js not found at ${script}`);
     }
   });
 
@@ -292,9 +329,10 @@ if (ONCE) {
   console.log('║  Services:        server.cjs (:3000)                        ║');
   console.log('║  Yahoo OI:        Firebase Cloud Function (remote)          ║');
   console.log('║  Fast pipeline:   */15 min (market hours, Mon-Fri)         ║');
-  console.log('║  Pre-market:      9:25am ET (ensure all services up)       ║');
+  console.log('║  Pre-market:      9:25am ET (ensure services up)            ║');
   console.log('║  Daily OI+sync:   9:32am ET (Mon-Fri)                      ║');
   console.log('║  Daily funnel:     10:00am ET (rank→price→publish)         ║');
+  console.log('║  Event calendar:   4:15pm ET (Yahoo earn + FMP ex-div)     ║');
   console.log('║  Weekly snapshot:  Fri 4:30pm ET (canonical premium+catchup)║');
   console.log('║  Health check:    */5 min (auto-restarts + missed catchup)║');
   console.log('╚══════════════════════════════════════════════════════════════╝');

@@ -4,12 +4,13 @@
 
 In-process scheduler for market data collection. Replaces system crontab with node-cron.
 
-Runs five scheduled jobs plus a health check:
+Runs six scheduled jobs plus a health check:
 1. **Fast pipeline** (every 15 min, market hours Mon-Fri) — Alpaca prices + IV for 111 symbols -> R2
 2. **Daily OI enrichment** (9:32am ET, Mon-Fri) — Nasdaq OI data (Yahoo Cloud Function fallback) + gamma wall recalc -> R2 + Firestore sync. Catch-up via health check if missed.
 3. **Daily funnel** (10:00am ET, Mon-Fri) — Rank scanner signals, price top N, publish picks to Firestore tiles
-4. **Weekly premium snapshot** (Fri 4:30pm ET) — Captures ATM call/put premiums for all 111 symbols -> R2 as `watchlist/premium-snapshots/{isoWeek}.json`. Catch-up via health check on Fri/Sat/Sun if missed.
-5. **Health check** (every 5 min, always) — Auto-restarts server.cjs, catches up missed daily OI and weekly snapshot jobs
+4. **Event calendar refresh** (4:15pm ET, Mon-Fri) — Fetches next earnings dates from Yahoo Cloud Function (yfinance, per-symbol) + ex-div dates from FMP bulk API. Writes `event-calendar.json` (new format with provenance) + backward-compat `earnings-calendar.json` to web/scanner/, pipeline/, and web/workbench/. Coverage: ~79/111 earnings (ETFs excluded), ~6/111 ex-div.
+5. **Weekly premium snapshot** (Fri 4:30pm ET) — Captures ATM call/put premiums for all 111 symbols -> R2 as `watchlist/premium-snapshots/{isoWeek}.json`. Catch-up via health check on Fri/Sat/Sun if missed.
+6. **Health check** (every 5 min, always) — Auto-restarts server.cjs, catches up missed daily OI and weekly snapshot jobs
 
 ## Scheduler Must Be Running
 

@@ -84,7 +84,10 @@ function classifySupportTouch(ev, candles, zone) {
     }
   }
   if (cls === 'unresolved' && fakeRecovered) cls = 'fake_break';
-  if (cls === 'unresolved') cls = 'hold'; // unresolved within window = held
+  // If touch is on the most recent bar(s) and hasn't resolved, mark as pending
+  // (the 5-bar confirmation window hasn't completed)
+  if (cls === 'unresolved' && ev.index >= candles.length - 5) cls = 'pending';
+  else if (cls === 'unresolved') cls = 'hold'; // older unresolved = held
 
   // Volume confirmation
   const avgVol = avgVolume(candles, ev.index);
@@ -114,7 +117,8 @@ function classifyResistanceTouch(ev, candles, zone) {
     }
   }
   if (cls === 'unresolved' && fakeRet) cls = 'fake_breakout';
-  if (cls === 'unresolved') cls = 'reject';
+  if (cls === 'unresolved' && ev.index >= candles.length - 5) cls = 'pending';
+  else if (cls === 'unresolved') cls = 'reject';
 
   const avgVol = avgVolume(candles, ev.index);
   const volConf = !!(ev.candle.volume && avgVol > 0 && ev.candle.volume > avgVol);
@@ -134,7 +138,14 @@ function avgVolume(candles, endIdx, w = 20) {
  * @param {'support'|'resistance'} type
  * @returns {Object} ZoneStats
  */
-function analyzeZone(candles, zone, type) {
+/**
+ * @param {Object[]} candles
+ * @param {Object} zone
+ * @param {'support'|'resistance'} type
+ * @param {{ minTouches?: number }} [opts]
+ */
+function analyzeZone(candles, zone, type, opts) {
+  const minTouches = opts?.minTouches ?? MIN_TOUCHES;
   const touches = findZoneTouches(candles, zone, type);
 
   const classified = type === 'support'
@@ -142,21 +153,25 @@ function analyzeZone(candles, zone, type) {
     : touches.map(t => classifyResistanceTouch(t, candles, zone));
 
   const total = classified.length;
-  const untested = total < MIN_TOUCHES;
+  const untested = total < minTouches;
+
+  const pending = classified.filter(c => c.classification === 'pending').length;
+  // Resolved count excludes pending — rates computed only on resolved touches
+  const resolved = total - pending;
 
   if (type === 'support') {
     const holds = classified.filter(c => c.classification === 'hold').length;
     const breaks = classified.filter(c => c.classification === 'break').length;
     const fakes = classified.filter(c => c.classification === 'fake_break').length;
-    const rawRate = total > 0 ? holds / total : 0;
-    const wilson = wilsonInterval(holds, total);
-    const volConfRate = total > 0 ? classified.filter(c => c.volConf).length / total : 0;
+    const rawRate = resolved > 0 ? holds / resolved : 0;
+    const wilson = wilsonInterval(holds, resolved);
+    const volConfRate = resolved > 0 ? classified.filter(c => c.volConf && c.classification !== 'pending').length / resolved : 0;
 
     return {
-      zone, type, touchCount: total, holdCount: holds, breakCount: breaks, fakeBreakCount: fakes,
+      zone, type, touchCount: total, holdCount: holds, breakCount: breaks, fakeBreakCount: fakes, pendingCount: pending,
       rawRate, smoothedRate: wilson.smoothed, ciLow: wilson.ciLow, ciHigh: wilson.ciHigh,
       volConfRate, untested, touches: classified,
-      score: untested ? 0 : computeZoneScore(wilson.smoothed, total, breaks / (total || 1), volConfRate, zone),
+      score: untested ? 0 : computeZoneScore(wilson.smoothed, resolved, breaks / (resolved || 1), volConfRate, zone),
     };
   }
 
@@ -164,15 +179,15 @@ function analyzeZone(candles, zone, type) {
   const rejects = classified.filter(c => c.classification === 'reject').length;
   const breakouts = classified.filter(c => c.classification === 'breakout').length;
   const fakes = classified.filter(c => c.classification === 'fake_breakout').length;
-  const rawRate = total > 0 ? rejects / total : 0;
-  const wilson = wilsonInterval(rejects, total);
-  const volConfRate = total > 0 ? classified.filter(c => c.volConf).length / total : 0;
+  const rawRate = resolved > 0 ? rejects / resolved : 0;
+  const wilson = wilsonInterval(rejects, resolved);
+  const volConfRate = resolved > 0 ? classified.filter(c => c.volConf && c.classification !== 'pending').length / resolved : 0;
 
   return {
-    zone, type, touchCount: total, rejectCount: rejects, breakoutCount: breakouts, fakeBreakoutCount: fakes,
+    zone, type, touchCount: total, rejectCount: rejects, breakoutCount: breakouts, fakeBreakoutCount: fakes, pendingCount: pending,
     rawRate, smoothedRate: wilson.smoothed, ciLow: wilson.ciLow, ciHigh: wilson.ciHigh,
     volConfRate, untested, touches: classified,
-    score: untested ? 0 : computeZoneScore(wilson.smoothed, total, breakouts / (total || 1), volConfRate, zone),
+    score: untested ? 0 : computeZoneScore(wilson.smoothed, resolved, breakouts / (resolved || 1), volConfRate, zone),
   };
 }
 

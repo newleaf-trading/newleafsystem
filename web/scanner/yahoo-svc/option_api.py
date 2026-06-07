@@ -79,6 +79,50 @@ def get_chain(symbol, expiry):
     except Exception as e:
         return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 400
 
+@app.route('/api/events/<symbol>')
+def get_events(symbol):
+    """Return next earnings date and ex-dividend date for a symbol via yfinance."""
+    try:
+        ticker = yf.Ticker(symbol.upper())
+        cal = ticker.calendar
+        earnings_date = None
+        ex_div_date = None
+
+        # ticker.calendar returns a dict or DataFrame with 'Earnings Date' etc.
+        if isinstance(cal, dict):
+            ed = cal.get('Earnings Date')
+            if ed:
+                # Can be a list of Timestamps or a single value
+                if isinstance(ed, list) and len(ed) > 0:
+                    earnings_date = str(ed[0].date()) if hasattr(ed[0], 'date') else str(ed[0])[:10]
+                elif hasattr(ed, 'date'):
+                    earnings_date = str(ed.date())
+            xd = cal.get('Ex-Dividend Date')
+            if xd and hasattr(xd, 'date'):
+                ex_div_date = str(xd.date())
+        elif hasattr(cal, 'to_dict'):
+            # DataFrame case
+            d = cal.to_dict()
+            for key in d:
+                if 'earnings' in str(key).lower() and 'date' in str(key).lower():
+                    val = list(d[key].values())
+                    if val:
+                        v = val[0]
+                        earnings_date = str(v.date()) if hasattr(v, 'date') else str(v)[:10]
+                if 'ex-div' in str(key).lower() or 'dividend' in str(key).lower():
+                    val = list(d[key].values())
+                    if val:
+                        v = val[0]
+                        ex_div_date = str(v.date()) if hasattr(v, 'date') else str(v)[:10]
+
+        return jsonify({
+            'symbol': symbol.upper(),
+            'earningsDate': earnings_date,
+            'exDividendDate': ex_div_date,
+        })
+    except Exception as e:
+        return jsonify({'symbol': symbol.upper(), 'earningsDate': None, 'exDividendDate': None, 'error': str(e)})
+
 if __name__ == '__main__':
     PORT = int(__import__('os').environ.get('PORT', 5300))
     print(f"\n  NewLeaf Yahoo Options Service → http://localhost:{PORT}")

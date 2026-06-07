@@ -1,0 +1,897 @@
+{
+  "_lastUpdated": "2026-06-07",
+  "_source": "Yahoo Cloud Function (yfinance) + FMP ex-div supplement",
+  "_symbolCount": 111,
+  "_earningsCount": 79,
+  "_exDivCount": 6,
+  "symbols": {
+    "SPY": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "QQQ": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "IWM": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "DIA": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "TLT": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "XLF": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "XLK": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "XLE": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "XLY": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "XLI": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "XLP": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "XLU": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "XLB": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "EEM": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "FXI": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "GLD": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "SLV": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "USO": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "UNG": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "GDX": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "BITO": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "AAPL": {
+      "earnings": "2026-07-30",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "MSFT": {
+      "earnings": "2026-07-29",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "NVDA": {
+      "earnings": "2026-08-26",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "AMZN": {
+      "earnings": "2026-07-30",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "GOOG": {
+      "earnings": "2026-07-23",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "META": {
+      "earnings": "2026-07-29",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": "2026-06-15",
+      "exDivSource": "fmp",
+      "exDivFetchedAt": "2026-06-07"
+    },
+    "TSLA": {
+      "earnings": "2026-07-22",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "AMD": {
+      "earnings": "2026-08-04",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "AVGO": {
+      "earnings": "2026-09-03",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "NFLX": {
+      "earnings": "2026-07-16",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "ADBE": {
+      "earnings": "2026-06-11",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "CRM": {
+      "earnings": "2026-09-02",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "INTC": {
+      "earnings": "2026-07-23",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "PLTR": {
+      "earnings": "2026-08-03",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "COIN": {
+      "earnings": "2026-07-30",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "RIOT": {
+      "earnings": "2026-07-30",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "MARA": {
+      "earnings": "2026-07-28",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "RIVN": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "LCID": {
+      "earnings": "2026-08-04",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "SOFI": {
+      "earnings": "2026-07-28",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "SNAP": {
+      "earnings": "2026-08-04",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "SHOP": {
+      "earnings": "2026-08-05",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "JPM": {
+      "earnings": "2026-07-14",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": "2026-07-06",
+      "exDivSource": "fmp",
+      "exDivFetchedAt": "2026-06-07"
+    },
+    "BAC": {
+      "earnings": "2026-07-14",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "GS": {
+      "earnings": "2026-07-14",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "MS": {
+      "earnings": "2026-07-15",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "C": {
+      "earnings": "2026-07-14",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "WFC": {
+      "earnings": "2026-07-14",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "SCHW": {
+      "earnings": "2026-07-16",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "XOM": {
+      "earnings": "2026-07-31",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "CVX": {
+      "earnings": "2026-07-31",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "COP": {
+      "earnings": "2026-08-06",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "SLB": {
+      "earnings": "2026-07-24",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "EOG": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "MPC": {
+      "earnings": "2026-08-04",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "PSX": {
+      "earnings": "2026-07-24",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "VLO": {
+      "earnings": "2026-07-30",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "OXY": {
+      "earnings": "2026-08-05",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "HES": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "HAL": {
+      "earnings": "2026-07-21",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "CAT": {
+      "earnings": "2026-08-04",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "DE": {
+      "earnings": "2026-08-20",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "CMI": {
+      "earnings": "2026-08-04",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "IR": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "EMR": {
+      "earnings": "2026-08-05",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "HON": {
+      "earnings": "2026-07-23",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "MMM": {
+      "earnings": "2026-07-21",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "BA": {
+      "earnings": "2026-07-28",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "LMT": {
+      "earnings": "2026-07-21",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "RTX": {
+      "earnings": "2026-07-21",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "GE": {
+      "earnings": "2026-07-16",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "UNH": {
+      "earnings": "2026-07-28",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": "2026-06-15",
+      "exDivSource": "fmp",
+      "exDivFetchedAt": "2026-06-07"
+    },
+    "PFE": {
+      "earnings": "2026-07-29",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "JNJ": {
+      "earnings": "2026-07-15",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "MRK": {
+      "earnings": "2026-08-04",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "ABBV": {
+      "earnings": "2026-07-30",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "LLY": {
+      "earnings": "2026-08-05",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "WMT": {
+      "earnings": "2026-08-20",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": "2026-08-21",
+      "exDivSource": "fmp",
+      "exDivFetchedAt": "2026-06-07"
+    },
+    "COST": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "TGT": {
+      "earnings": "2026-08-19",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "KR": {
+      "earnings": "2026-06-18",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "PG": {
+      "earnings": "2026-07-29",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "KO": {
+      "earnings": "2026-07-21",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": "2026-06-15",
+      "exDivSource": "fmp",
+      "exDivFetchedAt": "2026-06-07"
+    },
+    "PEP": {
+      "earnings": "2026-07-09",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "MDLZ": {
+      "earnings": "2026-07-28",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "CL": {
+      "earnings": "2026-07-31",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "GIS": {
+      "earnings": "2026-07-01",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "HD": {
+      "earnings": "2026-08-18",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "MCD": {
+      "earnings": "2026-08-06",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "NKE": {
+      "earnings": "2026-06-30",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "NUE": {
+      "earnings": "2026-07-27",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "FCX": {
+      "earnings": "2026-07-22",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "NEM": {
+      "earnings": "2026-07-23",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "VMC": {
+      "earnings": "2026-07-30",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "MLM": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "APD": {
+      "earnings": "2026-07-30",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "NEE": {
+      "earnings": "2026-07-22",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "DUK": {
+      "earnings": "2026-08-04",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "SO": {
+      "earnings": "2026-07-30",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "D": {
+      "earnings": "2026-07-30",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "AEP": {
+      "earnings": "2026-07-30",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "BABA": {
+      "earnings": "2026-08-28",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": "2026-06-11",
+      "exDivSource": "fmp",
+      "exDivFetchedAt": "2026-06-07"
+    },
+    "BIDU": {
+      "earnings": "2026-08-19",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "JD": {
+      "earnings": "2026-08-11",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "PDD": {
+      "earnings": "2026-08-25",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-06-07",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "NIO": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "UVXY": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "SQQQ": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "TQQQ": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    },
+    "ARKK": {
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
+    }
+  }
+}

@@ -37,6 +37,12 @@ const path = require('path');
 const oiTracker = require('./oi-tracker');
 const { analyzeGammaEnhanced } = require('./gamma-analyzer-enhanced');
 
+// ── Shared Strategy Engine (single source of truth for scanner + discover) ───
+const {
+  analyzeTechnicals, calcScore, getDirection, selectStrategy, reconcileDirection, STRATEGIES,
+  calcRealizedVol, calcATRPct, calcSMA, calcBB, calcRSI,
+} = require('./strategy-engine');
+
 // ── ATM Contracts for Strategy Builder ───────────────────────────────────────
 const { saveATMContracts } = require('./save-atm-contracts');
 
@@ -67,9 +73,26 @@ function loadWatchlistData() {
 }
 
 // ── Earnings Calendar ─────────────────────────────────────────────────────────
+// Prefers new event-calendar.json (has earnings + exDiv per symbol).
+// Falls back to old earnings-calendar.json (earnings only).
 let EARNINGS_CALENDAR = null;
+/** Invalidate cached calendar so next call reads fresh from disk. */
+function invalidateEarningsCache() { EARNINGS_CALENDAR = null; }
 function loadEarningsCalendar() {
   if (EARNINGS_CALENDAR) return EARNINGS_CALENDAR;
+  // Try new format first (written by scripts/refresh-event-calendar.js)
+  const newPath = path.join(__dirname, '..', 'web', 'scanner', 'event-calendar.json');
+  if (fs.existsSync(newPath)) {
+    try {
+      const cal = JSON.parse(fs.readFileSync(newPath, 'utf8'));
+      EARNINGS_CALENDAR = {};
+      for (const [sym, data] of Object.entries(cal.symbols || {})) {
+        EARNINGS_CALENDAR[sym] = (data && typeof data === 'object') ? data.earnings : data;
+      }
+      return EARNINGS_CALENDAR;
+    } catch (err) { /* fall through */ }
+  }
+  // Fall back to old format
   const calendarPath = path.join(__dirname, 'earnings-calendar.json');
   if (fs.existsSync(calendarPath)) {
     try {
@@ -142,7 +165,7 @@ const sleep  = ms => new Promise(r => setTimeout(r, ms));
 const jitter = (base=150) => base + Math.random()*150;
 
 function nextFridayISO() {
-  const d = new Date(); d.setHours(0,0,0,0);
+  const d = new Date(); d.setHours(12,0,0,0); // noon avoids UTC midnight off-by-one
   const day = d.getDay();
   d.setDate(d.getDate() + (day <= 5 ? (5-day)||7 : 6));
   return d.toISOString().split('T')[0];
@@ -155,7 +178,7 @@ function getThirdFriday() {
 
   // Start with first day of current month
   let d = new Date(year, month, 1);
-  d.setHours(0, 0, 0, 0);
+  d.setHours(12, 0, 0, 0); // noon avoids UTC midnight off-by-one
 
   // Find first Friday
   while (d.getDay() !== 5) {
@@ -166,9 +189,10 @@ function getThirdFriday() {
   d.setDate(d.getDate() + 14);
 
   // If third Friday is in the past, get next month's third Friday
-  now.setHours(0, 0, 0, 0);
+  now.setHours(12, 0, 0, 0);
   if (d <= now) {
     d = new Date(year, month + 1, 1);
+    d.setHours(12, 0, 0, 0);
     while (d.getDay() !== 5) {
       d.setDate(d.getDate() + 1);
     }
@@ -202,7 +226,7 @@ async function getStockSnapshot(symbol, hdrs) {
            volume:b.v||0, open:b.o||0, high:b.h||0, low:b.l||0, prevClose };
 }
 
-async function getStockBars(symbol, hdrs, days=250) {
+async function getStockBars(symbol, hdrs, days=400) {
   const end=new Date(), start=new Date(); start.setDate(start.getDate()-days);
   const url = `${ALPACA_DATA}/v2/stocks/${symbol}/bars?timeframe=1Day`
     + `&start=${start.toISOString().split('T')[0]}&end=${end.toISOString().split('T')[0]}&limit=500&adjustment=split`;
@@ -378,69 +402,8 @@ function mergeOI(contracts, oiMap) {
   return contracts;
 }
 
-// ── Technicals ────────────────────────────────────────────────────────────────
-const calcSMA = (prices,n) => prices.length<n ? null : prices.slice(-n).reduce((a,b)=>a+b,0)/n;
-
-function calcBB(prices, n=20, k=2) {
-  if (prices.length<n) return null;
-  const sl=prices.slice(-n), sma=sl.reduce((a,b)=>a+b,0)/n;
-  const sd=Math.sqrt(sl.map(p=>(p-sma)**2).reduce((a,b)=>a+b,0)/n);
-  return {upper:sma+k*sd, middle:sma, lower:sma-k*sd, width:(k*sd*2/sma)*100};
-}
-
-function calcRSI(prices, n=14) {
-  if (prices.length<n+1) return null;
-  const sl=prices.slice(-(n+1)), diffs=sl.slice(1).map((p,i)=>p-sl[i]);
-  const avgG=diffs.filter(d=>d>0).reduce((a,b)=>a+b,0)/n;
-  const avgL=diffs.filter(d=>d<0).map(Math.abs).reduce((a,b)=>a+b,0)/n;
-  return avgL===0?100:100-100/(1+avgG/avgL);
-}
-
-function analyzeTechnicals(bars, spot) {
-  const closes=bars.map(b=>b.c), rsi=calcRSI(closes), bb=calcBB(closes);
-  const sma50=calcSMA(closes,50), sma100=calcSMA(closes,100), sma200=calcSMA(closes,200), recent=closes.slice(-20);
-  let rsiState='Neutral';
-  if (rsi!==null) { if(rsi<20)rsiState='Oversold'; else if(rsi<30)rsiState='Near Oversold'; else if(rsi>80)rsiState='Overbought'; else if(rsi>70)rsiState='Near Overbought'; }
-  let trendScore=0.5;
-  if (sma50&&sma100) { if(spot>sma50&&sma50>sma100)trendScore=0.8; else if(spot<sma50&&sma50<sma100)trendScore=0.2; }
-  else if (sma50) trendScore=spot>sma50?0.65:0.35;
-  const trendState=trendScore>0.6?'Bullish':trendScore<0.4?'Bearish':'Neutral';
-  const bbW=bb?.width??0, volState=bbW<5?'Squeeze':bbW>20?'High Volatility':bbW>12?'High':'Normal';
-  const bbSeries=[]; for(let i=19;i<bars.length;i++){const v=calcBB(bars.slice(i-19,i+1).map(b=>b.c));if(v)bbSeries.push({t:bars[i].t,upper:v.upper,middle:v.middle,lower:v.lower});}
-  const rsiSeries=[]; for(let i=14;i<bars.length;i++){const v=calcRSI(bars.slice(i-14,i+1).map(b=>b.c));if(v!==null)rsiSeries.push({t:bars[i].t,rsi:v});}
-
-  // Calculate derived fields
-  const aboveSMA50 = sma50 ? spot > sma50 : null;
-  const aboveSMA100 = sma100 ? spot > sma100 : null;
-  const aboveSMA200 = sma200 ? spot > sma200 : null;
-  const realizedVol30d = calcRealizedVol(closes);
-  const atrPct = calcATRPct(closes, spot);
-
-  return { rsi, sma50, sma100, sma200, bb, avgScore:trendScore,
-    rsiEngine:{state:rsiState}, trendEngine:{state:trendState,score:trendScore},
-    volatilityEngine:{state:volState,squeeze:bbW<5},
-    sr:{support1:Math.min(...recent),resistance1:Math.max(...closes)},
-    priceHistory:bars, bbSeries, rsiSeries,
-    aboveSMA50, aboveSMA100, aboveSMA200, realizedVol30d, atrPct };
-}
-
-// ── Realized Volatility & ATR ─────────────────────────────────────────────────
-function calcRealizedVol(closes) {
-  if (!closes || closes.length < 30) return null;
-  const recent = closes.slice(-30);
-  const returns = recent.slice(1).map((p, i) => Math.log(p / recent[i]));
-  const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
-  const variance = returns.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / returns.length;
-  return Math.sqrt(variance * 252); // annualized
-}
-
-function calcATRPct(closes, price) {
-  if (!closes || closes.length < 15) return 0.02; // default 2%
-  const ranges = closes.slice(-14).map((p, i, arr) =>
-    i === 0 ? 0 : Math.abs(arr[i] - arr[i-1]) / arr[i-1]
-  );
-  return ranges.slice(1).reduce((a, b) => a + b, 0) / 13;
-}
+// ── Technicals, Scoring, Strategy Selection ──────────────────────────────────
+// All imported from strategy-engine.js (shared with API)
 
 // ── IV Rank ───────────────────────────────────────────────────────────────────
 function calcIVRank(symbol, currentIV) {
@@ -524,156 +487,7 @@ function analyzeGamma(contracts, spot, dteMin, dteMax) {
   return { analysis:{put_wall:pw,call_wall:cw,gamma_flip:gammaFlip,band_width_pct:bandWidth,position_in_band_pct:Math.round(posInBand),confidence_score:confidence,contracts_analyzed:contracts.length,dte_range:{min:dteMin,max:dteMax},topStrikes}, condorGate:{condorAllowed,suggestedStrikes}, ivData:{atmIv,ivLevel,ivByExpiry} };
 }
 
-// ── Scoring ───────────────────────────────────────────────────────────────────
-function calcScore(gammaData, technicalData) {
-  const {confidence_score:cs=0,band_width_pct:bw=30}=gammaData.analysis;
-  const hasGex=(gammaData.analysis.topStrikes||[]).some(s=>Math.abs(s.gamma_exposure)>0);
-  const hasOI=(gammaData.analysis.topStrikes||[]).some(s=>(s.call_oi+s.put_oi)>0);
-  let gammaPillar;
-  if(hasGex){const wallQ=Math.min(1,cs*1.5),bandQ=bw>=3&&bw<=15?1:bw<3?bw/3:Math.max(0,1-(bw-15)/15);gammaPillar=Math.round((wallQ*0.6+bandQ*0.4)*40);}
-  else if(hasOI){const bandQ=bw>=3&&bw<=15?1:bw<3?bw/3:Math.max(0,1-(bw-15)/15);gammaPillar=Math.round(bandQ*28);}
-  else{const rsi=technicalData.rsi??50,bbW=technicalData.bb?.width??15;const rsiScore=rsi>20&&rsi<80?1-Math.abs(rsi-50)/50:0.2,bbScore=bbW>=3&&bbW<=15?1:bbW<3?bbW/3:Math.max(0,1-(bbW-15)/15);gammaPillar=Math.round((rsiScore*0.5+bbScore*0.5)*22);}
-  const iv=gammaData.ivData?.atmIv, ivScore=iv?(iv>20&&iv<50?1:iv<20?iv/20:Math.max(0,1-(iv-50)/50)):0.6;
-  const ivPillar=Math.round(ivScore*35), ts=technicalData.trendEngine?.score??0.5, trendPillar=Math.round((0.5+Math.abs(ts-0.5))*25);
-  return {total:gammaPillar+ivPillar+trendPillar, pillars:{gamma:gammaPillar,iv:ivPillar,trend:trendPillar}, hasOptions:hasGex||hasOI};
-}
-
-function getDirection(gammaData, technicalData) {
-  const ts=technicalData.trendEngine?.score??0.5, cs=gammaData.analysis.confidence_score;
-  if(ts>0.65&&cs>0.4)return'bullish'; if(ts<0.35&&cs>0.4)return'bearish'; return'neutral';
-}
-
-const STRATEGIES={
-  iron_condor:     {name:'Iron Condor',     code:'iron_condor',      icon:'🦅',reasons:['Strong gamma walls identified','Optimal band width for premium','Neutral regime confirmed','Sell both sides for income']},
-  iron_butterfly:  {name:'Iron Butterfly',  code:'iron_butterfly',   icon:'🦋',reasons:['Gamma band exists but narrow','Tighter profit zone, higher premium','Lower risk than condor','Benefits from low volatility']},
-  bull_put_spread: {name:'Bull Put Spread', code:'bull_put_spread',  icon:'📈',reasons:['Bullish trend confirmed','Put wall provides strong support','Collect premium with defined risk','Theta decay works in your favour']},
-  bear_call_spread:{name:'Bear Call Spread',code:'bear_call_spread', icon:'📉',reasons:['Bearish trend identified','Call wall acts as resistance','Defined risk, defined reward','Premium income in downtrend']},
-  broken_wing_butterfly:{name:'Broken Wing Butterfly',code:'broken_wing_butterfly',icon:'🦗',reasons:['Gamma wall provides dealer floor/ceiling','Credit entry — zero risk on one side','Wider band favours asymmetric structure','IV supports sufficient credit collection']},
-};
-
-// ── Broken Wing Butterfly Strike Selection ────────────────────────────────────
-function roundToStrike(price, basePrice) {
-  if (basePrice < 50)  return Math.round(price);
-  if (basePrice < 200) return Math.round(price / 2.5) * 2.5;
-  return Math.round(price / 5) * 5;
-}
-
-function calculateBWBStrikes(data, direction = 'put') {
-  const price = data.snapshot?.price || data.price || 0;
-  const pw = data.gammaData?.analysis?.put_wall || price * 0.93;
-  const cw = data.gammaData?.analysis?.call_wall || price * 1.07;
-
-  if (direction === 'put') {
-    const body = roundToStrike(pw, price);
-    const upperWing = roundToStrike(body + (price - body) * 0.6, price);
-    const upperWidth = upperWing - body;
-    const lowerWing = roundToStrike(body - (upperWidth * 1.7), price);
-    return {
-      direction: 'put', subtype: 'put_bwb',
-      longPutUpper: upperWing, shortPut: body, longPutLower: lowerWing,
-      upperWidth, lowerWidth: body - lowerWing,
-      maxProfitZone: `$${body}`, zeroRiskAbove: `$${upperWing}`, maxLossBelow: `$${lowerWing}`,
-      notes: `Body at $${body} gamma wall. Zero risk above $${upperWing}. Wider lower wing collects credit.`
-    };
-  }
-
-  if (direction === 'call') {
-    const body = roundToStrike(cw, price);
-    const lowerWing = roundToStrike(body - (body - price) * 0.6, price);
-    const lowerWidth = body - lowerWing;
-    const upperWing = roundToStrike(body + (lowerWidth * 1.7), price);
-    return {
-      direction: 'call', subtype: 'call_bwb',
-      longCallLower: lowerWing, shortCall: body, longCallUpper: upperWing,
-      lowerWidth, upperWidth: upperWing - body,
-      maxProfitZone: `$${body}`, zeroRiskBelow: `$${lowerWing}`, maxLossAbove: `$${upperWing}`,
-      notes: `Body at $${body} gamma wall. Zero risk below $${lowerWing}. Wider upper wing collects credit.`
-    };
-  }
-  return null;
-}
-
-function scoreBWB(gammaData, bwbStrikes, price) {
-  let bonus = 0;
-  const { confidence_score, put_wall, call_wall } = gammaData.analysis;
-  const atmIv = gammaData.ivData?.atmIv || 0;
-
-  // Bonus: gamma wall confidence is high
-  if (confidence_score > 0.6) bonus += 5;
-
-  // Bonus: body is at gamma wall (within 2.5)
-  const bodyAtWall = bwbStrikes.direction === 'put'
-    ? Math.abs(bwbStrikes.shortPut - put_wall) <= 2.5
-    : Math.abs((bwbStrikes.shortCall || 0) - call_wall) <= 2.5;
-  if (bodyAtWall) bonus += 5;
-
-  // Bonus: IV in sweet spot (30-50%)
-  if (atmIv >= 0.30 && atmIv <= 0.50) bonus += 5;
-
-  // Bonus: price has buffer above upper put wing
-  if (bwbStrikes.direction === 'put' && price > 0) {
-    const bufferPct = (price - bwbStrikes.longPutUpper) / price;
-    if (bufferPct > 0.03) bonus += 3;
-  }
-
-  // Penalty: IV too high (>60%)
-  if (atmIv > 0.60) bonus -= 5;
-
-  return Math.max(0, bonus);
-}
-
-// ── Strategy Selection (updated with BWB) ─────────────────────────────────────
-function selectStrategy(gammaData, direction, snapshotPrice) {
-  // 1. Iron Condor: strong walls, optimal band (3-15%)
-  if (gammaData.condorGate.condorAllowed) return STRATEGIES.iron_condor;
-
-  // 2. Broken Wing Butterfly: wider band (>15%) OR moderate confidence + strong single wall
-  const bw = gammaData.analysis.band_width_pct || 0;
-  const conf = gammaData.analysis.confidence_score || 0;
-  const atmIv = gammaData.ivData?.atmIv || 0;
-  const bwbEligible = (
-    (bw > 15 && bw <= 40 && conf >= 0.15) ||           // wider band, walls exist (relaxed conf for wider bands)
-    (bw > 10 && bw <= 35 && conf >= 0.30 && atmIv >= 0.25)  // moderate band + decent conf + good IV
-  );
-
-  if (bwbEligible) {
-    const bwbDir = (direction === 'bearish') ? 'call' : 'put';
-    const bwbStrikes = calculateBWBStrikes(
-      { snapshot: { price: snapshotPrice }, gammaData },
-      bwbDir
-    );
-    const bwbBonus = scoreBWB(gammaData, bwbStrikes, snapshotPrice);
-
-    if (bwbBonus >= 0) {  // any non-negative = eligible
-      const strat = { ...STRATEGIES.broken_wing_butterfly };
-      strat.subtype = bwbStrikes.subtype;
-      strat.strikes = bwbStrikes;
-      strat.bwbBonus = bwbBonus;
-      strat.characteristics = {
-        entryType: 'credit',
-        zeroRiskSide: bwbDir === 'put' ? 'above' : 'below',
-        maxLossSide: bwbDir === 'put' ? 'below' : 'above',
-        dteIdeal: '21-35',
-        riskProfile: `low — only at risk on severe ${bwbDir === 'put' ? 'downside' : 'upside'}`
-      };
-      strat.reasons = [
-        `Strong ${bwbDir} gamma wall at $${bwbDir === 'put' ? gammaData.analysis.put_wall : gammaData.analysis.call_wall} acts as dealer ${bwbDir === 'put' ? 'floor' : 'ceiling'}`,
-        `Credit entry — zero risk if stock stays ${bwbDir === 'put' ? 'above' : 'below'} $${bwbDir === 'put' ? bwbStrikes.zeroRiskAbove : bwbStrikes.zeroRiskBelow}`.replace(/\$/g, ''),
-        `IV at ${atmIv > 1 ? Math.round(atmIv) : Math.round(atmIv * 100)}% provides sufficient premium for asymmetric credit`,
-        `Band width ${bw.toFixed(1)}% — too wide for Iron Condor, BWB preferred`
-      ];
-      return strat;
-    }
-  }
-
-  // 3. Directional spreads
-  if (direction === 'bullish') return STRATEGIES.bull_put_spread;
-  if (direction === 'bearish') return STRATEGIES.bear_call_spread;
-
-  // 4. Fallback
-  return STRATEGIES.iron_butterfly;
-}
-
+// Scoring, direction, strategy selection — all from strategy-engine.js
 // ── R2 Upload ─────────────────────────────────────────────────────────────────
 async function uploadToR2(cfg, key, body) {
   const {S3Client,PutObjectCommand}=require('@aws-sdk/client-s3');
@@ -744,7 +558,7 @@ async function appendHistory(cfg, symbol, type, entry) {
 // Calculate weekly ATM premium from option contracts
 function calcWeeklyPremium(contracts, spot) {
   const expiryStr = nextFridayISO();
-  const weekly    = contracts.filter(c => { const d=calcDTE(c.expiry||expiryStr); return d>=0&&d<=8; });
+  const weekly    = contracts.filter(c => { const d=calcDTE(c.expiry||expiryStr); return d>=1&&d<=8; });
   if (!weekly.length) return null;
   const atmStrike = [...new Set(weekly.map(c=>c.strike))].sort((a,b)=>Math.abs(a-spot)-Math.abs(b-spot))[0];
   if (!atmStrike) return null;
@@ -768,6 +582,7 @@ function calcMonthlyPremium(contracts, spot) {
   // Look for contracts expiring within 3 days of 3rd Friday (to account for weekends/holidays)
   const monthly = contracts.filter(c => {
     const dte = calcDTE(c.expiry || expiryStr);
+    if (dte < 1) return false; // never select expired/expiring-today contracts
     const targetDTE = calcDTE(expiryStr);
     return Math.abs(dte - targetDTE) <= 3;
   });
@@ -897,6 +712,12 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
       withOI = allContracts.filter(c => c.openInterest > 0).length;
       log(`Contracts: ${contractCount} | With OI: ${withOI > 0 ? C.green(String(withOI)) : withOI} | Source: ${oiSourceUsed}`);
 
+      // Save OI history BEFORE delta calc so today's snapshot is available
+      if (dailyMode) {
+        try { oiTracker.saveOIHistory(REPORTS_DIR, symbol, date, allContracts); }
+        catch (e) { log(C.dim(`OI history pre-save failed: ${e.message}`)); }
+      }
+
       // Calculate OI delta for enhanced gamma analysis
       const oiDeltaData = oiTracker.calculateOIDelta(
         REPORTS_DIR, symbol, date, allContracts,
@@ -912,12 +733,17 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
     }
   }
 
-  log(`Put wall $${gammaData.analysis.put_wall.toFixed(2)} | Call wall $${gammaData.analysis.call_wall.toFixed(2)} | Confidence ${(gammaData.analysis.confidence_score*100).toFixed(0)}%`);
+  const confVal = gammaData.analysis.confidence_score;
+  const confStr = confVal !== null
+    ? `${(confVal*100).toFixed(0)}%`
+    : C.red('NULL (no walls — OI data missing)');
+  log(`Put wall $${gammaData.analysis.put_wall.toFixed(2)} | Call wall $${gammaData.analysis.call_wall.toFixed(2)} | Confidence ${confStr} | Quality: ${gammaData.analysis.data_quality}`);
 
   // 3. Score + strategy
   const {total:opportunityScore, pillars, hasOptions} = calcScore(gammaData, technicalData);
-  const direction = getDirection(gammaData, technicalData);
-  const strategy  = selectStrategy(gammaData, direction, spot);
+  const trendDirection = getDirection(gammaData, technicalData);
+  const strategy  = selectStrategy(gammaData, trendDirection, spot, technicalData);
+  const direction = reconcileDirection(trendDirection, strategy.code);
   log(`Score: ${C.bold(opportunityScore.toFixed(1))} | ${direction} | ${strategy.name}`);
 
   // Calculate ivRank and add to gammaData
@@ -959,8 +785,9 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
     },
     snapshot,
     technicalData: { rsi:technicalData.rsi, sma50:technicalData.sma50, sma100:technicalData.sma100, sma200:technicalData.sma200,
-      bb:technicalData.bb, rsiEngine:technicalData.rsiEngine, trendEngine:technicalData.trendEngine,
-      volatilityEngine:technicalData.volatilityEngine, sr:technicalData.sr, avgScore:technicalData.avgScore,
+      bb:technicalData.bb, adx14:technicalData.adx14, rsiEngine:technicalData.rsiEngine, trendEngine:technicalData.trendEngine,
+      volatilityEngine:technicalData.volatilityEngine, momentumFlag:technicalData.momentumFlag,
+      sr:technicalData.sr, avgScore:technicalData.avgScore,
       priceHistory:technicalData.priceHistory, bbSeries:technicalData.bbSeries, rsiSeries:technicalData.rsiSeries,
       aboveSMA50:technicalData.aboveSMA50, aboveSMA100:technicalData.aboveSMA100, aboveSMA200:technicalData.aboveSMA200,
       realizedVol30d:technicalData.realizedVol30d, atrPct:technicalData.atrPct },
@@ -1038,8 +865,9 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
           report.meta.dataSource.greeks = daily.meta.dataSource.greeks;
           // Recalculate score with OI-enriched gamma data
           const {total:oiScore, pillars:oiPillars, hasOptions:oiHasOpts} = calcScore(report.gammaData, technicalData);
-          const oiDir = getDirection(report.gammaData, technicalData);
-          const oiStrat = selectStrategy(report.gammaData, oiDir, spot);
+          const oiTrendDir = getDirection(report.gammaData, technicalData);
+          const oiStrat = selectStrategy(report.gammaData, oiTrendDir, spot, technicalData);
+          const oiDir = reconcileDirection(oiTrendDir, oiStrat.code);
           report.scoring = {
             opportunityScore: oiStrat.bwbBonus ? oiScore + oiStrat.bwbBonus : oiScore,
             pillars: oiPillars, direction: oiDir, strategy: oiStrat, hasOptions: oiHasOpts,
@@ -1099,7 +927,7 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
       callWall:  +gammaData.analysis.call_wall.toFixed(2),
       gammaFlip: +gammaData.analysis.gamma_flip.toFixed(2),
       bandWidth: +gammaData.analysis.band_width_pct.toFixed(2),
-      confidence:+gammaData.analysis.confidence_score.toFixed(3),
+      confidence: gammaData.analysis.confidence_score !== null ? +gammaData.analysis.confidence_score.toFixed(3) : null,
     };
     await appendHistory(cfg, symbol, 'walls', walls).catch(()=>{});
     log(C.dim(`Walls history saved`));
@@ -1134,21 +962,34 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
     }
   }
 
-  // 7. Manifest
+  // 7. Manifest — use report.scoring (includes OI preservation from daily snapshot)
+  const finalStrat = report.scoring.strategy;
   const manifest = upsertManifest(symbol, date, {
-    opportunityScore: strategy.bwbBonus ? opportunityScore + strategy.bwbBonus : opportunityScore,
-    direction,
-    strategy:strategy.name, strategyCode:strategy.code, strategyIcon:strategy.icon,
-    ...(strategy.subtype ? { strategySubtype: strategy.subtype } : {}),
-    price:snapshot.price, changePercent:snapshot.changePercent,
-    iv:atmIv??null, hasOptions
+    opportunityScore: report.scoring.opportunityScore,
+    direction: report.scoring.direction,
+    strategy: finalStrat.name, strategyCode: finalStrat.code, strategyIcon: finalStrat.icon,
+    ...(finalStrat.subtype ? { strategySubtype: finalStrat.subtype } : {}),
+    price: snapshot.price, changePercent: snapshot.changePercent,
+    iv: report.gammaData.ivData?.atmIv ?? null, hasOptions: report.scoring.hasOptions
   });
 
   // 8. Upload to R2
   if (!noUpload && cfg.r2?.accountId) {
     try {
+      // Debug: verify OI preservation survived to upload point
+      const oi = report.gammaData?.analysis?.contracts_analyzed || 0;
+      const src = report.meta?.dataSource?.openInterest || 'none';
+      if (intradayMode) {
+        if (oi === 0 && src === 'none') log(C.dim(`R2 upload: NO OI preserved (${src})`));
+        else log(C.dim(`R2 upload: OI preserved (${oi} contracts, ${src})`));
+      }
       const body = JSON.stringify(report);
-      await uploadToR2(cfg.r2, `reports/${symbol}/latest.json`, body);  // always current
+      // Intraday with no OI: skip latest.json upload to avoid clobbering daily OI data on R2
+      if (intradayMode && oi === 0 && src === 'none') {
+        log(C.dim(`Skipping latest.json upload (no OI — would clobber daily snapshot)`));
+      } else {
+        await uploadToR2(cfg.r2, `reports/${symbol}/latest.json`, body);  // always current
+      }
       await uploadToR2(cfg.r2, `reports/${symbol}/${tsKey}`,     body);  // timestamped history
       // Only daily/full runs with real OI data write {date}.json — never overwrite with proxy data
       if (!intradayMode && gammaData.analysis.contracts_analyzed > 0) {

@@ -70,7 +70,7 @@ node index.js --once
 ps aux | grep "node index.js" | grep -v grep
 </pre>
 
-<h2>All Scheduled Jobs (6 total)</h2>
+<h2>All Scheduled Jobs (7 total)</h2>
 
 <table class="status-table">
   <thead>
@@ -97,6 +97,13 @@ ps aux | grep "node index.js" | grep -v grep
       <td>0 15 * * 1-5</td>
       <td><code>generaterecommendations/funnel-price.cjs</code></td>
       <td><span class="no-catchup">No</span></td>
+    </tr>
+    <tr>
+      <td>Event Calendar <span class="badge badge-daily">DAILY</span></td>
+      <td>4:15pm ET, Mon&ndash;Fri (after market close)</td>
+      <td>15 21 * * 1-5</td>
+      <td><code>scripts/refresh-event-calendar.js</code></td>
+      <td><span class="no-catchup">No (runs fresh daily)</span></td>
     </tr>
     <tr>
       <td>Weekly Premium Snapshot <span class="badge badge-weekly">WEEKLY</span></td>
@@ -201,7 +208,28 @@ ps aux | grep "node index.js" | grep -v grep
 </div>
 
 <div class="card">
-  <h3>4. Weekly Premium Snapshot <span class="badge badge-weekly">WEEKLY</span></h3>
+  <h3>4. Event Calendar Refresh <span class="badge badge-daily">DAILY</span></h3>
+  <div class="meta">Script: <code>scripts/refresh-event-calendar.js</code> | Runtime: ~2-3 min (111 Yahoo API calls)</div>
+  <p>Fetches next earnings date and ex-dividend date for all 111 watchlist symbols. Primary source: Yahoo Cloud Function (<code>yfinance</code>, per-symbol). Ex-div supplement: FMP bulk dividends API (optional, if <code>fmpApiKey</code> is set in config.json).</p>
+  <div class="flow">
+    <span class="step">Yahoo Cloud Fn /api/events/{SYM}</span><span class="arrow">&rarr;</span>
+    <span class="step">FMP /stable/dividends-calendar (bulk, optional)</span><span class="arrow">&rarr;</span>
+    <span class="step">event-calendar.json (4 copies)</span>
+  </div>
+  <p><strong>Output files (all identical content):</strong></p>
+  <ul style="margin: 4px 0 8px 20px; font-size: 14px;">
+    <li><code>web/scanner/event-calendar.json</code> — canonical (new format with provenance)</li>
+    <li><code>web/scanner/earnings-calendar.json</code> — backward compat (old format)</li>
+    <li><code>pipeline/earnings-calendar.json</code> — pipeline's <code>getEarningsDate()</code></li>
+    <li><code>web/workbench/earnings-calendar.json</code> — Movement &amp; Range page</li>
+  </ul>
+  <p><strong>Coverage:</strong> ~79/111 earnings (ETFs have no earnings), ~6/111 ex-div</p>
+  <p><strong>Provenance:</strong> each entry tagged <code>earningsSource: 'yahoo'|'fmp'</code> + <code>earningsFetchedAt</code></p>
+  <p><strong>Manual run:</strong> <code>node scripts/refresh-event-calendar.js</code> (no env vars needed for Yahoo; FMP key optional)</p>
+</div>
+
+<div class="card">
+  <h3>5. Weekly Premium Snapshot <span class="badge badge-weekly">WEEKLY</span></h3>
   <div class="meta">Script: <code>generaterecommendations/weekly-premium-snapshot.js</code> | Runtime: ~2 min</div>
   <p>Captures a canonical snapshot of ATM call/put premiums (mid price, % of stock, annualized) for all 111 symbols. Used by the Movement &amp; Range page for week-over-week premium comparisons.</p>
   <div class="flow">
@@ -215,7 +243,7 @@ ps aux | grep "node index.js" | grep -v grep
 </div>
 
 <div class="card">
-  <h3>5. Health Check <span class="badge badge-always">ALWAYS</span></h3>
+  <h3>6. Health Check <span class="badge badge-always">ALWAYS</span></h3>
   <div class="meta">Script: built-in + <code>check-scheduler-health.sh</code> | Every 5 min</div>
   <p>Monitors system health and catches up missed jobs:</p>
   <ul style="margin: 8px 0 0 20px; font-size: 14px;">

@@ -1,0 +1,454 @@
+{
+  "_lastUpdated": "2026-06-06",
+  "_source": "FMP stable API (financialmodelingprep.com)",
+  "_symbolCount": 111,
+  "_earningsCount": 40,
+  "_exDivCount": 6,
+  "_range": "2026-06-06 to 2026-09-04",
+  "symbols": {
+    "SPY": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "QQQ": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "IWM": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "DIA": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "TLT": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "XLF": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "XLK": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "XLE": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "XLY": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "XLI": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "XLP": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "XLU": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "XLB": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "EEM": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "FXI": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "GLD": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "SLV": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "USO": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "UNG": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "GDX": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "BITO": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "AAPL": {
+      "earnings": "2026-07-30",
+      "exDiv": null
+    },
+    "MSFT": {
+      "earnings": "2026-07-29",
+      "exDiv": null
+    },
+    "NVDA": {
+      "earnings": "2026-08-26",
+      "exDiv": null
+    },
+    "AMZN": {
+      "earnings": "2026-07-30",
+      "exDiv": null
+    },
+    "GOOG": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "META": {
+      "earnings": "2026-07-29",
+      "exDiv": "2026-06-15"
+    },
+    "TSLA": {
+      "earnings": "2026-07-22",
+      "exDiv": null
+    },
+    "AMD": {
+      "earnings": "2026-08-04",
+      "exDiv": null
+    },
+    "AVGO": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "NFLX": {
+      "earnings": "2026-07-16",
+      "exDiv": null
+    },
+    "ADBE": {
+      "earnings": "2026-06-11",
+      "exDiv": null
+    },
+    "CRM": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "INTC": {
+      "earnings": "2026-07-23",
+      "exDiv": null
+    },
+    "PLTR": {
+      "earnings": "2026-08-03",
+      "exDiv": null
+    },
+    "COIN": {
+      "earnings": "2026-07-30",
+      "exDiv": null
+    },
+    "RIOT": {
+      "earnings": "2026-07-30",
+      "exDiv": null
+    },
+    "MARA": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "RIVN": {
+      "earnings": "2026-08-04",
+      "exDiv": null
+    },
+    "LCID": {
+      "earnings": "2026-08-04",
+      "exDiv": null
+    },
+    "SOFI": {
+      "earnings": "2026-08-04",
+      "exDiv": null
+    },
+    "SNAP": {
+      "earnings": "2026-08-04",
+      "exDiv": null
+    },
+    "SHOP": {
+      "earnings": "2026-08-05",
+      "exDiv": null
+    },
+    "JPM": {
+      "earnings": "2026-07-14",
+      "exDiv": "2026-07-06"
+    },
+    "BAC": {
+      "earnings": "2026-07-14",
+      "exDiv": null
+    },
+    "GS": {
+      "earnings": "2026-07-14",
+      "exDiv": null
+    },
+    "MS": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "C": {
+      "earnings": "2026-07-14",
+      "exDiv": null
+    },
+    "WFC": {
+      "earnings": "2026-07-14",
+      "exDiv": null
+    },
+    "SCHW": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "XOM": {
+      "earnings": "2026-08-07",
+      "exDiv": null
+    },
+    "CVX": {
+      "earnings": "2026-08-07",
+      "exDiv": null
+    },
+    "COP": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "SLB": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "EOG": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "MPC": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "PSX": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "VLO": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "OXY": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "HES": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "HAL": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "CAT": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "DE": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "CMI": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "IR": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "EMR": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "HON": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "MMM": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "BA": {
+      "earnings": "2026-07-28",
+      "exDiv": null
+    },
+    "LMT": {
+      "earnings": "2026-07-28",
+      "exDiv": null
+    },
+    "RTX": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "GE": {
+      "earnings": "2026-07-16",
+      "exDiv": null
+    },
+    "UNH": {
+      "earnings": "2026-08-04",
+      "exDiv": "2026-06-15"
+    },
+    "PFE": {
+      "earnings": "2026-08-04",
+      "exDiv": null
+    },
+    "JNJ": {
+      "earnings": "2026-07-15",
+      "exDiv": null
+    },
+    "MRK": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "ABBV": {
+      "earnings": "2026-07-30",
+      "exDiv": null
+    },
+    "LLY": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "WMT": {
+      "earnings": "2026-08-20",
+      "exDiv": "2026-08-21"
+    },
+    "COST": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "TGT": {
+      "earnings": "2026-08-19",
+      "exDiv": null
+    },
+    "KR": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "PG": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "KO": {
+      "earnings": "2026-07-28",
+      "exDiv": "2026-06-15"
+    },
+    "PEP": {
+      "earnings": "2026-07-09",
+      "exDiv": null
+    },
+    "MDLZ": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "CL": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "GIS": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "HD": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "MCD": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "NKE": {
+      "earnings": "2026-06-30",
+      "exDiv": null
+    },
+    "NUE": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "FCX": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "NEM": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "VMC": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "MLM": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "APD": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "NEE": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "DUK": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "SO": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "D": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "AEP": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "BABA": {
+      "earnings": "2026-08-28",
+      "exDiv": "2026-06-11"
+    },
+    "BIDU": {
+      "earnings": "2026-08-19",
+      "exDiv": null
+    },
+    "JD": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "PDD": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "NIO": {
+      "earnings": "2026-09-01",
+      "exDiv": null
+    },
+    "UVXY": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "SQQQ": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "TQQQ": {
+      "earnings": null,
+      "exDiv": null
+    },
+    "ARKK": {
+      "earnings": null,
+      "exDiv": null
+    }
+  }
+}

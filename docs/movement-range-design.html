@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movement & Range — Design Document</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--forest:#0F3D2E;--forest-deep:#0B2D23;--gold:#C8A85A;--cream:#F7F4EE;--ink:#16241F;--muted:#6B7A72;--line:#E4DED2;--card:#fff;--green:#2E7D5B;--red:#B5483A;--amber:#B07F2E;--green-bg:#E7F2EC;--red-bg:#F7E8E5;--amber-bg:#F6EEDC;--grey-bg:#EFECE4;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);font-size:14px;line-height:1.7}
+.wrap{max-width:900px;margin:0 auto;padding:40px 32px 80px}
+h1{font-family:'Fraunces',serif;font-size:32px;font-weight:700;color:var(--forest);margin-bottom:4px}
+h2{font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:var(--forest);margin:40px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--line)}
+h3{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--ink);margin:24px 0 8px}
+p{margin:8px 0 12px}
+.sub{color:var(--muted);font-size:15px;margin-bottom:24px}
+code{font-family:'Space Mono',monospace;font-size:12px;background:#EDE8DC;padding:2px 6px;border-radius:3px}
+pre{font-family:'Space Mono',monospace;font-size:11.5px;background:#1a1a1a;color:#e0e0e0;padding:16px;border-radius:10px;overflow-x:auto;margin:12px 0;line-height:1.5}
+pre .c{color:#6b7280}pre .h{color:#34d399}pre .k{color:#fbbf24}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+th{text-align:left;font-family:'Space Mono',monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 12px;border-bottom:2px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+td:first-child{font-weight:600;white-space:nowrap}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:16px 0}
+.card h3{margin-top:0}
+.pill{display:inline-block;padding:3px 10px;border-radius:99px;font-family:'Space Mono';font-size:11px;font-weight:700}
+.pill.green{background:var(--green-bg);color:var(--green)}.pill.red{background:var(--red-bg);color:var(--red)}.pill.amber{background:var(--amber-bg);color:var(--amber)}.pill.grey{background:var(--grey-bg);color:var(--muted)}
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0;font-family:'Space Mono',monospace;font-size:12px}
+.flow .step{background:var(--card);border:1px solid var(--line);padding:8px 14px;border-radius:8px}
+.flow .arrow{color:var(--muted);font-size:16px}
+ol,ul{margin:8px 0 12px 24px}
+li{margin:4px 0}
+.note{background:var(--green-bg);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--forest);margin:12px 0;line-height:1.5}
+.warn{background:var(--amber-bg);color:#6d5320}
+.diagram{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin:16px 0;font-family:'Space Mono',monospace;font-size:11px;line-height:1.6;white-space:pre;overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Movement & Range — Design Document</h1>
+<p class="sub">How the page works end-to-end: data sources, pipeline dependencies, zone clustering, scoring algorithms, strategy selection, and the funnel that turns 111 symbols into a shortlist.</p>
+
+<h2>1. Architecture Overview</h2>
+
+<div class="diagram">
+Pipeline (runs on Mac Mini)            R2 CDN (Cloudflare)           Browser (workbench page)
+──────────────────────────          ──────────────────────           ────────────────────────
+Alpaca API (prices, IV, Greeks)  →  reports/{SYM}/latest.json   →   movement-range.html
+Nasdaq/Yahoo (Open Interest)     →     ↑ (uploaded per symbol)       ↑ loads 111 reports
+Strategy Engine (scores, gamma)  →     ↑                             ↑ runs shared/reaction/
+                                                                      ↑ via reaction.browser.js
+Yahoo Cloud Fn (yfinance)        →  event-calendar.json          →   ↑ earnings + ex-div
+FMP API (dividends supplement)   →     ↑                             ↑
+</div>
+
+<p>The page is <strong>100% client-side</strong>. All analytics run in the browser using <code>shared/reaction/</code> (the same CJS modules used server-side, compiled into <code>reaction.browser.js</code>). No API calls are made from the page — it reads pre-computed reports from R2.</p>
+
+<h2>2. Data Requirements</h2>
+
+<h3>2a. Per-Symbol Report (latest.json on R2)</h3>
+<p>Each of the 111 watchlist symbols has a <code>reports/{SYM}/latest.json</code> on R2, updated every 15 minutes during market hours by the pipeline.</p>
+
+<table>
+<thead><tr><th>Field</th><th>Path in JSON</th><th>Used for</th></tr></thead>
+<tbody>
+<tr><td>Spot price</td><td><code>snapshot.price</code></td><td>Position-in-range, distance to zone</td></tr>
+<tr><td>Price change %</td><td><code>snapshot.changePercent</code></td><td>Display</td></tr>
+<tr><td>Historical bars (OHLCV)</td><td><code>technicalData.priceHistory[]</code></td><td>Zone touch detection, containment, approach velocity (~276 daily bars)</td></tr>
+<tr><td>Bollinger Bands series</td><td><code>technicalData.bbSeries[]</code></td><td>Dynamic level gathering (BB upper/lower)</td></tr>
+<tr><td>RSI series</td><td><code>technicalData.rsiSeries[]</code></td><td>Available for confirmation (not currently used in scoring)</td></tr>
+<tr><td>SMA 50/100/200</td><td><code>technicalData.sma50/100/200</code></td><td>Support/resistance level candidates</td></tr>
+<tr><td>Bollinger Bands (current)</td><td><code>technicalData.bb</code></td><td>BB upper/lower as levels</td></tr>
+<tr><td>ADX(14)</td><td><code>technicalData.adx14</code></td><td>Regime classification (trending vs range-bound)</td></tr>
+<tr><td>ATR(14) %</td><td><code>technicalData.atrPct</code></td><td>Zone merge threshold, touch width, approach velocity check</td></tr>
+<tr><td>Realized Vol 30d</td><td><code>technicalData.realizedVol30d</code></td><td>IV/RV ratio (premium richness)</td></tr>
+<tr><td>Gamma put wall</td><td><code>gammaData.analysis.put_wall</code></td><td>Support level candidate</td></tr>
+<tr><td>Gamma call wall</td><td><code>gammaData.analysis.call_wall</code></td><td>Resistance level candidate</td></tr>
+<tr><td>Gamma confidence</td><td><code>gammaData.analysis.confidence_score</code></td><td>Iron Butterfly gate (requires >0.6)</td></tr>
+<tr><td>ATM IV</td><td><code>gammaData.ivData.atmIv</code></td><td>IV/RV ratio (premium richness)</td></tr>
+<tr><td>Top strikes (OI)</td><td><code>gammaData.analysis.topStrikes[]</code></td><td>Liquidity proxy (sum of call_oi + put_oi)</td></tr>
+</tbody>
+</table>
+
+<h3>2b. Event Calendar (event-calendar.json)</h3>
+<p>Written daily by <code>scripts/refresh-event-calendar.js</code>. Primary source: Yahoo Cloud Function (<code>yfinance</code>). Ex-div supplement: FMP API.</p>
+<table>
+<thead><tr><th>Field</th><th>Source</th><th>Coverage</th></tr></thead>
+<tbody>
+<tr><td>Next earnings date</td><td>Yahoo (yfinance)</td><td>79/111 (ETFs have no earnings)</td></tr>
+<tr><td>Next ex-dividend date</td><td>FMP bulk + Yahoo</td><td>6/111</td></tr>
+<tr><td>Provenance</td><td><code>earningsSource: 'yahoo'|'fmp'</code></td><td>Every entry tagged</td></tr>
+</tbody>
+</table>
+
+<h3>2c. Pipeline Jobs That Feed This Page</h3>
+<table>
+<thead><tr><th>Job</th><th>Schedule</th><th>What it produces</th></tr></thead>
+<tbody>
+<tr><td>Fast pipeline</td><td>Every 15 min, market hours</td><td>Prices, IV, Greeks, bars → <code>latest.json</code> on R2</td></tr>
+<tr><td>Daily OI enrichment</td><td>9:32am ET, Mon-Fri</td><td>Open Interest from Nasdaq/Yahoo → enriches <code>latest.json</code></td></tr>
+<tr><td>Event calendar refresh</td><td>4:15pm ET, Mon-Fri</td><td>Earnings + ex-div dates → <code>event-calendar.json</code></td></tr>
+</tbody>
+</table>
+
+<div class="note">The page works without the pipeline running — it reads stale R2 data. But results are only meaningful when reports are <24 hours old.</div>
+
+<h2>3. Level Gathering & Zone Clustering</h2>
+
+<h3>3a. Raw Level Sources</h3>
+<p>For each symbol, the engine gathers up to 9 raw price levels:</p>
+<table>
+<thead><tr><th>Level</th><th>Source</th><th>Type</th></tr></thead>
+<tbody>
+<tr><td>Gamma put wall</td><td><code>gammaData.analysis.put_wall</code></td><td>Static</td></tr>
+<tr><td>Gamma call wall</td><td><code>gammaData.analysis.call_wall</code></td><td>Static</td></tr>
+<tr><td>SMA 50</td><td><code>technicalData.sma50</code></td><td>Dynamic</td></tr>
+<tr><td>SMA 100</td><td><code>technicalData.sma100</code></td><td>Dynamic</td></tr>
+<tr><td>SMA 200</td><td><code>technicalData.sma200</code></td><td>Dynamic</td></tr>
+<tr><td>Bollinger lower</td><td><code>technicalData.bb.lower</code></td><td>Dynamic (excluded if spot < BB lower)</td></tr>
+<tr><td>Bollinger upper</td><td><code>technicalData.bb.upper</code></td><td>Dynamic (excluded if spot > BB upper)</td></tr>
+<tr><td>20-day swing low</td><td>Min of last 20 bar lows</td><td>Static</td></tr>
+<tr><td>20-day swing high</td><td>Max of last 20 bar highs</td><td>Static</td></tr>
+</tbody>
+</table>
+
+<p>Levels below spot → <strong>support</strong>. Levels above spot → <strong>resistance</strong>. Levels >15% from spot are filtered out.</p>
+
+<h3>3b. ATR-Based Zone Merging</h3>
+<p>Levels within <code>0.6 × ATR(14) × spot</code> of each other merge into one <strong>zone</strong>. The zone retains all source labels and pools touches across merged levels.</p>
+
+<pre>
+<span class="c">// Example: AVGO spot $1,412</span>
+<span class="c">// ATR = 2.1% → merge threshold = 0.6 × 0.021 × 1412 = $17.79</span>
+
+Put wall $1,380  ─┐
+SMA50   $1,386   ─┼─ merge → zone $1,378–$1,391  SUPPORT
+20d low $1,389   ─┘           (3 sources, touches pooled)
+
+Call wall $1,460 ─┐
+BB upper  $1,463 ─┴─ merge → zone $1,455–$1,468  RESISTANCE
+</pre>
+
+<h3>3c. Touch Detection Width</h3>
+<p>A candle "touches" a zone if it enters the zone's touch band: <code>zone edges ± 0.25 × ATR(14) × spot</code>.</p>
+<p>Consecutive bars inside the same zone count as <strong>one touch event</strong> (dedup).</p>
+
+<div class="card">
+<h3>Module: <code>shared/reaction/zones.cjs</code></h3>
+<p><code>clusterLevels(spot, levels, atrPct)</code> → <code>{ supportZones[], resistanceZones[] }</code></p>
+<p><code>gatherLevels(spot, opts)</code> → raw levels from report data</p>
+<p><code>nearestScoreableZones(spot, sStats, rStats)</code> → closest tested zone pair for S and R</p>
+</div>
+
+<h2>4. Touch/Hold Analysis & Wilson Smoothing</h2>
+
+<h3>4a. Touch Classification</h3>
+<p>For each touch event on a zone, the engine classifies the outcome within a 5-bar window:</p>
+
+<table>
+<thead><tr><th>Zone type</th><th>Outcome</th><th>Condition</th></tr></thead>
+<tbody>
+<tr><td rowspan="4">Support</td><td><span class="pill green">Hold</span></td><td>Close recovers +3% from touch close within 5 bars</td></tr>
+<tr><td><span class="pill red">Break</span></td><td>Close falls >1% below zone bottom for 2+ consecutive bars</td></tr>
+<tr><td><span class="pill amber">Fake break</span></td><td>Trades below zone intraday but closes back inside within 2 bars</td></tr>
+<tr><td><span class="pill grey">Pending</span></td><td>Touch on one of the last 5 bars — window not yet complete</td></tr>
+<tr><td rowspan="4">Resistance</td><td><span class="pill green">Reject</span></td><td>Close falls −3% from touch close within 5 bars</td></tr>
+<tr><td><span class="pill red">Breakout</span></td><td>Close rises >1% above zone top for 2+ consecutive bars</td></tr>
+<tr><td><span class="pill amber">Fake breakout</span></td><td>Trades above zone intraday but closes back inside within 2 bars</td></tr>
+<tr><td><span class="pill grey">Pending</span></td><td>Touch on last 5 bars — unresolved</td></tr>
+</tbody>
+</table>
+
+<h3>4b. Wilson Score Smoothing</h3>
+<p>Raw rates (e.g. 6/7 = 86%) overstate confidence on small samples. The engine uses the <strong>Wilson score interval centre</strong> to smooth rates:</p>
+<pre>
+<span class="c">// Wilson score interval (z = 1.96 for 95% CI)</span>
+centre = (p + z²/2n) / (1 + z²/n)
+margin = (z / (1+z²/n)) × sqrt(p(1-p)/n + z²/4n²)
+
+<span class="c">// Examples:</span>
+1/1   → smoothed ~60%  <span class="c">(single observation heavily penalized)</span>
+6/7   → smoothed ~73%  <span class="c">(close to raw 86% but conservative)</span>
+14/20 → smoothed ~68%  <span class="c">(close to raw 70%)</span>
+</pre>
+
+<h3>4c. Minimum Touch Gate (n ≥ 3)</h3>
+<p>Zones with fewer than 3 touches are flagged <code>untested</code>: score = 0, excluded from all scoring and strategy selection. This prevents "100% bounce rate" from a single observation.</p>
+
+<div class="card">
+<h3>Module: <code>shared/reaction/stats.cjs</code></h3>
+<p><code>analyzeZone(candles, zone, type)</code> → <code>{ touchCount, holdCount, smoothedRate, ciLow, ciHigh, score, untested, pendingCount }</code></p>
+</div>
+
+<h2>5. Zone Score (S/R Score)</h2>
+
+<p>Each zone gets a <strong>0–100 score</strong> based on its historical reaction quality:</p>
+
+<table>
+<thead><tr><th>Component</th><th>Weight</th><th>Measures</th></tr></thead>
+<tbody>
+<tr><td>Smoothed hold/reject rate</td><td>30%</td><td>Wilson-smoothed rate of successful reactions</td></tr>
+<tr><td>Touch count (reliability)</td><td>15%</td><td>More touches = more reliable signal (caps at 10)</td></tr>
+<tr><td>Low failure rate</td><td>15%</td><td>Fewer breaks/breakouts = stronger level</td></tr>
+<tr><td>Volume confirmation</td><td>10%</td><td>% of touches where volume > 20-day average</td></tr>
+<tr><td>Gamma wall alignment</td><td>5%</td><td>Bonus if gamma wall is within 2% of the zone</td></tr>
+<tr><td>Multi-source bonus</td><td>5%</td><td>Bonus if the zone merged 2+ distinct level sources</td></tr>
+</tbody>
+</table>
+
+<p>The zone score is displayed as the <strong>S/R Score</strong> column in the table (S = nearest support zone score, R = nearest resistance zone score). Zones with < 3 touches show "n<3" instead of a score.</p>
+
+<div class="card">
+<h3>Module: <code>shared/reaction/stats.cjs → computeZoneScore()</code></h3>
+</div>
+
+<h2>6. Regime Classification</h2>
+
+<p>Each symbol gets a deterministic <strong>regime</strong> label. The classifier runs in strict precedence order:</p>
+
+<table>
+<thead><tr><th>#</th><th>Regime</th><th>Condition</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><span class="pill red">breakout_up / breakout_down</span></td><td>Spot closed beyond a scoreable zone's touch boundary</td></tr>
+<tr><td>2</td><td><span class="pill amber">trending</span></td><td>ADX > 25 (checked BEFORE proximity — falling-knife protection)</td></tr>
+<tr><td>3</td><td><span class="pill green">testing_support / testing_resistance</span></td><td>Spot within 0.5 × ATR of a scoreable zone</td></tr>
+<tr><td>4</td><td><span class="pill green">range_bound</span></td><td>Containment > 70% over 45 bars AND ADX < 20 AND both rails scoreable</td></tr>
+<tr><td>5</td><td><span class="pill grey">unclear</span></td><td>None of the above (confidence capped at 40)</td></tr>
+</tbody>
+</table>
+
+<h3>6a. Trend-Into-Zone Detection</h3>
+<p>When regime = trending AND price is moving TOWARD a nearby zone (downtrend into support, or uptrend into resistance), the <code>trendIntoZone</code> flag is set. This drives the no_trade decision in bias mapping — selling premium into a trend is dangerous.</p>
+
+<h3>6b. Containment</h3>
+<p>Computed against the <strong>merged zone band</strong>: from nearest support zone's touchLo to nearest resistance zone's touchHi. Each bar in the lookback window that stays fully inside this band counts as "contained."</p>
+
+<div class="card">
+<h3>Module: <code>shared/reaction/regime.cjs</code></h3>
+<p><code>classifyRegime(spot, nearS, nearR, containment, adx, atrPct, {candles})</code> → <code>{ regime, confidence, trendIntoZone }</code></p>
+</div>
+
+<h2>7. Strategy Bias Selection</h2>
+
+<h3>7a. Position in Range</h3>
+<pre>
+posInRange = (spot − supportZone.lo) / (resistanceZone.hi − supportZone.lo)
+
+0.00 = at support rail
+0.50 = centred
+1.00 = at resistance rail
+</pre>
+
+<h3>7b. Structure Selection Table</h3>
+
+<table>
+<thead><tr><th>Condition</th><th>Bias</th><th>Skew</th></tr></thead>
+<tbody>
+<tr><td>range_bound, both rails strong, posInRange 0.40–0.60</td><td><span class="pill green">Iron Condor</span></td><td>none (symmetric)</td></tr>
+<tr><td>posInRange 0.45–0.55 + gamma conf > 0.6</td><td><span class="pill green">Iron Butterfly</span></td><td>none</td></tr>
+<tr><td>range_bound, both strong, posInRange 0.30–0.40 or 0.60–0.70</td><td><span class="pill green">Skewed Condor</span></td><td>bullish / bearish</td></tr>
+<tr><td>Near support (posInRange < 0.40), S strong, IV rich (≥1.15)</td><td><span class="pill green">Bull Put Spread</span></td><td>bullish</td></tr>
+<tr><td>Near support, S strong, IV moderate</td><td><span class="pill green">BWB (put-side)</span></td><td>bullish</td></tr>
+<tr><td>Near support, S strong, IV cheap (≤0.95)</td><td><span class="pill amber">Bull Call Spread</span></td><td>bullish (debit)</td></tr>
+<tr><td>Near resistance (posInRange > 0.60), R strong, IV rich</td><td><span class="pill green">Bear Call Spread</span></td><td>bearish</td></tr>
+<tr><td>Near resistance, R strong, IV moderate</td><td><span class="pill green">BWB (call-side)</span></td><td>bearish</td></tr>
+<tr><td>Near resistance, R strong, IV cheap</td><td><span class="pill amber">Bear Put Spread</span></td><td>bearish (debit)</td></tr>
+<tr><td>trending + trendIntoZone</td><td><span class="pill red">No Trade</span></td><td>—</td></tr>
+</tbody>
+</table>
+
+<h3>7c. Rules</h3>
+<ul>
+<li><strong>Symmetric condor only at centre</strong> — never when spot is at a rail</li>
+<li><strong>Debit rule</strong> — debit spreads only when IV/RV ≤ 1.0 (premium is cheap)</li>
+<li><strong>No_trade for trend-into-zone</strong> — falling knife / breakout risk</li>
+<li>Each suggestion includes <code>structureGeometry</code> (skew, bodyAnchor, testedRail) for future leg-builder integration</li>
+</ul>
+
+<div class="card">
+<h3>Module: <code>shared/reaction/bias.cjs</code></h3>
+<p><code>mapBias(input)</code> → <code>{ bias, category, posInRange, structureGeometry, noTradeReason }</code></p>
+</div>
+
+<h2>8. Setup Quality Score (0–100)</h2>
+
+<p>The composite score that ranks all symbols. This is the single number displayed in the ring on each table row.</p>
+
+<table>
+<thead><tr><th>Component</th><th>Weight</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td>Zone score (after n-gate)</td><td>0.30</td><td><code>stats.cjs</code> — Wilson-smoothed, nearest zone</td></tr>
+<tr><td>Premium richness (IV/RV)</td><td>0.20</td><td><code>premium.cjs</code> — IV/RV mapped to 0–100</td></tr>
+<tr><td>Regime confidence</td><td>0.15</td><td><code>regime.cjs</code> — classifier margin</td></tr>
+<tr><td>Distance / approach geometry</td><td>0.15</td><td>0% distance = 100, 5% = 0 (linear)</td></tr>
+<tr><td>Option liquidity (OI proxy)</td><td>0.10</td><td>Top strikes OI from gamma data</td></tr>
+<tr><td>Forward return edge</td><td>0.10</td><td>Median 5d return after zone touch</td></tr>
+<tr><td><em>Minus:</em> Event risk penalty</td><td>subtract</td><td>Earnings proximity penalty (30 − days to earnings)</td></tr>
+</tbody>
+</table>
+
+<h3>8a. Gates (hard caps before SQ is final)</h3>
+<table>
+<thead><tr><th>Gate</th><th>Effect</th><th>When</th></tr></thead>
+<tbody>
+<tr><td>Relevant-rail gate</td><td>Cap SQ at 64</td><td>The zone the strategy sells against has smoothed score < 65</td></tr>
+<tr><td>Hostile approach gate</td><td>Cap SQ at 64</td><td>3-bar net move toward zone > 3 × ATR (falling knife)</td></tr>
+<tr><td>Low score</td><td>Excluded from tradeable</td><td>SQ < 65</td></tr>
+</tbody>
+</table>
+
+<div class="card">
+<h3>Module: <code>shared/reaction/score.cjs</code></h3>
+<p><code>setupQuality(input)</code> → <code>{ total, components, exclusionReason, gateReason, liquidityVerified, earningsVerified }</code></p>
+</div>
+
+<h2>9. Premium Label (IV/RV)</h2>
+
+<pre>
+IV/RV ≤ 0.95  →  <span class="pill grey">CHEAP</span>   (implied vol below realized — options underpriced)
+IV/RV 0.95–1.15 →  <span class="pill grey">FAIR</span>   (near parity)
+IV/RV ≥ 1.15  →  <span class="pill amber">RICH</span>    (implied vol elevated — good for selling premium)
+</pre>
+
+<div class="card">
+<h3>Module: <code>shared/reaction/premium.cjs</code></h3>
+<p>Single source of truth for thresholds — used by score, bias, and UI.</p>
+</div>
+
+<h2>10. The Funnel</h2>
+
+<p>Starting from 111 symbols, the funnel applies exclusions in order:</p>
+
+<div class="flow">
+<span class="step">111 scanned</span>
+<span class="arrow">→</span>
+<span class="step">− earnings in 21d DTE</span>
+<span class="arrow">→</span>
+<span class="step">− ex-div (short call risk)</span>
+<span class="arrow">→</span>
+<span class="step">− untested (< 3 touches)</span>
+<span class="arrow">→</span>
+<span class="step">− vol ETP / illiquid</span>
+<span class="arrow">→</span>
+<span class="step">− weak rail (< 65)</span>
+<span class="arrow">→</span>
+<span class="step">− hostile approach</span>
+<span class="arrow">→</span>
+<span class="step">− SQ < 65</span>
+<span class="arrow">→</span>
+<span class="step" style="background:var(--green-bg);font-weight:700">Tradeable</span>
+</div>
+
+<table>
+<thead><tr><th>Exclusion</th><th>Data source</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Earnings inside DTE window</td><td>Yahoo (yfinance) → event-calendar.json</td><td>Live (79/111 coverage)</td></tr>
+<tr><td>Ex-div + short call</td><td>FMP dividends + Yahoo</td><td>Live (6 dates)</td></tr>
+<tr><td>Untested zones</td><td>Computed from bars</td><td>Live</td></tr>
+<tr><td>Vol ETP</td><td>Hardcoded list (UVXY, SQQQ, TQQQ, ARKK...)</td><td>Live</td></tr>
+<tr><td>Illiquid</td><td>Option spread > 5% or OI < 500 (from topStrikes)</td><td>Live</td></tr>
+<tr><td>Weak relevant rail</td><td>Zone score < 65 on the rail the strategy sells against</td><td>Live</td></tr>
+<tr><td>Hostile approach</td><td>3-bar move > 3×ATR toward zone</td><td>Live</td></tr>
+<tr><td>Low SQ</td><td>Composite score < 65</td><td>Live</td></tr>
+</tbody>
+</table>
+
+<h2>11. UI Modes</h2>
+
+<table>
+<thead><tr><th>Tab</th><th>Shows</th><th>Sorted by</th></tr></thead>
+<tbody>
+<tr><td><strong>Tradeable</strong></td><td>Actionable setups (SQ ≥ 65, bias ≠ no_trade)</td><td>Setup Quality descending</td></tr>
+<tr><td><strong>Earnings</strong></td><td>Symbols with upcoming earnings (next 60 days)</td><td>Earnings date ascending</td></tr>
+<tr><td><strong>All scanned</strong></td><td>All 111 symbols with full analysis</td><td>Setup Quality descending</td></tr>
+</tbody>
+</table>
+
+<p>The Tradeable tab also shows a <strong>"Watching — no trade"</strong> strip below the table for symbols that pass SQ but have no actionable strategy (trending, no tested rail, etc.).</p>
+
+<h2>12. Module Map</h2>
+
+<table>
+<thead><tr><th>File</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>shared/reaction/zones.cjs</code></td><td>Level gathering, ATR zone merging, nearest-zone selection</td></tr>
+<tr><td><code>shared/reaction/stats.cjs</code></td><td>Touch detection, hold/break classification, Wilson smoothing, zone scoring</td></tr>
+<tr><td><code>shared/reaction/forward.cjs</code></td><td>Median forward returns (3/5/10/20d), p75 max adverse move</td></tr>
+<tr><td><code>shared/reaction/premium.cjs</code></td><td>IV/RV thresholds (cheap/fair/rich), premium scoring</td></tr>
+<tr><td><code>shared/reaction/regime.cjs</code></td><td>Regime classification, containment, trend direction detection</td></tr>
+<tr><td><code>shared/reaction/bias.cjs</code></td><td>posInRange-aware structure selection, structureGeometry</td></tr>
+<tr><td><code>shared/reaction/score.cjs</code></td><td>Composite setupQuality, funnel exclusions, gates</td></tr>
+<tr><td><code>shared/reaction/events.cjs</code></td><td>Earnings/ex-div parsing, staleness labels, exclusion checks</td></tr>
+<tr><td><code>shared/reaction/index.cjs</code></td><td>Entry point (re-exports all)</td></tr>
+<tr><td><code>web/workbench/public/js/reaction.browser.js</code></td><td>Browser IIFE build of all the above</td></tr>
+<tr><td><code>web/workbench/movement-range.html</code></td><td>The page itself — loads R2 data, runs analysis, renders</td></tr>
+<tr><td><code>scripts/refresh-event-calendar.js</code></td><td>Yahoo + FMP earnings/ex-div refresh job</td></tr>
+</tbody>
+</table>
+
+<h2>13. What Does NOT Happen on This Page</h2>
+
+<ul>
+<li><strong>No LLM calls</strong> — everything is deterministic, pure functions</li>
+<li><strong>No option legs</strong> — the page suggests a structure (e.g. "Bull Put Spread") but does not construct specific strikes. That's the leg-builder's job (<code>api/src/tools/leg-builder.ts</code>)</li>
+<li><strong>No live API calls</strong> — reads pre-computed R2 data only</li>
+<li><strong>No Firestore writes</strong> — read-only workbench tool</li>
+</ul>
+
+<h2>14. Test Coverage</h2>
+
+<table>
+<thead><tr><th>Suite</th><th>File</th><th>Count</th></tr></thead>
+<tbody>
+<tr><td>shared/reaction engine</td><td><code>shared/reaction/index.test.cjs</code></td><td>130+</td></tr>
+<tr><td>TS wrapper (API)</td><td><code>api/src/tools/price-reaction.test.ts</code></td><td>39</td></tr>
+<tr><td><strong>Total</strong></td><td></td><td><strong>169+</strong></td></tr>
+</tbody>
+</table>
+
+<p>Key fixtures: zone merging, Wilson smoothing, n-gate, MSFT containment fix, COIN falling-knife, XLF/MDLZ/HON bias stability, premium thresholds, earnings exclusion, ex-div short-call gate, posInRange condor centering.</p>
+
+<footer style="margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)">
+  NewLeaf System — Movement & Range Design Document · June 2026 · Source: <code>shared/reaction/</code>
+</footer>
+
+</div>
+</body>
+</html>
