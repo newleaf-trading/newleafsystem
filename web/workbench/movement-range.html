@@ -161,6 +161,35 @@ footer{margin-top:28px;font-size:11px;color:var(--muted);line-height:1.6;border-
 footer b{color:var(--forest)}
 .loading{text-align:center;padding:50px;color:var(--muted);font-family:'Space Mono';font-size:12px}
 @media(max-width:1100px){.dgrid{grid-template-columns:1fr}.excl-groups{grid-template-columns:1fr 1fr}.layout{grid-template-columns:1fr}.side{display:none}}
+/* Leg Builder Popup */
+.lb-popup{background:#fff;border-radius:14px;width:860px;max-width:96vw;max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.lb-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 22px 12px;border-bottom:1px solid var(--line)}
+.lb-title{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--forest)}
+.lb-subtitle{font-size:11px;color:var(--muted);margin-left:10px;font-family:'Space Mono'}
+.lb-close{background:none;border:none;font-size:24px;color:#999;cursor:pointer;padding:0 4px;line-height:1}
+.lb-close:hover{color:#333}
+.lb-body{padding:18px 22px 22px}
+.lb-loading{text-align:center;padding:40px;color:var(--muted);font-family:'Space Mono';font-size:12px}
+.lb-error{text-align:center;padding:30px;color:var(--red);font-family:'Space Mono';font-size:12px}
+.lb-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:14px}
+.lb-section{margin-bottom:14px}
+.lb-section-title{font-family:'Space Mono';font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.lb-legs{width:100%;border-collapse:collapse;font-size:12px}
+.lb-legs th{font-family:'Space Mono';font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:5px 8px;border-bottom:1px solid var(--line)}
+.lb-legs td{padding:6px 8px;border-bottom:1px solid #EFEAE0;font-family:'Space Mono';font-size:12px}
+.lb-legs .short-leg{color:var(--red);font-weight:600}
+.lb-legs .long-leg{color:var(--green);font-weight:600}
+.lb-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lb-stat{background:#F8F5EC;border-radius:8px;padding:10px 12px}
+.lb-stat-label{font-family:'Space Mono';font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.lb-stat-val{font-family:'Space Mono';font-size:15px;font-weight:700;color:var(--ink)}
+.lb-stat-val.green{color:var(--green)}.lb-stat-val.red{color:var(--red)}
+.lb-expiry-bar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.lb-expiry-btn{font-family:'Space Mono';font-size:10px;padding:5px 10px;border-radius:5px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--muted);transition:.15s}
+.lb-expiry-btn:hover{border-color:var(--forest);color:var(--ink)}
+.lb-expiry-btn.on{background:var(--forest);color:var(--cream);border-color:var(--forest)}
+.pill.clickable{cursor:pointer;transition:all .15s}
+.pill.clickable:hover{opacity:.85;box-shadow:0 1px 4px rgba(0,0,0,.12);transform:translateY(-1px)}
 </style>
 </head>
 <body>
@@ -232,6 +261,16 @@ footer b{color:var(--forest)}
   <!-- Analysis popup (Gamma + Technicals combined) -->
   <div class="info-popup-overlay" id="analysisPopupOverlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
     <div class="info-popup"><div class="info-popup-hdr"><div class="info-popup-title" id="analysisPopupTitle">Analysis</div><button class="info-popup-close" onclick="document.getElementById('analysisPopupOverlay').style.display='none'">&times;</button></div><div class="info-popup-body" id="analysisPopupBody">Loading...</div></div>
+  </div>
+  <!-- Leg Builder popup -->
+  <div class="info-popup-overlay" id="legBuilderOverlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+    <div class="lb-popup">
+      <div class="lb-hdr">
+        <div style="display:flex;align-items:baseline;gap:6px"><div class="lb-title" id="lbTitle">Leg Builder</div><span class="lb-subtitle" id="lbSubtitle"></span></div>
+        <button class="lb-close" onclick="document.getElementById('legBuilderOverlay').style.display='none'">&times;</button>
+      </div>
+      <div class="lb-body" id="lbBody"><div class="lb-loading">Loading option chain...</div></div>
+    </div>
   </div>
   <section class="excl" id="excl"><h3 id="excl-title">Excluded today</h3><div class="excl-groups" id="excl-groups"></div></section>
   <footer><b>What changed vs v1:</b> ① single Setup Quality score replaces eyeballing S/R bars ② levels &lt; 0.6×ATR apart merge into zones with pooled touches ③ Wilson-smoothed rates with min-3-touch gate ④ relevant-rail gate: the zone you sell against must score ≥ 65 ⑤ event-risk / illiquid / ETP exclusions visible in funnel ⑥ containment computed on merged zone band ⑦ median 5d forward return as edge column ⑧ S/R bars from v1 retained, now from Wilson-smoothed zone scores</footer>
@@ -353,7 +392,9 @@ function parseSymbol(sym, report) {
   const totalOI = topStrikes.reduce((sum, ts) => sum + (ts.call_oi || 0) + (ts.put_oi || 0), 0);
   // Earnings: prefer calendar lookup over report (report may have null if pipeline didn't write it)
   const earningsDate = earningsCalendar[sym] || report.earningsDate || null;
-  return { symbol: sym, price: s.price, changePct: s.changePercent || 0, bars, atrPct: t.atrPct || 0.02, adx: t.adx14, rsi: t.rsi, putWall: g.analysis?.put_wall, callWall: g.analysis?.call_wall, sma50: t.sma50, sma100: t.sma100, sma200: t.sma200, bb: t.bb, atmIv: g.ivData?.atmIv || 0, rv: (t.realizedVol30d || 0) * 100, gammaConf: g.analysis?.confidence_score || 0, totalOI, oiAvailable: totalOI > 0, earningsDate, _gammaData: g, _techData: t };
+  // Store optionChain for leg builder (flat array with expiry/dte per contract)
+  const optionChain = report.optionChain || [];
+  return { symbol: sym, price: s.price, changePct: s.changePercent || 0, bars, atrPct: t.atrPct || 0.02, adx: t.adx14, rsi: t.rsi, putWall: g.analysis?.put_wall, callWall: g.analysis?.call_wall, sma50: t.sma50, sma100: t.sma100, sma200: t.sma200, bb: t.bb, atmIv: g.ivData?.atmIv || 0, rv: (t.realizedVol30d || 0) * 100, gammaConf: g.analysis?.confidence_score || 0, totalOI, oiAvailable: totalOI > 0, earningsDate, _gammaData: g, _techData: t, _optionChain: optionChain };
 }
 
 function runAnalysis() {
@@ -368,14 +409,14 @@ function runAnalysis() {
     const { nearestSupport: nearS, nearestResistance: nearR } = R.nearestScoreableZones(d.price, sStats, rStats);
     let containment = 0;
     if (nearS && nearR && nearS.zone.hi < nearR.zone.lo) containment = R.computeContainment(d.bars, nearS.zone, nearR.zone, 45);
-    const { regime, confidence } = R.classifyRegime(d.price, nearS, nearR, containment, d.adx, d.atrPct);
+    const { regime, confidence, trendIntoZone } = R.classifyRegime(d.price, nearS, nearR, containment, d.adx, d.atrPct, { candles: d.bars });
     const ivRv = d.rv > 0 && d.atmIv > 0 ? d.atmIv / d.rv : 0;
     const fwd = nearS?.touches?.length ? R.forwardReturns(d.bars, nearS.touches, [5], 'support') : {};
     let distPct = 99;
     if (nearS && !nearS.untested) distPct = Math.min(distPct, ((d.price - nearS.zone.hi) / d.price) * 100);
     if (nearR && !nearR.untested) distPct = Math.min(distPct, ((nearR.zone.lo - d.price) / d.price) * 100);
     const bandCentre = nearS && nearR && nearS.zone.hi < nearR.zone.lo ? (nearS.zone.hi + nearR.zone.lo) / 2 : null;
-    const biasResult = R.mapBias({ regime, supportScore: nearS?.score || 0, resistanceScore: nearR?.score || 0, supportTested: nearS ? !nearS.untested : false, resistanceTested: nearR ? !nearR.untested : false, ivRv, spot: d.price, supportLo: nearS?.zone?.lo || null, resistanceHi: nearR?.zone?.hi || null, bandCentre, gammaConfidence: d.gammaConf, containment, adx: d.adx });
+    const biasResult = R.mapBias({ regime, supportScore: nearS?.score || 0, resistanceScore: nearR?.score || 0, supportTested: nearS ? !nearS.untested : false, resistanceTested: nearR ? !nearR.untested : false, ivRv, spot: d.price, supportLo: nearS?.zone?.lo || null, resistanceHi: nearR?.zone?.hi || null, bandCentre, gammaConfidence: d.gammaConf, containment, adx: d.adx, trendIntoZone });
     const bias = biasResult.bias, biasCategory = biasResult.category, halfBlind = biasResult.halfBlind;
     const quality = R.setupQuality({ symbol: d.symbol, spot: d.price, zoneScore: Math.max(nearS?.score || 0, nearR?.score || 0), ivRv, regimeConfidence: confidence, distancePct: Math.abs(distPct), topStrikesOI: d.totalOI, oiDataAvailable: d.oiAvailable, median5d: fwd.median5d || 0, earningsDate: d.earningsDate, untested: (nearS?.untested !== false && nearR?.untested !== false), regime, supportZoneScore: nearS?.score || 0, resistanceZoneScore: nearR?.score || 0, strategyBias: bias });
     const rq = R.rangeQuality({ containment, adx: d.adx, supportScore: nearS?.score || 0, resistanceScore: nearR?.score || 0, supportTested: nearS ? !nearS.untested : false, resistanceTested: nearR ? !nearR.untested : false, posInRange: biasResult.posInRange });
@@ -587,7 +628,7 @@ function renderRow(r) {
     <td><div class="dist"><div class="bar"><i style="left:${distBar}%"></i></div><div class="cap"><span>zone</span><span>${distPct}</span></div></div></td>
     <td class="r num" style="color:${med5 != null && med5 > 0 ? 'var(--green)' : med5 != null && med5 < 0 ? 'var(--red)' : 'var(--muted)'}">${med5Lbl}</td>
     <td><span class="pill ${premCls}">${premLbl.toUpperCase()} ${r.ivRv.toFixed(2)}</span>${liqTag}</td>
-    <td>${biasLbl !== '--' ? `<span class="pill ${biasCls}">${biasLbl}</span>${r.halfBlind ? '<br><span class="tag-unverified">no defined far rail</span>' : ''}${(r.bias === 'broken_wing_butterfly' || r.bias === 'skewed_condor') ? '<span class="skew-tag">legs not yet skew-adjusted</span>' : ''}` : '<span style="color:var(--muted)">--</span>'}</td>
+    <td>${biasLbl !== '--' ? `<span class="pill ${biasCls} clickable" onclick="event.stopPropagation();showLegBuilder('${d.symbol}','${r.bias}')" title="Click to build legs">${biasLbl}</span>${r.halfBlind ? '<br><span class="tag-unverified">no defined far rail</span>' : ''}${(r.bias === 'broken_wing_butterfly' || r.bias === 'skewed_condor') ? '<span class="skew-tag">legs not yet skew-adjusted</span>' : ''}` : '<span style="color:var(--muted)">--</span>'}</td>
     <td class="num" style="color:var(--muted)">${openDetail === d.symbol ? '&#9662;' : '&#9656;'}</td>
   </tr>`;
 }
@@ -651,6 +692,14 @@ function renderDetailRow(r) {
           </div>
           <div style="color:var(--gold);font-size:20px;font-weight:700">&#8250;</div>
         </div>
+        ${r.bias !== 'no_trade' ? `<div style="margin-top:8px;background:linear-gradient(135deg,#1a4a2e,#0d3320);border-radius:9px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:opacity .15s;border:2px solid var(--green)" onclick="event.stopPropagation();showLegBuilder('${d.symbol}','${r.bias}')" onmouseenter="this.style.opacity='0.9'" onmouseleave="this.style.opacity='1'">
+          <div style="width:36px;height:36px;border-radius:8px;background:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;color:#fff">&#9881;</div>
+          <div style="flex:1">
+            <div style="font-family:'Fraunces',serif;font-size:14px;font-weight:600;color:#d4edda">Build Legs &amp; Payoff Chart</div>
+            <div style="font-size:11px;color:#8fbf9e;margin-top:2px">Auto-select best strikes from option chain, see P&amp;L diagram</div>
+          </div>
+          <div style="color:#8fbf9e;font-size:20px;font-weight:700">&#8250;</div>
+        </div>` : ''}
       </div>
     </div>
   </td></tr>`;
@@ -910,7 +959,536 @@ function drawTechChartMR(tabId, td) {
 }
 
 // Close popups on Escape
-document.addEventListener('keydown', e => { if (e.key==='Escape') { ['analysisPopupOverlay','summaryPopupOverlay'].forEach(id => { const o = document.getElementById(id); if (o) o.style.display='none'; }); }});
+document.addEventListener('keydown', e => { if (e.key==='Escape') { ['analysisPopupOverlay','summaryPopupOverlay','legBuilderOverlay'].forEach(id => { const o = document.getElementById(id); if (o) o.style.display='none'; }); }});
+
+// ════════════════════════════════════════════════════════════════════════════
+// LEG BUILDER — auto-build best legs from option chain & show payoff chart
+// ════════════════════════════════════════════════════════════════════════════
+
+// Strategy → internal key mapping (movement-range bias names → strategy keys)
+const BIAS_TO_STRATEGY = {
+  bull_put_spread: 'bull_put_spread',
+  bull_put: 'bull_put_spread',
+  bear_call_spread: 'bear_call_spread',
+  bear_call: 'bear_call_spread',
+  iron_condor: 'iron_condor',
+  bull_call_spread: 'bull_call_spread',
+  bull_call: 'bull_call_spread',
+  bear_put_spread: 'bear_put_spread',
+  bear_put: 'bear_put_spread',
+  iron_butterfly: 'iron_butterfly',
+  broken_wing_butterfly: 'broken_wing_put',
+  skewed_condor: 'iron_condor',
+};
+
+const STRATEGY_LABELS = {
+  bull_put_spread: 'Bull Put Spread',
+  bear_call_spread: 'Bear Call Spread',
+  iron_condor: 'Iron Condor',
+  bull_call_spread: 'Bull Call Spread',
+  bear_put_spread: 'Bear Put Spread',
+  iron_butterfly: 'Iron Butterfly',
+  broken_wing_put: 'Broken Wing Butterfly (Put)',
+};
+
+const STRATEGY_COLORS = {
+  bull_put_spread: '#2d7d4f',
+  bear_call_spread: '#b03030',
+  iron_condor: '#0d6e56',
+  bull_call_spread: '#2d7d4f',
+  bear_put_spread: '#b03030',
+  iron_butterfly: '#5a3a8a',
+  broken_wing_put: '#a0620c',
+};
+
+// ── Math helpers ──
+function lbNormCdf(x) {
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const sign=x<0?-1:1, ax=Math.abs(x)/Math.SQRT2;
+  const t=1/(1+p*ax);
+  const y=1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-ax*ax);
+  return 0.5*(1+sign*y);
+}
+
+function lbBsDelta(spot,strike,dteDays,iv,type) {
+  if (!spot||!strike||!dteDays||!iv||iv<=0) return null;
+  const T=Math.max(dteDays,1)/365;
+  const d1=(Math.log(spot/strike)+(0.5*iv*iv)*T)/(iv*Math.sqrt(T));
+  return type==='call'?lbNormCdf(d1):lbNormCdf(d1)-1;
+}
+
+function lbExpectedMove(spot,iv,dte) {
+  if (!spot||!iv||!dte) return spot*0.05;
+  return spot*iv*Math.sqrt(dte/365);
+}
+
+// ── Chain enrichment (add delta via BS if missing) ──
+function lbEnrichChain(contracts,spot,dte,atmIv) {
+  contracts.forEach(c => {
+    if (c.delta!=null && Math.abs(c.delta)>0.001) return;
+    const iv=(c.iv&&c.iv>0)?(c.iv>1?c.iv/100:c.iv):atmIv;
+    if (!iv) return;
+    c._delta = lbBsDelta(spot,c.strike,dte,iv,c.type);
+  });
+}
+
+function lbGetDelta(c) {
+  return (c.delta!=null && Math.abs(c.delta)>0.001)?c.delta:(c._delta??null);
+}
+
+// ── Resolve ATM IV ──
+function lbResolveAtmIv(contracts,spot,gammaIv) {
+  if (gammaIv && gammaIv > 0) return gammaIv > 1 ? gammaIv/100 : gammaIv;
+  const near = contracts.filter(c => c.iv>0 && Math.abs(c.strike-spot)/spot<0.05);
+  if (!near.length) {
+    const any = contracts.find(c => c.iv>0);
+    return any ? (any.iv>1?any.iv/100:any.iv) : 0.3;
+  }
+  const avg = near.reduce((s,c)=>s+c.iv,0)/near.length;
+  return avg>1?avg/100:avg;
+}
+
+// ── Strike selection ──
+function lbFindByDelta(chain,targetDelta,type,spot,side,em) {
+  const sideFilter = o => {
+    if (side==='below') return o.strike<spot;
+    if (side==='above') return o.strike>spot;
+    return true;
+  };
+  // Tier 1: liquid + has delta
+  const t1=chain.filter(o=>o.type===type&&(o.oi==null||o.oi>=50)).filter(sideFilter)
+    .map(o=>({...o,_d:lbGetDelta(o)})).filter(o=>o._d!=null)
+    .map(o=>({...o,_diff:Math.abs(Math.abs(o._d)-targetDelta)})).sort((a,b)=>a._diff-b._diff);
+  if (t1.length) return t1[0];
+  // Tier 2: any OI
+  const t2=chain.filter(o=>o.type===type).filter(sideFilter)
+    .map(o=>({...o,_d:lbGetDelta(o)})).filter(o=>o._d!=null)
+    .map(o=>({...o,_diff:Math.abs(Math.abs(o._d)-targetDelta)})).sort((a,b)=>a._diff-b._diff);
+  if (t2.length) return t2[0];
+  // Tier 3: price-offset proxy
+  const move=(em&&em>0)?em:(spot*0.05);
+  const mult=Math.max(0.05,(0.5-targetDelta)*2.94);
+  const dir=side==='below'?-1:side==='above'?1:(type==='put'?-1:1);
+  return lbFindByStrike(chain,spot+dir*move*mult,type);
+}
+
+function lbFindByStrike(chain,target,type,constraint) {
+  let f=chain.filter(o=>o.type===type);
+  if (constraint?.below!=null) f=f.filter(o=>o.strike<constraint.below);
+  if (constraint?.above!=null) f=f.filter(o=>o.strike>constraint.above);
+  if (!f.length) return null;
+  let best=f[0],bd=Math.abs(best.strike-target);
+  for (let i=1;i<f.length;i++){const d=Math.abs(f[i].strike-target);if(d<bd){bd=d;best=f[i];}}
+  return best;
+}
+
+// ── Build legs for each strategy ──
+function lbBuildLegs(spot,chain,iv,dte,strategyType,cfg) {
+  const em=lbExpectedMove(spot,iv,dte);
+  const wing=Math.max(em*0.5,1);
+  const legs=[];
+
+  if (strategyType==='iron_condor') {
+    const sp=lbFindByDelta(chain,cfg.shortDelta,'put',spot,'below',em);
+    const sc=lbFindByDelta(chain,cfg.shortDelta,'call',spot,'above',em);
+    if (!sp||!sc) return null;
+    const lp=lbFindByStrike(chain,sp.strike-wing*cfg.wingRatio,'put',{below:sp.strike});
+    const lc=lbFindByStrike(chain,sc.strike+wing*cfg.wingRatio,'call',{above:sc.strike});
+    if (!lp||!lc) return null;
+    legs.push({contract:lp,dir:'long',qty:1,name:'Long Put',type:'put'},
+              {contract:sp,dir:'short',qty:1,name:'Short Put',type:'put'},
+              {contract:sc,dir:'short',qty:1,name:'Short Call',type:'call'},
+              {contract:lc,dir:'long',qty:1,name:'Long Call',type:'call'});
+  } else if (strategyType==='iron_butterfly') {
+    const bp=lbFindByStrike(chain,spot,'put');
+    const bc=lbFindByStrike(chain,spot,'call');
+    if (!bp||!bc) return null;
+    const lp=lbFindByStrike(chain,bp.strike-wing*cfg.wingRatio,'put',{below:bp.strike});
+    const lc=lbFindByStrike(chain,bc.strike+wing*cfg.wingRatio,'call',{above:bc.strike});
+    if (!lp||!lc) return null;
+    legs.push({contract:lp,dir:'long',qty:1,name:'Long Put',type:'put'},
+              {contract:bp,dir:'short',qty:1,name:'Short Put',type:'put'},
+              {contract:bc,dir:'short',qty:1,name:'Short Call',type:'call'},
+              {contract:lc,dir:'long',qty:1,name:'Long Call',type:'call'});
+  } else if (strategyType==='bull_put_spread') {
+    const sp=lbFindByDelta(chain,cfg.shortDelta,'put',spot,'below',em);
+    if (!sp) return null;
+    const lp=lbFindByStrike(chain,sp.strike-wing*cfg.wingRatio,'put',{below:sp.strike});
+    if (!lp) return null;
+    legs.push({contract:lp,dir:'long',qty:1,name:'Long Put',type:'put'},
+              {contract:sp,dir:'short',qty:1,name:'Short Put',type:'put'});
+  } else if (strategyType==='bear_call_spread') {
+    const sc=lbFindByDelta(chain,cfg.shortDelta,'call',spot,'above',em);
+    if (!sc) return null;
+    const lc=lbFindByStrike(chain,sc.strike+wing*cfg.wingRatio,'call',{above:sc.strike});
+    if (!lc) return null;
+    legs.push({contract:sc,dir:'short',qty:1,name:'Short Call',type:'call'},
+              {contract:lc,dir:'long',qty:1,name:'Long Call',type:'call'});
+  } else if (strategyType==='bull_call_spread') {
+    const lc=lbFindByDelta(chain,0.50,'call',spot,null,em)||lbFindByStrike(chain,spot,'call');
+    if (!lc) return null;
+    const sc=lbFindByStrike(chain,lc.strike+wing*cfg.wingRatio,'call',{above:lc.strike});
+    if (!sc) return null;
+    legs.push({contract:lc,dir:'long',qty:1,name:'Long Call',type:'call'},
+              {contract:sc,dir:'short',qty:1,name:'Short Call',type:'call'});
+  } else if (strategyType==='bear_put_spread') {
+    const lp=lbFindByDelta(chain,0.50,'put',spot,null,em)||lbFindByStrike(chain,spot,'put');
+    if (!lp) return null;
+    const sp=lbFindByStrike(chain,lp.strike-wing*cfg.wingRatio,'put',{below:lp.strike});
+    if (!sp) return null;
+    legs.push({contract:sp,dir:'short',qty:1,name:'Short Put',type:'put'},
+              {contract:lp,dir:'long',qty:1,name:'Long Put',type:'put'});
+  } else if (strategyType==='broken_wing_put') {
+    const sp=lbFindByDelta(chain,Math.max(cfg.shortDelta+0.05,0.28),'put',spot,'below',em);
+    if (!sp) return null;
+    const ps=Math.max(spot-sp.strike,wing);
+    const lp=lbFindByStrike(chain,sp.strike-ps*1.5,'put',{below:sp.strike});
+    const sc=lbFindByDelta(chain,Math.max(cfg.shortDelta-0.04,0.18),'call',spot,'above',em);
+    if (!lp||!sc) return null;
+    const cs=Math.max(sc.strike-spot,wing);
+    const lc=lbFindByStrike(chain,sc.strike+cs,'call',{above:sc.strike});
+    if (!lc) return null;
+    if (!(lp.strike<sp.strike&&sp.strike<spot&&spot<sc.strike&&sc.strike<lc.strike)) return null;
+    legs.push({contract:lp,dir:'long',qty:1,name:'Long Put (broken)',type:'put'},
+              {contract:sp,dir:'short',qty:2,name:'Short Puts x2',type:'put'},
+              {contract:sc,dir:'short',qty:1,name:'Short Call',type:'call'},
+              {contract:lc,dir:'long',qty:1,name:'Long Call',type:'call'});
+  }
+  return legs.length?legs:null;
+}
+
+// ── Net credit / P&L / breakevens ──
+function lbNetCredit(legs) {
+  let c=0;
+  legs.forEach(l=>{const sign=l.dir==='short'?1:-1; c+=sign*(l.contract.mid??((l.contract.bid+l.contract.ask)/2))*(l.qty||1);});
+  return c*100;
+}
+
+function lbPnlAt(price,legs,credit) {
+  let pnl=0;
+  legs.forEach(l=>{
+    const intr=l.type==='put'?Math.max(l.contract.strike-price,0):Math.max(price-l.contract.strike,0);
+    const sign=l.dir==='long'?1:-1;
+    pnl+=sign*(l.qty||1)*intr;
+  });
+  return pnl*100+credit;
+}
+
+function lbSamplePayoff(legs,spot) {
+  const strikes=legs.map(l=>l.contract.strike);
+  const minK=Math.min(...strikes,spot), maxK=Math.max(...strikes,spot);
+  const span=(maxK-minK)||(spot*0.1);
+  const lo=Math.max(0.01,minK-span*0.6), hi=maxK+span*0.6;
+  const step=(hi-lo)/200;
+  const credit=lbNetCredit(legs);
+  const out=[];
+  for (let p=lo;p<=hi;p+=step) out.push({price:p,pnl:lbPnlAt(p,legs,credit)});
+  return out;
+}
+
+function lbMaxProfitLoss(legs) {
+  const credit=lbNetCredit(legs);
+  const strikes=legs.map(l=>l.contract.strike);
+  const minK=Math.min(...strikes), maxK=Math.max(...strikes);
+  const span=(maxK-minK)||(minK*0.5)||1;
+  let best=-Infinity,worst=Infinity;
+  for (let p=minK-span;p<=maxK+span;p+=span/100||0.5){
+    const v=lbPnlAt(p,legs,credit);
+    if (v>best) best=v;
+    if (v<worst) worst=v;
+  }
+  return {maxProfit:best,maxLoss:worst};
+}
+
+function lbBreakevens(legs) {
+  const credit=lbNetCredit(legs);
+  const strikes=legs.map(l=>l.contract.strike);
+  const lo=Math.min(...strikes)-20, hi=Math.max(...strikes)+20;
+  const steps=500, bes=[];
+  for (let i=1;i<=steps;i++){
+    const p0=lo+(hi-lo)*(i-1)/steps, p1=lo+(hi-lo)*i/steps;
+    const v0=lbPnlAt(p0,legs,credit), v1=lbPnlAt(p1,legs,credit);
+    if ((v0>=0)!==(v1>=0)) bes.push(p0+(0-v0)*(p1-p0)/(v1-v0));
+  }
+  return bes;
+}
+
+// ── Validate setup ──
+function lbValidate(legs,spot) {
+  const credit=lbNetCredit(legs);
+  const {maxProfit,maxLoss}=lbMaxProfitLoss(legs);
+  // For credit spreads, credit should be > 0
+  const isCredit=credit>0;
+  const shortLegs=legs.filter(l=>l.dir==='short');
+  const avgDelta=shortLegs.map(l=>Math.abs(lbGetDelta(l.contract)||0.2)).reduce((s,d)=>s+d,0)/Math.max(shortLegs.length,1);
+  const pop=Math.round((1-avgDelta)*100);
+  return {valid:true,credit,maxProfit,maxLoss,isCredit,pop};
+}
+
+// ── Build with retry across configs ──
+function lbBuildWithRetry(spot,chain,iv,dte,strategy) {
+  const configs=[
+    {shortDelta:0.20,wingRatio:1.5,label:'Conservative',sub:'~20 delta shorts, wide wings'},
+    {shortDelta:0.25,wingRatio:1.2,label:'Balanced',sub:'~25 delta shorts, standard width'},
+    {shortDelta:0.30,wingRatio:1.0,label:'Aggressive',sub:'~30 delta shorts, tight wings'},
+  ];
+  const results=[];
+  for (const cfg of configs) {
+    const legs=lbBuildLegs(spot,chain,iv,dte,strategy,cfg);
+    if (!legs) continue;
+    const v=lbValidate(legs,spot);
+    if (v.valid) results.push({legs,validation:v,cfg});
+  }
+  return results;
+}
+
+// ── Main entry: show the leg builder popup ──
+let lbCache = {};
+
+function showLegBuilder(symbol,bias) {
+  const overlay=document.getElementById('legBuilderOverlay');
+  const body=document.getElementById('lbBody');
+  const stratKey=BIAS_TO_STRATEGY[bias]||bias;
+  const stratLabel=STRATEGY_LABELS[stratKey]||bias.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+
+  document.getElementById('lbTitle').textContent=symbol+' — '+stratLabel;
+  document.getElementById('lbSubtitle').textContent='';
+  overlay.style.display='flex';
+
+  // Find symbol data for spot price and option chain
+  const row=allResults.find(r=>r.d.symbol===symbol);
+  if (!row) { body.innerHTML='<div class="lb-error">Symbol data not found.</div>'; return; }
+  const spot=row.d.price;
+  const gammaIv=row.d.atmIv;
+  const rawChain=row.d._optionChain||[];
+
+  if (!rawChain.length) {
+    body.innerHTML='<div class="lb-error">No option chain data available for '+symbol+'.<br>The pipeline may not have published contracts for this symbol.</div>';
+    return;
+  }
+
+  // Group flat chain into expiries: { expiry, dte, contracts[] }
+  if (!lbCache[symbol]) {
+    const expiryMap={};
+    for (const c of rawChain) {
+      const key=c.expiry;
+      if (!expiryMap[key]) expiryMap[key]={expiry:key,dte:c.dte,contracts:[]};
+      expiryMap[key].contracts.push({
+        strike:c.strike, type:c.type, bid:c.bid||0, ask:c.ask||0,
+        mid:c.mid||((c.bid||0)+(c.ask||0))/2,
+        iv:c.iv||0, delta:c.delta||null, gamma:c.gamma||null,
+        oi:c.openInterest||0, volume:c.volume||0
+      });
+    }
+    const expiries=Object.values(expiryMap).sort((a,b)=>a.dte-b.dte);
+    lbCache[symbol]={spot,expiries};
+  }
+  const atmData=lbCache[symbol];
+
+  if (!atmData.expiries.length) {
+    body.innerHTML='<div class="lb-error">No expiry data available for '+symbol+'.</div>';
+    return;
+  }
+
+  // Find ~3 week expiry (target 21 DTE)
+  let bestExpiry=null, bestDiff=Infinity;
+  const TARGET_DTE=21;
+  for (const e of atmData.expiries) {
+    const diff=Math.abs(e.dte-TARGET_DTE);
+    if (diff<bestDiff) { bestDiff=diff; bestExpiry=e; }
+  }
+  if (!bestExpiry || bestExpiry.dte < 5) {
+    bestExpiry=atmData.expiries.find(e=>e.dte>=14)||atmData.expiries[0];
+  }
+
+  renderLegBuilderForExpiry(symbol,stratKey,spot,gammaIv,atmData,bestExpiry,row);
+}
+
+function renderLegBuilderForExpiry(symbol,stratKey,spot,gammaIv,atmData,expiry,row) {
+  const body=document.getElementById('lbBody');
+  const chain=expiry.contracts||[];
+  const dte=expiry.dte;
+  const atmIv=lbResolveAtmIv(chain,spot,gammaIv);
+
+  // Enrich chain with BS deltas
+  lbEnrichChain(chain,spot,dte,atmIv);
+
+  // Build all 3 configs
+  const setups=lbBuildWithRetry(spot,chain,atmIv,dte,stratKey);
+  if (!setups.length) {
+    body.innerHTML=`<div class="lb-error">Could not build valid ${STRATEGY_LABELS[stratKey]||stratKey} legs for ${symbol} at ${expiry.expiry} (${dte} DTE).<br>The option chain may be too sparse or illiquid.</div>`;
+    return;
+  }
+
+  // Default to the first valid (conservative) setup
+  let activeIdx=0;
+  // Prefer balanced if available
+  if (setups.length>=2) activeIdx=1;
+
+  const stratLabel=STRATEGY_LABELS[stratKey]||stratKey;
+  document.getElementById('lbSubtitle').textContent=`${expiry.expiry} · ${dte} DTE · $${spot.toFixed(2)}`;
+
+  function render(idx) {
+    activeIdx=idx;
+    const {legs,validation,cfg}=setups[idx];
+    const credit=validation.credit;
+    const {maxProfit,maxLoss}=validation;
+    const bes=lbBreakevens(legs);
+    const isCredit=credit>0;
+
+    body.innerHTML=`
+      <div class="lb-expiry-bar" id="lbExpiryBar">
+        ${atmData.expiries.filter(e=>e.dte>=7&&e.dte<=60).map(e=>
+          `<button class="lb-expiry-btn ${e.expiry===expiry.expiry?'on':''}" onclick="event.stopPropagation();renderLegBuilderForExpiry('${symbol}','${stratKey}',${spot},${gammaIv},lbCache['${symbol}'],lbCache['${symbol}'].expiries.find(x=>x.expiry==='${e.expiry}'),allResults.find(r=>r.d.symbol==='${symbol}'))">${e.expiry} <span style="color:var(--muted)">${e.dte}d</span></button>`
+        ).join('')}
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:14px">
+        ${setups.map((s,i)=>`<button class="lb-expiry-btn ${i===idx?'on':''}" onclick="lbSwitchSetup(${i})">${s.cfg.label}</button>`).join('')}
+      </div>
+      <div class="lb-section">
+        <div class="lb-section-title">Legs — ${cfg.label} (${cfg.sub})</div>
+        <table class="lb-legs">
+          <tr><th>Leg</th><th>Type</th><th>Strike</th><th>Bid</th><th>Ask</th><th class="r">Mid</th><th class="r">Delta</th><th class="r">IV</th><th class="r">OI</th></tr>
+          ${legs.map(l=>{
+            const c=l.contract, d=lbGetDelta(c);
+            const cls=l.dir==='short'?'short-leg':'long-leg';
+            return `<tr>
+              <td class="${cls}">${l.name}${l.qty>1?' x'+l.qty:''}</td>
+              <td>${l.type.toUpperCase()}</td>
+              <td style="font-weight:700">$${c.strike.toFixed(0)}</td>
+              <td>$${(c.bid||0).toFixed(2)}</td>
+              <td>$${(c.ask||0).toFixed(2)}</td>
+              <td class="r" style="font-weight:700">$${(c.mid||(c.bid+c.ask)/2||0).toFixed(2)}</td>
+              <td class="r">${d!=null?(d*100).toFixed(0)+'%':'--'}</td>
+              <td class="r">${c.iv?(c.iv>1?c.iv.toFixed(1):((c.iv*100).toFixed(1)))+'%':'--'}</td>
+              <td class="r">${c.oi!=null?c.oi.toLocaleString():'--'}</td>
+            </tr>`;
+          }).join('')}
+        </table>
+      </div>
+      <div class="lb-grid">
+        <div>
+          <div class="lb-stats">
+            <div class="lb-stat"><div class="lb-stat-label">${isCredit?'Net Credit':'Net Debit'}</div><div class="lb-stat-val ${isCredit?'green':'red'}">$${Math.abs(credit).toFixed(0)}</div></div>
+            <div class="lb-stat"><div class="lb-stat-label">Max Profit</div><div class="lb-stat-val green">$${maxProfit.toFixed(0)}</div></div>
+            <div class="lb-stat"><div class="lb-stat-label">Max Loss</div><div class="lb-stat-val red">$${Math.abs(maxLoss).toFixed(0)}</div></div>
+            <div class="lb-stat"><div class="lb-stat-label">Est. PoP</div><div class="lb-stat-val">${validation.pop}%</div></div>
+          </div>
+          <div style="margin-top:10px" class="lb-stats">
+            <div class="lb-stat"><div class="lb-stat-label">Reward : Risk</div><div class="lb-stat-val">${maxLoss!==0?(maxProfit/Math.abs(maxLoss)).toFixed(2):'--'} : 1</div></div>
+            <div class="lb-stat"><div class="lb-stat-label">Breakeven${bes.length>1?'s':''}</div><div class="lb-stat-val" style="font-size:12px">${bes.length?bes.map(b=>'$'+b.toFixed(2)).join(', '):'--'}</div></div>
+          </div>
+          ${row.d.putWall||row.d.callWall?`<div style="margin-top:10px;font-size:11px;color:var(--muted);font-family:Space Mono">
+            ${row.d.putWall?'Put wall: $'+row.d.putWall.toFixed(0):''}${row.d.putWall&&row.d.callWall?' · ':''}${row.d.callWall?'Call wall: $'+row.d.callWall.toFixed(0):''}
+          </div>`:''}
+        </div>
+        <div>
+          <div class="lb-section-title">Payoff at Expiration</div>
+          <canvas id="lbPayoffCanvas" style="width:100%;height:240px;display:block"></canvas>
+        </div>
+      </div>
+    `;
+
+    // Draw payoff chart
+    requestAnimationFrame(()=>drawLbPayoff(legs,spot,stratKey));
+  }
+
+  // Expose switch function
+  window.lbSwitchSetup = render;
+  render(activeIdx);
+}
+
+// ── Payoff Chart Drawing ──
+function drawLbPayoff(legs,spot,stratKey) {
+  const canvas=document.getElementById('lbPayoffCanvas');
+  if (!canvas) return;
+  const DPR=window.devicePixelRatio||1;
+  const W=canvas.offsetWidth||400, H=240;
+  canvas.width=W*DPR; canvas.height=H*DPR; canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(DPR,DPR); ctx.clearRect(0,0,W,H);
+
+  const sample=lbSamplePayoff(legs,spot);
+  const prices=sample.map(s=>s.price), payoffs=sample.map(s=>s.pnl);
+  const PAD={t:18,r:16,b:38,l:60};
+  const cW=W-PAD.l-PAD.r, cH=H-PAD.t-PAD.b;
+  const maxV=Math.max(...payoffs,0)+40, minV=Math.min(...payoffs,0)-40;
+  const rng=maxV-minV||1;
+  const xf=p=>PAD.l+(p-prices[0])/(prices[prices.length-1]-prices[0])*cW;
+  const yf=v=>PAD.t+(1-(v-minV)/rng)*cH;
+  const col=STRATEGY_COLORS[stratKey]||'#0d6e56';
+
+  // Y grid
+  const target=(maxV-minV)/5, mag=Math.pow(10,Math.floor(Math.log10(target||1)));
+  const norm=target/mag;
+  const step=norm<1.5?1*mag:norm<3?2*mag:norm<7?5*mag:10*mag;
+  const first=Math.ceil(minV/step)*step;
+  for (let v=first;v<=maxV;v+=step) {
+    ctx.strokeStyle='rgba(229,225,212,.6)';ctx.lineWidth=0.5;ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(PAD.l,yf(v));ctx.lineTo(PAD.l+cW,yf(v));ctx.stroke();
+    ctx.fillStyle='#9ea1a8';ctx.font='600 10px sans-serif';ctx.textAlign='right';
+    const label=Math.abs(v)>=1000?(v>=0?'+$':'-$')+(Math.abs(v)/1000).toFixed(1)+'k':'$'+(v>=0?'+':'')+Math.round(v);
+    ctx.fillText(label,PAD.l-6,yf(v)+4);
+  }
+
+  // Zero line
+  ctx.strokeStyle='rgba(120,120,120,.5)';ctx.lineWidth=1;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(PAD.l,yf(0));ctx.lineTo(PAD.l+cW,yf(0));ctx.stroke();ctx.setLineDash([]);
+
+  // X labels
+  ctx.fillStyle='#9ea1a8';ctx.font='600 10px sans-serif';ctx.textAlign='center';
+  const xStep=Math.max(1,Math.floor(prices.length/6));
+  prices.forEach((p,i)=>{if(i%xStep===0)ctx.fillText('$'+Math.round(p),xf(p),H-PAD.b+14);});
+
+  // Loss fill
+  ctx.beginPath();ctx.moveTo(xf(prices[0]),yf(0));
+  prices.forEach((p,i)=>ctx.lineTo(xf(p),yf(Math.min(payoffs[i],0))));
+  ctx.lineTo(xf(prices[prices.length-1]),yf(0));ctx.closePath();
+  ctx.fillStyle='rgba(176,48,48,.09)';ctx.fill();
+
+  // Profit fill
+  ctx.beginPath();ctx.moveTo(xf(prices[0]),yf(0));
+  prices.forEach((p,i)=>ctx.lineTo(xf(p),yf(Math.max(payoffs[i],0))));
+  ctx.lineTo(xf(prices[prices.length-1]),yf(0));ctx.closePath();
+  ctx.fillStyle=col+'18';ctx.fill();
+
+  // Main P&L line
+  ctx.beginPath();
+  prices.forEach((p,i)=>i===0?ctx.moveTo(xf(p),yf(payoffs[i])):ctx.lineTo(xf(p),yf(payoffs[i])));
+  ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.stroke();
+
+  // Spot line
+  if (spot>=prices[0]&&spot<=prices[prices.length-1]) {
+    ctx.strokeStyle='rgba(200,168,90,.85)';ctx.lineWidth=1.5;ctx.setLineDash([5,4]);
+    ctx.beginPath();ctx.moveTo(xf(spot),PAD.t);ctx.lineTo(xf(spot),PAD.t+cH);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#C9A96E';ctx.font='700 11px sans-serif';ctx.textAlign='center';
+    ctx.fillText('$'+spot.toFixed(0),xf(spot),PAD.t-4);
+  }
+
+  // Breakevens
+  const bes=lbBreakevens(legs);
+  bes.forEach(be=>{
+    if (be>=prices[0]&&be<=prices[prices.length-1]) {
+      const x=xf(be);
+      ctx.fillStyle='#333';ctx.beginPath();ctx.arc(x,yf(0),4,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#666';ctx.font='600 9px sans-serif';ctx.textAlign='center';
+      ctx.fillText('BE $'+be.toFixed(0),x,yf(0)+14);
+    }
+  });
+
+  // Strike markers
+  legs.forEach(l=>{
+    const x=xf(l.contract.strike);
+    if (x>=PAD.l&&x<=PAD.l+cW) {
+      ctx.strokeStyle=l.dir==='short'?'rgba(176,48,48,.5)':'rgba(45,125,79,.5)';
+      ctx.lineWidth=1;ctx.setLineDash([2,2]);
+      ctx.beginPath();ctx.moveTo(x,PAD.t);ctx.lineTo(x,PAD.t+cH);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=l.dir==='short'?'#b03030':'#2d7d4f';
+      ctx.font='600 8px sans-serif';ctx.textAlign='center';
+      ctx.fillText('$'+l.contract.strike.toFixed(0),x,H-PAD.b+26);
+    }
+  });
+}
 
 loadData();
 </script>

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf — Deterministic Engine · System Reference</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<script src="load-nav.js" defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --forest: #0B2D23; --gold: #C9A96E; --cream: #F7F5F0; --cream-dark: #EDE8DC;
+    --ink: #0B0F14; --ink-muted: #6b6b60; --ink-faint: #9b9b8e; --white: #fff;
+    --border: rgba(15,61,46,.12); --teal: #0d6e56; --teal-bg: #e0f2ec; --teal-text: #07473a;
+    --green: #1a8c5e; --yellow: #d97706; --red: #c0392b; --mono: 'Space Mono', monospace; --radius: 10px;
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--ink); line-height: 1.6; }
+  .main { max-width: 1180px; margin: 0 auto; padding: 24px 24px 90px; }
+  .page-header { text-align: center; margin-bottom: 18px; }
+  .page-header h1 { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: var(--forest); margin-bottom: 6px; }
+  .page-header p { font-size: 14px; color: var(--ink-muted); max-width: 720px; margin: 0 auto; }
+  .det-badge { display:inline-block; font-size:10px; font-weight:700; padding:3px 10px; border-radius:12px; background:var(--forest); color:var(--gold); text-transform:uppercase; letter-spacing:.08em; margin-left:8px; vertical-align:middle; }
+
+  /* Tabs */
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin:22px 0 18px; }
+  .tab { font-family:var(--mono); font-size:12px; font-weight:700; padding:9px 18px; border-radius:8px; border:1px solid var(--border); background:var(--white); color:var(--ink-muted); cursor:pointer; text-transform:uppercase; letter-spacing:.04em; transition:all .15s; }
+  .tab:hover { border-color:var(--gold); color:var(--forest); }
+  .tab.active { background:var(--forest); color:var(--gold); border-color:var(--forest); }
+  .tabpane { display:none; }
+  .tabpane.active { display:block; }
+
+  .panel { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: 0 1px 3px rgba(15,61,46,.04); overflow-x:auto; margin-bottom:16px; }
+  .mermaid { font-family:'Inter',sans-serif; text-align:center; }
+  .note { font-family:var(--mono); font-size:11px; color:var(--ink-faint); text-align:center; margin:6px 0 18px; }
+  .note code, td code, p code, li code { font-family:var(--mono); font-size:12px; background:var(--cream-dark); padding:1px 5px; border-radius:4px; color:var(--teal-text); }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; margin:6px 0 14px; font-family:var(--mono); font-size:11px; color:var(--ink-muted); }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .swatch { width:14px; height:14px; border-radius:3px; display:inline-block; border:1px solid var(--border); }
+
+  h2.sec { font-family:'Playfair Display',serif; font-size:20px; color:var(--forest); margin:6px 0 4px; }
+  .rule { height:2px; width:40px; background:var(--gold); margin:8px 0 16px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-bottom:8px; }
+  th { font-family:var(--mono); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-muted); text-align:left; padding:9px 11px; border-bottom:2px solid var(--border); }
+  td { padding:10px 11px; border-bottom:1px solid var(--border); vertical-align:top; }
+  tr:hover td { background:var(--cream); }
+  .tag { display:inline-block; font-family:var(--mono); font-size:9px; font-weight:700; padding:2px 7px; border-radius:9px; text-transform:uppercase; letter-spacing:.04em; }
+  .t-code { background:var(--teal-bg); color:var(--teal-text); }
+  .t-llm { background:#ede9fe; color:#5b21b6; }
+  .t-data { background:#fef3c7; color:#92400e; }
+  a { color:var(--teal); }
+  .step { background:var(--white); border:1px solid var(--border); border-left:3px solid var(--gold); border-radius:8px; padding:14px 18px; margin-bottom:12px; }
+  .step h3 { font-size:15px; color:var(--forest); margin-bottom:4px; }
+  .step .u { font-family:var(--mono); font-size:12px; color:var(--teal); }
+  pre.code { font-family:var(--mono); font-size:12px; line-height:1.6; background:var(--forest); color:#d9e8e0; padding:14px 16px; border-radius:8px; overflow-x:auto; margin:8px 0; }
+  ul { margin:6px 0 10px 20px; } li { margin-bottom:5px; }
+</style>
+</head>
+<body>
+  <div id="nav-slot"></div>
+  <div class="main">
+    <div class="page-header">
+      <h1>Deterministic Engine — System Reference <span class="det-badge">No LLM in decisions</span></h1>
+      <p>How the recommendation system works end to end: the decision flow, the services behind each algorithm, the pages that use them, and how to use it all.</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="flow">① Flow Chart</button>
+      <button class="tab" data-tab="apis">② APIs &amp; Services</button>
+      <button class="tab" data-tab="ui">③ UI Pages</button>
+      <button class="tab" data-tab="howto">④ How to Use</button>
+    </div>
+
+    <!-- ───────────── TAB 1: FLOW ───────────── -->
+    <div class="tabpane active" id="tab-flow">
+      <div class="legend">
+        <span><i class="swatch" style="background:#eef4f1;border-color:#0d6e56"></i> process / data</span>
+        <span><i class="swatch" style="background:#fff8ec;border-color:#d97706;transform:rotate(45deg)"></i> decision / check</span>
+        <span><i class="swatch" style="background:#e0f2ec;border-color:#0d6e56;border-radius:9px"></i> input / output</span>
+        <span><i class="swatch" style="background:#fee2e2;border-color:#c0392b"></i> flag / NO&nbsp;TRADE</span>
+      </div>
+      <div class="panel">
+        <pre class="mermaid">
+flowchart TD
+  Start(["Ticker + DTE — e.g. TSLA · 14d"]):::io --> Fetch["fetch market data"]:::proc
+  subgraph S1[" 1 · Fetch market data — parallel "]
+    Fetch --> Snap["Stock snapshot → spot price"]:::proc
+    Fetch --> Bars["400d bars → candles"]:::proc
+    Fetch --> Alp["Alpaca options chain — indicative feed"]:::proc
+    Fetch --> OIsrc["Open interest — Yahoo svc, expiry-snapped"]:::proc
+  end
+  Alp --> Qchain{"Chain has ≥ 10 contracts?"}:::dec
+  Qchain -- "no / empty" --> Yahoo["Full chain from Yahoo<br/>strikes · bid/ask · IV · OI"]:::proc
+  Qchain -- "yes" --> Merge["Merge OI + IV onto contracts"]:::proc
+  Yahoo --> Merge
+  OIsrc --> Merge
+  subgraph S2[" 2 · Compute features "]
+    Merge --> Tech["Technicals — RSI · ADX<br/>SMA 20/50/100/200 · ATR · realized vol"]:::proc
+    Merge --> Gamma["Gamma — put/call walls · band width<br/>confidence · ATM IV"]:::proc
+  end
+  Tech --> Have(["DATA WE HAVE for this stock"]):::io
+  Gamma --> Have
+  Have --> Suff{"Data sufficient?<br/>≥2 of IV / gamma / OI missing<br/>AND no coherent thesis?"}:::dec
+  Suff -- "yes — cannot evaluate" --> DataErr(["DATA_ERROR"]):::flag
+  Suff -- "no — proceed<br/>flags if any" --> Score["calcScore → 0–100<br/>gamma · IV · trend pillars"]:::proc
+  subgraph S3[" 3 · Engine selects strategy — gate cascade, first wins "]
+    Score --> G1{"iron_condor?<br/>conf≥0.60 · band 3–15% · ≥50 contracts"}:::dec
+    G1 -- no --> G2{"broken_wing_butterfly?<br/>band / conf / IV thresholds"}:::dec
+    G2 -- no --> G3{"directional?<br/>trend = bull / bear"}:::dec
+    G3 -- no --> G4{"calendar?<br/>neutral · IV/RV &lt; 1 · low IV"}:::dec
+    G4 -- no --> G5["iron_butterfly — fallback"]:::proc
+    G1 -- yes --> Pick["chosen strategy + direction"]:::proc
+    G2 -- yes --> Pick
+    G3 -- yes --> Pick
+    G4 -- yes --> Pick
+    G5 --> Pick
+  end
+  subgraph S4[" 4 · Reaction gate — S/R unification "]
+    RG["Reaction engine on candles + walls<br/>→ nearest tested support / resistance"]:::proc --> Qrail{"Neutral pick AND testing a tested rail?<br/>holds ≥ 60% · score ≥ 55"}:::dec
+    Qrail -- "yes" --> Promote["PROMOTE → bull_put_spread (support)<br/>or bear_call_spread (resistance)"]:::proc
+    Qrail -- "no" --> Keep["keep gamma pick"]:::proc
+  end
+  Pick --> RG
+  subgraph S5[" 5 · Classify regime + decide "]
+    Regime["classifyRegime — numeric rules<br/>trend cont · mean-rev · developing · range"]:::proc --> Legs{"Legs constructible?<br/>fail-closed builder"}:::dec
+    Legs -- "no" --> NT1(["NO_TRADE — legs_not_constructible"]):::flag
+    Legs -- "yes" --> Tier{"Engine score?"}:::dec
+    Tier -- "≥ 65" --> Guards{"Guardrails — downgrade only<br/>gates failed · no vol · developing"}:::dec
+    Tier -- "40–64" --> Watch["WATCHLIST_TRADE"]:::proc
+    Tier -- "&lt; 40" --> NT2(["NO_TRADE"]):::flag
+    Guards -- "trip" --> Watch
+    Guards -- "clear" --> Appr["APPROVED_TRADE"]:::proc
+  end
+  Promote --> Regime
+  Keep --> Regime
+  subgraph S6[" 6 · Construct + return "]
+    Build["buildLegs → snap to real strikes<br/>valid-or-nothing → payoff + risk plan"]:::proc --> Out(["Recommendation card<br/>decision · legs · score · regime · risk plan"]):::io
+  end
+  Appr --> Build
+  Watch --> Build
+  NT1 --> OutNT(["NO_TRADE / DATA_ERROR card + reason"]):::flag
+  NT2 --> OutNT
+  DataErr --> OutNT
+  classDef proc fill:#eef4f1,stroke:#0d6e56,stroke-width:1px,color:#0B2D23;
+  classDef dec fill:#fff8ec,stroke:#d97706,stroke-width:1.2px,color:#5a3d12;
+  classDef io fill:#e0f2ec,stroke:#0d6e56,stroke-width:1.5px,color:#07473a;
+  classDef flag fill:#fee2e2,stroke:#c0392b,stroke-width:1px,color:#991b1b;
+        </pre>
+      </div>
+      <div class="note"><code>routes/ai.ts</code> orchestrates · <code>strategy-engine.js</code> (gates + score) · <code>reaction-features.ts</code> (gate) · <code>decision-engine.ts</code> (regime + tiers) · <code>leg-builder.ts</code> (fail-closed legs). Same data in → same trade out → $0 LLM cost.</div>
+
+      <div class="page-header" style="margin-top:36px;">
+        <h1 style="font-size:21px;">Inside the Reaction Gate <span class="det-badge">Step 4 detail</span></h1>
+        <p>How a support/resistance rail is scored — the logic behind movement-range's <b>“21 touches · 17 rejects · smoothed 76%”</b> evidence.</p>
+      </div>
+      <div class="panel">
+        <pre class="mermaid">
+flowchart TD
+  In(["candles 400d + gamma walls + SMAs + Bollinger"]):::io --> Gather["gatherLevels<br/>collect candidate levels:<br/>put/call walls · SMA 50/100/200 · BB · 20d swing hi/lo"]:::proc
+  Gather --> Cluster["clusterLevels<br/>merge nearby levels into ZONES — ATR-based width"]:::proc
+  Cluster --> Scan["findZoneTouches<br/>scan every candle — did price enter the zone?"]:::proc
+  Scan --> N{"≥ 3 touches?"}:::dec
+  N -- "no" --> Unt(["untested → score 0, excluded"]):::flag
+  N -- "yes" --> Cls["classify each touch"]:::proc
+  Cls --> H["HOLD / REJECT<br/>bounced away — the '17 rejects'"]:::proc
+  Cls --> B["BREAK / BREAKOUT<br/>closed through the zone"]:::proc
+  Cls --> F["fake break<br/>poked then reclaimed"]:::proc
+  H --> Rate["raw rate = holds ÷ resolved touches"]:::proc
+  B --> Rate
+  F --> Rate
+  Rate --> Wil["Wilson smoothing<br/>shrinks small samples toward 50%<br/>→ the 'smoothed 76%'"]:::proc
+  Wil --> Sc["computeZoneScore → S/R SCORE 0–100<br/>hold-rate + touches + (1−break) + vol-conf + gamma-align<br/>→ the '51' / '82'"]:::proc
+  Scan --> Fwd["forwardReturns<br/>median 5d move after a touch"]:::proc
+  Fwd --> Sc
+  Sc --> Near["nearestScoreableZones<br/>nearest tested support + resistance to spot"]:::proc
+  Near --> Gate{"Price testing this rail? — within ~0.6 ATR<br/>AND hold/reject ≥ 60% AND score ≥ 55"}:::dec
+  Gate -- "yes" --> Promote2(["PROMOTE neutral pick →<br/>bull_put (support) · bear_call (resistance)"]):::io
+  Gate -- "no" --> Keep2(["no promotion — keep gamma pick"]):::flag
+  classDef proc fill:#eef4f1,stroke:#0d6e56,stroke-width:1px,color:#0B2D23;
+  classDef dec fill:#fff8ec,stroke:#d97706,stroke-width:1.2px,color:#5a3d12;
+  classDef io fill:#e0f2ec,stroke:#0d6e56,stroke-width:1.5px,color:#07473a;
+  classDef flag fill:#fee2e2,stroke:#c0392b,stroke-width:1px,color:#991b1b;
+        </pre>
+      </div>
+      <div class="note">This is <code>shared/reaction/</code> — the same engine <b>movement-range</b> runs in your browser and the <b>pipeline</b> now bakes into every report.</div>
+    </div>
+
+    <!-- ───────────── TAB 2: APIs ───────────── -->
+    <div class="tabpane" id="tab-apis">
+      <h2 class="sec">The deterministic stack — algorithms &amp; services</h2><div class="rule"></div>
+      <p style="color:var(--ink-muted);font-size:14px;margin-bottom:12px;max-width:820px;">Each box on the flow chart maps to a real module. None of these call an LLM — they are pure, testable, deterministic code. Tags: <span class="tag t-code">code</span> deterministic · <span class="tag t-data">data</span> market data · <span class="tag t-llm">llm</span> uses a model.</p>
+      <table>
+        <thead><tr><th>Algorithm / Service</th><th>What it does</th><th>Module</th><th>Used by</th></tr></thead>
+        <tbody>
+          <tr><td><b>Recommendation engine</b> <span class="tag t-code">code</span></td><td>Orchestrates the whole flow: fetch → features → gates → reaction gate → decision → legs. Returns one recommendation.</td><td><code>routes/ai.ts</code> → <code>POST /api/recommend</code></td><td>discover-engine, discover, discover-pro, leg-builder-test</td></tr>
+          <tr><td><b>Strategy engine (gamma)</b> <span class="tag t-code">code</span></td><td>Gate cascade (iron_condor → BWB → directional → calendar → iron_butterfly) + 0–100 score from gamma/IV/trend pillars + direction.</td><td><code>strategy-engine.js</code></td><td>/api/recommend + scanner pipeline</td></tr>
+          <tr><td><b>Gamma analyzer</b> <span class="tag t-code">code</span></td><td>Computes put/call walls, band width, blended confidence (OI · GEX · delta · volume), ATM IV.</td><td><code>gamma-analyzer-enhanced.js</code></td><td>strategy engine</td></tr>
+          <tr><td><b>Decision engine</b> <span class="tag t-code">code</span></td><td>Regime classification (numeric rules), score → APPROVED/WATCHLIST/NO_TRADE tiers + guardrails, per-strategy risk plan, template rationale.</td><td><code>decision-engine.ts</code></td><td>/api/recommend</td></tr>
+          <tr><td><b>Leg builder</b> <span class="tag t-code">code</span></td><td>Builds real strikes/legs from the chosen strategy, snapped to liquid strikes. Fail-closed: valid legs or NO_TRADE — never a mislabelled structure.</td><td><code>leg-builder.ts</code> + <code>validate.js</code></td><td>/api/recommend</td></tr>
+          <tr><td><b>Reaction / S-R engine</b> <span class="tag t-code">code</span></td><td>Clusters S/R zones, counts touches/holds/rejects, Wilson-smooths the rate, scores rails. Drives the reaction gate that promotes neutral → directional.</td><td><code>shared/reaction/</code> · <code>reaction-features.ts</code> · <code>price-reaction.ts</code></td><td>/api/recommend (gate), movement-range (browser), pipeline (<code>reaction-gate.cjs</code>)</td></tr>
+          <tr><td><b>OI / chain data</b> <span class="tag t-data">data</span></td><td>Open interest (Yahoo service primary, Nasdaq fallback, holiday expiry-snap) + full-chain fallback when Alpaca is empty.</td><td><code>nasdaq-oi.ts</code> · Yahoo Cloud Fn</td><td>/api/recommend, pipeline</td></tr>
+          <tr><td><b>Market data</b> <span class="tag t-data">data</span></td><td>Stock snapshot, 400-day bars, options chain.</td><td><code>alpaca.ts</code> → <code>/api/snapshot/:ticker</code></td><td>all discover pages (to resolve spot + expiry)</td></tr>
+          <tr><td><b>Scanner pipeline</b> <span class="tag t-data">data</span></td><td>Runs the engine + reaction gate over all 297 symbols, writes reports → R2 + Firestore, rebuilds the manifest authoritatively. Scheduled (15-min fast, daily OI 9:32am ET).</td><td><code>newleaf-pipeline.js</code> · <code>manifest-builder.cjs</code></td><td>movement-range, watchlist, published picks</td></tr>
+          <tr><td>Outcome snapshots <span class="tag t-data">data</span></td><td>Persists each recommendation (score, regime, strategy, legs) so the score can be calibrated against realized P&amp;L.</td><td>Firestore <code>recommendation_snapshots</code></td><td>(future) calibration</td></tr>
+          <tr><td>Market read / chat <span class="tag t-llm">llm</span></td><td>One-sentence prose market read; trade-desk chat assistant. Off the decision path — narration only.</td><td><code>/api/ai-read</code> · <code>/api/chat</code></td><td>discover, discover-pro, strategy-builder</td></tr>
+        </tbody>
+      </table>
+      <div class="note">All requests use header <code>X-API-Key</code>. Base: <code>https://us-central1-newleaf-trading.cloudfunctions.net/api</code></div>
+    </div>
+
+    <!-- ───────────── TAB 3: UI ───────────── -->
+    <div class="tabpane" id="tab-ui">
+      <h2 class="sec">Pages — what each shows &amp; what it runs</h2><div class="rule"></div>
+      <table>
+        <thead><tr><th>Page</th><th>Purpose</th><th>Engine / data source</th></tr></thead>
+        <tbody>
+          <tr><td><a href="discover-engine.html"><b>discover-engine</b></a></td><td>Single-ticker engine test — decision, regime, gate trace, score pillars, legs, payoff, risk plan, $0-cost badge.</td><td><span class="tag t-code">/api/recommend</span></td></tr>
+          <tr><td><a href="discover.html"><b>discover</b></a></td><td>AI-Powered Strategy Builder — the 5-step product flow (snapshot → strategies → drill-in → verify → verdict → publish).</td><td><span class="tag t-code">/api/recommend</span> + <span class="tag t-llm">ai-read</span></td></tr>
+          <tr><td><a href="discover-pro.html"><b>discover-pro</b></a></td><td>Pro single-recommendation view.</td><td><span class="tag t-code">/api/recommend</span></td></tr>
+          <tr><td><a href="movement-range.html"><b>movement-range</b></a></td><td>Support/Resistance setups across all 297 names, ranked by Setup Quality, with touches/rejects/smoothed evidence + suggested spread.</td><td><span class="tag t-data">R2 reports</span> + reaction engine (in-browser)</td></tr>
+          <tr><td><a href="discover-pro-llm.html"><b>discover-pro-llm</b></a></td><td>Eval harness — runs the same deterministic decision and compares how 12 models <i>narrate</i> it (the decision is identical across all).</td><td><span class="tag t-code">/api/recommend</span> + <span class="tag t-llm">narration</span></td></tr>
+          <tr><td><a href="leg-builder-test.html"><b>leg-builder-test</b></a></td><td>Exercises the fail-closed leg builder directly.</td><td><span class="tag t-code">/api/recommend</span></td></tr>
+          <tr><td><a href="watchlist.html"><b>watchlist</b></a> · <a href="all-stocks.html">all-stocks</a></td><td>Watchlist / full-universe views of the latest scored reports.</td><td><span class="tag t-data">R2 reports + manifest</span></td></tr>
+          <tr><td><b>SPA /invest/discover</b></td><td>The published product surface — pre-ranked pick tiles.</td><td><span class="tag t-data">Firestore tiles</span> (not the live API)</td></tr>
+          <tr><td><a href="discover-engine-flow.html"><b>this page</b></a></td><td>System reference — flow, services, pages, how-to.</td><td>static</td></tr>
+        </tbody>
+      </table>
+      <div class="note">Live engine = the workbench discover pages + the API. The SPA Discover reads pre-published tiles; wiring it to the live engine is a follow-up.</div>
+    </div>
+
+    <!-- ───────────── TAB 4: HOW TO USE ───────────── -->
+    <div class="tabpane" id="tab-howto">
+      <h2 class="sec">How to use it</h2><div class="rule"></div>
+      <div class="step"><h3>① Get a trade idea for one stock</h3>
+        <div class="u">newleafsystem.com/workbench/discover-engine.html</div>
+        <p>Type a ticker (or tap a chip), pick a target DTE → you get the full recommendation: decision (APPROVED / WATCHLIST / NO_TRADE), strategy + legs, payoff chart, risk plan, the gate trace, and the market context it decided from. Deterministic — same inputs always give the same trade.</p>
+      </div>
+      <div class="step"><h3>② Scan the whole universe for setups</h3>
+        <div class="u">newleafsystem.com/workbench/movement-range.html</div>
+        <p>All 297 names ranked by Setup Quality. The funnel shows why names were excluded (earnings, untested zones, illiquid, weak rail, low score). Each row shows the S/R evidence (touches · holds/rejects · smoothed rate) and a suggested spread. Use the presets (Condor screen · Bullish at support · Bearish at resistance).</p>
+      </div>
+      <div class="step"><h3>③ Run the product flow</h3>
+        <div class="u">newleafsystem.com/workbench/discover.html</div>
+        <p>The 5-step builder: snapshot → AI-ranked strategies → drill into one → verify → pass/fail verdict → publish. Built on the same <code>/api/recommend</code> engine.</p>
+      </div>
+      <div class="step"><h3>④ Call the API directly</h3>
+        <pre class="code">TK=TSLA
+EXP=$(curl -s "$BASE/api/snapshot/$TK" -H "X-API-Key: $KEY" \
+  | jq -r '.expirations | map(select(.)) | .[0]')
+curl -s -X POST "$BASE/api/recommend" \
+  -H "Content-Type: application/json" -H "X-API-Key: $KEY" \
+  -d "{\"ticker\":\"$TK\",\"expiry\":\"$EXP\"}" | jq '.enginePick.reasoningOverride'</pre>
+        <p>Read <code>enginePick.reasoningOverride</code> (decision · strategy · legs · regime · risk plan), <code>engineSnapshot.gateValues</code> (the score pillars + walls), and <code>reactionFeatures</code> (the S/R rails). <code>cost.totalCost</code> is always <code>0</code>.</p>
+      </div>
+      <div class="step"><h3>⑤ Data freshness</h3>
+        <p>The scanner pipeline refreshes the R2 reports automatically — fast pass every 15 min during market hours, full OI enrichment at 9:32am ET. movement-range and watchlist read those; the discover pages call the engine live per request.</p>
+      </div>
+    </div>
+  </div>
+<script>
+  mermaid.initialize({
+    startOnLoad: true, securityLevel: 'loose',
+    flowchart: { curve: 'basis', nodeSpacing: 40, rankSpacing: 48, useMaxWidth: true },
+    themeVariables: { fontFamily: 'Inter, sans-serif', fontSize: '13px', clusterBkg: '#ffffff', clusterBorder: '#C9A96E', lineColor: '#9b9b8e', edgeLabelBackground: '#F7F5F0' },
+    theme: 'base',
+  });
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tabpane').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('tab-' + t.dataset.tab).classList.add('active');
+  }));
+</script>
+</body>
+</html>
