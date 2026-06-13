@@ -89,23 +89,13 @@ async function ensureServer() {
 // Source code kept in yahoo-svc/ for redeployment: firebase deploy --only functions
 
 // ── Market hours check (ET) ───────────────────────────────────────────────────
-function isDST(date) {
-  const jan = new Date(date.getFullYear(), 0, 1).getTimezoneOffset();
-  const jul = new Date(date.getFullYear(), 6, 1).getTimezoneOffset();
-  return Math.min(jan, jul) === date.getTimezoneOffset();
-}
-
+// Market hours via true ET wall-clock — no manual DST math, robust to the machine's timezone.
+const ET_TZ = 'America/New_York';
 function isMarketHours() {
-  const now = new Date();
-  const day = now.getDay();
-  if (day === 0 || day === 6) return false;
-
-  const etOffset = isDST(now) ? -4 : -5;
-  const etHour = now.getUTCHours() + etOffset;
-  const etMin = now.getUTCMinutes();
-  const etTotal = etHour * 60 + etMin;
-
-  return etTotal >= 9 * 60 + 30 && etTotal < 16 * 60; // 9:30am-4:00pm ET
+  const et = new Date(new Date().toLocaleString('en-US', { timeZone: ET_TZ }));
+  if (et.getDay() === 0 || et.getDay() === 6) return false;
+  const total = et.getHours() * 60 + et.getMinutes();
+  return total >= 9 * 60 + 30 && total < 16 * 60; // 9:30am–4:00pm ET
 }
 
 function nowET() {
@@ -226,6 +216,9 @@ if (ONCE) {
   // Start services on scheduler boot
   ensureServer().catch(console.error);
 
+  // All schedules run in true ET via node-cron's timezone option — no UK-local / DST hacks.
+  const TZ = { timezone: ET_TZ };
+
   // Fast pipeline: every 15 min, Mon-Fri, market hours only
   cron.schedule('*/15 * * * 1-5', async () => {
     if (!isMarketHours()) return;
@@ -234,25 +227,22 @@ if (ONCE) {
     try { await runJob('pipeline-fast.js', ['--watchlist']); }
     catch (err) { console.error(`[${nowET()}] Fast pipeline error:`, err.message); }
     finally { fastPipelineRunning = false; }
-  });
+  }, TZ);
 
   // Daily OI enrichment + watchlist + Firestore sync: 9:32am ET
-  // Using 13:32 UTC (summer) / 14:32 UTC (winter) — node-cron runs in local TZ
-  // Since machine is in UK (BST/GMT), use 14:32 for BST (= 9:32 ET in summer)
-  cron.schedule('32 14 * * 1-5', async () => {
+  cron.schedule('32 9 * * 1-5', async () => {
     if (dailyOIRanToday()) return;
     await runDailyOISequence();
-  });
+  }, TZ);
 
   // Pre-market service check: 9:25am ET — ensure services are up before daily jobs
-  cron.schedule('25 14 * * 1-5', async () => {
+  cron.schedule('25 9 * * 1-5', async () => {
     console.log(`[${nowET()}] === Pre-market service check ===`);
     await ensureServer().catch(console.error);
-  });
+  }, TZ);
 
-  // Daily funnel: rank scanner signals → price top N → publish to tiles
-  // 10:00am ET = 15:00 BST (summer) / 15:00 GMT (winter) — after market open, chains populated
-  cron.schedule('0 15 * * 1-5', async () => {
+  // Daily funnel: rank scanner signals → price top N → publish to tiles. 10:00am ET.
+  cron.schedule('0 10 * * 1-5', async () => {
     const stamp = (() => { try { return fs.readFileSync(DAILY_FUNNEL_STAMP, 'utf8').trim(); } catch { return ''; } })();
     if (stamp === todayET()) return; // already ran today
     console.log(`[${nowET()}] === Daily Funnel: Rank → Price → Publish ===`);
@@ -263,11 +253,10 @@ if (ONCE) {
     } else {
       console.error(`[${nowET()}] funnel-price.cjs not found at ${funnelScript}`);
     }
-  });
+  }, TZ);
 
-  // Event calendar refresh (FMP): daily after market close, 4:15pm ET
-  // 4:15pm ET = 21:15 BST (summer) — DST shift cancels
-  cron.schedule('15 21 * * 1-5', async () => {
+  // Event calendar refresh (Yahoo earnings + FMP ex-div): daily after market close, 4:15pm ET.
+  cron.schedule('15 16 * * 1-5', async () => {
     console.log(`[${nowET()}] === Event Calendar Refresh (Yahoo + FMP ex-div) ===`);
     const script = path.join(NEWLEAF_DIR, 'scripts', 'refresh-event-calendar.js');
     if (fs.existsSync(script)) {
@@ -275,15 +264,13 @@ if (ONCE) {
     } else {
       console.error(`[${nowET()}] refresh-event-calendar.js not found at ${script}`);
     }
-  });
+  }, TZ);
 
-  // Canonical weekly premium snapshot: Fridays at 4:30pm ET
-  // 4:30pm ET = 21:30 BST (summer) / 21:30 GMT (winter) — both are cron '30 21'
-  // because US and UK DST shifts cancel out (EDT→BST = EST→GMT = +5h)
-  cron.schedule('30 21 * * 5', async () => {
+  // Canonical weekly premium snapshot: Fridays at 4:30pm ET.
+  cron.schedule('30 16 * * 5', async () => {
     if (weeklySnapRanThisWeek()) return;
     await runWeeklySnapshot();
-  });
+  }, TZ);
 
   // Health check: every 5 min — auto-restart any down services
   // Also catches up daily OI if it was missed (e.g. machine was asleep at cron time)
@@ -312,7 +299,7 @@ if (ONCE) {
     if (fs.existsSync(healthScript)) {
       spawn('bash', [healthScript], { cwd: __dirname, stdio: 'inherit' });
     }
-  });
+  }, TZ);
 
   // Cleanup child processes on scheduler exit
   function cleanup() {

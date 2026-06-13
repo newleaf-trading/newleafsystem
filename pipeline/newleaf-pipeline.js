@@ -744,17 +744,21 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
   const trendDirection = getDirection(gammaData, technicalData);
   let strategy  = selectStrategy(gammaData, trendDirection, spot, technicalData);
   let direction = reconcileDirection(trendDirection, strategy.code);
-  // Step 1 (engine unification): a tested S/R rail the price is testing promotes a NEUTRAL
-  // pick to the aligned directional spread. Same gate as the API + movement-range. Non-fatal.
-  try {
-    const { computeReactionRails, applyReactionGate } = require('./reaction-gate.cjs');
-    const _g = applyReactionGate(strategy.code, computeReactionRails({ snapshot: { price: spot }, technicalData, gammaData }));
-    if (_g) {
-      log(C.dim(`  Reaction gate: ${strategy.code} → ${_g.strategy} (${_g.note})`));
-      strategy = { ...STRATEGIES[_g.strategy], reactionNote: _g.note, gammaCode: strategy.code };
-      direction = _g.direction;
-    }
-  } catch (_) { /* non-fatal: keep the gamma pick */ }
+  // Reaction gate (engine unification): promote a neutral pick to the aligned directional spread.
+  // Skip in intraday — S/R zones don't change within the day, this result isn't uploaded to
+  // latest.json (no OI), and the intraday OI-preservation path below re-applies the gate. Daily
+  // and full runs apply it here. (Optimisation #2 — removes a wasted recompute every 15 min.)
+  if (!intradayMode) {
+    try {
+      const { computeReactionRails, applyReactionGate } = require('./reaction-gate.cjs');
+      const _g = applyReactionGate(strategy.code, computeReactionRails({ snapshot: { price: spot }, technicalData, gammaData }));
+      if (_g) {
+        log(C.dim(`  Reaction gate: ${strategy.code} → ${_g.strategy} (${_g.note})`));
+        strategy = { ...STRATEGIES[_g.strategy], reactionNote: _g.note, gammaCode: strategy.code };
+        direction = _g.direction;
+      }
+    } catch (_) { /* non-fatal: keep the gamma pick */ }
+  }
   log(`Score: ${C.bold(opportunityScore.toFixed(1))} | ${direction} | ${strategy.name}`);
 
   // Calculate ivRank and add to gammaData
