@@ -8,3 +8,8 @@ reports/
 .DS_Store
 yahoo-svc/venv/
 yahoo-svc/__pycache__/
+
+# runtime stamps
+.daily-oi-stamp
+.daily-funnel-stamp
+.weekly-snap-stamp
