@@ -222,9 +222,9 @@ export function usePortfolio() {
     await updateDoc(posRef, { ...fields, updatedAt: serverTimestamp() });
   }, [user]);
 
-  // ── Check if position exists ───
+  // ── Check if ACTIVE position exists (closed trades don't block rediscovery) ───
   const isInPortfolio = useCallback((tileId) => {
-    return portfolioItems.some(item => item.tileId === tileId || item.id === tileId);
+    return portfolioItems.some(item => (item.tileId === tileId || item.id === tileId) && item.status === 'active');
   }, [portfolioItems]);
 
   // ── Derived data ───

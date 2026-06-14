@@ -1,0 +1,287 @@
+/* ═══════════════════════════════════════════════════════════════
+   Invest shared component styles
+   All tokens reference the design system vars.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Colors (CSS custom properties used by components) ── */
+:root {
+  --inv-forest: #0F3D2E;
+  --inv-deep: #062e22;
+  --inv-green-900: #073827;
+  --inv-green-800: #0f4a36;
+  --inv-gold: #C8A85A;
+  --inv-gold-soft: #f4ead4;
+  --inv-cream: #f7f3ea;
+  --inv-paper: #fffdf8;
+  --inv-page: #fbfaf7;
+  --inv-text: #172033;
+  --inv-muted: #6b7280;
+  --inv-line: #e8e2d8;
+  --inv-line-soft: #f0ebe0;
+  --inv-profit: #16835f;
+  --inv-profit-deep: #0d6347;
+  --inv-profit-soft: #edf8f3;
+  --inv-loss: #d94f4f;
+  --inv-loss-deep: #b5392f;
+  --inv-loss-soft: #fff1ef;
+  --inv-loss-line: #ffd6d1;
+  --inv-amber: #bd7c19;
+  --inv-amber-soft: #fff7e8;
+  --inv-radius: 18px;
+  --inv-radius-sm: 12px;
+  --inv-shadow: 0 16px 44px rgba(18,32,27,.06);
+}
+
+/* ── Shared typography ── */
+.serif { font-family: 'Fraunces', Georgia, serif; }
+.mono  { font-family: 'Space Mono', ui-monospace, SFMono-Regular, monospace; }
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--inv-gold);
+}
+.pos { color: var(--inv-profit); }
+.neg { color: var(--inv-loss); }
+
+/* ── ReviewBadge ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 11px;
+  border-radius: 20px;
+}
+.badgeTime   { background: var(--inv-amber-soft); color: var(--inv-amber); }
+.badgeLoss   { background: var(--inv-loss-soft);   color: var(--inv-loss-deep); }
+.badgeProfit { background: var(--inv-profit-soft); color: var(--inv-profit-deep); }
+.badgeStrat  { background: rgba(201,169,110,.16);  color: #9a7b3a; }
+.badgeNeutral{ background: rgba(255,255,255,.1);   color: #cdbb93; }
+.badgeCandidate { background: var(--inv-profit-soft); color: var(--inv-profit-deep); }
+.badgeExpired   { background: #f0ebe0; color: #6b7280; }
+
+/* ── MetricCard ── */
+.metricCard {
+  background: var(--inv-paper);
+  border: 0.5px solid var(--inv-line);
+  border-radius: var(--inv-radius-sm);
+  padding: 16px 18px;
+}
+.metricLabel {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--inv-muted);
+  font-weight: 500;
+}
+.metricValue {
+  font-family: 'Space Mono', monospace;
+  font-size: 30px;
+  font-weight: 500;
+  margin-top: 6px;
+  line-height: 1;
+}
+.metricSub {
+  font-size: 12px;
+  color: var(--inv-muted);
+  margin-top: 6px;
+}
+
+/* ── RiskGauge ── */
+.gaugeTrack {
+  position: relative;
+  height: 30px;
+  border-radius: 9px;
+  overflow: visible;
+  background: #efece4;
+}
+.gaugeTrackInline {
+  composes: gaugeTrack;
+  height: 22px;
+  border-radius: 7px;
+}
+.zoneLoss {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: rgba(217,79,79,.22);
+  border-radius: 9px 0 0 9px;
+}
+.zoneProfit {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  background: rgba(22,131,95,.20);
+  border-radius: 0 9px 9px 0;
+}
+.gaugeBE {
+  position: absolute;
+  top: -6px; bottom: -6px;
+  width: 0;
+  border-left: 1.5px dashed rgba(23,32,51,.4);
+}
+.gaugeMarker {
+  position: absolute;
+  top: 50%;
+  width: 18px; height: 18px;
+  margin: -9px 0 0 -9px;
+  border-radius: 50%;
+  border: 3px solid var(--inv-paper);
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+}
+.gaugeMarkerInline {
+  composes: gaugeMarker;
+  width: 12px; height: 12px;
+  margin: -6px 0 0 -6px;
+  border-width: 2px;
+}
+.markerProfit { background: var(--inv-profit); }
+.markerLoss   { background: var(--inv-loss); }
+.gaugeLabel {
+  position: absolute;
+  top: 38px;
+  transform: translateX(-50%);
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.gaugeEnds {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--inv-muted);
+  margin-top: 28px;
+}
+.gaugeEndsInline {
+  composes: gaugeEnds;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+/* ── LegsTable ── */
+.legsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.legsTable th {
+  text-align: right;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--inv-muted);
+  font-weight: 500;
+  padding: 8px 6px;
+}
+.legsTable th:first-child,
+.legsTable td:first-child { text-align: left; }
+.legsTable td {
+  text-align: right;
+  padding: 13px 6px;
+  border-top: 0.5px solid var(--inv-line-soft);
+  font-family: 'Space Mono', monospace;
+}
+.legTag {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+}
+.tagSell { background: var(--inv-loss-soft); color: var(--inv-loss-deep); }
+.tagBuy  { background: var(--inv-profit-soft); color: var(--inv-profit-deep); }
+.netRow td {
+  border-top: 1px solid var(--inv-line) !important;
+  font-weight: 500;
+}
+
+/* ── MoneyBreakdown ── */
+.breakdown {
+  background: rgba(255,255,255,.05);
+  border: 0.5px solid rgba(255,255,255,.1);
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  text-align: right;
+  line-height: 1.7;
+}
+.breakdownLight {
+  composes: breakdown;
+  background: var(--inv-cream);
+  border-color: var(--inv-line);
+  color: var(--inv-text);
+}
+
+/* ── Chips (inline metrics on position rows) ── */
+.chip {
+  font-size: 12px;
+  color: var(--inv-muted);
+  background: var(--inv-cream);
+  border: 0.5px solid var(--inv-line);
+  border-radius: 8px;
+  padding: 6px 11px;
+  white-space: nowrap;
+}
+.chip b {
+  color: var(--inv-text);
+  font-family: 'Space Mono', monospace;
+  font-weight: 500;
+  margin-left: 3px;
+}
+.chipWhy {
+  composes: chip;
+  background: var(--inv-loss-soft);
+  border-color: var(--inv-loss-line);
+}
+.chipWhy b { color: var(--inv-loss-deep); }
+.chipWhyGood {
+  composes: chip;
+  background: var(--inv-profit-soft);
+  border-color: #c3e4d6;
+}
+.chipWhyGood b { color: var(--inv-profit-deep); }
+
+/* ── DTE chip ── */
+.dteChip {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 7px;
+  font-weight: 500;
+}
+.dteHot  { background: var(--inv-loss-soft); color: var(--inv-loss-deep); }
+.dteWarm { background: var(--inv-amber-soft); color: var(--inv-amber); }
+.dteCool { background: var(--inv-profit-soft); color: var(--inv-profit-deep); }
+
+/* ── Toggle (Total ↔ Per-contract) ── */
+.toggle {
+  display: flex;
+  background: var(--inv-cream);
+  border: 0.5px solid var(--inv-line);
+  border-radius: 10px;
+  padding: 3px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.toggleBtn {
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--inv-muted);
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.toggleBtnActive {
+  composes: toggleBtn;
+  background: var(--inv-deep);
+  color: #fff;
+}

@@ -29,6 +29,7 @@ const LandingPage = lazy(() => import('./trading/pages/LandingPageV7').then(m =>
 const LearnPage = lazy(() => import('./trading/pages/LearnPage').then(m => ({ default: m.LearnPage })));
 const TradingLayout = lazy(() => import('./trading/TradingLayout'));
 const WorkbenchAnalysisWrapper = lazy(() => import('./shared/components/WorkbenchAnalysisWrapper'));
+const ProjectionPage = lazy(() => import('./trading/pages/ProjectionPage'));
 
 // Marketing pages — lazy
 const HowWePickPage = lazy(() => import('./marketing/how-we-pick/HowWePickPage').then(m => ({ default: m.HowWePickPage })));
@@ -151,6 +152,7 @@ export default function App() {
         <Route element={<WorkbenchLayout />}>
           <Route path="/workbench/analysis" element={<WorkbenchAnalysisWrapper />} />
           <Route path="/workbench/analysis/:ticker" element={<WorkbenchAnalysisWrapper />} />
+          <Route path="/workbench/projection" element={<ProjectionPage mode="operator" />} />
         </Route>
 
         {/* ═══ Auth ═══ */}

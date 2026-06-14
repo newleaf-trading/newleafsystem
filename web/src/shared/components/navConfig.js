@@ -82,7 +82,7 @@ export const surfaceConfig = {
       { kind: 'dropdown', label: 'Strategies', items: WORKBENCH_STRATEGIES, dark: true },
       { kind: 'link', label: 'Watchlist', href: '/workbench/watchlist.html' },
       { kind: 'link', label: 'Analysis', href: '/workbench/analysis' },
-      { kind: 'link', label: 'Projection', href: '/workbench/projection.html' },
+      { kind: 'link', label: 'Projection', href: '/workbench/projection' },
     ],
     showSwitcher: true,
     statusType: 'live',
@@ -91,6 +91,7 @@ export const surfaceConfig = {
   invest: {
     sections: [
       { kind: 'link', label: 'Home', href: '/invest' },
+      { kind: 'link', label: 'Plans', href: '/invest/plans' },
       { kind: 'link', label: 'Discover', href: '/invest/discover' },
       { kind: 'link', label: 'Build', href: '/invest/build' },
       { kind: 'link', label: 'Positions', href: '/invest/positions' },

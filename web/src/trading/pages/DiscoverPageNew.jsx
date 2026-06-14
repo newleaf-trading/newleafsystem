@@ -5,7 +5,11 @@ import { useShortlist } from '../hooks/useShortlist';
 import { useMarketState } from '../hooks/useMarketState';
 import { formatStrategy } from '../utils/formatters';
 import { calculateMetrics } from '../utils/optionsCalc';
+import { deriveCandidate, computeLiveDte } from '../lib/deriveCandidate';
+import { tileToCanonical } from '../lib/toCanonical';
+import { applyPublishGate, deriveTier } from '../lib/tileSchema';
 import { SegmentedTabs, StrategyCard } from '../components/ui';
+import { ReviewBadge } from '../components/invest';
 import { PhaseHeader } from '../components/PhaseHeader';
 import { EmptyState } from '../../shared/components/ui/EmptyState';
 import { Button } from '../../shared/components/ui/Button';
@@ -121,7 +125,10 @@ export function DiscoverPageNew({ tiles }) {
       let rewardRisk = maxLoss > 0 ? maxProfit / maxLoss : maxProfit > 0 ? 999 : 0;
       const probProfit = t.oddsOfProfit || t.probOfProfit || t.lottery?.oddsOfProfit || t.technical?.probability || 0;
       const riskLevel = Math.min(Math.max(100 - probProfit, 0), 100);
-      const dte = t.daysToExpiry || 0;
+      const dte = computeLiveDte(t.expiry);
+
+      // Filter out expired candidates
+      if (dte <= 0) return false;
 
       return (
         rewardRisk >= filters.rewardRiskMin && rewardRisk <= filters.rewardRiskMax &&
@@ -130,11 +137,27 @@ export function DiscoverPageNew({ tiles }) {
       );
     });
 
-    return result.sort((a, b) => {
-      const aRoc = a.returnOnCapital || a.technical?.returnOnCapital || 0;
-      const bRoc = b.returnOnCapital || b.technical?.returnOnCapital || 0;
-      return bRoc - aRoc;
-    });
+    // Classify freshness + centeredness per tile, drop breached/expired/unpriced/gate-failed
+    const classified = result.map(t => {
+      const c = tileToCanonical(t);
+      const liveSpot = t.underlyingPrice || 0;
+      const fc = deriveCandidate(c, liveSpot);
+      // Read-time publish gate (belt-and-suspenders for legacy tiles)
+      // Uses verdictConfidence/oddsOfProfit from canonical, not generic confidence
+      const gate = applyPublishGate({ verdictConfidence: t.verdictConfidence ?? null, oddsOfProfit: c.probability != null ? c.probability * 100 : null });
+      const tier = deriveTier({ verdictConfidence: t.verdictConfidence ?? null });
+      return { tile: t, fc, canonical: c, gate, tier };
+    }).filter(({ fc, gate }) =>
+      fc.priced &&
+      fc.freshness !== 'breached' &&
+      fc.freshness !== 'expired' &&
+      gate.pass
+    );
+
+    // Sort by |offset| ascending — most centered first
+    classified.sort((a, b) => Math.abs(a.fc.offset) - Math.abs(b.fc.offset));
+
+    return classified;
   }, [tiles, filter, isInPortfolio, filters]);
 
   const pulse = useMemo(() => getMarketPulse(filteredTiles, marketState), [filteredTiles, marketState]);
@@ -258,7 +281,7 @@ export function DiscoverPageNew({ tiles }) {
         </div>
       )}
 
-      {/* Market Pulse */}
+      {/* Market Pulse — count synced to post-filter */}
       <div className={styles.pulse}>
         <span className={styles.pulseIcon}>&#128225;</span>
         <span className={styles.pulseHeadline}>{pulse.headline}</span>
@@ -278,12 +301,12 @@ export function DiscoverPageNew({ tiles }) {
         />
       ) : (
         <div className="nl-grid-2">
-          {filteredTiles.map(tile => {
+          {filteredTiles.map(({ tile, fc, tier }) => {
             const metrics = calculateMetrics(tile);
             const maxProfit = tile.maxProfit ?? tile.lottery?.maxWin ?? tile.technical?.maxProfit ?? metrics.maxProfit;
             const maxLoss = tile.maxLoss ?? tile.technical?.maxLoss ?? tile.lottery?.ticketCost ?? metrics.maxLoss;
             const probProfit = tile.oddsOfProfit || tile.probOfProfit || tile.lottery?.oddsOfProfit || tile.technical?.probability || 0;
-            const dte = tile.daysToExpiry || 0;
+            const dte = fc.liveDte;
 
             let rewardRiskDisplay = '--';
             if (maxLoss > 0) {
@@ -295,27 +318,57 @@ export function DiscoverPageNew({ tiles }) {
             const riskFillWidth = Math.min(Math.max(100 - probProfit, 10), 90);
             const saved = isShortlisted(tile.id);
 
+            // Centeredness chip text
+            const centerChip = fc.side === 'centered'
+              ? 'centered'
+              : `${Math.round(Math.abs(fc.distancePct) * 100)}% toward ${fc.side}`;
+
+            // Rail color by freshness
+            const railColor = fc.freshness === 'fresh' ? '#16835f' : fc.freshness === 'drifted' ? '#bd7c19' : '#6b7280';
+
             const strategyMetrics = [
               { label: 'Reward:Risk', value: rewardRiskDisplay, positive: true, primary: true },
               { label: 'Max Profit', value: formatCurr(maxProfit), positive: true },
               { label: 'Max Loss', value: formatCurr(maxLoss), negative: true },
-              { label: 'Probability', value: probProfit.toFixed(0) + '%' },
+              { label: 'Probability', value: probProfit.toFixed(0) + '%' + (fc.popStale ? '*' : '') },
             ];
 
             return (
-              <StrategyCard
-                key={tile.id}
-                symbol={tile.symbol}
-                companyName={COMPANY_NAMES[tile.symbol]}
-                strategy={formatStrategy(tile.strategy)}
-                dte={dte}
-                metrics={strategyMetrics}
-                riskLevel={riskFillWidth}
-                onTakeTrade={() => navigate(`/invest/build?add=${tile.id}`)}
-                onSaveForLater={() => { if (!saved) addToShortlist(tile); }}
-                isSaved={saved}
-                onClick={() => navigate(`/invest/strategy/${tile.id}`)}
-              />
+              <div key={tile.id} style={{ borderLeft: `3px solid ${railColor}`, borderRadius: '0 12px 12px 0', position: 'relative' }}>
+                {/* Freshness badge + tier badge + centeredness chip */}
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', padding: '8px 12px 0', flexWrap: 'wrap' }}>
+                  <ReviewBadge freshness={fc.freshness} />
+                  {tier === 'verified' && (
+                    <span style={{
+                      fontFamily: "'Space Mono', monospace", fontSize: 9, letterSpacing: '.08em',
+                      textTransform: 'uppercase', padding: '3px 8px', borderRadius: 6, fontWeight: 600,
+                      background: '#e7f1ec', color: '#0f4a36', border: '0.5px solid #c3e4d6',
+                    }}>
+                      ✓ Reviewed
+                    </span>
+                  )}
+                  <span style={{
+                    fontFamily: "'Space Mono', monospace", fontSize: 10, letterSpacing: '.06em',
+                    padding: '3px 8px', borderRadius: 6, fontWeight: 600,
+                    background: fc.side === 'centered' ? '#edf8f3' : '#fff7e8',
+                    color: fc.side === 'centered' ? '#0d6347' : '#bd7c19',
+                  }}>
+                    {centerChip}
+                  </span>
+                </div>
+                <StrategyCard
+                  symbol={tile.symbol}
+                  companyName={COMPANY_NAMES[tile.symbol]}
+                  strategy={formatStrategy(tile.strategy)}
+                  dte={dte}
+                  metrics={strategyMetrics}
+                  riskLevel={riskFillWidth}
+                  onTakeTrade={() => navigate(`/invest/build?add=${tile.id}`)}
+                  onSaveForLater={() => { if (!saved) addToShortlist(tile); }}
+                  isSaved={saved}
+                  onClick={() => navigate(`/invest/strategy/${tile.id}`)}
+                />
+              </div>
             );
           })}
         </div>
