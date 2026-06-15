@@ -19,8 +19,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const SA_PATH = resolve(__dirname, '../../OptionAdvisor/newleaf-trading/scanner/serviceAccountKey.json');
-const ALPACA_CONFIG = resolve(__dirname, '../pipeline/alpaca-config.json');
+// Resolved within this clone (/Users/manish/newleafsystem): primary service account
+// and the pipeline config that holds Alpaca creds (same ones the daemon uses).
+const SA_PATH = resolve(__dirname, '../../pipeline/serviceAccountKey.json');
+const ALPACA_CONFIG = resolve(__dirname, '../../pipeline/config.json');
 const DRY_RUN = process.argv.includes('--dry-run');
 
 admin.initializeApp({
@@ -34,8 +36,9 @@ db.settings({ databaseId: 'newleafdb' });
 let alpacaKey, alpacaSecret;
 try {
   const cfg = JSON.parse(readFileSync(ALPACA_CONFIG, 'utf-8'));
-  alpacaKey = cfg.key || cfg.apiKey || cfg.APCA_API_KEY_ID;
-  alpacaSecret = cfg.secret || cfg.apiSecret || cfg.APCA_API_SECRET_KEY;
+  const a = cfg.alpaca || cfg; // pipeline/config.json nests creds under `alpaca`
+  alpacaKey = a.apiKey || a.key || a.APCA_API_KEY_ID;
+  alpacaSecret = a.secretKey || a.secret || a.apiSecret || a.APCA_API_SECRET_KEY;
 } catch (e) {
   console.error('  Could not load Alpaca config:', e.message);
   process.exit(1);
@@ -125,7 +128,7 @@ async function run() {
       console.log(`    Spot: $${spot.toFixed(2)} → ${result.outcome} (P&L: ${result.actualPnl})`);
 
       if (!DRY_RUN) {
-        await db.collection('pick_outcomes').doc(pick.id).update({
+        const outcomeData = {
           outcome: result.outcome,
           actualPnl: result.actualPnl,
           pnlPercent: result.pnlPercent,
@@ -133,7 +136,25 @@ async function run() {
           closeReason: result.closeReason,
           closedAt: 'expiry',
           closedAtTs: new Date().toISOString()
-        });
+        };
+
+        await db.collection('pick_outcomes').doc(pick.id).update(outcomeData);
+
+        // Also update recommendation_log if it exists (Layer 1 outcome tracking)
+        try {
+          const tileId = pick.tileId || pick.id.split('_').slice(2).join('_');
+          const logRef = db.collection('recommendation_log').doc(tileId);
+          const logDoc = await logRef.get();
+          if (logDoc.exists) {
+            await logRef.update({
+              outcome: result.outcome,
+              actualPnl: result.actualPnl,
+              spotAtExpiry: parseFloat(spot.toFixed(2)),
+              closedAt: 'expiry',
+              closedAtTs: new Date().toISOString(),
+            });
+          }
+        } catch (_) { /* recommendation_log may not exist for older picks */ }
       }
     } catch (err) {
       console.error(`  ERROR ${pick.ticker}: ${err.message}`);
