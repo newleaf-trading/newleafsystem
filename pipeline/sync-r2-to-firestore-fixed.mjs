@@ -1,17 +1,21 @@
 #!/usr/bin/env node
 /**
  * sync-r2-to-firestore.js (FIXED v3 structure)
- * 
- * Syncs latest NewLeaf Pro v3 data from R2 to Firestore
- * - Fetches manifest.json from R2
- * - Fetches individual symbol reports (latest.json)
- * - Transforms v3 structure to tile format
- * - Deactivates old tiles
- * - Pushes new tiles to Firestore
- * 
+ *
+ * Syncs latest NewLeaf Pro v3 data from R2 to Firestore.
+ *
+ * IMPORTANT: Writes to `scanner_signals` collection, NOT `tiles`.
+ * Scanner signals are pre-pricing signals — symbol, strategy, direction,
+ * score, gamma data — not tradeable candidates. The `tiles` collection
+ * is reserved for priced candidates written by publish-pick, discover-publish,
+ * or strategy-builder.
+ *
+ * The deactivation sweep targets `scanner_signals` only — it must NEVER
+ * touch `tiles` (doing so would deactivate priced candidates and empty Discover).
+ *
  * Usage:
- *   node sync-r2-to-firestore-fixed.js --dry-run
- *   node sync-r2-to-firestore-fixed.js
+ *   node sync-r2-to-firestore-fixed.mjs --dry-run
+ *   node sync-r2-to-firestore-fixed.mjs
  */
 
 import admin from 'firebase-admin';
@@ -28,6 +32,9 @@ const config = JSON.parse(readFileSync(resolve(__dirname, 'config.json'), 'utf-8
 const R2_BASE_URL = config.r2.publicBaseUrl;
 const DRY_RUN = process.argv.includes('--dry-run');
 
+// The collection this script writes to — NEVER 'tiles'
+const SIGNAL_COLLECTION = 'scanner_signals';
+
 // Initialize Firebase Admin
 admin.initializeApp({
   projectId: 'newleaf-trading',
@@ -35,7 +42,10 @@ admin.initializeApp({
 });
 
 const db = admin.firestore();
-db.settings({ databaseId: 'newleafdb' });
+// ignoreUndefinedProperties: a report occasionally has an undefined field (e.g. `strategy`)
+// which previously crashed the whole sync ("Cannot use undefined as a Firestore value"),
+// leaving Firestore tiles stale until a manual rerun. Skip undefined fields instead.
+db.settings({ databaseId: 'newleafdb', ignoreUndefinedProperties: true });
 
 /**
  * Fetch JSON from R2
@@ -47,10 +57,10 @@ async function fetchR2Json(path) {
 }
 
 /**
- * Transform v3 report (latest.json) to tile format
- * Handles the actual v3 structure where data is nested under 'scoring'
+ * Transform v3 report (latest.json) to ScannerSignal shape.
+ * This is NOT a tile — no legs, no pricing, no breakevens.
  */
-function transformToTile(report) {
+function transformToSignal(report) {
   const {
     meta,
     snapshot,
@@ -58,36 +68,30 @@ function transformToTile(report) {
     gammaData
   } = report;
 
-  // Extract from nested scoring object
   const { opportunityScore, direction, strategy } = scoring;
   const { name: strategyName, code: strategyCode, icon: strategyIcon } = strategy;
-
-  // Price data from snapshot
   const { price, changePercent } = snapshot;
-
-  // IV data
   const iv = gammaData?.ivData?.atmIv || 0;
 
-  const tile = {
+  return {
     id: `${meta.symbol}_${strategyCode}_${Date.now()}`,
     symbol: meta.symbol,
-    company: meta.symbol, // Could enhance with company name lookup
-    
-    // Strategy info
+
+    // Strategy
     strategy: strategyName,
     strategyCode,
     strategyIcon,
     direction,
-    
-    // Scores & metrics
+
+    // Scores
     opportunityScore: Math.round(opportunityScore),
-    
-    // Price data
+
+    // Price at scan time
     price: parseFloat(price),
     priceChange: parseFloat(changePercent),
     iv: parseFloat(iv),
-    
-    // NEW v3: Gamma data with confidence breakdown
+
+    // Gamma data
     gammaData: gammaData ? {
       analysis: gammaData.analysis || {},
       confidence: {
@@ -106,64 +110,61 @@ function transformToTile(report) {
                      meta.oiConfidence >= 0.4 ? 'fair' : 'poor'
       }
     } : null,
-    
-    // Metadata
+
+    // Provenance
+    source: 'pipeline-scanner',
     date: meta.date,
-    dataSource: 'newleaf-alpaca-r2',
-    pipelineVersion: 'v3',
     isActive: true,
-    sortOrder: 100 - opportunityScore, // Higher scores first
+    sortOrder: 100 - opportunityScore,
     lastUpdated: admin.firestore.Timestamp.now()
   };
-
-  return tile;
 }
 
 /**
  * Main sync function
  */
 async function syncR2ToFirestore() {
-  console.log('🔄 NewLeaf Pro v3: R2 → Firestore Sync (FIXED)');
+  console.log('🔄 NewLeaf Pro v3: R2 → Firestore Sync');
+  console.log(`   Collection: ${SIGNAL_COLLECTION} (NOT tiles)`);
   console.log('━'.repeat(60));
-  
+
   if (DRY_RUN) {
     console.log('🔍 DRY RUN MODE - No data will be written\n');
   }
 
   try {
-    // Get list of symbols from config (authoritative source)
     const watchlist = config.watchlist;
     console.log(`\n📋 Using watchlist from config: ${watchlist.length} symbols`);
-    console.log(`   (Ignoring accumulated manifest)`);
 
-    // Fetch individual reports and transform to tiles
+    // Fetch individual reports and transform to signals
     console.log('\n🔄 Fetching reports from R2...');
-    const tiles = [];
+    const signals = [];
     let successCount = 0;
     let failureCount = 0;
-    
+
     for (const symbol of watchlist) {
       try {
         const report = await fetchR2Json(`reports/${symbol}/latest.json`);
-        const tile = transformToTile(report);
-        tiles.push(tile);
+        const signal = transformToSignal(report);
+        signals.push(signal);
         successCount++;
-        
-        console.log(`  ✓ ${symbol}: ${tile.strategy} (score: ${tile.opportunityScore}, OI: ${(tile.gammaData?.confidence?.oi * 100 || 0).toFixed(0)}%)`);
+
+        console.log(`  ✓ ${symbol}: ${signal.strategy} (score: ${signal.opportunityScore}, OI: ${(signal.gammaData?.confidence?.oi * 100 || 0).toFixed(0)}%)`);
       } catch (error) {
         failureCount++;
         console.error(`  ✗ ${symbol}: ${error.message}`);
       }
     }
 
-    console.log(`\n✓ Transformed ${tiles.length} tiles (${successCount} ok, ${failureCount} failed)`);
+    console.log(`\n✓ Transformed ${signals.length} signals (${successCount} ok, ${failureCount} failed)`);
 
     if (DRY_RUN) {
       console.log('\n📊 DRY RUN SUMMARY:');
-      console.log(`  Would write ${tiles.length} tiles to Firestore`);
-      console.log(`  Would deactivate all existing active tiles`);
+      console.log(`  Would write ${signals.length} signals to ${SIGNAL_COLLECTION}`);
+      console.log(`  Would deactivate old signals in ${SIGNAL_COLLECTION}`);
+      console.log(`  tiles collection: UNTOUCHED`);
       console.log(`\n  Top 5 opportunities:`);
-      tiles
+      signals
         .sort((a, b) => b.opportunityScore - a.opportunityScore)
         .slice(0, 5)
         .forEach((t, i) => {
@@ -176,32 +177,34 @@ async function syncR2ToFirestore() {
 
     // Write to Firestore
     console.log('\n📝 Writing to Firestore...');
-    
-    // First, deactivate ALL existing tiles
-    console.log('  Deactivating old tiles...');
-    const oldTilesSnapshot = await db.collection('tiles').where('isActive', '==', true).get();
-    const deactivateBatch = db.batch();
-    
-    oldTilesSnapshot.docs.forEach(doc => {
-      deactivateBatch.update(doc.ref, { isActive: false });
-    });
-    
-    await deactivateBatch.commit();
-    console.log(`  ✓ Deactivated ${oldTilesSnapshot.size} old tiles`);
 
-    // Write new tiles in batches (Firestore limit: 500 writes per batch)
-    const batchSize = 500;
-    for (let i = 0; i < tiles.length; i += batchSize) {
-      const batch = db.batch();
-      const batchTiles = tiles.slice(i, i + batchSize);
-      
-      batchTiles.forEach(tile => {
-        const tileRef = db.collection('tiles').doc(tile.id);
-        batch.set(tileRef, tile);
+    // Deactivate old SIGNALS (never tiles!)
+    console.log(`  Deactivating old signals in ${SIGNAL_COLLECTION}...`);
+    const oldSignals = await db.collection(SIGNAL_COLLECTION).where('isActive', '==', true).get();
+    if (oldSignals.size > 0) {
+      const deactivateBatch = db.batch();
+      oldSignals.docs.forEach(doc => {
+        deactivateBatch.update(doc.ref, { isActive: false });
       });
-      
+      await deactivateBatch.commit();
+      console.log(`  ✓ Deactivated ${oldSignals.size} old signals`);
+    } else {
+      console.log('  ✓ No old signals to deactivate');
+    }
+
+    // Write new signals in batches
+    const batchSize = 500;
+    for (let i = 0; i < signals.length; i += batchSize) {
+      const batch = db.batch();
+      const batchSignals = signals.slice(i, i + batchSize);
+
+      batchSignals.forEach(signal => {
+        const ref = db.collection(SIGNAL_COLLECTION).doc(signal.id);
+        batch.set(ref, signal);
+      });
+
       await batch.commit();
-      console.log(`  ✓ Wrote batch ${Math.floor(i / batchSize) + 1} (${batchTiles.length} tiles)`);
+      console.log(`  ✓ Wrote batch ${Math.floor(i / batchSize) + 1} (${batchSignals.length} signals)`);
     }
 
     // Update market state
@@ -210,8 +213,8 @@ async function syncR2ToFirestore() {
       lastScanTime: admin.firestore.Timestamp.now(),
       scanSource: 'newleaf-alpaca-r2-sync',
       pipelineVersion: 'v3',
-      activeTileCount: tiles.length,
-      symbols: tiles.map(t => t.symbol),
+      activeSignalCount: signals.length,
+      symbols: signals.map(t => t.symbol),
       lastUpdated: admin.firestore.Timestamp.now()
     }, { merge: true });
 
@@ -221,10 +224,11 @@ async function syncR2ToFirestore() {
     console.log('\n' + '━'.repeat(60));
     console.log('✅ SYNC COMPLETE');
     console.log('━'.repeat(60));
-    console.log(`📊 Total tiles written: ${tiles.length}`);
-    console.log(`📅 Data date: ${tiles[0]?.date || 'N/A'}`);
-    const topTile = tiles.sort((a, b) => b.opportunityScore - a.opportunityScore)[0];
-    console.log(`🏆 Top opportunity: ${topTile?.symbol} (${topTile?.opportunityScore}, ${topTile?.strategy})`);
+    console.log(`📊 Total signals written: ${signals.length} (to ${SIGNAL_COLLECTION})`);
+    console.log(`📋 tiles collection: UNTOUCHED`);
+    console.log(`📅 Data date: ${signals[0]?.date || 'N/A'}`);
+    const topSignal = signals.sort((a, b) => b.opportunityScore - a.opportunityScore)[0];
+    console.log(`🏆 Top opportunity: ${topSignal?.symbol} (${topSignal?.opportunityScore}, ${topSignal?.strategy})`);
     console.log('━'.repeat(60));
 
   } catch (error) {
