@@ -317,7 +317,9 @@ export default function ProjectionPage({ mode = 'operator' }) {
 
   // ── Publish (operator/admin)
   const nextPublishVersion = latestVersion(templates, publishName.trim()) + 1;
-  const [publishMaxLoss, setPublishMaxLoss] = useState(20); // portfolio max loss %
+  // Max risk is DERIVED, not entered: concurrent trades (≈ weekly cadence) × per-idea cap.
+  const concurrentTrades = Math.max(1, Math.round(tpy / 52));
+  const derivedMaxLossPct = concurrentTrades * capPct; // capPct is the UI percent (e.g. 1.0)
   const onPublish = async () => {
     const name = publishName.trim();
     if (!name) return;
@@ -325,7 +327,6 @@ export default function ProjectionPage({ mode = 'operator' }) {
       name,
       version: latestVersion(templates, name) + 1,
       state: s,
-      portfolioMaxLossPct: publishMaxLoss / 100,
       user,
     });
     setPublishOpen(false);
@@ -627,7 +628,7 @@ export default function ProjectionPage({ mode = 'operator' }) {
                     <button
                       className={styles.publishBtn}
                       type="button"
-                      onClick={() => { setPublishName(''); setPublishMaxLoss(20); setPublishOpen(true); }}
+                      onClick={() => { setPublishName(''); setPublishOpen(true); }}
                     >
                       Publish as template
                     </button>
@@ -659,7 +660,7 @@ export default function ProjectionPage({ mode = 'operator' }) {
                   <button
                     className={styles.linkBtn}
                     type="button"
-                    onClick={() => { setPublishName(t.name); setPublishMaxLoss(Math.round((t.portfolioMaxLossPct || 0.2) * 100)); setPublishOpen(true); }}
+                    onClick={() => { setPublishName(t.name); setPublishOpen(true); }}
                   >
                     New version
                   </button>
@@ -686,11 +687,13 @@ export default function ProjectionPage({ mode = 'operator' }) {
               <span className={styles.hint}>Will publish as version {nextPublishVersion}.</span>
             </div>
             <div className={styles.field}>
-              <label htmlFor="pj-pubmaxloss">Portfolio max loss (%)</label>
-              <input id="pj-pubmaxloss" type="number" min="1" max="100" step="1" value={publishMaxLoss}
-                onChange={(e) => setPublishMaxLoss(Number(e.target.value))} />
+              <label>Max risk (derived)</label>
+              <div className={styles.derivedVal}>
+                {concurrentTrades}/wk × {pctLabel(capPctPct)} per idea = <b>{pctLabel(derivedMaxLossPct)}</b> of capital
+                <span> · {fmt((derivedMaxLossPct / 100) * cap)}</span>
+              </div>
               <span className={styles.hint}>
-                Risk per trade {pctLabel(capPctPct)} · edge {(sim ? sim.ev * 100 : 0).toFixed(2)}% · {perWk.toFixed(1)} trades/wk
+                Portfolio max loss is computed from cadence × per-idea risk — not hand-entered. Edge {(sim ? sim.ev * 100 : 0).toFixed(2)}%.
               </span>
             </div>
             <div className={styles.dialogActions}>

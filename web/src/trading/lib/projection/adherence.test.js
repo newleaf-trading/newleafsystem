@@ -122,7 +122,7 @@ describe('narrateAdherence — deterministic, no figures generated', () => {
     expect(narrateAdherence({ phase: 'reconcile' }).verdict).toMatch(/re-commit/i);
 
     const cold = narrateAdherence({ phase: 'coldstart', weekNumber: 1, tradesPerWeek: 2.31, tradesTakenThisWeek: 0 });
-    expect(cold.verdict).toBe('Week 1 — plan just set. 0 of ~2 qualified setups this week. Nothing to grade yet.');
+    expect(cold.verdict).toBe('Week 1 — plan just set. 0 of ~2 qualified setups this week. Start when you’re ready.');
 
     const onEdge = narrateAdherence({ phase: 'active', realisedEdge: 0.01, ev: 0.003 });
     expect(onEdge.verdict).toMatch(/pace, not risk/);

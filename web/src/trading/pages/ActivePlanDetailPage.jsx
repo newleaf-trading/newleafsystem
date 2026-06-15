@@ -10,6 +10,7 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { ActivePlanCard } from '../components/ActivePlanCard';
 import { AdherenceCardFull } from '../components/AdherenceCardFull';
+import { PlanAlignmentPanel } from '../components/PlanAlignmentPanel';
 
 // SAMPLE figures for the dev preview only (never reachable in a production build).
 const PREVIEW_PLAN = { capital: 210000, maxLossDollar: 21000, riskCapDollar: 2100, tradesPerWeek: 5 };
@@ -37,12 +38,16 @@ export function ActivePlanDetailPage() {
 
       <ActivePlanCard showAdherence={false} />
 
+      <div style={{ marginTop: 16 }}><PlanAlignmentPanel /></div>
+
       {preview && (
-        <div style={{ font: '700 11px/1 "Space Mono", monospace', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#B68F3E', margin: '4px 0 8px' }}>
+        <div style={{ font: '700 11px/1 "Space Mono", monospace', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#B68F3E', margin: '16px 0 8px' }}>
           Preview · sample data (active phase) — dev only
         </div>
       )}
-      <AdherenceCardFull previewData={preview ? { plan: PREVIEW_PLAN, adherence: PREVIEW_ADHERENCE } : null} />
+      <div style={{ marginTop: 16 }}>
+        <AdherenceCardFull showNudge={false} previewData={preview ? { plan: PREVIEW_PLAN, adherence: PREVIEW_ADHERENCE } : null} />
+      </div>
     </div>
   );
 }

@@ -14,6 +14,7 @@ import { renamePlan } from '../lib/projection/planStore';
 import { weekOf } from '../lib/projection/planMath';
 import { usd } from '../lib/money';
 import { AdherenceGlance } from './AdherenceGlance';
+import { StartPlanNudge } from './StartPlanNudge';
 import styles from './ActivePlanCard.module.css';
 
 export function ActivePlanCard({ showAdherence = true }) {
@@ -98,6 +99,7 @@ export function ActivePlanCard({ showAdherence = true }) {
         </div>
       </div>
       {showAdherence && <AdherenceGlance />}
+      {showAdherence && <StartPlanNudge tone="onDark" />}
       <div className={styles.foot}>
         <Link to="/invest/plans/active" className={styles.footLink}>Plan adherence</Link>
         <Link to="/invest/projection" className={styles.footLink}>Change plan</Link>

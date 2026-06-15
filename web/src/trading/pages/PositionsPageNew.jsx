@@ -17,6 +17,7 @@ import { toCanonical } from '../lib/toCanonical';
 import { derivePosition, recommendation } from '../lib/derivePosition';
 import { signedUsd, usd } from '../lib/money';
 import { formatStrategy } from '../utils/formatters';
+import { StartPlanNudge } from '../components/StartPlanNudge';
 import {
   RiskGauge,
   MetricCard,
@@ -211,10 +212,13 @@ export function PositionsPageNew({ tiles, onOpenChat }) {
       </div>
 
       {sorted.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 60, color: '#6b7280', fontSize: 14 }}>
-          <div style={{ fontSize: 28, marginBottom: 8 }}>&#128737;</div>
-          No active positions. <Link to="/invest/discover" style={{ color: '#0f4a36', fontWeight: 500 }}>Discover strategies</Link>
-        </div>
+        <>
+          <StartPlanNudge tone="light" />
+          <div style={{ textAlign: 'center', padding: 60, color: '#6b7280', fontSize: 14 }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>&#128737;</div>
+            No active positions. <Link to="/invest/discover" style={{ color: '#0f4a36', fontWeight: 500 }}>Discover strategies</Link>
+          </div>
+        </>
       ) : (
         sorted.map(item => (
           <PositionRow

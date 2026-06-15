@@ -10,13 +10,14 @@
  */
 import { Link } from 'react-router-dom';
 import { useAdherence } from '../hooks/useAdherence';
+import { StartPlanNudge } from './StartPlanNudge';
 import { usd, signedUsd } from '../lib/money';
 import styles from './AdherenceCard.module.css';
 
 const pctStr = (frac) => (frac == null ? '—' : (frac * 100).toFixed(2) + '%');
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
-export function AdherenceCardFull({ previewData = null }) {
+export function AdherenceCardFull({ previewData = null, showNudge = true }) {
   const { a, plan, narration, qualifiedAvailable, deployedRisk, loading } = useAdherence(previewData);
 
   if (loading) return null;
@@ -81,6 +82,7 @@ export function AdherenceCardFull({ previewData = null }) {
           <span className={styles.dot} />
           <p>{narration.verdict}</p>
         </div>
+        {showNudge && <div style={{ marginBottom: 20 }}><StartPlanNudge tone="light" /></div>}
         {Footer}
       </section>
     );

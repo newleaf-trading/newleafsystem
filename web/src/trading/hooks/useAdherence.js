@@ -41,5 +41,5 @@ export function useAdherence(previewData = null) {
   const narration = useMemo(() => narrateAdherence(a), [a]);
   const loading = !previewData && (planHook.loading || portLoading);
 
-  return { a, plan, narration, qualifiedAvailable, deployedRisk, loading };
+  return { a, plan, narration, qualifiedAvailable, deployedRisk, accountCapital, loading };
 }

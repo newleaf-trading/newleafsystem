@@ -171,7 +171,7 @@ export function narrateAdherence(a) {
   if (a.phase === 'coldstart') {
     const target = Math.round(a.tradesPerWeek);
     return {
-      verdict: `Week ${a.weekNumber} — plan just set. ${a.tradesTakenThisWeek} of ~${target} qualified setups this week. Nothing to grade yet.`,
+      verdict: `Week ${a.weekNumber} — plan just set. ${a.tradesTakenThisWeek} of ~${target} qualified setups this week. Start when you’re ready.`,
       footer: FOOTER,
     };
   }

@@ -94,6 +94,26 @@
 .empty .t { font-size: 13px; color: var(--ad-muted); }
 .cta { background: var(--ad-green); color: #EDE7D6; text-decoration: none; border-radius: 9px; padding: 9px 14px; font-weight: 700; font-size: 12.5px; white-space: nowrap; }
 
+/* start-plan nudge (forward CTA — never a catch-up debt) */
+.nudge {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  background: var(--ad-panel2); border: 1px solid var(--ad-line); border-radius: 13px;
+  padding: 14px 16px; font-family: var(--ad-sans);
+}
+.nudgeText { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.nudgeTitle { font-family: var(--ad-serif); font-size: 15px; font-weight: 600; color: var(--ad-ink); }
+.nudgeSub { font-size: 12px; color: var(--ad-muted); line-height: 1.45; }
+.nudgeCta {
+  flex: 0 0 auto; background: var(--ad-green); color: #EDE7D6; text-decoration: none;
+  border-radius: 9px; padding: 10px 15px; font-weight: 700; font-size: 12.5px; white-space: nowrap;
+}
+.nudgeCta:hover { filter: brightness(1.12); }
+/* onDark variant — inside Home's green Active Plan card */
+.nudgeDark { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.12); margin-top: 12px; }
+.nudgeDark .nudgeTitle { color: #EDE7D6; }
+.nudgeDark .nudgeSub { color: #9DB0A2; }
+.nudgeDark .nudgeCta { background: var(--ad-gold); color: var(--ad-green-deep); }
+
 /* chip (Performance — links to PLANS adherence view) */
 .chip {
   display: inline-flex; align-items: center; gap: 9px; text-decoration: none;

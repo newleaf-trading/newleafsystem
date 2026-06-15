@@ -10,6 +10,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { usePortfolio } from '../hooks/usePortfolio';
 import { usePortfolioSettings } from '../hooks/usePortfolioSettings';
+import { usePlanOfRecord } from '../hooks/usePlanOfRecord';
 import { useShortlist } from '../hooks/useShortlist';
 import { usePositionLiveData } from '../hooks/usePositionLiveData';
 import { toCanonical } from '../lib/toCanonical';
@@ -19,6 +20,7 @@ import { signedUsd, usd } from '../lib/money';
 import { formatStrategy } from '../utils/formatters';
 import { DEFAULT_MAX_DRAWDOWN } from '../lib/build/evConstants';
 import { investStyles as s } from '../components/invest';
+import { StartPlanNudge } from '../components/StartPlanNudge';
 
 import './BuildPageNew.css';
 
@@ -66,9 +68,18 @@ export function BuildPageNew({ tiles }) {
     }
   }, [addTileId, tiles, addToShortlist]);
 
+  // Risk budget follows the active plan: the WEEKLY risk the plan says to deploy =
+  // cadence × per-idea risk. This is NOT the portfolio max-loss ceiling (that's the
+  // absolute drawdown limit on the plan card). Re-derived at the account's current
+  // capital so it holds even while the plan is in reconcile. Falls back to the
+  // default drawdown when no plan. Diagnostic only — sizing/labels, never blocks.
+  const { plan } = usePlanOfRecord();
   const totalCapital = settings?.totalCapital || 0;
-  const maxDrawdown = DEFAULT_MAX_DRAWDOWN;
-  const riskBudget = Math.round(totalCapital * maxDrawdown);
+  // Per-idea risk cap from the plan (riskCapPct × current capital).
+  const perTradeCap = plan ? Math.round(totalCapital * (plan.riskCapPct || 0)) : null;
+  const tradesPerWk = plan ? Math.max(1, Math.round(plan.tradesPerWeek || 0)) : null;
+  const planWeeklyBudget = perTradeCap != null && tradesPerWk != null ? perTradeCap * tradesPerWk : null;
+  const riskBudget = planWeeklyBudget ?? Math.round(totalCapital * DEFAULT_MAX_DRAWDOWN);
 
   // ── Held state: closing toggles ──
   const [closingSet, setClosingSet] = useState(new Set());
@@ -232,7 +243,13 @@ export function BuildPageNew({ tiles }) {
         <div className="bp-wf">
           <div className="bp-wf-lbl">Risk budget</div>
           <div className="bp-wf-val">{usd(riskBudget)}</div>
-          <div className="bp-wf-sub">{totalCapital > 0 ? `${Math.round((riskBudget / totalCapital) * 100)}% of ${usd(totalCapital)} capital` : 'configure in settings'}</div>
+          <div className="bp-wf-sub">{
+            totalCapital > 0
+              ? (planWeeklyBudget != null
+                  ? `${tradesPerWk}/wk × ${usd(perTradeCap)} per idea · from your plan`
+                  : `${Math.round((riskBudget / totalCapital) * 100)}% of ${usd(totalCapital)} capital`)
+              : 'configure in settings'
+          }</div>
           <span className="bp-arrow">&rarr;</span>
         </div>
         <div className="bp-wf bp-wf-committed">
@@ -334,7 +351,10 @@ export function BuildPageNew({ tiles }) {
       {/* ══════════════ New candidates ══════════════ */}
       <div className="bp-sec-h" style={{ marginTop: 30 }}>
         <h3>New &mdash; sizing now</h3>
-        <span className="bp-sec-note">From Discover &middot; competing for the <b style={{ color: '#0d6347' }}>{usd(alloc.available)}</b> available</span>
+        <span className="bp-sec-note">
+          From Discover &middot; competing for the <b style={{ color: '#0d6347' }}>{usd(alloc.available)}</b> available
+          {perTradeCap ? <> &middot; plan caps risk per idea at <b>{usd(perTradeCap)}</b></> : null}
+        </span>
       </div>
 
       <div className="bp-allocrow">
@@ -345,7 +365,10 @@ export function BuildPageNew({ tiles }) {
       </div>
 
       {candidates.length === 0 ? (
-        <p style={{ color: '#6b7280', fontSize: 14 }}>No candidates shortlisted. <Link to="/invest/discover" style={{ color: '#0f4a36', fontWeight: 500 }}>Discover strategies</Link></p>
+        <>
+          <StartPlanNudge tone="light" />
+          <p style={{ color: '#6b7280', fontSize: 14 }}>No candidates shortlisted. <Link to="/invest/discover" style={{ color: '#0f4a36', fontWeight: 500 }}>Discover strategies</Link></p>
+        </>
       ) : (
         <table className="bp-alloc">
           <thead><tr><th>Strategy</th><th>Risk / contract</th><th>Contracts</th><th>Amount</th><th>% of available</th><th></th></tr></thead>
@@ -364,7 +387,17 @@ export function BuildPageNew({ tiles }) {
                       <button className="bp-qbtn" onClick={() => stepQty(c.id, 1)}>+</button>
                     </div>
                   </td>
-                  <td>{usd(cRow?.amount || 0)}</td>
+                  <td>
+                    {usd(cRow?.amount || 0)}
+                    {perTradeCap && (cRow?.amount || 0) > perTradeCap && (
+                      <span
+                        title={`Plan caps risk per idea at ${usd(perTradeCap)}`}
+                        style={{ marginLeft: 6, fontFamily: '"Space Mono", monospace', fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', color: '#9c4f33', background: '#F0DED4', borderRadius: 6, padding: '2px 6px', whiteSpace: 'nowrap' }}
+                      >
+                        over plan cap
+                      </span>
+                    )}
+                  </td>
                   <td>{Math.round(cRow?.pctOfAvailable || 0)}%</td>
                   <td><button className="bp-rowbtn bp-rowbtn-close" onClick={() => handleRemove(c.id)}>&#10005; Remove</button></td>
                 </tr>

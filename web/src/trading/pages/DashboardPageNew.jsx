@@ -15,6 +15,7 @@ import { usePortfolioSettings } from '../hooks/usePortfolioSettings';
 import { usePortfolioPnl } from '../hooks/usePortfolioPnl';
 import { PortfolioSummaryHero } from '../components/PortfolioSummaryHero';
 import { ActivePlanCard } from '../components/ActivePlanCard';
+import { StartPlanNudge } from '../components/StartPlanNudge';
 import { AddFundsModal } from '../components/AddFundsModal';
 import { usePositionLiveData } from '../hooks/usePositionLiveData';
 import { toCanonical } from '../lib/toCanonical';
@@ -190,10 +191,13 @@ export function DashboardPageNew({ user, tiles, onOpenChat }) {
         <FlaggedRow key={item.id} item={item} tile={tiles?.find(t => t.id === (item.tileId || item.id))} />
       ))}
       {activePositions.length === 0 && (
-        <div className="dh-ontrack">
-          <span>No active positions yet.</span>
-          <Link to="/invest/discover" style={{ fontWeight: 500, color: '#0f4a36' }}>Discover strategies</Link>
-        </div>
+        <>
+          <StartPlanNudge tone="light" />
+          <div className="dh-ontrack">
+            <span>No active positions yet.</span>
+            <Link to="/invest/discover" style={{ fontWeight: 500, color: '#0f4a36' }}>Discover strategies</Link>
+          </div>
+        </>
       )}
 
       {/* ══════════════ Two-column: Discover + Performance ══════════════ */}

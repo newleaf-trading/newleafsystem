@@ -31,11 +31,23 @@ const slug = (s) =>
     .replace(/^-+|-+$/g, '');
 
 /**
+ * Portfolio max-loss fraction, DERIVED (not hand-entered): the most at risk at once
+ * = concurrent trades × per-idea risk cap. With ~weekly turnover, concurrency ≈ the
+ * weekly cadence, so maxLoss% = round(tradesPerWeek) × riskCapPct. Keeps the plan's
+ * envelope internally consistent with cadence × per-idea risk (the Build budget).
+ */
+export function derivePortfolioMaxLossPct(tradesPerWeek, riskCapPct) {
+  const concurrent = Math.max(1, Math.round(tradesPerWeek || 0));
+  return Number((concurrent * (riskCapPct || 0)).toFixed(4));
+}
+
+/**
  * Publish a template from the operator's current engine state.
  * @param state  engine state ({ wr, aw, al, capPct, tpy } in fractions/counts)
  * @param user   the authenticated operator (uid/email stamped as provenance)
  */
-export async function publishTemplate({ name, version, state, portfolioMaxLossPct, user }) {
+export async function publishTemplate({ name, version, state, user }) {
+  const tradesPerWeek = Number((state.tpy / 52).toFixed(2));
   const template = {
     name,
     version,
@@ -43,9 +55,10 @@ export async function publishTemplate({ name, version, state, portfolioMaxLossPc
     winRateTarget: state.wr,
     avgWin: state.aw,
     avgLoss: state.al,
-    tradesPerWeek: Number((state.tpy / 52).toFixed(2)),
+    tradesPerWeek,
     riskCapPct: state.capPct,
-    portfolioMaxLossPct,
+    // DERIVED — concurrent trades × per-idea cap, never hand-entered.
+    portfolioMaxLossPct: derivePortfolioMaxLossPct(tradesPerWeek, state.capPct),
   };
   const id = `tmpl_${slug(name)}_v${version}`;
   await setDoc(doc(db, TEMPLATES, id), {
