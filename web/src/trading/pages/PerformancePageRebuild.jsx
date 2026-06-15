@@ -16,7 +16,7 @@ import { toCanonical } from '../lib/toCanonical';
 import { derivePosition } from '../lib/derivePosition';
 import { signedUsd, usd } from '../lib/money';
 import { formatStrategy } from '../utils/formatters';
-import { AdherenceCard } from '../components/AdherenceCard';
+import { AdherenceChip } from '../components/AdherenceChip';
 import {
   MetricCard,
   ReviewBadge,
@@ -127,9 +127,9 @@ export function PerformancePageRebuild({ tiles }) {
         <MetricCard label="Win rate" value={closedStats.total > 0 ? `${closedStats.winRate}%` : '—'} sub={closedStats.total > 0 ? `${closedStats.wins} of ${closedStats.total} trades` : 'no closed trades'} />
       </div>
 
-      {/* ══════════════ Plan adherence (Phase 2a — diagnostic) ══════════════ */}
+      {/* ══════════════ Plan adherence — chip links to PLANS detail ══════════════ */}
       <div style={{ marginBottom: 20 }}>
-        <AdherenceCard />
+        <AdherenceChip />
       </div>
 
       {/* ══════════════ Reconciliation bar ══════════════ */}

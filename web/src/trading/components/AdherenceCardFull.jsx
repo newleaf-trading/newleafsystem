@@ -1,53 +1,28 @@
 /**
- * AdherenceCard — diagnostic read of plan adherence (Phase 2a). Layout ports the
- * approved mock (design: adherence-tracker.html).
+ * AdherenceCardFull — the full plan-adherence card (verdict, KPIs, drift
+ * attribution, metronome, equity band) for all phases (reconcile / coldstart /
+ * active). Lives on the PLANS active-plan detail. Layout ports the approved mock
+ * (design/prototypes/adherence-tracker.html).
  *
- * READ-ONLY. Code computes every figure (computeAdherence); narration is a fixed
- * deterministic template (narrateAdherence) — no LLM, no model-generated numbers.
- * Never renders trades-owed or a "place N more to catch up" prompt.
- *
- * Phases: reconcile (capital mismatch) · coldstart (<1wk or <5 plan-trades) ·
- * active (verdict + KPIs + drift attribution + metronome + equity band).
- * `compact` renders the condensed Home variant.
+ * READ-ONLY. All figures come from useAdherence() → computeAdherence (unchanged);
+ * narration is the deterministic template. No LLM, no model-generated numbers, and
+ * never a trades-owed / catch-up prompt.
  */
-import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { usePlanOfRecord } from '../hooks/usePlanOfRecord';
-import { usePortfolioSettings } from '../hooks/usePortfolioSettings';
-import { usePortfolio } from '../hooks/usePortfolio';
-import { useWeeklyQualifiedSetups } from '../hooks/useWeeklyQualifiedSetups';
-import { computeAdherence, narrateAdherence } from '../lib/projection/adherence';
+import { useAdherence } from '../hooks/useAdherence';
 import { usd, signedUsd } from '../lib/money';
 import styles from './AdherenceCard.module.css';
 
 const pctStr = (frac) => (frac == null ? '—' : (frac * 100).toFixed(2) + '%');
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
-export function AdherenceCard({ compact = false }) {
-  const { plan, loading: planLoading } = usePlanOfRecord();
-  const { settings } = usePortfolioSettings();
-  const { closedPositions, activePositions, loading: portLoading } = usePortfolio();
-  const { count: qualifiedAvailable } = useWeeklyQualifiedSetups();
+export function AdherenceCardFull({ previewData = null }) {
+  const { a, plan, narration, qualifiedAvailable, deployedRisk, loading } = useAdherence(previewData);
 
-  const accountCapital = settings?.totalCapital ?? null;
-
-  const a = useMemo(
-    () => (plan ? computeAdherence({ plan, accountCapital, closedPositions }) : null),
-    [plan, accountCapital, closedPositions]
-  );
-  const narration = useMemo(() => narrateAdherence(a), [a]);
-
-  // Risk deployed (diagnostic only — room before the plan's portfolio max loss).
-  const deployedRisk = useMemo(
-    () => (activePositions || []).reduce((s, p) => s + Math.abs(p.maxLoss || 0) * (p.quantity || 1), 0),
-    [activePositions]
-  );
-
-  if (planLoading || portLoading) return null;
+  if (loading) return null;
 
   // ── No plan ──
   if (!plan) {
-    if (compact) return null;
     return (
       <section className={styles.card}>
         <span className={styles.eyebrow}>Plan adherence</span>
@@ -59,33 +34,6 @@ export function AdherenceCard({ compact = false }) {
     );
   }
 
-  // ── Compact (Home green card) ──
-  if (compact) {
-    if (a.phase === 'reconcile') {
-      return (
-        <div className={styles.compact}>
-          <div className={styles.compactBanner}>
-            {narration.verdict} <Link to="/invest/projection" className={styles.compactLink}>Re-commit →</Link>
-          </div>
-        </div>
-      );
-    }
-    if (a.phase === 'coldstart') {
-      return <div className={styles.compact}><div className={styles.compactVerdict}>{narration.verdict}</div></div>;
-    }
-    return (
-      <div className={styles.compact}>
-        <div className={styles.compactVerdict}>{narration.verdict}</div>
-        <div className={styles.compactChips}>
-          <span>Cadence <b>{a.actualTrades}/{Math.round(a.expectedTrades)}</b></span>
-          <span>Realised edge <b>{pctStr(a.realisedEdge)}</b></span>
-          <span>Net vs plan <b>{signedUsd(a.netVsExpected)}</b></span>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Full card ──
   const Header = (
     <div className={styles.head}>
       <div>
@@ -142,11 +90,9 @@ export function AdherenceCard({ compact = false }) {
   const expectedRounded = Math.round(a.expectedTrades);
   const cadenceBehind = a.cadenceRatio < 1;
 
-  // diverging drift bars: scale the larger magnitude to the full half-track (50%).
   const maxMag = Math.max(Math.abs(a.cadenceContribution), Math.abs(a.edgeContribution), 1);
   const widthOf = (v) => clamp((Math.abs(v) / maxMag) * 50, 2, 50);
 
-  // equity-vs-band axis with small padding
   const { p10, p50, p90 } = a.band;
   const axisLo = Math.min(p10, a.actualCapital);
   const axisHi = Math.max(p90, a.actualCapital);
@@ -154,7 +100,6 @@ export function AdherenceCard({ compact = false }) {
   const lo = axisLo - pad, hi = axisHi + pad;
   const posOf = (v) => clamp(((v - lo) / (hi - lo)) * 100, 0, 100);
 
-  // metronome (honest): target slots = pace, filled = trades taken this plan-week.
   const targetSlots = clamp(Math.round(a.tradesPerWeek), 1, 8);
   const taken = clamp(a.tradesTakenThisWeek, 0, targetSlots);
 

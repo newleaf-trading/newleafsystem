@@ -29,6 +29,7 @@ import { PerformancePageRebuild } from './pages/PerformancePageRebuild';
 import { BuildPageNew } from './pages/BuildPageNew';
 import ProjectionPage from './pages/ProjectionPage';
 import { PlansPage } from './pages/PlansPage';
+import { ActivePlanDetailPage } from './pages/ActivePlanDetailPage';
 
 // Redirect helper for /invest/position/:tileId → /invest/strategy/:tileId
 function PositionRedirect() {
@@ -133,6 +134,7 @@ export default function TradingLayout() {
           <Route path="/performance" element={<PerformancePageRebuild tiles={tiles} />} />
           <Route path="/projection" element={<ProjectionPage mode="investor" />} />
           <Route path="/plans" element={<PlansPage />} />
+          <Route path="/plans/active" element={<ActivePlanDetailPage />} />
 
           {/* ═══ Utility routes ═══ */}
           <Route path="/analysis/:ticker" element={<AnalysisPage />} />

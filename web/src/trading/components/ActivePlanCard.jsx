@@ -13,10 +13,10 @@ import { usePlanOfRecord } from '../hooks/usePlanOfRecord';
 import { renamePlan } from '../lib/projection/planStore';
 import { weekOf } from '../lib/projection/planMath';
 import { usd } from '../lib/money';
-import { AdherenceCard } from './AdherenceCard';
+import { AdherenceGlance } from './AdherenceGlance';
 import styles from './ActivePlanCard.module.css';
 
-export function ActivePlanCard() {
+export function ActivePlanCard({ showAdherence = true }) {
   const { user } = useAuth();
   const { plan, loading } = usePlanOfRecord();
   const [editing, setEditing] = useState(false);
@@ -97,8 +97,9 @@ export function ActivePlanCard() {
           <div className={styles.v}>{usd(plan.maxLossDollar)}</div>
         </div>
       </div>
-      <AdherenceCard compact />
+      {showAdherence && <AdherenceGlance />}
       <div className={styles.foot}>
+        <Link to="/invest/plans/active" className={styles.footLink}>Plan adherence</Link>
         <Link to="/invest/projection" className={styles.footLink}>Change plan</Link>
         <Link to="/invest/plans" className={styles.footLink}>View all plans →</Link>
       </div>
