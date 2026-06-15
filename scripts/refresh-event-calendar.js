@@ -22,6 +22,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const CONFIG_PATH = path.join(ROOT, 'pipeline', 'config.json');
@@ -168,6 +169,23 @@ async function main() {
   } catch (err) {
     console.error(`\n  ATOMIC WRITE FAILED: ${err.message} — old files preserved`);
     process.exit(1);
+  }
+
+  // Publish to R2 so consumers (Movement & Range) get the fresh calendar with NO hosting
+  // deploy — same delivery path as the per-symbol reports. This is what stops the calendar
+  // drifting stale on the live site between deploys. Retried; logged loudly if it can't.
+  const uploader = path.join(ROOT, 'pipeline', 'upload-to-r2.js');
+  const uploads = [
+    ['../web/scanner/event-calendar.json', 'reports/event-calendar.json'],
+    ['../web/scanner/earnings-calendar.json', 'reports/earnings-calendar.json'],
+  ];
+  for (const [local, key] of uploads) {
+    let ok = false;
+    for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
+      try { execFileSync('node', [uploader, local, key], { stdio: 'inherit' }); ok = true; }
+      catch (e) { console.error(`  R2 upload ${key} attempt ${attempt} failed: ${e.message}`); }
+    }
+    if (!ok) console.error(`  ⚠️  R2 upload FAILED for ${key} — live calendar will be stale until next run`);
   }
 
   console.log('\n  Done.');

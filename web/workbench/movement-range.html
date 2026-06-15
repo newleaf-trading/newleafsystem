@@ -349,8 +349,12 @@ async function loadData() {
     // Load manifest + event calendar (new format preferred, old fallback)
     const [manifestRes, evtCalRes, oldCalRes] = await Promise.all([
       fetch(`${R2}/reports/manifest.json`),
-      fetch('event-calendar.json').then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch('earnings-calendar.json').then(r => r.ok ? r.json() : null).catch(() => null),
+      // Calendar served from R2 (refreshed daily by refresh-event-calendar.js) so it stays
+      // fresh on the live site without a hosting deploy. Falls back to the deployed copy.
+      fetch(`${R2}/reports/event-calendar.json`).then(r => r.ok ? r.json() : null).catch(() => null)
+        .then(d => d || fetch('event-calendar.json').then(r => r.ok ? r.json() : null).catch(() => null)),
+      fetch(`${R2}/reports/earnings-calendar.json`).then(r => r.ok ? r.json() : null).catch(() => null)
+        .then(d => d || fetch('earnings-calendar.json').then(r => r.ok ? r.json() : null).catch(() => null)),
     ]);
     const manifest = await manifestRes.json();
     // Parse event calendar (with provenance)
