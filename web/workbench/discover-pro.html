@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-06YFVHFNYT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-06YFVHFNYT");</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NewLeaf System — Discover Pro</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script>window.__CONFIG__={API_URL:"https://us-central1-newleaf-trading.cloudfunctions.net/api",API_KEY:"nl_31ee32be43bd4f07a3520ae15c4b3162"};</script>
+  <script src="load-nav.js" defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,800;1,400;1,700&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/modules/heatmap.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --forest: #0B2D23; --forest-mid: #1a5c44; --gold: #C9A96E; --gold-pale: #f5ecd4;
+      --cream: #F7F5F0; --cream-dark: #EDE8DC; --ink: #0B0F14; --ink-mid: #3d3d35;
+      --ink-muted: #6b6b60; --ink-faint: #9b9b8e; --white: #fff;
+      --border: rgba(15,61,46,.12); --border-mid: rgba(15,61,46,.22);
+      --teal: #0d6e56; --teal-bg: #e0f2ec; --teal-text: #07473a;
+      --bg: var(--cream); --surface: var(--white); --surface-2: var(--cream-dark);
+      --text: var(--ink); --text-muted: var(--ink-muted); --accent: var(--teal);
+      --pass-bg: #e0f2ec; --pass-border: #2D5A3F; --pass-text: #07473a;
+      --concern-bg: #fef3c7; --concern-border: #d97706; --concern-text: #92400e;
+      --fail-bg: #fee2e2; --fail-border: #dc2626; --fail-text: #991b1b;
+      --green: #1a8c5e; --yellow: #d97706; --red: #c0392b;
+      --mono: 'Space Mono', monospace;
+      --radius: 10px;
+    }
+
+    body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+
+    /* Layout */
+    .main { max-width: 1100px; margin: 0 auto; padding: 24px 24px 80px; }
+    .page-header { text-align: center; margin-bottom: 32px; }
+    .page-header h1 { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: var(--forest); margin-bottom: 6px; }
+    .page-header p { font-size: 14px; color: var(--ink-muted); line-height: 1.6; max-width: 600px; margin: 0 auto; }
+    .pro-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 12px; background: var(--gold); color: var(--forest); text-transform: uppercase; letter-spacing: 0.08em; margin-left: 8px; vertical-align: middle; }
+
+    /* Panels */
+    .panel { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(15,61,46,.04); }
+    .panel-title { font-family: var(--mono); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); margin-bottom: 16px; }
+
+    /* Input bar */
+    .input-bar { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+    .input-bar .field { display: flex; flex-direction: column; gap: 4px; }
+    .input-bar .field label { font-size: 11px; font-weight: 600; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .input-bar .field input { padding: 10px 14px; background: var(--white); border: 1px solid var(--border-mid); border-radius: 6px; font-size: 14px; font-family: var(--mono); color: var(--ink); outline: none; width: 140px; }
+    .input-bar .field input:focus { border-color: var(--teal); }
+    .btn-primary { padding: 10px 24px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: var(--teal); color: white; font-family: inherit; transition: background 0.15s; }
+    .btn-primary:hover { background: var(--forest-mid); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Metric strip */
+    .metric-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin: 16px 0; }
+    .metric-item { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; text-align: center; }
+    .metric-item .m-label { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); margin-bottom: 4px; }
+    .metric-item .m-value { font-size: 18px; font-weight: 700; font-family: var(--mono); }
+
+    /* AI Read card */
+    .ai-read-card { background: var(--cream-dark); border-left: 3px solid var(--teal); border-radius: 0 6px 6px 0; padding: 12px 16px; font-size: 13px; color: var(--ink-mid); line-height: 1.6; font-style: italic; margin: 12px 0; }
+
+    /* Engine pick */
+    .pick-card { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .pick-left .pick-strategy { font-size: 18px; font-weight: 700; color: var(--forest); }
+    .pick-left .pick-direction { font-size: 12px; color: var(--ink-muted); margin-top: 4px; }
+    .pick-score { font-size: 32px; font-weight: 800; font-family: var(--mono); }
+    .pick-score.high { color: var(--green); }
+    .pick-score.mid { color: var(--yellow); }
+    .pick-score.low { color: var(--red); }
+    .gate-trace { margin-top: 12px; font-size: 11px; color: var(--ink-muted); font-family: var(--mono); line-height: 1.8; }
+    .gate-trace .gate-pass { color: var(--green); }
+    .gate-trace .gate-fail { color: var(--red); }
+
+    /* Reasoning grid */
+    .reasoning-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 16px 0; }
+    .reason-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; position: relative; overflow: hidden; }
+    .reason-card .rc-title { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--teal); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .reason-card .rc-title .rc-icon { font-size: 16px; }
+    .rc-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; font-size: 12px; }
+    .rc-row .rc-label { color: var(--ink-muted); font-weight: 500; }
+    .rc-row .rc-val { font-family: var(--mono); font-weight: 600; color: var(--ink); }
+    .rc-text { font-size: 12px; color: var(--ink-mid); line-height: 1.6; margin-bottom: 10px; }
+    .rc-text strong { color: var(--ink); font-weight: 600; }
+    .rc-divider { height: 1px; background: var(--border); margin: 12px 0; }
+    .rc-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 6px; }
+    .rc-badge.green { background: var(--pass-bg); color: var(--pass-text); }
+    .rc-badge.yellow { background: var(--concern-bg); color: var(--concern-text); }
+    .rc-badge.red { background: var(--fail-bg); color: var(--fail-text); }
+
+    /* Scenario table */
+    .scenario-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+    .scenario-table th { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); padding: 6px 8px; text-align: center; border-bottom: 1px solid var(--border); }
+    .scenario-table td { padding: 6px 8px; text-align: center; font-family: var(--mono); font-size: 11px; border-bottom: 1px solid var(--border); }
+    .scenario-table td.positive { color: var(--green); font-weight: 600; }
+    .scenario-table td.negative { color: var(--red); font-weight: 600; }
+
+    /* Scenario cases */
+    .case-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start; }
+    .case-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+    .case-dot.best { background: var(--green); }
+    .case-dot.base { background: var(--yellow); }
+    .case-dot.worst { background: var(--red); }
+    .case-info { flex: 1; }
+    .case-info .ci-desc { font-size: 12px; color: var(--ink-mid); line-height: 1.5; }
+    .case-info .ci-meta { font-size: 11px; font-family: var(--mono); color: var(--ink-muted); margin-top: 2px; }
+
+    /* Adjustments list */
+    .adj-item { background: var(--cream); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
+    .adj-trigger { font-size: 11px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+    .adj-action { font-size: 12px; color: var(--ink-mid); line-height: 1.5; }
+
+    /* Overall grade */
+    .grade-banner { text-align: center; padding: 32px; border-radius: var(--radius); }
+    .grade-banner.pass { background: var(--pass-bg); border: 1.5px solid var(--pass-border); }
+    .grade-banner.concern { background: var(--concern-bg); border: 1.5px solid var(--concern-border); }
+    .grade-banner.fail { background: var(--fail-bg); border: 1.5px solid var(--fail-border); }
+    .grade-letter { font-family: 'Playfair Display', serif; font-size: 56px; font-weight: 800; }
+    .grade-banner.pass .grade-letter { color: var(--pass-text); }
+    .grade-banner.concern .grade-letter { color: var(--concern-text); }
+    .grade-banner.fail .grade-letter { color: var(--fail-text); }
+    .grade-sub { font-size: 13px; color: var(--ink-muted); margin-top: 8px; }
+    .grade-conviction { font-family: var(--mono); font-size: 20px; font-weight: 700; margin-top: 4px; }
+    .publish-verdict { display: inline-block; margin-top: 12px; font-size: 11px; font-weight: 700; padding: 4px 14px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .publish-verdict.yes { background: var(--pass-text); color: white; }
+    .publish-verdict.no { background: var(--fail-text); color: white; }
+
+    /* Cost footer */
+    .cost-footer { display: flex; justify-content: center; gap: 24px; padding: 16px; font-size: 11px; color: var(--ink-muted); font-family: var(--mono); }
+
+    /* Shimmer loading */
+    .shimmer { position: relative; overflow: hidden; background: var(--cream-dark); border-radius: 6px; }
+    .shimmer::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent); animation: shimmerMove 1.5s infinite; }
+    @keyframes shimmerMove { 0% { left: -100%; } 100% { left: 100%; } }
+    .shimmer-line { height: 14px; margin-bottom: 8px; border-radius: 4px; }
+    .shimmer-line.w60 { width: 60%; }
+    .shimmer-line.w80 { width: 80%; }
+    .shimmer-line.w40 { width: 40%; }
+    .shimmer-block { height: 80px; border-radius: 6px; }
+
+    /* Status messages */
+    .status-msg { text-align: center; padding: 40px 20px; }
+    .status-msg .status-icon { font-size: 32px; margin-bottom: 12px; }
+    .status-msg .status-text { font-size: 14px; color: var(--ink-muted); }
+    .status-msg .status-sub { font-size: 12px; color: var(--ink-faint); margin-top: 6px; }
+
+    /* Error state */
+    .error-banner { background: var(--fail-bg); border: 1px solid var(--fail-border); border-radius: 6px; padding: 12px 16px; font-size: 12px; color: var(--fail-text); margin: 12px 0; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .reasoning-grid { grid-template-columns: 1fr; }
+      .input-bar { flex-direction: column; align-items: stretch; }
+      .input-bar .field input { width: 100%; }
+      .metric-strip { grid-template-columns: repeat(3, 1fr); }
+      .pick-card { flex-direction: column; align-items: flex-start; }
+      .cost-footer { flex-direction: column; align-items: center; gap: 8px; }
+    }
+    @media (max-width: 480px) {
+      .metric-strip { grid-template-columns: repeat(2, 1fr); }
+      .main { padding: 16px 12px 60px; }
+    }
+
+    /* Print styles */
+    @media print {
+      body { background: white; }
+      .input-bar, .btn-primary, .cost-footer { display: none; }
+      .panel, .reason-card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+      .reasoning-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Highcharts container */
+    .pnl-chart-container { width: 100%; height: 200px; margin: 12px 0; }
+
+    /* Conviction meter */
+    .conviction-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin: 8px 0; background: var(--cream-dark); }
+    .conviction-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--teal), var(--forest-mid)); transition: width 0.6s ease; }
+
+    /* Pulse animation for loading cards */
+    .pulse-loading { animation: pulseLoad 1.8s ease-in-out infinite; }
+    @keyframes pulseLoad { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    /* Smooth section reveal */
+    .section-reveal { animation: revealUp 0.4s ease-out; }
+    @keyframes revealUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Mock banner */
+    .mock-banner { background: var(--concern-bg); border: 1px solid var(--concern-border); border-radius: 6px; padding: 8px 14px; font-size: 11px; color: var(--concern-text); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .mock-banner .mb-icon { font-size: 14px; }
+
+    /* Hidden utility */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- Auth gate -->
+  <div id="auth-gate" style="display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 56px);padding:40px 20px">
+    <div style="text-align:center;max-width:420px">
+      <div style="font-size:48px;margin-bottom:16px">&#128274;</div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:28px;font-weight:400;color:var(--forest);margin-bottom:8px">Sign in required</h2>
+      <p style="font-size:14px;color:var(--ink-muted);line-height:1.6;margin-bottom:24px">Discover Pro provides hedge fund-level reasoning analysis. Sign in with your Google account to access deep AI-driven trade research.</p>
+      <button id="auth-gate-signin" style="padding:12px 32px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;background:var(--teal);color:white;font-family:inherit;transition:background .2s" onmouseover="this.style.background='var(--forest-mid)'" onmouseout="this.style.background='var(--teal)'">Sign in with Google</button>
+      <p style="font-size:11px;color:var(--ink-faint);margin-top:16px"><a href="/" style="color:var(--teal);text-decoration:none">Back to home</a></p>
+    </div>
+  </div>
+
+  <!-- App content -->
+  <div id="app-content" style="display:none">
+    <div class="main">
+
+      <!-- Page header -->
+      <div class="page-header">
+        <h1>Discover Pro<span class="pro-badge">Pro</span></h1>
+        <p>Hedge fund-level reasoning analysis. Enter a ticker to get AI-driven market read, engine pick, and 6-layer deep reasoning with thesis, risk, scenarios, exit strategy, regime context, and position sizing.</p>
+      </div>
+
+      <!-- Input bar -->
+      <div class="panel">
+        <div class="input-bar">
+          <div class="field">
+            <label>Ticker</label>
+            <input type="text" id="inp-ticker" placeholder="AAPL" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="field">
+            <label>Expiry (DTE)</label>
+            <input type="number" id="inp-expiry" placeholder="21" value="21" min="1" max="120">
+          </div>
+          <button class="btn-primary" id="btn-load" onclick="runAnalysis()">Analyze</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--ink-muted);margin:0;">
+            <input type="checkbox" id="inp-llm-override" style="width:auto;accent-color:var(--teal);cursor:pointer;">
+            <span><strong style="color:var(--teal);">AI Strategy Selection</strong></span>
+          </label>
+          <select id="inp-model" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:var(--mono);color:var(--ink-mid);background:var(--white);cursor:pointer;">
+            <option value="">Engine default</option>
+            <optgroup label="Qwen (DashScope)">
+              <option value="qwen-plus">qwen-plus (fast, $0.80/M)</option>
+              <option value="qwen-max">qwen-max (balanced, $1.60/M)</option>
+              <option value="qwen3-max" selected>qwen3-max (reasoning, $2/M)</option>
+            </optgroup>
+            <optgroup label="Anthropic">
+              <option value="claude-sonnet">claude-sonnet 4 ($3/M)</option>
+              <option value="claude-haiku">claude-haiku 4.5 ($0.80/M)</option>
+            </optgroup>
+            <optgroup label="Google">
+              <option value="gemini-pro">gemini 2.5 pro ($1.25/M)</option>
+              <option value="gemini-flash">gemini 2.5 flash ($0.075/M)</option>
+            </optgroup>
+            <optgroup label="OpenAI">
+              <option value="gpt-4">gpt-4o ($2.50/M)</option>
+              <option value="gpt-5.5">gpt-5.5 ($3/M)</option>
+            </optgroup>
+            <optgroup label="DeepSeek">
+              <option value="deepseek">deepseek-chat ($0.27/M)</option>
+              <option value="deepseek-r1">deepseek-r1 reasoning ($0.55/M)</option>
+            </optgroup>
+            <optgroup label="xAI">
+              <option value="grok">grok-4 ($3/M)</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+
+      <!-- Market Snapshot -->
+      <div id="section-snapshot" class="hidden">
+        <div class="panel">
+          <div class="panel-title">Market Snapshot</div>
+          <div class="metric-strip" id="metrics-grid"></div>
+        </div>
+      </div>
+
+      <!-- AI Market Read -->
+      <div id="section-airead" class="hidden">
+        <div class="ai-read-card" id="ai-read-text">Loading AI market read...</div>
+      </div>
+
+      <!-- Engine Pick -->
+      <div id="section-pick" class="hidden">
+        <div class="panel">
+          <div class="panel-title">Engine Pick</div>
+          <div class="pick-card" id="pick-content"></div>
+          <div class="gate-trace" id="gate-trace"></div>
+          <!-- Reasoning override (shown when LLM overrode engine fallback) -->
+          <div id="reasoning-override" class="hidden" style="margin-top:14px;padding:14px 16px;background:var(--teal-bg);border:1px solid var(--teal);border-radius:8px;"></div>
+        </div>
+      </div>
+
+      <!-- Strategy Payoff Section -->
+      <div id="section-payoff" class="hidden">
+        <!-- P&L Metrics Strip -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px;" id="pnl-strip">
+          <div class="panel" style="padding:12px 14px;margin:0;">
+            <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted)">Max Profit</div>
+            <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:var(--green);margin-top:4px" id="pm-profit">--</div>
+            <div style="font-size:10px;color:var(--ink-faint)">at expiration</div>
+          </div>
+          <div class="panel" style="padding:12px 14px;margin:0;">
+            <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted)">Max Loss</div>
+            <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:var(--red);margin-top:4px" id="pm-loss">--</div>
+            <div style="font-size:10px;color:var(--ink-faint)">defined risk</div>
+          </div>
+          <div class="panel" style="padding:12px 14px;margin:0;">
+            <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted)">Breakeven Low</div>
+            <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:var(--ink);margin-top:4px" id="pm-belo">--</div>
+            <div style="font-size:10px;color:var(--ink-faint)" id="pm-belo-pct">--</div>
+          </div>
+          <div class="panel" style="padding:12px 14px;margin:0;">
+            <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted)">Breakeven High</div>
+            <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:var(--ink);margin-top:4px" id="pm-behi">--</div>
+            <div style="font-size:10px;color:var(--ink-faint)" id="pm-behi-pct">--</div>
+          </div>
+          <div class="panel" style="padding:12px 14px;margin:0;">
+            <div style="font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted)">Total Credit</div>
+            <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:var(--green);margin-top:4px" id="pm-credit">--</div>
+            <div style="font-size:10px;color:var(--ink-faint)">collected upfront</div>
+          </div>
+        </div>
+
+        <!-- P&L Chart -->
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div style="font-size:15px;font-weight:600;color:var(--ink);">P&L at expiration — <em id="payoff-strat-label" style="font-style:italic;color:var(--forest);">Iron Condor</em></div>
+            <div style="display:flex;gap:14px;font-size:11px;color:var(--ink-muted);">
+              <span><span style="display:inline-block;width:16px;height:3px;background:var(--forest);vertical-align:middle;margin-right:4px;border-radius:1px;"></span>Profit</span>
+              <span><span style="display:inline-block;width:16px;height:3px;background:var(--red);vertical-align:middle;margin-right:4px;border-radius:1px;"></span>Loss</span>
+              <span><span style="display:inline-block;width:16px;height:3px;background:var(--gold);vertical-align:middle;margin-right:4px;border-radius:1px;opacity:.7;"></span>Spot</span>
+            </div>
+          </div>
+          <div id="payoff-hc" style="width:100%;height:300px;"></div>
+          <div style="text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-faint);margin-top:4px;">Stock price at expiration</div>
+        </div>
+
+        <!-- Legs Table -->
+        <div class="panel" style="padding:14px 18px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-muted);font-weight:600;">Legs Breakdown</div>
+            <div style="font-size:11px;color:var(--ink-muted);font-family:var(--mono);" id="payoff-leg-count">--</div>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px;" id="payoff-legs-table">
+            <thead><tr style="border-bottom:1px solid var(--border);">
+              <th style="padding:6px 8px;text-align:left;font-size:9px;color:var(--ink-muted);text-transform:uppercase;font-weight:600;">Leg</th>
+              <th style="padding:6px 8px;text-align:left;font-size:9px;color:var(--ink-muted);text-transform:uppercase;font-weight:600;">Type</th>
+              <th style="padding:6px 8px;text-align:right;font-size:9px;color:var(--ink-muted);text-transform:uppercase;font-weight:600;">Strike</th>
+              <th style="padding:6px 8px;text-align:right;font-size:9px;color:var(--ink-muted);text-transform:uppercase;font-weight:600;">Mid</th>
+            </tr></thead>
+            <tbody id="payoff-legs-body"></tbody>
+          </table>
+        </div>
+
+        <!-- Pricing warning -->
+        <div id="pricing-warning" class="hidden" style="background:#fef3c7;border:1px solid #d97706;border-radius:8px;padding:12px 16px;font-size:12px;color:#92400e;line-height:1.6;"></div>
+      </div>
+
+      <!-- Reasoning Panels -->
+      <div id="section-reasoning" class="hidden">
+        <div class="panel" style="background:transparent;border:none;box-shadow:none;padding:0;">
+          <div id="mock-banner" class="mock-banner hidden">
+            <span class="mb-icon">&#9888;&#65039;</span>
+            <span>Reasoning layer not deployed yet. Displaying sample analysis data for UI preview.</span>
+          </div>
+          <div class="panel-title" style="margin-bottom:12px;">Deep Reasoning Analysis</div>
+          <div class="reasoning-grid" id="reasoning-grid">
+            <!-- Cards are rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- P&L Heatmap Chart -->
+      <div id="section-pnl-chart" class="hidden">
+        <div class="panel">
+          <div class="panel-title">P&L Heatmap (Spot Move vs Time)</div>
+          <div id="pnl-chart-container" class="pnl-chart-container"></div>
+        </div>
+      </div>
+
+      <!-- Overall Grade -->
+      <div id="section-grade" class="hidden">
+        <div class="panel" style="padding:0;overflow:hidden;">
+          <div class="grade-banner" id="grade-banner"></div>
+        </div>
+      </div>
+
+      <!-- Cost footer -->
+      <div id="section-cost" class="hidden">
+        <div class="cost-footer" id="cost-footer"></div>
+      </div>
+
+      <!-- Loading state -->
+      <div id="section-loading" class="hidden">
+        <div class="panel">
+          <div class="status-msg">
+            <div class="status-icon pulse-loading" id="loading-icon">&#9881;&#65039;</div>
+            <div class="status-text" id="loading-text">Analyzing...</div>
+            <div class="status-sub" id="loading-sub">Fetching market data and running reasoning engine</div>
+            <div class="status-sub" id="loading-elapsed" style="font-family:var(--mono);margin-top:8px;color:var(--teal);"></div>
+          </div>
+          <div style="padding:0 20px 20px;">
+            <div class="shimmer shimmer-line w80"></div>
+            <div class="shimmer shimmer-line w60"></div>
+            <div class="shimmer shimmer-line w40"></div>
+            <div class="shimmer shimmer-block" style="margin-top:12px;"></div>
+          </div>
+          <!-- Shimmer cards preview -->
+          <div style="padding:0 20px 20px;">
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+              <div class="shimmer shimmer-block"></div>
+              <div class="shimmer shimmer-block"></div>
+              <div class="shimmer shimmer-block"></div>
+              <div class="shimmer shimmer-block"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /app-content -->
+
+<script type="module">
+import { computeNetCredit, computeMaxLoss, computeBreakevens, pnlAt } from './public/js/legMath.js';
+import { drawPayoffChart } from './public/js/payoffChart.js';
+import { initializeApp, getApps, getApp }
+  from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, increment, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+import { getAuth, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+
+const app = getApps().length ? getApp() : initializeApp({
+  apiKey: "AIzaSyBHOeCWF_Z-xATalX911Q_0isAKsJzHpwk",
+  authDomain: "newleaf-trading.firebaseapp.com",
+  projectId: "newleaf-trading",
+  storageBucket: "newleaf-trading.firebasestorage.app",
+  messagingSenderId: "240392819045",
+  appId: "1:240392819045:web:a1dc19e5dcfa29e6cdd18c"
+});
+
+const db = getFirestore(app, 'newleafdb');
+const auth = getAuth(app);
+
+// Auth gate
+onAuthStateChanged(auth, user => {
+  window.firebaseUser = user || null;
+  const gate = document.getElementById('auth-gate');
+  const appEl = document.getElementById('app-content');
+  if (user) { gate.style.display = 'none'; appEl.style.display = ''; }
+  else { gate.style.display = ''; appEl.style.display = 'none'; }
+});
+
+document.getElementById('auth-gate-signin')?.addEventListener('click', async () => {
+  try {
+    const { GoogleAuthProvider, signInWithPopup } = await import("https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js");
+    await signInWithPopup(auth, new GoogleAuthProvider());
+  } catch (e) {
+    console.error('Sign-in failed:', e);
+    alert('Sign-in failed: ' + (e.message || e));
+  }
+});
+
+// Suppress Highcharts accessibility warning
+if (window.Highcharts) Highcharts.setOptions({ accessibility: { enabled: false } });
+
+// ─── Config ───────────────────────────────────────────────────────────────────
+const API_URL = window.__CONFIG__.API_URL;
+const API_KEY = window.__CONFIG__.API_KEY;
+const USE_MOCK = false; // Reasoning API is deployed
+
+// ─── Mock reasoning data ──────────────────────────────────────────────────────
+const MOCK_REASONING = {
+  thesis: {
+    primaryDriver: "volatility_selling",
+    structuralEdge: "IV/RV ratio 1.3 means options are overpriced relative to realized movement. Gamma walls pin price within 8% band.",
+    catalyst: "Post-earnings IV crush + theta decay acceleration approaching 21 DTE",
+    timeHorizonMatch: true,
+    timeHorizonReasoning: "21 DTE aligns with theta acceleration curve. Most decay occurs in final 2 weeks.",
+    conviction: 7,
+    convictionReasoning: "Strong gamma containment (confidence 72%) + rich IV environment (rank 65) + neutral ADX. Main concern: RSI oversold could trigger bounce testing call wing.",
+    bearCase: "RSI at 30 signals potential mean-reversion rally that could breach call wall at $102.",
+    thesis: "Sell premium into elevated IV while gamma walls contain price. The edge is the IV/RV gap — options are pricing a 35% move but realized vol is only 27%."
+  },
+  risk: {
+    scenarios: [
+      { name: "Earnings surprise rally", type: "event", probability: 0.15, trigger: "Better-than-expected guidance or analyst upgrade", pnlImpact: "-85% of max loss", mitigation: "Close if spot > call wall + 2%" },
+      { name: "Sector rotation into tech", type: "market", probability: 0.20, trigger: "Risk-on shift, funds rotating into growth", pnlImpact: "-50% of max loss (call wing tested)", mitigation: "Roll call spread up $5 for credit" },
+      { name: "VIX spike above 25", type: "volatility", probability: 0.12, trigger: "Macro shock, geopolitical event", pnlImpact: "-40% unrealized (vega expansion)", mitigation: "Hold — theta will offset if spot stays in range" }
+    ],
+    maxPainScenario: "Overnight gap above $105 on analyst upgrade. No chance to adjust. Full max loss on call side.",
+    overallRiskGrade: "MODERATE",
+    riskRewardVerdict: "Favorable. 82% probability of profit vs max loss that's 1.3x credit collected.",
+    killSwitch: "Close immediately if spot breaks above $104 (call wall + 2%)"
+  },
+  scenarios: {
+    pnlGrid: [
+      { spot: -5, d7: 85, d14: 120, d21: 153 },
+      { spot: -2.5, d7: 95, d14: 135, d21: 153 },
+      { spot: 0, d7: 80, d14: 130, d21: 153 },
+      { spot: 2.5, d7: 45, d14: 90, d21: 140 },
+      { spot: 5, d7: -120, d14: -80, d21: -350 }
+    ],
+    bestCase: { description: "Spot stays within $95-$105 range. Full credit collected at expiry.", probability: 0.55, expectedPnl: "$153/contract" },
+    baseCase: { description: "Small move tests one wing. Close at 50% profit.", probability: 0.27, expectedPnl: "$77/contract" },
+    worstCase: { description: "Gap through call wall. Max loss hit.", probability: 0.08, expectedPnl: "-$847/contract" }
+  },
+  exit: {
+    profitTarget: { percentage: 50, reasoning: "Close at 50% of max credit. Captures most edge while reducing gamma risk in final week.", typicalDaysToHit: 12 },
+    stopLoss: { percentage: 200, spotTrigger: 104, reasoning: "2x credit lost means edge is gone. $104 = call wall + 2% confirms breakout." },
+    timeExit: { daysBeforeExpiry: 5, reasoning: "Gamma risk accelerates in final week. Close with 5 DTE to avoid pin risk." },
+    adjustments: [
+      { trigger: "Short call delta > 0.30", action: "Roll call spread up $5 and out 1 week", newRisk: "Extends DTE but collects additional credit to offset" },
+      { trigger: "Spot drops below put wall - 3%", action: "Close put spread for profit, leave call spread as free runner", newRisk: "Reduces position to half. Unlimited upside on remaining call spread." }
+    ],
+    rollingStrategy: { shouldRoll: true, trigger: "If at 50% profit before day 7", targetExpiry: "Roll to next weekly for fresh theta" },
+    summary: "Close at 50% profit or 5 DTE, whichever comes first. Exit immediately if spot > $104."
+  },
+  regime: {
+    marketRegime: "Risk-neutral with slight bullish bias. SPY in consolidation, VIX at 16.",
+    sectorMomentum: "Tech sector neutral-to-bullish. XLK flat this week after 3-week rally.",
+    vixEnvironment: "VIX at 16 supports premium selling. Below 20 = favorable for short vol strategies.",
+    correlationRisk: "Moderate. This stock correlates 0.65 with SPY. A broad market move will impact.",
+    alignmentScore: 0.72
+  },
+  sizing: {
+    allocation: 3.5,
+    contracts: { "10k": 1, "25k": 2, "50k": 4, "100k": 8 },
+    maxLossDollars: { "10k": 350, "25k": 700, "50k": 1400, "100k": 2800 },
+    kellyEstimate: "Kelly suggests 4.2% but we cap at 3.5% for conservative sizing.",
+    scalingPlan: "Enter full size at once — no averaging into a premium selling position."
+  },
+  meta: {
+    totalConviction: 7.2,
+    overallGrade: "B+",
+    shouldPublish: true,
+    totalCostUsd: 0.018,
+    wallClockMs: 2800
+  }
+};
+
+// ─── Utility functions ────────────────────────────────────────────────────────
+function $(id) { return document.getElementById(id); }
+function show(id) { $(id)?.classList.remove('hidden'); }
+function hide(id) { $(id)?.classList.add('hidden'); }
+
+function apiHeaders() {
+  return { 'Content-Type': 'application/json', 'X-API-Key': API_KEY };
+}
+
+async function apiFetch(path, opts = {}) {
+  const url = API_URL + path;
+  const headers = { ...apiHeaders(), ...(opts.headers || {}) };
+  const res = await fetch(url, { ...opts, headers });
+  if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`);
+  return res.json();
+}
+
+function gradeClass(grade) {
+  if (!grade) return 'concern';
+  const letter = grade.charAt(0).toUpperCase();
+  if (letter === 'A' || letter === 'B') return 'pass';
+  if (letter === 'C') return 'concern';
+  return 'fail';
+}
+
+function riskGradeClass(grade) {
+  if (!grade) return 'yellow';
+  const g = grade.toUpperCase();
+  if (g === 'LOW') return 'green';
+  if (g === 'MODERATE') return 'yellow';
+  return 'red';
+}
+
+function pnlClass(val) {
+  return val >= 0 ? 'positive' : 'negative';
+}
+
+function pct(val) {
+  return (val * 100).toFixed(0) + '%';
+}
+
+// ─── Rendering functions ──────────────────────────────────────────────────────
+function renderMetrics(data) {
+  const metrics = [
+    { label: 'Spot', value: '$' + (data.spot || data.price || '--') },
+    { label: 'RSI', value: data.rsi?.toFixed(1) || '--' },
+    { label: 'ADX', value: data.adx?.toFixed(1) || '--' },
+    { label: 'ATR', value: data.atr?.toFixed(2) || '--' },
+    { label: 'IV Rank', value: data.ivRank?.toFixed(0) || data.iv_rank?.toFixed(0) || '--' },
+    { label: 'Put Wall', value: data.putWall ? '$' + data.putWall : '--' },
+    { label: 'Call Wall', value: data.callWall ? '$' + data.callWall : '--' },
+  ];
+  $('metrics-grid').innerHTML = metrics.map(m =>
+    `<div class="metric-item"><div class="m-label">${m.label}</div><div class="m-value">${m.value}</div></div>`
+  ).join('');
+  show('section-snapshot');
+}
+
+function renderAiRead(text) {
+  $('ai-read-text').textContent = text || 'AI market read unavailable.';
+  show('section-airead');
+}
+
+function renderPick(pick) {
+  const score = pick.score || pick.totalScore || 0;
+  const scoreClass = score >= 70 ? 'high' : score >= 50 ? 'mid' : 'low';
+  $('pick-content').innerHTML = `
+    <div class="pick-left">
+      <div class="pick-strategy">${pick.strategy || pick.name || 'Unknown'}</div>
+      <div class="pick-direction">Direction: ${pick.direction || 'neutral'} | DTE: ${pick.dte || '--'}</div>
+    </div>
+    <div class="pick-score ${scoreClass}">${score}</div>
+  `;
+  // Gate trace
+  if (pick.gateTrace || pick.gates) {
+    const gates = pick.gateTrace || pick.gates || [];
+    $('gate-trace').innerHTML = gates.map(g => {
+      const cls = g.passed || g.pass ? 'gate-pass' : 'gate-fail';
+      const icon = g.passed || g.pass ? '&#10003;' : '&#10007;';
+      return '<span class="' + cls + '">' + icon + ' ' + (g.name || g.gate) + '</span>';
+    }).join(' &nbsp; ');
+  }
+
+  // Reasoning override (shown when LLM overrode engine fallback)
+  const ro = pick.reasoningOverride || pick._reasoningOverride;
+  const roEl = document.getElementById('reasoning-override');
+  if (ro && ro.reasoning && roEl) {
+    const modelLabel = ro.model ? ' via ' + ro.model : '';
+    let html = '<div style="font-size:12px;font-weight:600;color:var(--teal);margin-bottom:6px;">'
+      + (ro.noTrade ? 'LLM recommends NO TRADE' : 'LLM Strategy Selection' + modelLabel)
+      + '</div>'
+      + '<div style="font-size:13px;color:var(--ink-mid);line-height:1.6;">' + ro.reasoning + '</div>';
+    if (ro.confidence) {
+      html += '<div style="margin-top:6px;font-size:11px;font-family:var(--mono);color:var(--ink-muted);">Confidence: ' + ro.confidence + '/10</div>';
+    }
+    if (ro.suggestedLegs && ro.suggestedLegs.length) {
+      html += '<div style="margin-top:8px;font-size:11px;color:var(--ink-muted);">'
+        + '<strong>Suggested legs:</strong> '
+        + ro.suggestedLegs.map(function(l) {
+            return (l.side === 'short' ? 'SELL' : 'BUY') + ' ' + l.type + ' $' + l.strike;
+          }).join(' / ')
+        + '</div>';
+    }
+    roEl.innerHTML = html;
+    roEl.classList.remove('hidden');
+  }
+
+  show('section-pick');
+}
+
+const STRAT_SVGS = {
+  iron_condor: '<svg viewBox="0 0 80 32" width="80" height="28"><polyline points="0,28 15,28 25,4 55,4 65,28 80,28" fill="none" stroke="#2D5A3F" stroke-width="2.5"/></svg>',
+  iron_butterfly: '<svg viewBox="0 0 80 32" width="80" height="28"><polyline points="0,28 25,28 40,4 55,28 80,28" fill="none" stroke="#2D5A3F" stroke-width="2.5"/></svg>',
+  bull_put_spread: '<svg viewBox="0 0 80 32" width="80" height="28"><polyline points="0,28 30,28 50,4 80,4" fill="none" stroke="#0d6e56" stroke-width="2.5"/></svg>',
+  vertical_spread: '<svg viewBox="0 0 80 32" width="80" height="28"><polyline points="0,28 30,28 50,4 80,4" fill="none" stroke="#0d6e56" stroke-width="2.5"/></svg>',
+  bear_call_spread: '<svg viewBox="0 0 80 32" width="80" height="28"><polyline points="0,4 30,4 50,28 80,28" fill="none" stroke="#c0392b" stroke-width="2.5"/></svg>',
+  broken_wing_butterfly: '<svg viewBox="0 0 80 32" width="80" height="28"><polyline points="0,22 20,28 35,4 50,28 65,22 80,22" fill="none" stroke="#a78bfa" stroke-width="2.5"/></svg>',
+  short_strangle: '<svg viewBox="0 0 80 32" width="80" height="28"><polyline points="0,28 20,28 30,4 50,4 60,28 80,28" fill="none" stroke="#d97706" stroke-width="2.5"/></svg>',
+};
+
+function renderPayoffChart(recRes, spot) {
+  if (!recRes?.recommendation?.strategies?.length) return;
+  const strat = recRes.recommendation.strategies[0];
+  const legs = strat.legs || strat.legDetails || [];
+  if (!legs.length) return;
+
+  // Normalize legs format — prefer real mids from API, estimate only as fallback
+  let hasRealMids = false;
+  const normalizedLegs = legs.map(l => {
+    const side = l.side || (l.action === 'SELL' || l.action === 'short' ? 'short' : 'long');
+    let mid = l.mid || l.premium || 0;
+    if (mid > 0) {
+      hasRealMids = true;
+    } else {
+      // Estimate only if API didn't provide mid
+      const dist = Math.abs(l.strike - spot) / spot;
+      mid = Math.max(0.05, spot * 0.02 * Math.exp(-dist * 10));
+    }
+    return { side, type: l.type, strike: l.strike, mid };
+  });
+
+  const stratName = (strat.strategy || 'Unknown').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  $('payoff-strat-label').textContent = stratName;
+
+  // Compute metrics — use API netCredit when available (estimated mids are unreliable)
+  const qty = 1;
+  const apiCredit = strat.netCredit || null;
+  let nc = 0, ml = 0, mp = 0, be = [];
+  let midsAreEstimated = !hasRealMids;
+  try {
+    nc = apiCredit || computeNetCredit(normalizedLegs);
+    // If API provided netCredit but no real mids, redistribute estimated mids proportionally
+    if (apiCredit && !hasRealMids && normalizedLegs.length >= 2) {
+      const computedNc = computeNetCredit(normalizedLegs);
+      if (computedNc !== 0) {
+        const ratio = apiCredit / computedNc;
+        normalizedLegs.forEach(l => { l.mid = (l.mid || 0) * ratio; });
+      } else {
+        const shortLegs = normalizedLegs.filter(l => l.side === 'short');
+        const longLegs = normalizedLegs.filter(l => l.side === 'long');
+        if (shortLegs.length) {
+          const creditPerShort = (apiCredit + longLegs.reduce((s, l) => s + (l.mid || 0), 0)) / shortLegs.length;
+          shortLegs.forEach(l => { l.mid = Math.max(0.01, creditPerShort); });
+        }
+      }
+    }
+
+    // Compute ACTUAL max profit and max loss by sampling across price range
+    const strikes = normalizedLegs.map(l => l.strike);
+    const sampleLo = Math.min(...strikes) - 30;
+    const sampleHi = Math.max(...strikes) + 30;
+    let minPnl = Infinity, maxPnl = -Infinity;
+    for (let i = 0; i <= 500; i++) {
+      const price = sampleLo + (sampleHi - sampleLo) * i / 500;
+      const p = pnlAt(price, normalizedLegs, qty);
+      if (p < minPnl) minPnl = p;
+      if (p > maxPnl) maxPnl = p;
+    }
+    mp = Math.max(0, maxPnl);
+    ml = Math.abs(Math.min(0, minPnl));
+    be = computeBreakevens(normalizedLegs, qty);
+
+    // Detect arbitrage-like payoff (no loss zone) — flag as unreliable pricing
+    if (minPnl > 0) {
+      midsAreEstimated = true; // Force warning
+    }
+  } catch (e) { console.warn('Metrics calc error:', e); }
+
+  // Store computed expiry P&L for scenarios override
+  window._computedPayoff = { legs: normalizedLegs, qty, spot, nc, mp, ml, be, midsAreEstimated };
+
+  // Populate metrics strip
+  $('pm-profit').textContent = mp ? '$' + mp.toFixed(0) : '--';
+  $('pm-loss').textContent = ml ? '-$' + Math.abs(ml).toFixed(0) : '--';
+  $('pm-credit').textContent = nc ? '$' + Math.abs(nc).toFixed(2) : '--';
+  if (be.length >= 1) {
+    // Sort breakevens: lower first
+    be.sort((a, b) => a - b);
+    $('pm-belo').textContent = '$' + be[0].toFixed(2);
+    const beloPct = ((be[0] - spot) / spot * 100).toFixed(1);
+    $('pm-belo-pct').textContent = beloPct + '% from spot';
+  }
+  if (be.length >= 2) {
+    $('pm-behi').textContent = '$' + be[1].toFixed(2);
+    const behiPct = ((be[1] - spot) / spot * 100).toFixed(1);
+    $('pm-behi-pct').textContent = '+' + behiPct + '% from spot';
+  } else if (be.length === 1) {
+    // Only one breakeven — check if profitable above or below
+    const pnlAbove = pnlAt(spot + 50, normalizedLegs, qty);
+    if (pnlAbove > 0) {
+      $('pm-behi').textContent = 'N/A';
+      $('pm-behi-pct').textContent = 'profitable above';
+    } else {
+      $('pm-behi').textContent = 'N/A';
+      $('pm-behi-pct').textContent = '--';
+    }
+  }
+
+  // Legs table
+  const tbody = $('payoff-legs-body');
+  tbody.innerHTML = normalizedLegs.map(l => {
+    const sideColor = l.side === 'short' ? 'var(--red)' : 'var(--green)';
+    const sideLabel = l.side === 'short' ? 'SELL' : 'BUY';
+    const typeLabel = l.type.toUpperCase();
+    const typeBg = l.type === 'call' ? '#fee2e2' : '#e0f2ec';
+    const typeColor = l.type === 'call' ? '#991b1b' : '#07473a';
+    return '<tr style="border-bottom:1px solid rgba(15,61,46,.12);">'
+      + '<td style="padding:6px 8px;font-weight:600;color:' + sideColor + '">' + sideLabel + '</td>'
+      + '<td style="padding:6px 8px;"><span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;background:' + typeBg + ';color:' + typeColor + '">' + typeLabel + '</span></td>'
+      + '<td style="padding:6px 8px;text-align:right;font-family:\'Space Mono\',monospace;font-weight:700;">$' + l.strike.toFixed(1) + '</td>'
+      + '<td style="padding:6px 8px;text-align:right;font-family:\'Space Mono\',monospace;color:#6b6b60;">$' + l.mid.toFixed(2) + '</td>'
+      + '</tr>';
+  }).join('');
+  $('payoff-leg-count').textContent = normalizedLegs.length + ' legs · 1 contract';
+
+  // Pricing warning
+  const warningEl = document.getElementById('pricing-warning');
+  if (warningEl) {
+    if (midsAreEstimated) {
+      warningEl.innerHTML = '<strong>Pricing notice:</strong> Mid prices are estimated (real chain data not available). '
+        + 'Max profit, max loss, and breakevens may not reflect executable prices. '
+        + (ml === 0 ? '<strong>Structure shows no loss zone — this indicates stale or estimated pricing, not a real arbitrage opportunity.</strong> ' : '')
+        + 'Verify bid/ask executable prices before trading.';
+      warningEl.classList.remove('hidden');
+    } else {
+      warningEl.classList.add('hidden');
+    }
+  }
+
+  // Highcharts P&L chart
+  try {
+    const strikes = normalizedLegs.map(l => l.strike);
+    const minStrike = Math.min(...strikes);
+    const maxStrike = Math.max(...strikes);
+    const range = maxStrike - minStrike;
+    const lo = minStrike - range * 0.8;
+    const hi = maxStrike + range * 0.8;
+    const step = Math.max(0.25, range / 150);
+    const pnlData = [], profitData = [], lossData = [];
+
+    for (let p = lo; p <= hi; p += step) {
+      const pnl = pnlAt(p, normalizedLegs, qty);
+      const x = +p.toFixed(2), y = +pnl.toFixed(2);
+      pnlData.push([x, y]);
+      profitData.push([x, y >= 0 ? y : 0]);
+      lossData.push([x, y < 0 ? y : 0]);
+    }
+
+    // Plot lines for breakevens and spot
+    const xPlotLines = [
+      { value: spot, color: '#C9A96E', width: 2, dashStyle: 'Dash', zIndex: 3,
+        label: { text: '$' + spot.toFixed(0), style: { fontSize: '11px', fontWeight: '700', color: '#C9A96E' }, y: -6 } }
+    ];
+    be.forEach(b => {
+      xPlotLines.push({
+        value: b, color: 'rgba(150,145,135,0.5)', width: 1, dashStyle: 'Dot', zIndex: 2,
+        label: { text: 'BE $' + b.toFixed(0), style: { fontSize: '10px', fontWeight: '600', color: '#6b6b60' }, y: 14 }
+      });
+    });
+
+    Highcharts.chart('payoff-hc', {
+      chart: { backgroundColor: 'transparent', height: 300, style: { fontFamily: "'Inter', sans-serif" }, spacingTop: 20 },
+      title: { text: null },
+      xAxis: {
+        title: null,
+        labels: { format: '${value}', style: { fontFamily: "'Space Mono', monospace", fontSize: '10px', color: '#9b9b8e' } },
+        plotLines: xPlotLines,
+        gridLineWidth: 0,
+        lineColor: 'rgba(15,61,46,0.12)',
+        tickColor: 'rgba(15,61,46,0.12)',
+      },
+      yAxis: {
+        title: null,
+        labels: { format: '${value}', style: { fontFamily: "'Space Mono', monospace", fontSize: '10px', color: '#9b9b8e' } },
+        plotLines: [{ value: 0, color: 'rgba(120,120,120,0.4)', width: 1, dashStyle: 'Dash', zIndex: 1 }],
+        gridLineColor: 'rgba(229,225,212,0.6)',
+      },
+      legend: { enabled: false },
+      tooltip: {
+        backgroundColor: 'rgba(255,255,255,0.96)', borderColor: 'rgba(15,61,46,0.15)', borderRadius: 8,
+        style: { fontFamily: "'Inter', sans-serif", fontSize: '12px' },
+        formatter: function() {
+          const col = this.y >= 0 ? '#1a8c5e' : '#c0392b';
+          return '<b>$' + this.x.toFixed(0) + '</b><br/>P&L: <b style="color:' + col + '">$' + this.y.toFixed(0) + '</b>';
+        }
+      },
+      plotOptions: {
+        area: { lineWidth: 0, marker: { enabled: false }, states: { hover: { lineWidth: 0 } }, threshold: 0 },
+        line: { marker: { enabled: false }, states: { hover: { lineWidthPlus: 1 } } },
+      },
+      series: [
+        { type: 'area', name: 'Profit', data: profitData, color: '#0B2D23', fillColor: 'rgba(11,45,35,0.08)', lineWidth: 0 },
+        { type: 'area', name: 'Loss', data: lossData, color: '#c0392b', fillColor: 'rgba(192,57,43,0.08)', negativeColor: '#c0392b', negativeFillColor: 'rgba(192,57,43,0.08)', lineWidth: 0 },
+        { type: 'line', name: 'P&L', data: pnlData, color: '#0B2D23', lineWidth: 2.5 },
+      ],
+      credits: { enabled: false },
+    });
+  } catch (e) {
+    console.warn('Payoff chart draw failed:', e);
+  }
+
+  show('section-payoff');
+}
+
+function renderReasoning(r) {
+  const cards = [];
+  const cp = window._computedPayoff;
+
+  // Computed reference bar — shows the real numbers for cross-referencing with LLM text
+  if (cp && cp.legs.length) {
+    const legsDesc = cp.legs.map(function(l) {
+      return (l.side === 'short' ? 'Sell' : 'Buy') + ' ' + l.type + ' $' + l.strike;
+    }).join(' / ');
+    cards.push(
+      '<div style="background:#f0ece0;border:1px solid rgba(15,61,46,.12);border-radius:8px;padding:10px 14px;margin-bottom:4px;font-size:11px;color:#3d3d35;line-height:1.6;grid-column:1/-1;">'
+      + '<strong>Computed reference:</strong> ' + legsDesc
+      + ' | Credit: $' + Math.abs(cp.nc).toFixed(2)
+      + ' | Max Profit: $' + cp.mp.toFixed(0)
+      + ' | Max Loss: ' + (cp.ml > 0 ? '-$' + cp.ml.toFixed(0) : '$0')
+      + (cp.be.length ? ' | BE: ' + cp.be.map(function(b) { return '$' + b.toFixed(2); }).join(' / ') : '')
+      + (cp.midsAreEstimated ? ' | <span style="color:#92400e">Mids estimated</span>' : '')
+      + '</div>'
+    );
+  }
+
+  // 1. Thesis
+  cards.push(`
+    <div class="reason-card">
+      <div class="rc-title"><span class="rc-icon">&#128161;</span> Thesis</div>
+      <div class="rc-row"><span class="rc-label">Conviction</span><span class="rc-val">${r.thesis.conviction}/10</span></div>
+      <div class="rc-row"><span class="rc-label">Primary Driver</span><span class="rc-val">${r.thesis.primaryDriver.replace(/_/g, ' ')}</span></div>
+      <div class="rc-divider"></div>
+      <div class="rc-text"><strong>Edge:</strong> ${r.thesis.structuralEdge}</div>
+      <div class="rc-text"><strong>Catalyst:</strong> ${r.thesis.catalyst}</div>
+      <div class="rc-text"><strong>Thesis:</strong> ${r.thesis.thesis}</div>
+      <div class="rc-divider"></div>
+      <div class="rc-text" style="color:var(--red);"><strong>Bear case:</strong> ${r.thesis.bearCase}</div>
+    </div>
+  `);
+
+  // 2. Risk Assessment
+  cards.push(`
+    <div class="reason-card">
+      <div class="rc-title"><span class="rc-icon">&#9888;&#65039;</span> Risk Assessment</div>
+      <div class="rc-row"><span class="rc-label">Overall Grade</span><span class="rc-val"><span class="rc-badge ${riskGradeClass(r.risk.overallRiskGrade)}">${r.risk.overallRiskGrade}</span></span></div>
+      <div class="rc-divider"></div>
+      ${r.risk.scenarios.map(s => `
+        <div style="margin-bottom:10px;">
+          <div class="rc-row"><span class="rc-label">${s.name}</span><span class="rc-val">${pct(s.probability)}</span></div>
+          <div class="rc-text" style="margin:0;font-size:11px;">${s.trigger} &rarr; ${s.pnlImpact}</div>
+        </div>
+      `).join('')}
+      <div class="rc-divider"></div>
+      <div class="rc-text"><strong>Kill switch:</strong> ${r.risk.killSwitch}</div>
+      <div class="rc-text"><strong>Risk/reward:</strong> ${r.risk.riskRewardVerdict}</div>
+    </div>
+  `);
+
+  // 3. P&L Scenarios — COMPUTED from legs, not LLM-generated
+  let scenarioHtml = '';
+  if (cp && cp.legs.length) {
+    const spotMoves = [-5, -2.5, 0, 2.5, 5];
+    const computedGrid = spotMoves.map(pct => {
+      const targetSpot = cp.spot * (1 + pct / 100);
+      const expiryPnl = pnlAt(targetSpot, cp.legs, cp.qty);
+      // Rough interim estimates: at +7d ~30% of expiry P&L change from current, +14d ~65%
+      const currentPnl = cp.nc * 100; // approximate current value = credit collected
+      const d21 = expiryPnl;
+      const d14 = currentPnl + (expiryPnl - currentPnl) * 0.65;
+      const d7 = currentPnl + (expiryPnl - currentPnl) * 0.30;
+      return { spot: pct, d7: Math.round(d7), d14: Math.round(d14), d21: Math.round(d21) };
+    });
+    const gridRows = computedGrid.map(row =>
+      '<tr>'
+      + '<td>' + (row.spot > 0 ? '+' : '') + row.spot + '%</td>'
+      + '<td class="' + pnlClass(row.d7) + '">$' + row.d7 + '</td>'
+      + '<td class="' + pnlClass(row.d14) + '">$' + row.d14 + '</td>'
+      + '<td class="' + pnlClass(row.d21) + '">$' + row.d21 + '</td>'
+      + '</tr>'
+    ).join('');
+
+    // Best/base/worst from computed expiry values
+    const expiryVals = computedGrid.map(g => g.d21);
+    const bestPnl = Math.max(...expiryVals);
+    const worstPnl = Math.min(...expiryVals);
+    const midPnl = computedGrid.find(g => g.spot === 0)?.d21 || 0;
+
+    scenarioHtml = '<div class="reason-card">'
+      + '<div class="rc-title"><span class="rc-icon">&#128200;</span> P&L Scenarios <span style="font-size:9px;color:#6b6b60;font-weight:400;text-transform:none;letter-spacing:0;">(computed from legs)</span></div>'
+      + '<table class="scenario-table"><thead><tr><th>Spot %</th><th>~7d</th><th>~14d</th><th>Expiry</th></tr></thead>'
+      + '<tbody>' + gridRows + '</tbody></table>'
+      + '<div class="rc-divider"></div>'
+      + '<div class="case-row"><div class="case-dot best"></div><div class="case-info"><div class="ci-desc">' + (r.scenarios?.bestCase?.description || 'Spot at max profit zone at expiry') + '</div><div class="ci-meta">' + (r.scenarios?.bestCase?.probability ? pct(r.scenarios.bestCase.probability) : '--') + ' | $' + bestPnl + '/contract</div></div></div>'
+      + '<div class="case-row"><div class="case-dot base"></div><div class="case-info"><div class="ci-desc">' + (r.scenarios?.baseCase?.description || 'Spot stays near current level') + '</div><div class="ci-meta">' + (r.scenarios?.baseCase?.probability ? pct(r.scenarios.baseCase.probability) : '--') + ' | $' + midPnl + '/contract</div></div></div>'
+      + '<div class="case-row"><div class="case-dot worst"></div><div class="case-info"><div class="ci-desc">' + (r.scenarios?.worstCase?.description || 'Spot moves to worst-case zone') + '</div><div class="ci-meta">' + (r.scenarios?.worstCase?.probability ? pct(r.scenarios.worstCase.probability) : '--') + ' | $' + worstPnl + '/contract</div></div></div>'
+      + (cp.midsAreEstimated ? '<div style="margin-top:8px;font-size:10px;color:#92400e;font-style:italic;">Note: Mid prices are estimated. Dollar amounts may not reflect executable prices.</div>' : '')
+      + '</div>';
+  } else {
+    // Fallback to LLM scenarios if no computed payoff available
+    scenarioHtml = '<div class="reason-card">'
+      + '<div class="rc-title"><span class="rc-icon">&#128200;</span> P&L Scenarios <span style="font-size:9px;color:#92400e;font-weight:400;text-transform:none;letter-spacing:0;">(LLM estimate — verify independently)</span></div>'
+      + '<table class="scenario-table"><thead><tr><th>Spot %</th><th>+7d</th><th>+14d</th><th>+21d</th></tr></thead><tbody>'
+      + (r.scenarios?.pnlGrid || []).map(function(row) {
+          return '<tr><td>' + (row.spot > 0 ? '+' : '') + row.spot + '%</td>'
+          + '<td class="' + pnlClass(row.d7) + '">$' + row.d7 + '</td>'
+          + '<td class="' + pnlClass(row.d14) + '">$' + row.d14 + '</td>'
+          + '<td class="' + pnlClass(row.d21) + '">$' + row.d21 + '</td></tr>';
+        }).join('')
+      + '</tbody></table></div>';
+  }
+  cards.push(scenarioHtml);
+
+  // 4. Exit Strategy
+  cards.push(`
+    <div class="reason-card">
+      <div class="rc-title"><span class="rc-icon">&#128682;</span> Exit Strategy</div>
+      <div class="rc-row"><span class="rc-label">Profit Target</span><span class="rc-val">${r.exit.profitTarget.percentage}% (~${r.exit.profitTarget.typicalDaysToHit}d)</span></div>
+      <div class="rc-row"><span class="rc-label">Stop Loss</span><span class="rc-val">${r.exit.stopLoss.percentage}% | Spot $${r.exit.stopLoss.spotTrigger}</span></div>
+      <div class="rc-row"><span class="rc-label">Time Exit</span><span class="rc-val">${r.exit.timeExit.daysBeforeExpiry} DTE</span></div>
+      <div class="rc-divider"></div>
+      <div class="rc-text"><strong>Summary:</strong> ${r.exit.summary}</div>
+      <div class="rc-divider"></div>
+      <div style="font-size:11px;font-weight:600;color:var(--ink-muted);margin-bottom:8px;">ADJUSTMENTS</div>
+      ${r.exit.adjustments.map(a => `
+        <div class="adj-item">
+          <div class="adj-trigger">IF: ${a.trigger}</div>
+          <div class="adj-action">THEN: ${a.action}</div>
+        </div>
+      `).join('')}
+    </div>
+  `);
+
+  // 5. Regime Context
+  cards.push(`
+    <div class="reason-card">
+      <div class="rc-title"><span class="rc-icon">&#127760;</span> Regime Context</div>
+      <div class="rc-row"><span class="rc-label">Alignment Score</span><span class="rc-val">${(r.regime.alignmentScore * 100).toFixed(0)}%</span></div>
+      <div class="rc-divider"></div>
+      <div class="rc-text"><strong>Market:</strong> ${r.regime.marketRegime}</div>
+      <div class="rc-text"><strong>Sector:</strong> ${r.regime.sectorMomentum}</div>
+      <div class="rc-text"><strong>VIX:</strong> ${r.regime.vixEnvironment}</div>
+      <div class="rc-text"><strong>Correlation:</strong> ${r.regime.correlationRisk}</div>
+    </div>
+  `);
+
+  // 6. Position Sizing — override with computed max loss
+  const computedMl = cp ? cp.ml : 0;
+  const sizingAccounts = [
+    { label: '$10k', size: 10000 },
+    { label: '$25k', size: 25000 },
+    { label: '$50k', size: 50000 },
+    { label: '$100k', size: 100000 },
+  ];
+  // Target 2% risk per trade for conservative sizing
+  const riskPct = 0.02;
+  let sizingRows = '';
+  if (computedMl > 0) {
+    sizingRows = sizingAccounts.map(function(a) {
+      const maxContracts = Math.max(1, Math.floor(a.size * riskPct / computedMl));
+      const totalRisk = maxContracts * computedMl;
+      const riskOfAccount = (totalRisk / a.size * 100).toFixed(1);
+      return '<tr><td>' + a.label + '</td><td>' + maxContracts + '</td><td class="negative">$' + totalRisk.toFixed(0) + '</td><td style="font-size:10px;color:#6b6b60">' + riskOfAccount + '%</td></tr>';
+    }).join('');
+  } else {
+    // No computed max loss — fall back to LLM sizing
+    sizingRows = Object.keys(r.sizing.contracts).map(function(k) {
+      return '<tr><td>$' + k + '</td><td>' + r.sizing.contracts[k] + '</td><td class="negative">$' + r.sizing.maxLossDollars[k] + '</td><td></td></tr>';
+    }).join('');
+  }
+  cards.push(
+    '<div class="reason-card">'
+    + '<div class="rc-title"><span class="rc-icon">&#128176;</span> Position Sizing'
+    + (computedMl > 0 ? ' <span style="font-size:9px;color:#6b6b60;font-weight:400;text-transform:none;letter-spacing:0;">(computed, 2% risk target)</span>' : '')
+    + '</div>'
+    + '<div class="rc-row"><span class="rc-label">Max Loss / Contract</span><span class="rc-val">' + (computedMl > 0 ? '$' + computedMl.toFixed(0) : '--') + '</span></div>'
+    + '<div class="rc-divider"></div>'
+    + '<table class="scenario-table"><thead><tr><th>Account</th><th>Contracts</th><th>Max Loss</th><th>% of Account</th></tr></thead>'
+    + '<tbody>' + sizingRows + '</tbody></table>'
+    + '<div class="rc-divider"></div>'
+    + '<div class="rc-text"><strong>Kelly:</strong> ' + (r.sizing?.kellyEstimate || 'N/A') + '</div>'
+    + '<div class="rc-text"><strong>Scaling:</strong> ' + (r.sizing?.scalingPlan || 'N/A') + '</div>'
+    + (cp?.midsAreEstimated ? '<div style="margin-top:8px;font-size:10px;color:#92400e;font-style:italic;">Note: Max loss based on estimated mid prices. Verify with live bid/ask before sizing.</div>' : '')
+    + '</div>'
+  );
+
+  $('reasoning-grid').innerHTML = cards.join('');
+  show('section-reasoning');
+}
+
+function renderGrade(meta) {
+  const cls = gradeClass(meta.overallGrade);
+  $('grade-banner').className = 'grade-banner ' + cls;
+  $('grade-banner').innerHTML = `
+    <div class="grade-letter">${meta.overallGrade}</div>
+    <div class="grade-conviction">Conviction: ${meta.totalConviction}/10</div>
+    <div class="grade-sub">Composite score across all 6 reasoning dimensions</div>
+    <div class="publish-verdict ${meta.shouldPublish ? 'yes' : 'no'}">${meta.shouldPublish ? 'Publish' : 'Do Not Publish'}</div>
+  `;
+  show('section-grade');
+}
+
+function renderCost(meta) {
+  $('cost-footer').innerHTML = `
+    <span>Cost: $${meta.totalCostUsd?.toFixed(4) || '0.0000'}</span>
+    <span>Time: ${meta.wallClockMs ? (meta.wallClockMs / 1000).toFixed(1) + 's' : '--'}</span>
+    <span>Engine: NewLeaf Reasoning v1</span>
+  `;
+  show('section-cost');
+}
+
+function renderPnlChart(scenarios) {
+  if (!window.Highcharts) return;
+
+  // Use COMPUTED P&L data if available, fall back to LLM scenarios
+  const cp = window._computedPayoff;
+  let grid;
+  if (cp && cp.legs.length) {
+    const spotMoves = [-5, -2.5, 0, 2.5, 5];
+    const currentPnl = cp.nc * 100;
+    grid = spotMoves.map(pctMove => {
+      const targetSpot = cp.spot * (1 + pctMove / 100);
+      const expiryPnl = pnlAt(targetSpot, cp.legs, cp.qty);
+      return {
+        spot: pctMove,
+        d7: Math.round(currentPnl + (expiryPnl - currentPnl) * 0.30),
+        d14: Math.round(currentPnl + (expiryPnl - currentPnl) * 0.65),
+        d21: Math.round(expiryPnl),
+      };
+    });
+  } else if (scenarios?.pnlGrid?.length) {
+    grid = scenarios.pnlGrid;
+  } else {
+    return;
+  }
+
+  const categories = grid.map(function(r) { return (r.spot > 0 ? '+' : '') + r.spot + '%'; });
+  const allVals = grid.flatMap(function(r) { return [r.d7, r.d14, r.d21]; });
+  const minVal = Math.min(...allVals);
+  const maxVal = Math.max(...allVals);
+  // Dynamic color scale centered on 0
+  const absMax = Math.max(Math.abs(minVal), Math.abs(maxVal), 1);
+
+  Highcharts.chart('pnl-chart-container', {
+    chart: { type: 'heatmap', backgroundColor: 'transparent', height: 200 },
+    title: { text: null },
+    xAxis: { categories: categories, title: { text: 'Spot Move', style: { fontSize: '10px', color: '#6b6b60' } }, labels: { style: { fontFamily: "'Space Mono', monospace", fontSize: '10px' } } },
+    yAxis: { categories: ['~7d', '~14d', 'Expiry'], title: null, labels: { style: { fontFamily: "'Space Mono', monospace", fontSize: '10px' } }, reversed: true },
+    colorAxis: { min: -absMax, max: absMax, stops: [[0, '#c0392b'], [0.4, '#fef3c7'], [0.5, '#f7f5f0'], [0.6, '#e0f2ec'], [1, '#1a8c5e']] },
+    legend: { enabled: false },
+    tooltip: { formatter: function() { return '<b>' + this.series.xAxis.categories[this.point.x] + '</b> at <b>' + this.series.yAxis.categories[this.point.y] + '</b><br/>P&L: <b>$' + this.point.value + '</b>'; } },
+    series: [{
+      borderWidth: 1, borderColor: 'rgba(15,61,46,0.12)',
+      data: grid.flatMap(function(row, xi) { return [[xi, 0, row.d7], [xi, 1, row.d14], [xi, 2, row.d21]]; }),
+      dataLabels: { enabled: true, format: '${point.value}', style: { fontSize: '10px', fontFamily: "'Space Mono', monospace", fontWeight: '600', textOutline: 'none' } }
+    }],
+    credits: { enabled: false }
+  });
+  show('section-pnl-chart');
+}
+
+function showMockBanner() {
+  $('mock-banner')?.classList.remove('hidden');
+}
+
+function addRevealAnimation(sectionId) {
+  const el = $(sectionId);
+  if (el) el.classList.add('section-reveal');
+}
+
+// ─── Main analysis flow ───────────────────────────────────────────────────────
+let elapsedTimer = null;
+
+function startElapsedTimer() {
+  const start = Date.now();
+  const el = $('loading-elapsed');
+  if (el) el.textContent = '0.0s';
+  elapsedTimer = setInterval(() => {
+    if (el) el.textContent = ((Date.now() - start) / 1000).toFixed(1) + 's';
+  }, 100);
+}
+
+function stopElapsedTimer() {
+  if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null; }
+}
+
+window.runAnalysis = async function() {
+  const ticker = $('inp-ticker').value.trim().toUpperCase();
+  const dte = parseInt($('inp-expiry').value) || 21;
+  if (!ticker) { alert('Please enter a ticker symbol.'); return; }
+
+  // Reset UI — clear ALL previous results
+  hide('section-snapshot');
+  hide('section-airead');
+  hide('section-pick');
+  hide('section-payoff');
+  hide('section-reasoning');
+  hide('section-pnl-chart');
+  hide('section-grade');
+  hide('section-cost');
+  $('mock-banner')?.classList.add('hidden');
+  $('reasoning-override')?.classList.add('hidden');
+  $('pricing-warning')?.classList.add('hidden');
+  window._computedPayoff = null;
+  show('section-loading');
+  startElapsedTimer();
+
+  $('btn-load').disabled = true;
+  $('inp-ticker').value = ticker;
+
+  const startTime = Date.now();
+
+  try {
+    // Step 1: Fetch market snapshot + indicators in parallel
+    $('loading-text').textContent = `Fetching market data for ${ticker}...`;
+    let metricsData = { spot: '--', rsi: null, adx: null, atr: null, ivRank: null, putWall: null, callWall: null };
+    let spotPrice = 0;
+    let firstExpiry = '';
+    try {
+      const snapRes = await apiFetch(`/api/snapshot/${ticker}`);
+      spotPrice = snapRes.snapshot?.price || 0;
+      const expirations = snapRes.expirations || [];
+      firstExpiry = expirations[0] || '';
+
+      // Fetch indicators + gamma in parallel
+      const [indRes, gammaRes] = await Promise.all([
+        apiFetch(`/api/indicators/${ticker}`).catch(() => ({ indicators: {} })),
+        firstExpiry ? apiFetch(`/api/gamma/${ticker}/${firstExpiry}`).catch(() => ({})) : Promise.resolve({}),
+      ]);
+      const ind = indRes.indicators || indRes || {};
+      metricsData = {
+        spot: spotPrice, price: spotPrice,
+        rsi: ind.rsi14, adx: ind.adx14, atr: ind.atr14,
+        ivRank: ind.ivRank || null,
+        putWall: gammaRes.putWallStrike || null,
+        callWall: gammaRes.callWallStrike || null,
+        smaTrend: ind.smaTrend || 'unknown',
+      };
+    } catch (e) {
+      console.warn('Snapshot fetch failed:', e.message);
+    }
+    renderMetrics(metricsData);
+
+    // Step 2: Engine recommendation FIRST (so we have direction for ai-read)
+    $('loading-text').textContent = 'Running recommendation engine...';
+    let pick;
+    let recFullRes = null;
+    try {
+      recFullRes = await apiFetch('/api/recommend', {
+        method: 'POST',
+        body: JSON.stringify({
+          ticker,
+          expiry: firstExpiry || undefined,
+          useLLMStrategy: document.getElementById('inp-llm-override')?.checked || false,
+          strategyModel: document.getElementById('inp-model')?.value || '',
+        })
+      });
+      const ep = recFullRes.enginePick || {};
+      pick = {
+        strategy: ep.strategy || recFullRes.recommendation?.strategies?.[0]?.strategy || 'Unknown',
+        direction: ep.direction || 'neutral',
+        score: ep.score || recFullRes.recommendation?.strategies?.[0]?.score || 0,
+        dte: dte,
+        gateTrace: recFullRes.engineSnapshot?.gateTrace || [],
+        reasoningOverride: ep.reasoningOverride || null,
+      };
+      // Update metrics with data from recommend response
+      if (recFullRes.indicators) {
+        const ind = recFullRes.indicators;
+        metricsData.rsi = ind.rsi14 ?? metricsData.rsi;
+        metricsData.adx = ind.adx14 ?? metricsData.adx;
+        metricsData.atr = ind.atr14 ?? metricsData.atr;
+        metricsData.smaTrend = ind.smaTrend ?? metricsData.smaTrend;
+      }
+      if (recFullRes.gammaAnalysis) {
+        metricsData.putWall = recFullRes.gammaAnalysis.putWallStrike ?? metricsData.putWall;
+        metricsData.callWall = recFullRes.gammaAnalysis.callWallStrike ?? metricsData.callWall;
+      }
+      renderMetrics(metricsData); // re-render with better data
+    } catch (e) {
+      console.warn('Recommend failed:', e.message);
+      pick = { strategy: 'Engine unavailable', score: 0, direction: '--', dte, gateTrace: [] };
+    }
+    renderPick(pick);
+
+    // Check if LLM recommended NO TRADE — skip chart + reasoning if so
+    const isNoTrade = pick.reasoningOverride?.noTrade === true;
+
+    // Step 3: AI Read — now direction-aware (runs after recommend)
+    $('loading-text').textContent = 'Getting AI market read...';
+    try {
+      const readRes = await apiFetch('/api/ai-read', {
+        method: 'POST',
+        body: JSON.stringify({
+          ticker, spot: spotPrice,
+          ivRank: metricsData.ivRank || 0, atr14: metricsData.atr || 0,
+          rsi: metricsData.rsi || 0, adx: metricsData.adx || 0,
+          trend: metricsData.smaTrend || 'unknown',
+          putWall: metricsData.putWall || 0, callWall: metricsData.callWall || 0,
+          earningsDaysOut: null,
+          engineDirection: pick.direction,
+          engineStrategy: pick.strategy,
+        })
+      });
+      renderAiRead(readRes.read || readRes.synthesis || readRes.text || 'No read available.');
+    } catch (e) {
+      console.warn('AI read failed:', e.message);
+      renderAiRead('AI market read unavailable for this ticker.');
+    }
+
+    if (isNoTrade) {
+      // NO TRADE — stop here, don't render chart/reasoning/grade
+      hide('section-loading');
+      stopElapsedTimer();
+      $('btn-load').disabled = false;
+      return;
+    }
+
+    // Step 3b: Strategy payoff chart (from recommend legs)
+    if (recFullRes) {
+      renderPayoffChart(recFullRes, spotPrice);
+    }
+
+    // Step 4: Deep reasoning
+    $('loading-text').textContent = 'Running 6-layer reasoning analysis...';
+    let reasoning;
+    let usedMock = false;
+
+    if (USE_MOCK) {
+      await new Promise(r => setTimeout(r, 800));
+      reasoning = MOCK_REASONING;
+      usedMock = true;
+    } else {
+      try {
+        // Build rich payload from recommend response + snapshot
+        const reasonBody = {
+          ticker, dte,
+          spot: spotPrice,
+          expiry: firstExpiry || undefined,
+          // Engine pick
+          strategy: pick.strategy,
+          direction: pick.direction,
+          score: pick.score,
+          // Indicators from snapshot fetch
+          rsi: metricsData.rsi || 0,
+          adx: metricsData.adx || 0,
+          atr: metricsData.atr || 0,
+          ivRank: metricsData.ivRank || 0,
+          putWall: metricsData.putWall || 0,
+          callWall: metricsData.callWall || 0,
+          // From recommend response (engine snapshot)
+          ...(recFullRes?.engineSnapshot?.gateValues || {}),
+          ...(recFullRes?.indicators || {}),
+          // Pass full objects for the route to extract from
+          enginePick: recFullRes?.enginePick,
+          engineSnapshot: recFullRes?.engineSnapshot,
+          indicators: recFullRes?.indicators,
+          gammaAnalysis: recFullRes?.gammaAnalysis,
+          recommendation: recFullRes?.recommendation,
+          // Legs from first strategy
+          legs: recFullRes?.recommendation?.strategies?.[0]?.legs,
+          netCredit: recFullRes?.recommendation?.strategies?.[0]?.netCredit,
+        };
+        const reasonUrl = API_URL + '/api/reasoning/analyze';
+        const reasonResp = await fetch(reasonUrl, {
+          method: 'POST',
+          headers: apiHeaders(),
+          body: JSON.stringify(reasonBody),
+        });
+        if (!reasonResp.ok) {
+          const errBody = await reasonResp.json().catch(() => ({}));
+          if (errBody.error === 'LEGS_NOT_PRICED') {
+            console.warn('Reasoning rejected: legs not priced. Falling back to mock.');
+            reasoning = MOCK_REASONING;
+            usedMock = true;
+          } else {
+            throw new Error(errBody.error || reasonResp.statusText);
+          }
+        } else {
+          reasoning = await reasonResp.json();
+        }
+      } catch (e) {
+        console.warn('Reasoning API error, using mock data:', e.message);
+        reasoning = MOCK_REASONING;
+        usedMock = true;
+      }
+    }
+
+    if (usedMock) showMockBanner();
+
+    renderReasoning(reasoning);
+    addRevealAnimation('section-reasoning');
+
+    // Render P&L heatmap chart
+    renderPnlChart(reasoning.scenarios);
+
+    renderGrade(reasoning.meta);
+    addRevealAnimation('section-grade');
+
+    // Cost/time
+    const elapsed = Date.now() - startTime;
+    reasoning.meta.wallClockMs = elapsed;
+    renderCost(reasoning.meta);
+
+    hide('section-loading');
+    stopElapsedTimer();
+
+  } catch (err) {
+    hide('section-loading');
+    stopElapsedTimer();
+    console.error('Analysis error:', err);
+    $('section-snapshot').innerHTML = `<div class="error-banner">Analysis failed: ${err.message}</div>`;
+    show('section-snapshot');
+  } finally {
+    $('btn-load').disabled = false;
+  }
+};
+
+// Enter key triggers analysis
+$('inp-ticker')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') window.runAnalysis();
+});
+</script>
+</body>
+</html>

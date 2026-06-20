@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf Invest — Position Detail</title>
+<style>
+  :root{
+    --forest:#163A2B; --deep:#0F2A1F; --green:#1F6B4A; --bright:#2F9E6B;
+    --soft:#DCEEE4; --beige:#F5F1E8; --card:#FBF9F3; --ink:#1C2620;
+    --muted:#7D8A82; --line:#E4DDD0; --red:#A8342B; --amber:#CAA12F;
+    --amberink:#8A6A14; --blue:#2D6A8A; --slate:#4A6572; --white:#fff;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Calibri','Segoe UI',sans-serif;background:var(--beige);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  header{background:var(--deep);color:#fff;padding:20px 0;position:relative;overflow:hidden;}
+  header .hwrap{max-width:980px;margin:0 auto;padding:0 24px;position:relative;z-index:2;}
+  header .orb{position:absolute;border-radius:50%;opacity:.45;}
+  .brand{font-family:'Consolas',monospace;font-size:12px;letter-spacing:3px;color:var(--bright);font-weight:700;}
+  .demo-flag{display:inline-block;background:rgba(202,161,47,.18);border:1px solid var(--amber);color:#F2D98A;font-family:Consolas,monospace;font-size:11px;padding:3px 10px;border-radius:20px;margin-top:8px;letter-spacing:.5px;}
+  .wrap{max-width:980px;margin:0 auto;padding:26px 24px 60px;}
+  .back{background:none;border:none;color:var(--green);font-family:Consolas,monospace;font-size:12px;font-weight:700;cursor:pointer;padding:0;margin-bottom:18px;letter-spacing:.5px;}
+
+  /* state toggle */
+  .toggle{display:flex;gap:0;background:#E8E2D4;border-radius:9px;padding:3px;width:fit-content;margin-bottom:22px;}
+  .toggle button{background:none;border:none;font-family:Consolas,monospace;font-size:11.5px;font-weight:700;letter-spacing:.5px;padding:8px 18px;border-radius:7px;cursor:pointer;color:var(--muted);text-transform:uppercase;transition:.15s;}
+  .toggle button.on{background:var(--forest);color:#fff;}
+
+  .dhead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:3px;}
+  .dhead .sym{font-family:Georgia,serif;font-size:32px;font-weight:700;}
+  .dhead .strat{font-family:Consolas,monospace;font-size:15px;color:var(--green);font-weight:700;}
+  .pill{font-family:Consolas,monospace;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase;}
+  .pill.paper{background:#E8EEF1;color:var(--slate);}
+  .pill.open{background:#FBF3DC;color:var(--amberink);}
+  .pill.closed{background:#E8EEF1;color:var(--slate);}
+  .dsub{color:var(--muted);font-size:13.5px;margin-bottom:22px;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;}
+  .panel.dark{background:var(--forest);color:#fff;border-color:var(--forest);}
+  .panel h3{font-family:Consolas,monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;font-weight:700;}
+  .panel.dark h3{color:var(--bright);}
+  .panel:not(.dark) h3{color:var(--green);}
+  .kv{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:13.5px;}
+  .panel.dark .kv{border-bottom:1px solid rgba(255,255,255,.1);}
+  .kv:last-child{border-bottom:none;}
+  .kv .k{color:var(--muted);font-family:Consolas,monospace;font-size:12px;}
+  .panel.dark .kv .k{color:var(--soft);}
+  .kv .v{font-weight:700;font-family:Consolas,monospace;}
+  .panel.dark .kv .v{color:#fff;}
+
+  .thesis-box{background:var(--soft);border-radius:10px;padding:16px 18px;}
+  .thesis-box .q{font-size:14px;font-weight:700;color:var(--forest);margin-bottom:6px;}
+  .thesis-box .a{font-size:13px;color:var(--ink);}
+  .barwrap{margin-top:16px;}
+  .barwrap .blab{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:5px;font-family:Consolas,monospace;}
+  .bartrack{height:28px;background:#EDE7DA;border-radius:6px;position:relative;overflow:hidden;}
+  .barfill{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:11px;font-size:11px;font-weight:700;color:#fff;font-family:Consolas,monospace;}
+  .zone{position:absolute;top:0;bottom:0;border-left:2px dashed var(--green);}
+  .note{font-size:12px;color:var(--amberink);font-style:italic;margin-top:14px;}
+
+  .full{margin-top:18px;}
+  .dual{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px;}
+  .track{border:1px solid var(--line);border-radius:10px;padding:15px 17px;background:#fff;}
+  .track .lab{font-family:Consolas,monospace;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;font-weight:700;margin-bottom:9px;}
+  .track.expiry .lab{color:var(--amberink);}
+  .track.managed .lab{color:var(--blue);}
+  .track .row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;}
+  .track .row .l{color:var(--muted);}
+  .track .row .r{font-weight:700;}
+  .ok{color:var(--green);} .bad{color:var(--red);} .neutral{color:var(--slate);}
+
+  /* outcome verdict block (closed only) */
+  .verdict{border-radius:12px;padding:22px 24px;margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  .verdict.held{background:linear-gradient(0deg,var(--soft),var(--soft));border:1.5px solid var(--green);}
+  .vcol .vlab{font-family:Consolas,monospace;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+  .vcol .vbig{font-family:Georgia,serif;font-size:26px;font-weight:700;}
+  .vcol .vexp{font-size:12.5px;color:var(--slate);margin-top:5px;line-height:1.4;}
+  .split-note{background:#FBF3DC;border:1px solid var(--amber);border-radius:10px;padding:14px 18px;margin-top:16px;font-size:13px;color:var(--amberink);line-height:1.5;}
+  .hide{display:none;}
+  .foot{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);font-family:Consolas,monospace;text-align:center;}
+</style>
+</head>
+<body>
+<header>
+  <div class="orb" style="width:220px;height:220px;background:var(--green);top:-110px;right:-30px;"></div>
+  <div class="hwrap">
+    <div class="brand">NEWLEAF · INVEST</div>
+    <div class="demo-flag">◆ UX MOCKUP · illustrative data · single position detail</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <button class="back">← all positions</button>
+
+  <div class="toggle">
+    <button id="t-open" class="on" onclick="setState('open')">While open</button>
+    <button id="t-closed" onclick="setState('closed')">After close (scored)</button>
+  </div>
+
+  <div class="dhead">
+    <span class="sym">GOOG</span>
+    <span class="strat">iron_condor</span>
+    <span class="pill paper">paper</span>
+    <span class="pill open" id="statepill">open</span>
+  </div>
+  <div class="dsub" id="dsub">Entered 19 May 2026 · 35-day expiry · the engine picked this because of the readings below.</div>
+
+  <!-- ENTRY + THESIS -->
+  <div class="grid2">
+    <div class="panel dark">
+      <h3>1 · Entry snapshot — what the engine saw</h3>
+      <div class="kv"><span class="k">direction</span><span class="v">neutral</span></div>
+      <div class="kv"><span class="k">trend strength (ADX)</span><span class="v">7 — weak</span></div>
+      <div class="kv"><span class="k">vol regime (Bollinger)</span><span class="v">normal · 9%</span></div>
+      <div class="kv"><span class="k">IV / RV</span><span class="v">0.95</span></div>
+      <div class="kv"><span class="k">blended confidence</span><span class="v">0.62</span></div>
+      <div class="kv"><span class="k">composite score</span><span class="v">93 / 100</span></div>
+      <div class="kv"><span class="k">band width</span><span class="v">9.5%</span></div>
+      <div class="kv"><span class="k">short strikes</span><span class="v">165P / 185C</span></div>
+      <div class="kv"><span class="k">entry credit</span><span class="v">$2.10</span></div>
+      <div class="kv"><span class="k">max loss</span><span class="v">$2.90</span></div>
+      <div class="kv"><span class="k">spot at entry</span><span class="v">175.40</span></div>
+    </div>
+
+    <div class="panel">
+      <h3>2 · Thesis being tested</h3>
+      <div class="thesis-box">
+        <div class="q">Did the range hold?</div>
+        <div class="a">An iron condor's thesis: spot stays <b>between the short strikes (165–185)</b> through the evaluation point. Weak ADX (no trend) + strong walls (conf 0.62) said it should.</div>
+      </div>
+      <div class="barwrap">
+        <div class="blab"><span>165 put</span><span id="spotlab">spot 175.4</span><span>185 call</span></div>
+        <div class="bartrack">
+          <div class="zone" style="left:2%"></div>
+          <div class="zone" style="left:98%"></div>
+          <div class="barfill" id="rangebar" style="width:52%;background:var(--green)">in range</div>
+        </div>
+      </div>
+      <div class="note" id="thesisnote">Spot is comfortably inside the short strikes — thesis tracking true so far.</div>
+    </div>
+  </div>
+
+  <!-- DUAL TRACKING -->
+  <div class="panel full">
+    <h3>3 · Dual outcome tracking — scored two ways</h3>
+    <div class="dsub" style="margin:0 0 14px;">Every position is tracked on <b>both</b> bases: <b>expiry</b> (the clean thesis signal that tunes the engine) and <b>managed</b> (your real exit rules — 50% profit / 21 DTE / 2× credit).</div>
+    <div class="dual">
+      <div class="track expiry">
+        <div class="lab">◆ Expiry basis</div>
+        <div class="row" id="e1"><span class="l">status</span><span class="r neutral">open — 28 DTE</span></div>
+        <div class="row" id="e2"><span class="l">if held to expiry</span><span class="r">range intact → full credit</span></div>
+        <div class="row" id="e3"><span class="l">thesis (projected)</span><span class="r ok">on track ✓</span></div>
+      </div>
+      <div class="track managed">
+        <div class="lab">◆ Managed basis</div>
+        <div class="row" id="m1"><span class="l">profit target</span><span class="r">50% of max ($1.05)</span></div>
+        <div class="row" id="m2"><span class="l">current</span><span class="r ok">+$0.78 (37%)</span></div>
+        <div class="row" id="m3"><span class="l">next trigger</span><span class="r">50% target or 21 DTE</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OUTCOME VERDICT (closed only) -->
+  <div class="full hide" id="outcomeblock">
+    <div class="verdict held">
+      <div class="vcol">
+        <div class="vlab">◆ Thesis held?</div>
+        <div class="vbig ok">YES ✓</div>
+        <div class="vexp">Spot stayed between 165–185 the entire period. The engine's read — neutral, weak trend, strong walls → range-bound — was correct.</div>
+      </div>
+      <div class="vcol">
+        <div class="vlab">◆ P&amp;L (recorded separately)</div>
+        <div class="vbig">+$1.05 <span style="font-size:14px;color:var(--muted);">managed</span></div>
+        <div class="vexp">Closed at the 50% profit target on day 19 (managed). On the expiry basis it would have kept the full $2.10 credit. Both logged.</div>
+      </div>
+    </div>
+    <div class="split-note">
+      <b>Why thesis and P&amp;L are separate:</b> here they agree — the reasoning was right <i>and</i> it paid. But tracking them apart is what lets us catch the cases where they don't: a thesis that held but lost to variance (don't punish the engine), or one that failed but got lucky (don't reward it). Only <b>thesis-held</b> tunes the weights.
+    </div>
+  </div>
+
+  <div class="foot">NewLeaf Invest · single position detail · illustrative data · no real outcomes shown</div>
+</div>
+
+<script>
+  function setState(s){
+    const open = s==='open';
+    document.getElementById('t-open').classList.toggle('on',open);
+    document.getElementById('t-closed').classList.toggle('on',!open);
+    document.getElementById('statepill').textContent = open?'open':'closed';
+    document.getElementById('statepill').className = 'pill '+(open?'open':'closed');
+    document.getElementById('outcomeblock').classList.toggle('hide',open);
+
+    if(open){
+      document.getElementById('dsub').innerHTML = 'Entered 19 May 2026 · 35-day expiry · the engine picked this because of the readings below.';
+      document.getElementById('spotlab').textContent = 'spot 175.4';
+      document.getElementById('rangebar').style.width='52%';
+      document.getElementById('rangebar').textContent='in range';
+      document.getElementById('thesisnote').textContent='Spot is comfortably inside the short strikes — thesis tracking true so far.';
+      document.getElementById('e1').innerHTML='<span class="l">status</span><span class="r neutral">open — 28 DTE</span>';
+      document.getElementById('e2').innerHTML='<span class="l">if held to expiry</span><span class="r">range intact → full credit</span>';
+      document.getElementById('e3').innerHTML='<span class="l">thesis (projected)</span><span class="r ok">on track ✓</span>';
+      document.getElementById('m1').innerHTML='<span class="l">profit target</span><span class="r">50% of max ($1.05)</span>';
+      document.getElementById('m2').innerHTML='<span class="l">current</span><span class="r ok">+$0.78 (37%)</span>';
+      document.getElementById('m3').innerHTML='<span class="l">next trigger</span><span class="r">50% target or 21 DTE</span>';
+    } else {
+      document.getElementById('dsub').innerHTML = 'Entered 19 May 2026 · closed 6 Jun 2026 · held 19 days (managed exit).';
+      document.getElementById('spotlab').textContent = 'close 178.2';
+      document.getElementById('rangebar').style.width='62%';
+      document.getElementById('rangebar').textContent='stayed in range';
+      document.getElementById('thesisnote').textContent='Spot never left the short strikes through the whole period — the range held.';
+      document.getElementById('e1').innerHTML='<span class="l">at expiry</span><span class="r ok">178.2 — in range</span>';
+      document.getElementById('e2').innerHTML='<span class="l">thesis (expiry)</span><span class="r ok">HELD ✓</span>';
+      document.getElementById('e3').innerHTML='<span class="l">P&L if held</span><span class="r">+$2.10 (full credit)</span>';
+      document.getElementById('m1').innerHTML='<span class="l">exit trigger</span><span class="r">50% target · day 19</span>';
+      document.getElementById('m2').innerHTML='<span class="l">thesis (managed)</span><span class="r ok">HELD ✓</span>';
+      document.getElementById('m3').innerHTML='<span class="l">P&L realized</span><span class="r ok">+$1.05</span>';
+    }
+  }
+</script>
+</body>
+</html>

@@ -289,13 +289,21 @@ function parseNasdaqExpiryGroup(groupStr) {
 
 async function getNasdaqExpiries(symbol) {
   const assetclass = nasdaqAssetClass(symbol);
-  const url = `${NASDAQ_BASE}/${symbol}/option-chain?assetclass=${assetclass}&limit=500`;
+  // Nasdaq defaults to a narrow date window and returns ONLY the nearest expiry's
+  // full chain (~75 rows) — so without fromdate/todate we discover a single expiry.
+  // Pass an explicit ~120-day window (money=all,type=all) to surface every expiry
+  // group; the DTE filter downstream trims to dteMin–dteMax.
+  const fromdate = new Date(); fromdate.setHours(12,0,0,0);
+  const todate   = new Date(fromdate.getTime() + 120 * 86400000);
+  const iso = dt => dt.toISOString().slice(0, 10);
+  const dateRange = `&fromdate=${iso(fromdate)}&todate=${iso(todate)}&money=all&type=all`;
+  const url = `${NASDAQ_BASE}/${symbol}/option-chain?assetclass=${assetclass}&limit=500${dateRange}`;
   let d = await nasdaqGet(url);
 
   // Fallback: try other asset class if empty
   if (!d?.data?.table?.rows?.length) {
     const alt = assetclass === 'stocks' ? 'etf' : 'stocks';
-    d = await nasdaqGet(`${NASDAQ_BASE}/${symbol}/option-chain?assetclass=${alt}&limit=500`);
+    d = await nasdaqGet(`${NASDAQ_BASE}/${symbol}/option-chain?assetclass=${alt}&limit=500${dateRange}`);
   }
 
   if (!d?.data?.table?.rows?.length) throw new Error(`No option data from Nasdaq for ${symbol}`);

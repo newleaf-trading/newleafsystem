@@ -23,7 +23,7 @@ export function registerAdminRoutes(fastify: FastifyInstance, llm?: LLMRouter) {
     }
 
     const { getFirestore } = await import('firebase-admin/firestore');
-    const db = getFirestore();
+    const db = getFirestore('newleafdb');
     const doc = db.collection('apiKeys').doc();
     const record = {
       key,
@@ -46,7 +46,7 @@ export function registerAdminRoutes(fastify: FastifyInstance, llm?: LLMRouter) {
     }
 
     const { getFirestore } = await import('firebase-admin/firestore');
-    const snap = await getFirestore().collection('apiKeys').orderBy('createdAt', 'desc').get();
+    const snap = await getFirestore('newleafdb').collection('apiKeys').orderBy('createdAt', 'desc').get();
     const keys = snap.docs.map(d => {
       const data = d.data();
       return {
@@ -74,7 +74,7 @@ export function registerAdminRoutes(fastify: FastifyInstance, llm?: LLMRouter) {
     }
 
     const { getFirestore } = await import('firebase-admin/firestore');
-    const doc = getFirestore().collection('apiKeys').doc(id);
+    const doc = getFirestore('newleafdb').collection('apiKeys').doc(id);
     const snap = await doc.get();
     if (!snap.exists) return reply.code(404).send({ error: 'Key not found' });
     await doc.update({ active: false });

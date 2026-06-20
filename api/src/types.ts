@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const TradeIdeaSchema = z.object({
   ticker: z.string(),
-  structure: z.enum(['iron_condor', 'broken_wing_butterfly', 'calendar', 'diagonal', 'vertical_spread', 'short_strangle']),
+  structure: z.enum(['iron_condor', 'iron_butterfly', 'broken_wing_butterfly', 'calendar', 'calendar_spread', 'diagonal', 'vertical_spread', 'bull_put_spread', 'bear_call_spread', 'short_strangle']),
   legs: z.array(z.object({
     type: z.enum(['call', 'put']),
     side: z.enum(['long', 'short']),

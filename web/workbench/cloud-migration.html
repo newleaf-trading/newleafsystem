@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NewLeaf System — Cloud Migration Proposal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;800&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="nl-brand.css">
+  <script src="load-nav.js" defer></script>
+  <style>
+    :root {
+      --forest: #0B2D23;
+      --gold: #C9A96E;
+      --cream: #F7F5F0;
+      --bg-card: #FFFFFF;
+      --text-primary: #1A1A1A;
+      --text-secondary: #6B7280;
+      --border: #E5E7EB;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --error: #EF4444;
+      --info: #3B82F6;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--text-primary); line-height: 1.7; }
+
+    .page { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    /* ── Hero ─────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, var(--forest) 0%, #143D30 100%);
+      color: #fff;
+      border-radius: 16px;
+      padding: 56px 48px;
+      margin-bottom: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: '';
+      position: absolute; top: -60px; right: -60px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(201,169,110,0.15) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .hero h1 { font-family: 'Playfair Display', serif; font-size: 2.4rem; font-weight: 800; margin-bottom: 12px; }
+    .hero .subtitle { font-size: 1.1rem; opacity: 0.85; max-width: 700px; }
+    .hero .status-row { display: flex; gap: 24px; margin-top: 28px; flex-wrap: wrap; }
+    .hero .status-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px; padding: 8px 16px; font-size: 0.85rem;
+    }
+    .hero .status-badge .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-green { background: var(--success); }
+    .dot-gold { background: var(--gold); }
+    .dot-red { background: var(--error); }
+
+    /* ── Section ──────────────────────────────────── */
+    .section { margin-bottom: 40px; }
+    .section h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem; font-weight: 700;
+      color: var(--forest); margin-bottom: 16px;
+      padding-bottom: 8px; border-bottom: 2px solid var(--gold);
+    }
+    .section h3 { font-size: 1.1rem; font-weight: 600; margin: 20px 0 10px; color: var(--forest); }
+    .section p { color: var(--text-secondary); margin-bottom: 12px; }
+
+    /* ── Architecture Diagrams ────────────────────── */
+    .arch-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 24px 0; }
+    @media (max-width: 768px) { .arch-compare { grid-template-columns: 1fr; } }
+    .arch-box {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 28px; position: relative;
+    }
+    .arch-box.current { border-top: 3px solid var(--error); }
+    .arch-box.target { border-top: 3px solid var(--success); }
+    .arch-box .label {
+      position: absolute; top: -1px; right: 20px;
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+      padding: 4px 12px; border-radius: 0 0 6px 6px;
+    }
+    .arch-box.current .label { background: var(--error); color: #fff; }
+    .arch-box.target .label { background: var(--success); color: #fff; }
+    .arch-box h4 { font-size: 1rem; margin-bottom: 14px; }
+    .arch-flow {
+      font-family: 'Space Mono', monospace; font-size: 0.78rem;
+      background: #f9fafb; border-radius: 8px; padding: 16px;
+      line-height: 1.9; color: var(--text-secondary); white-space: pre;
+      overflow-x: auto;
+    }
+
+    /* ── Options Cards ────────────────────────────── */
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 24px 0; }
+    @media (max-width: 768px) { .options-grid { grid-template-columns: 1fr; } }
+    .option-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 32px; transition: box-shadow 0.2s;
+    }
+    .option-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .option-card.recommended { border: 2px solid var(--gold); }
+    .option-card .badge {
+      display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; padding: 4px 10px; border-radius: 4px; margin-bottom: 16px;
+    }
+    .badge-gold { background: var(--gold); color: var(--forest); }
+    .badge-gray { background: #e5e7eb; color: var(--text-secondary); }
+    .option-card h3 { font-size: 1.2rem; margin-bottom: 4px; color: var(--forest); }
+    .option-card .tech { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px; }
+    .option-card ul { list-style: none; padding: 0; margin: 0 0 20px; }
+    .option-card li {
+      padding: 6px 0; font-size: 0.9rem; color: var(--text-secondary);
+      border-bottom: 1px solid #f3f4f6; display: flex; align-items: flex-start; gap: 8px;
+    }
+    .option-card li:last-child { border: none; }
+    .option-card li::before { content: ''; flex-shrink: 0; }
+    .pro::before { content: '+'; color: var(--success); font-weight: 700; width: 14px; }
+    .con::before { content: '-'; color: var(--error); font-weight: 700; width: 14px; }
+    .neutral-item::before { content: '~'; color: var(--warning); font-weight: 700; width: 14px; }
+
+    /* ── Data Tables ──────────────────────────────── */
+    .data-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.88rem; }
+    .data-table th {
+      text-align: left; padding: 10px 14px; background: var(--forest); color: #fff;
+      font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .data-table th:first-child { border-radius: 8px 0 0 0; }
+    .data-table th:last-child { border-radius: 0 8px 0 0; }
+    .data-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+    .data-table tr:hover td { background: #f9fafb; }
+    .data-table .mono { font-family: 'Space Mono', monospace; font-size: 0.82rem; }
+    .data-table .tag {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 0.75rem; font-weight: 600;
+    }
+    .tag-green { background: #d1fae5; color: #065f46; }
+    .tag-amber { background: #fef3c7; color: #92400e; }
+    .tag-red { background: #fee2e2; color: #991b1b; }
+    .tag-blue { background: #dbeafe; color: #1e40af; }
+
+    /* ── Cost Card ────────────────────────────────── */
+    .cost-card {
+      background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+      border: 1px solid #a7f3d0; border-radius: 12px;
+      padding: 28px 32px; margin: 24px 0;
+    }
+    .cost-card h3 { color: #065f46; margin-bottom: 12px; }
+    .cost-total {
+      font-family: 'Playfair Display', serif; font-size: 2.4rem; font-weight: 800;
+      color: #065f46; margin: 8px 0;
+    }
+    .cost-total span { font-size: 1rem; font-weight: 400; opacity: 0.7; }
+    .cost-compare { font-size: 0.85rem; color: #047857; margin-top: 8px; }
+
+    /* ── Timeline ─────────────────────────────────── */
+    .timeline { position: relative; padding-left: 32px; margin: 24px 0; }
+    .timeline::before {
+      content: ''; position: absolute; left: 11px; top: 8px; bottom: 8px;
+      width: 2px; background: var(--gold);
+    }
+    .timeline-item { position: relative; margin-bottom: 24px; }
+    .timeline-item::before {
+      content: ''; position: absolute; left: -27px; top: 6px;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--gold); border: 2px solid var(--cream);
+    }
+    .timeline-item h4 { font-size: 0.95rem; color: var(--forest); margin-bottom: 2px; }
+    .timeline-item .duration {
+      font-size: 0.78rem; color: var(--gold); font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .timeline-item p { font-size: 0.88rem; color: var(--text-secondary); margin-top: 4px; }
+
+    /* ── Risk Card ────────────────────────────────── */
+    .risk-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 16px 0; }
+    @media (max-width: 768px) { .risk-grid { grid-template-columns: 1fr; } }
+    .risk-item {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px;
+    }
+    .risk-item .risk-level {
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .risk-item h4 { font-size: 0.95rem; margin-bottom: 6px; }
+    .risk-item p { font-size: 0.82rem; color: var(--text-secondary); }
+
+    /* ── Recommendation Banner ────────────────────── */
+    .recommendation {
+      background: var(--forest); color: #fff; border-radius: 12px;
+      padding: 32px 40px; margin: 40px 0;
+    }
+    .recommendation h3 {
+      font-family: 'Playfair Display', serif; font-size: 1.4rem;
+      color: var(--gold); margin-bottom: 12px;
+    }
+    .recommendation p { opacity: 0.9; margin-bottom: 16px; }
+    .recommendation .next-steps { list-style: decimal; padding-left: 20px; }
+    .recommendation .next-steps li { padding: 4px 0; opacity: 0.9; font-size: 0.92rem; }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ═══════════════════ HERO ═══════════════════ -->
+  <div class="hero">
+    <h1>Pipeline Cloud Migration</h1>
+    <p class="subtitle">Move the NewLeaf data pipeline from a local Mac scheduler to Google Cloud Platform &mdash; eliminating single-machine dependency, enabling auto-scaling, and reducing operational risk.</p>
+    <div class="status-row">
+      <div class="status-badge"><span class="dot dot-green"></span> Yahoo OI Service &mdash; already on Cloud Functions</div>
+      <div class="status-badge"><span class="dot dot-green"></span> Firestore &mdash; already on GCP</div>
+      <div class="status-badge"><span class="dot dot-gold"></span> Pipeline &mdash; local Mac (node-cron)</div>
+      <div class="status-badge"><span class="dot dot-red"></span> Scheduler &mdash; single point of failure</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ CURRENT vs TARGET ═══════════════════ -->
+  <div class="section">
+    <h2>Architecture: Current vs Target</h2>
+    <div class="arch-compare">
+      <div class="arch-box current">
+        <span class="label">Current</span>
+        <h4>Local Mac + node-cron</h4>
+        <div class="arch-flow">Mac (node-cron)
+ ├─ */15 min ──&gt; pipeline-fast.js
+ │              (Alpaca prices only)
+ ├─ 9:32am  ──&gt; pipeline-oi-enrichment.js
+ │              (Nasdaq OI + Yahoo fallback)
+ ├─ 9:32am  ──&gt; watchlist + Firestore sync
+ └─ */5 min ──&gt; health check
+       │
+       ▼
+  R2 (CDN) + Firestore</div>
+      </div>
+      <div class="arch-box target">
+        <span class="label">Target</span>
+        <h4>GCP Cloud Run + Cloud Scheduler</h4>
+        <div class="arch-flow">Cloud Scheduler (cron)
+ ├─ */15 min ──&gt; Cloud Run: fast
+ │              (256 MB, 5 min timeout)
+ ├─ 9:32am  ──&gt; Cloud Run: daily OI
+ │              (512 MB, 15 min timeout)
+ ├─ 9:36am  ──&gt; Cloud Run: sync
+ │              (256 MB, 2 min timeout)
+ └─ [exists] ─&gt; Cloud Fn: Yahoo OI
+       │
+       ▼
+  R2 (CDN) + Firestore (unchanged)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ WHY MIGRATE ═══════════════════ -->
+  <div class="section">
+    <h2>Why Migrate</h2>
+    <table class="data-table">
+      <thead>
+        <tr><th>Concern</th><th>Local Mac</th><th>Cloud Run</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Uptime</td>
+          <td><span class="tag tag-red">Manual</span> Mac must be on, awake, connected</td>
+          <td><span class="tag tag-green">99.95% SLA</span> GCP managed</td>
+        </tr>
+        <tr>
+          <td>Single point of failure</td>
+          <td><span class="tag tag-red">Yes</span> Power outage, sleep, VPN drop = missed scan</td>
+          <td><span class="tag tag-green">No</span> Auto-restarts, multi-zone</td>
+        </tr>
+        <tr>
+          <td>Scaling</td>
+          <td><span class="tag tag-amber">Fixed</span> Limited to Mac hardware</td>
+          <td><span class="tag tag-green">Auto</span> Scales to 0 when idle, up when needed</td>
+        </tr>
+        <tr>
+          <td>Monitoring</td>
+          <td><span class="tag tag-amber">Manual</span> SSH/screen, custom health checks</td>
+          <td><span class="tag tag-green">Built-in</span> Cloud Logging, error alerting</td>
+        </tr>
+        <tr>
+          <td>Secret management</td>
+          <td><span class="tag tag-red">config.json</span> File on disk</td>
+          <td><span class="tag tag-green">Secret Manager</span> Encrypted, audited, rotatable</td>
+        </tr>
+        <tr>
+          <td>Cost</td>
+          <td><span class="tag tag-amber">$15-25/mo</span> Electricity + wear</td>
+          <td><span class="tag tag-green">~$8/mo</span> Pay-per-use</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════ OPTIONS ═══════════════════ -->
+  <div class="section">
+    <h2>Deployment Options</h2>
+    <div class="options-grid">
+
+      <!-- Option A -->
+      <div class="option-card recommended">
+        <span class="badge badge-gold">Recommended</span>
+        <h3>Option A: Cloud Run</h3>
+        <p class="tech">Container-based &bull; HTTP-triggered &bull; Same Firebase project</p>
+        <ul>
+          <li class="pro">60-minute timeout &mdash; handles daily OI enrichment (10 min) with headroom</li>
+          <li class="pro">Full Node.js 20 environment &mdash; identical to local</li>
+          <li class="pro">Scales to zero &mdash; no cost when idle</li>
+          <li class="pro">Dockerfile + 1 entrypoint file &mdash; minimal new code</li>
+          <li class="pro">Same container for all 3 jobs (fast / daily / sync) via HTTP routes</li>
+          <li class="pro">Easy local testing: <code>docker run</code></li>
+          <li class="neutral-item">Requires Artifact Registry for container images (~$0.10/mo)</li>
+          <li class="neutral-item">Cold start: 3-5 seconds (irrelevant for batch jobs)</li>
+        </ul>
+        <table class="data-table" style="margin-top:16px">
+          <thead><tr><th>Job</th><th>Memory</th><th>Timeout</th><th>Schedule</th></tr></thead>
+          <tbody>
+            <tr><td>Fast pipeline</td><td class="mono">256 MB</td><td class="mono">5 min</td><td class="mono">*/15 9:30-16 ET M-F</td></tr>
+            <tr><td>Daily OI</td><td class="mono">512 MB</td><td class="mono">15 min</td><td class="mono">9:32 ET M-F</td></tr>
+            <tr><td>Watchlist + Sync</td><td class="mono">256 MB</td><td class="mono">5 min</td><td class="mono">9:36 ET M-F</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Option B -->
+      <div class="option-card">
+        <span class="badge badge-gray">Alternative</span>
+        <h3>Option B: Cloud Functions (2nd Gen)</h3>
+        <p class="tech">Serverless &bull; Event-triggered &bull; Same as Yahoo OI service</p>
+        <ul>
+          <li class="pro">Simplest deployment &mdash; <code>firebase deploy --only functions</code></li>
+          <li class="pro">Same infra as Yahoo OI service (proven pattern)</li>
+          <li class="pro">Auto-scaling built in</li>
+          <li class="pro">No Docker/container management</li>
+          <li class="con">Timeout: 9 min (1st gen) or 60 min (2nd gen) &mdash; must use 2nd gen</li>
+          <li class="con">Memory cap: 8 GB (fine for this workload)</li>
+          <li class="con">3 separate function deployments (fast / daily / sync)</li>
+          <li class="con">Harder to test locally than a container</li>
+        </ul>
+        <table class="data-table" style="margin-top:16px">
+          <thead><tr><th>Job</th><th>Memory</th><th>Timeout</th><th>Trigger</th></tr></thead>
+          <tbody>
+            <tr><td>Fast pipeline</td><td class="mono">256 MB</td><td class="mono">5 min</td><td class="mono">Cloud Scheduler</td></tr>
+            <tr><td>Daily OI</td><td class="mono">512 MB</td><td class="mono">15 min</td><td class="mono">Cloud Scheduler</td></tr>
+            <tr><td>Watchlist + Sync</td><td class="mono">256 MB</td><td class="mono">5 min</td><td class="mono">Pub/Sub</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════ WHAT EXISTS ═══════════════════ -->
+  <div class="section">
+    <h2>Already in the Cloud</h2>
+    <table class="data-table">
+      <thead><tr><th>Service</th><th>Platform</th><th>Status</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Yahoo OI Service</td>
+          <td>Firebase Cloud Function (2nd gen, Python 3.10)</td>
+          <td><span class="tag tag-green">Live</span></td>
+          <td>1024 MB, 120s timeout, scales to 0. Fallback OI source.</td>
+        </tr>
+        <tr>
+          <td>Firestore Database</td>
+          <td>Firebase / GCP (<code>newleaf-trading</code>)</td>
+          <td><span class="tag tag-green">Live</span></td>
+          <td>Database: <code>newleafdb</code>. Tiles, picks, market state.</td>
+        </tr>
+        <tr>
+          <td>R2 Storage (CDN)</td>
+          <td>Cloudflare R2</td>
+          <td><span class="tag tag-green">Live</span></td>
+          <td>Reports, manifest, history. Public read CDN. Stays as-is.</td>
+        </tr>
+        <tr>
+          <td>Firebase Auth</td>
+          <td>Firebase</td>
+          <td><span class="tag tag-green">Live</span></td>
+          <td>User authentication. No migration needed.</td>
+        </tr>
+        <tr>
+          <td>Pipeline Scheduler</td>
+          <td>Local Mac (node-cron)</td>
+          <td><span class="tag tag-red">Local</span></td>
+          <td>Single point of failure. This is what we're migrating.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════ COST ═══════════════════ -->
+  <div class="section">
+    <h2>Cost Estimate</h2>
+    <div class="cost-card">
+      <h3>Estimated Monthly Cost (Cloud Run)</h3>
+      <div class="cost-total">~$8 <span>/ month</span></div>
+      <p class="cost-compare">vs $15-25/mo electricity + wear on local Mac &bull; vs $50-100/mo for an always-on EC2</p>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>Component</th><th>Usage</th><th>Cost/mo</th></tr></thead>
+      <tbody>
+        <tr><td>Cloud Run (fast pipeline)</td><td class="mono">4 runs/day &times; 22 days &times; 5 min &times; 256 MB</td><td class="mono">~$2.50</td></tr>
+        <tr><td>Cloud Run (daily OI)</td><td class="mono">1 run/day &times; 22 days &times; 10 min &times; 512 MB</td><td class="mono">~$3.00</td></tr>
+        <tr><td>Cloud Function (Yahoo OI)</td><td class="mono">~200 calls/day &times; 22 days, avg 5s each</td><td class="mono">~$1.50</td></tr>
+        <tr><td>Cloud Scheduler</td><td class="mono">3 cron jobs</td><td class="mono">$0.30</td></tr>
+        <tr><td>Secret Manager</td><td class="mono">6 secrets, ~1k accesses/mo</td><td class="mono">$0.01</td></tr>
+        <tr><td>Artifact Registry</td><td class="mono">1 container image (~200 MB)</td><td class="mono">$0.10</td></tr>
+        <tr><td>Firestore writes</td><td class="mono">111 docs/day &times; 22 days</td><td class="mono">&lt;$0.01</td></tr>
+        <tr style="font-weight:700; background:#f0fdf4">
+          <td>Total</td><td></td><td class="mono">~$7.50</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════ WHAT CHANGES ═══════════════════ -->
+  <div class="section">
+    <h2>What Changes vs What Stays</h2>
+    <table class="data-table">
+      <thead><tr><th>Component</th><th>Change?</th><th>Details</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>newleaf-pipeline.js</td>
+          <td><span class="tag tag-green">No change</span></td>
+          <td>Core pipeline logic stays identical</td>
+        </tr>
+        <tr>
+          <td>gamma-analyzer-enhanced.js</td>
+          <td><span class="tag tag-green">No change</span></td>
+          <td>Blended confidence formula stays</td>
+        </tr>
+        <tr>
+          <td>pipeline-fast.js / pipeline-oi-enrichment.js</td>
+          <td><span class="tag tag-green">No change</span></td>
+          <td>Wrapper scripts stay as-is</td>
+        </tr>
+        <tr>
+          <td>R2 uploads + Firestore sync</td>
+          <td><span class="tag tag-green">No change</span></td>
+          <td>Same APIs, same endpoints</td>
+        </tr>
+        <tr>
+          <td>index.js (node-cron scheduler)</td>
+          <td><span class="tag tag-red">Replaced</span></td>
+          <td>Replaced by Cloud Scheduler + HTTP entrypoint</td>
+        </tr>
+        <tr>
+          <td>config.json</td>
+          <td><span class="tag tag-amber">Migrated</span></td>
+          <td>Values move to Secret Manager, loaded at runtime</td>
+        </tr>
+        <tr>
+          <td>reports/ (local cache)</td>
+          <td><span class="tag tag-amber">Ephemeral</span></td>
+          <td>Uses Cloud Run /tmp; R2 is source of truth</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════ NEW FILES ═══════════════════ -->
+  <div class="section">
+    <h2>New Files Required</h2>
+    <table class="data-table">
+      <thead><tr><th>File</th><th>Purpose</th><th>Size</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="mono">Dockerfile</td>
+          <td>Container definition &mdash; <code>node:20-slim</code>, <code>npm ci</code>, copies pipeline code</td>
+          <td class="mono">~15 lines</td>
+        </tr>
+        <tr>
+          <td class="mono">cloud-entrypoint.js</td>
+          <td>HTTP server exposing <code>/run/fast</code>, <code>/run/daily</code>, <code>/run/sync</code>, <code>/health</code></td>
+          <td class="mono">~60 lines</td>
+        </tr>
+        <tr>
+          <td class="mono">cloudbuild.yaml</td>
+          <td>CI/CD &mdash; build container, push to Artifact Registry, deploy to Cloud Run</td>
+          <td class="mono">~20 lines</td>
+        </tr>
+        <tr>
+          <td class="mono">.dockerignore</td>
+          <td>Exclude node_modules, reports/, .env from container</td>
+          <td class="mono">~5 lines</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin-top:12px; font-size:0.88rem"><strong>Total new code: ~100 lines.</strong> Zero changes to existing pipeline logic.</p>
+  </div>
+
+  <!-- ═══════════════════ TIMELINE ═══════════════════ -->
+  <div class="section">
+    <h2>Implementation Timeline</h2>
+    <div class="timeline">
+      <div class="timeline-item">
+        <span class="duration">Day 1</span>
+        <h4>Containerise &amp; Test Locally</h4>
+        <p>Create Dockerfile, cloud-entrypoint.js, .dockerignore. Build and run locally with <code>docker run</code>. Verify fast/daily/sync routes produce correct output.</p>
+      </div>
+      <div class="timeline-item">
+        <span class="duration">Day 2</span>
+        <h4>Secrets &amp; Deploy</h4>
+        <p>Push Alpaca, R2, sentiment API keys to Secret Manager. Deploy container to Cloud Run. Configure IAM permissions for Firestore + Secret Manager access.</p>
+      </div>
+      <div class="timeline-item">
+        <span class="duration">Day 3</span>
+        <h4>Cloud Scheduler + End-to-End Test</h4>
+        <p>Create 3 Cloud Scheduler jobs (fast, daily, sync). Run one full market-hours cycle. Verify R2 manifest updates, Firestore tiles refresh, scanner page shows fresh data.</p>
+      </div>
+      <div class="timeline-item">
+        <span class="duration">Day 4-5</span>
+        <h4>Shadow Run &amp; Cutover</h4>
+        <p>Run cloud and local in parallel for 1-2 trading days. Compare outputs. Once confirmed identical, kill local scheduler. Done.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ RISKS ═══════════════════ -->
+  <div class="section">
+    <h2>Migration Risks</h2>
+    <div class="risk-grid">
+      <div class="risk-item">
+        <div class="risk-level" style="color:var(--warning)">Medium</div>
+        <h4>Nasdaq Rate Limiting</h4>
+        <p>Cloud Run uses shared egress IPs. Nasdaq may rate-limit more aggressively than a residential IP. Mitigation: Yahoo fallback is already in place.</p>
+      </div>
+      <div class="risk-item">
+        <div class="risk-level" style="color:var(--success)">Low</div>
+        <h4>Ephemeral Filesystem</h4>
+        <p>Cloud Run /tmp is wiped between invocations. OI history (needed for delta) must be read from R2 instead of local files. One-time code change.</p>
+      </div>
+      <div class="risk-item">
+        <div class="risk-level" style="color:var(--success)">Low</div>
+        <h4>Cold Starts</h4>
+        <p>Container cold start: 3-5 seconds. Irrelevant for batch jobs that run 5-15 minutes. Not a concern.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ RECOMMENDATION ═══════════════════ -->
+  <div class="recommendation">
+    <h3>Recommendation: Cloud Run (Option A)</h3>
+    <p>Cloud Run is the right fit: it handles the 10-minute daily OI enrichment comfortably, uses the same Firebase project as the existing Yahoo OI service and Firestore, costs ~$8/month, and requires only ~100 lines of new code with zero changes to pipeline logic.</p>
+    <ol class="next-steps">
+      <li>Approve Cloud Run as the target platform</li>
+      <li>Build Dockerfile + HTTP entrypoint (Day 1)</li>
+      <li>Deploy to <code>newleaf-trading</code> GCP project with Secret Manager (Day 2)</li>
+      <li>Wire up Cloud Scheduler and test full cycle (Day 3)</li>
+      <li>Shadow-run alongside local for 1-2 days, then cut over (Day 4-5)</li>
+    </ol>
+  </div>
+
+</div>
+
+</body>
+</html>

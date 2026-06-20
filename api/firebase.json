@@ -4,7 +4,7 @@
       "source": ".",
       "codebase": "newleaf-api",
       "runtime": "nodejs22",
-      "ignore": ["node_modules", "src", ".git", "scripts"]
+      "ignore": ["node_modules", "src", ".git", "scripts", ".env"]
     }
   ],
   "firestore": {

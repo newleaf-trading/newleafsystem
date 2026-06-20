@@ -1,0 +1,291 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=DM+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green-950:#062e22; --green-900:#073827; --green-850:#0b4330; --green-800:#0f4a36;
+  --green-700:#155b43; --green-100:#e7f1ec; --gold:#c9a96e; --gold-soft:#f4ead4;
+  --cream:#f7f3ea; --paper:#fffdf8; --page:#fbfaf7;
+  --text:#172033; --muted:#6b7280; --line:#e8e2d8; --line-soft:#f0ebe0;
+  --red:#d94f4f; --red-deep:#b5392f; --red-soft:#fff1ef; --red-line:#ffd6d1;
+  --profit:#16835f; --profit-deep:#0d6347; --profit-soft:#edf8f3;
+  --amber:#bd7c19; --amber-soft:#fff7e8;
+  --radius:18px; --radius-sm:12px; --shadow:0 16px 44px rgba(18,32,27,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:'DM Sans',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  background:var(--page);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.5}
+.serif{font-family:'Fraunces',Georgia,serif}
+.mono{font-family:'Space Mono',ui-monospace,SFMono-Regular,monospace}
+a{color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+.eyebrow{text-transform:uppercase;letter-spacing:.16em;font-size:11px;font-weight:500;color:var(--gold);}
+.muted{color:var(--muted)}
+.pos{color:var(--profit)} .neg{color:var(--red)}
+
+.topbar{background:var(--green-950);color:#fff;height:64px;display:flex;align-items:center;padding:0 28px;position:sticky;top:0;z-index:20}
+.topbar .brand{font-family:'Fraunces',serif;font-size:20px;margin-right:30px;letter-spacing:-.01em}
+.topbar .brand b{font-weight:500} .topbar .brand i{color:var(--gold);font-style:italic;font-weight:400}
+.topbar nav{display:flex;gap:2px;flex:1}
+.topbar nav a{color:#b6c7bf;text-decoration:none;text-transform:uppercase;letter-spacing:.13em;font-size:11px;font-weight:500;padding:9px 14px;border-radius:8px;transition:.15s}
+.topbar nav a:hover{color:#fff}
+.topbar nav a.active{color:#fff;background:rgba(255,255,255,.08)}
+.topbar .meta{display:flex;align-items:center;gap:16px;color:#9fb2aa;font-size:12px;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:#7e9488;display:inline-block;margin-right:7px;vertical-align:middle}
+.ask{border:1px solid rgba(201,169,110,.5);color:#f0dcae;background:rgba(201,169,110,.08);
+  padding:8px 15px;border-radius:8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:500}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--gold);color:var(--green-950);
+  display:grid;place-items:center;font-weight:600;margin-left:14px;font-size:14px}
+
+.card{background:var(--paper);border:0.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.breadcrumb{font-size:13px;color:var(--muted);padding:22px 0 6px}
+.breadcrumb a{text-decoration:none}
+.breadcrumb span{margin:0 8px;color:var(--line)}
+
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:500;letter-spacing:.08em;
+  text-transform:uppercase;padding:5px 11px;border-radius:20px}
+.b-action{background:rgba(216,90,48,.16);color:#c2521f}
+.b-strat{background:rgba(201,169,110,.16);color:#9a7b3a}
+.b-neutral{background:rgba(255,255,255,.1);color:#cdbb93}
+.b-review{background:var(--red-soft);color:var(--red-deep)}
+.b-watch{background:var(--amber-soft);color:var(--amber)}
+.b-near{background:var(--profit-soft);color:var(--profit-deep)}
+.b-time{background:var(--amber-soft);color:var(--amber)}
+.b-loss{background:var(--red-soft);color:var(--red-deep)}
+.b-profit{background:var(--profit-soft);color:var(--profit-deep)}
+
+.btn{font-family:inherit;font-size:14px;font-weight:500;border-radius:11px;padding:13px 20px;border:0;cursor:pointer}
+.btn-primary{background:var(--red);color:#fff}
+.btn-ghost{background:rgba(255,255,255,.08);color:#eef3f0;border:0.5px solid rgba(255,255,255,.16)}
+.btn-ai{background:rgba(255,255,255,.05);color:#f0dcae;border:0.5px solid rgba(201,169,110,.4)}
+
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.metric{background:var(--paper);border:0.5px solid var(--line);border-radius:var(--radius-sm);padding:16px 18px}
+.metric .lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.metric .val{font-family:'Space Mono',monospace;font-size:30px;font-weight:500;margin-top:6px;line-height:1}
+.metric .sub{font-size:12px;color:var(--muted);margin-top:6px}
+
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.rise{animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+</style></head><body>
+<style>
+  .stepper{display:flex;align-items:center;gap:0;margin:24px 0 18px}
+  .step{display:flex;flex-direction:column;align-items:center;gap:7px}
+  .step .o{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--line);background:var(--paper)}
+  .step.done .o{background:var(--green-950);border-color:var(--green-950);color:#fff;width:22px;height:22px;display:grid;place-items:center;font-size:11px;font-family:'Space Mono'}
+  .step.cur .o{border-color:var(--gold);background:var(--gold);width:18px;height:18px}
+  .step small{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .step.cur small,.step.done small{color:var(--green-950)}
+  .seg{flex:1;height:1px;background:var(--line);margin:0 8px 24px}
+  .ph h1{font-family:'Fraunces',serif;font-weight:500;font-size:38px;margin:6px 0 4px}
+  .ph p{margin:0;color:var(--muted);font-size:14px}
+
+  .waterfall{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0 10px}
+  .wf{background:var(--paper);border:0.5px solid var(--line);border-radius:14px;padding:16px 18px;position:relative}
+  .wf .lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .wf .val{font-family:'Space Mono',monospace;font-size:26px;font-weight:500;margin-top:6px;line-height:1}
+  .wf .sub{font-size:12px;color:var(--muted);margin-top:5px}
+  .wf.committed{background:#f1f6f3}
+  .wf.available{background:var(--profit-soft)} .wf.available .val{color:var(--profit-deep)}
+  .arrow{position:absolute;right:-19px;top:50%;transform:translateY(-50%);color:var(--line);font-size:20px;z-index:2}
+
+  .bbar{display:flex;height:30px;border-radius:9px;overflow:hidden;margin:14px 0 6px;background:#efece4}
+  .bbar .seg-c{background:var(--green-800)} .bbar .seg-n{background:var(--gold)} .bbar .seg-u{background:#e3ddd0}
+  .bkey{display:flex;gap:22px;font-size:12px;color:var(--muted);margin-bottom:24px;flex-wrap:wrap}
+  .bkey i{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:middle}
+  .bkey b{color:var(--text);font-family:'Space Mono'}
+
+  .sec-h{display:flex;align-items:baseline;justify-content:space-between;margin:24px 0 10px}
+  .sec-h h3{font-family:'Fraunces',serif;font-weight:500;font-size:20px;margin:0}
+  .sec-h .note{font-size:13px;color:var(--muted)}
+  .allocrow{display:flex;align-items:center;gap:14px;background:var(--cream);border:0.5px solid var(--line);border-radius:10px;padding:10px 16px;margin-bottom:14px;font-size:13px}
+  .allocrow .cb{width:18px;height:18px;border:1.5px solid var(--muted);border-radius:5px}
+  .allocrow .btns{margin-left:auto;display:flex;gap:8px}
+  .abtn{font-size:13px;font-weight:500;border-radius:9px;padding:9px 15px;border:0.5px solid var(--line);background:var(--paper);cursor:pointer}
+  .abtn.apply{background:var(--green-800);color:#fff;border-color:var(--green-800)}
+
+  table.alloc{width:100%;border-collapse:collapse}
+  table.alloc th{text-align:right;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;padding:8px 10px}
+  table.alloc th:first-child{text-align:left}
+  table.alloc td{text-align:right;padding:14px 10px;border-top:0.5px solid var(--line-soft);font-family:'Space Mono',monospace;font-size:14px;vertical-align:middle}
+  table.alloc td:first-child{text-align:left;font-family:'DM Sans'}
+  .strat{display:flex;align-items:center;gap:10px;border-left:3px solid transparent;padding-left:12px;margin-left:-12px}
+  .strat.held{border-left-color:#9bb1a6} .strat.new{border-left-color:var(--gold)}
+  .strat .nm{font-weight:500;font-size:15px} .strat .ty{font-size:12px;color:var(--muted)}
+  .pill{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:6px}
+  .pill.held{background:#e7eeea;color:#4a665b} .pill.new{background:var(--gold-soft);color:#8a6d2e}
+  .pill.closing{background:var(--red-soft);color:var(--red-deep)}
+  .held-row td{color:#8c968f} .held-row .nm{color:#5d6b63}
+  .closing .nm{text-decoration:line-through;opacity:.7}
+  .removed td{opacity:.45} .removed .nm{text-decoration:line-through}
+  .qstep{display:inline-flex;align-items:center;gap:10px}
+  .qbtn{width:30px;height:30px;border-radius:8px;border:0.5px solid var(--line);background:var(--paper);font-size:17px;cursor:pointer;color:var(--text)}
+  .qval{min-width:30px;text-align:center;font-size:16px}
+  .rowbtn{font-family:'DM Sans';font-size:12px;font-weight:500;border-radius:7px;padding:6px 12px;border:0.5px solid var(--line);background:var(--paper);cursor:pointer;white-space:nowrap}
+  .rowbtn.close{color:var(--red-deep);border-color:var(--red-line)}
+  .rowbtn.keep{color:var(--profit-deep);border-color:#bfe3d4;background:var(--profit-soft)}
+  .freed{color:var(--profit-deep);font-family:'DM Sans';font-size:12px}
+
+  .foot{display:flex;align-items:center;gap:12px;margin-top:26px;flex-wrap:wrap}
+  .exec{background:var(--green-950);color:#fff;border:0;border-radius:11px;padding:14px 24px;font-size:15px;font-weight:500;cursor:pointer}
+  .ghostbtn{background:var(--cream);border:0.5px solid var(--line);border-radius:11px;padding:14px 20px;font-size:14px;font-weight:500;cursor:pointer}
+  .over{color:var(--red-deep);font-weight:500}
+  @media(max-width:980px){.waterfall{grid-template-columns:repeat(2,1fr)}.arrow{display:none}}
+</style>
+
+<div class="topbar">
+  <div class="brand"><b>Leaf</b> <i>System</i></div>
+  <nav><a href="#">Home</a><a href="#">Discover</a><a href="#" class="active">Build</a><a href="#">Positions</a><a href="#">Performance</a><a href="#">Admin</a></nav>
+  <div class="meta"><span><span class="dot"></span>Markets Closed</span><span class="ask">⚡ Ask AI</span><span class="avatar">M</span></div>
+</div>
+
+<div class="wrap">
+  <div class="stepper">
+    <div class="step done"><span class="o">✓</span><small>Discover</small></div><div class="seg"></div>
+    <div class="step done"><span class="o">✓</span><small>Decide</small></div><div class="seg"></div>
+    <div class="step cur"><span class="o"></span><small>Build</small></div><div class="seg"></div>
+    <div class="step"><span class="o"></span><small>Execute</small></div><div class="seg"></div>
+    <div class="step"><span class="o"></span><small>Defend</small></div>
+  </div>
+
+  <div class="ph">
+    <div class="eyebrow">Build · stage your next batch</div>
+    <h1 class="serif">Build</h1>
+    <p>Open new trades against the budget you have left — or close a held one to free budget. Everything here becomes one execution batch.</p>
+  </div>
+
+  <div class="waterfall">
+    <div class="wf"><div class="lbl">Risk budget</div><div class="val">$23,100</div><div class="sub">11% of $210,000 capital</div><span class="arrow">→</span></div>
+    <div class="wf committed"><div class="lbl">Committed · held</div><div class="val" id="wf-committed">$16,788</div><div class="sub" id="wf-committed-sub">3 held · already executed</div><span class="arrow">→</span></div>
+    <div class="wf available"><div class="lbl">Available for new</div><div class="val" id="wf-available">$6,312</div><div class="sub" id="wf-available-sub">27% of budget</div><span class="arrow">→</span></div>
+    <div class="wf"><div class="lbl">Unallocated</div><div class="val" id="wf-unalloc">$311</div><div class="sub" id="wf-unalloc-sub">after staging batch</div></div>
+  </div>
+
+  <div class="bbar">
+    <div class="seg-c" id="bar-c" style="width:72.7%"></div>
+    <div class="seg-n" id="bar-n" style="width:26.0%"></div>
+    <div class="seg-u" id="bar-u" style="width:1.3%"></div>
+  </div>
+  <div class="bkey">
+    <span><i style="background:var(--green-800)"></i>Committed (held) <b id="key-c">$16,788</b></span>
+    <span><i style="background:var(--gold)"></i>Allocating to new <b id="key-n">$6,001</b></span>
+    <span><i style="background:#e3ddd0"></i>Unallocated <b id="key-u">$311</b></span>
+  </div>
+
+  <div class="sec-h">
+    <h3 class="serif">Held positions</h3>
+    <span class="note">Locked size · close to free budget, or resize on the Defend page</span>
+  </div>
+  <table class="alloc">
+    <thead><tr><th>Strategy</th><th>Risk / contract</th><th>Contracts</th><th>Committed</th><th>% of budget</th><th></th></tr></thead>
+    <tbody id="held-body"></tbody>
+  </table>
+
+  <div class="sec-h" style="margin-top:30px">
+    <h3 class="serif">New — sizing now</h3>
+    <span class="note">From Discover · competing for the <b style="color:var(--profit-deep)" id="note-avail">$6,312</b> available</span>
+  </div>
+  <div class="allocrow">
+    <span class="cb"></span>
+    <div><b>Auto-allocate available equally</b> &nbsp;<span style="color:var(--muted)">Split the available budget across the active new strategies only</span></div>
+    <div class="btns"><button class="abtn" onclick="resetEqual()">Reset to equal</button><button class="abtn apply">Apply to portfolio</button></div>
+  </div>
+  <table class="alloc">
+    <thead><tr><th>Strategy</th><th>Risk / contract</th><th>Contracts</th><th>Amount</th><th>% of available</th><th></th></tr></thead>
+    <tbody id="new-body"></tbody>
+  </table>
+
+  <div class="foot">
+    <button class="exec" id="execbtn">Execute · open 2</button>
+    <button class="ghostbtn">Add more strategies</button>
+    <span id="overmsg" class="over" style="display:none"></span>
+  </div>
+  <div style="height:48px"></div>
+</div>
+
+<script>
+  var BUDGET=23100;
+  var held=[
+    {k:'abnb',nm:'ABNB',riskc:129,qty:44,committed:5676,closing:false},
+    {k:'bidu',nm:'BIDU',riskc:432,qty:13,committed:5616,closing:false},
+    {k:'amzn',nm:'AMZN',riskc:1374,qty:4,committed:5496,closing:false}
+  ];
+  var news=[
+    {k:'baba',nm:'BABA',riskc:593,qty:5,removed:false},
+    {k:'adbe',nm:'ADBE',riskc:276,qty:11,removed:false}
+  ];
+  function money(n){return (n<0?'\u2212$':'$')+Math.abs(Math.round(n)).toLocaleString('en-US');}
+
+  function render(){
+    var committedActive=0, freed=0, heldCount=0;
+    held.forEach(function(h){ if(h.closing){freed+=h.committed;} else {committedActive+=h.committed;heldCount++;} });
+    var available=BUDGET-committedActive;
+    var allocNew=0, openCount=0;
+    news.forEach(function(n){ if(!n.removed){ allocNew+=n.riskc*n.qty; if(n.qty>0)openCount++; } });
+    var unalloc=available-allocNew;
+    var closeCount=held.filter(function(h){return h.closing;}).length;
+
+    document.getElementById('held-body').innerHTML=held.map(function(h){
+      var pct=Math.round(h.committed/BUDGET*100);
+      if(h.closing){
+        return '<tr class="held-row closing"><td><div class="strat held"><span class="pill closing">Will close</span><div><div class="nm">'+h.nm+'</div><div class="ty">Iron Condor</div></div></div></td>'+
+          '<td>'+money(h.riskc)+'</td><td>'+h.qty+'</td><td><span class="freed">+'+money(h.committed)+' freed</span></td><td>\u2014</td>'+
+          '<td><button class="rowbtn keep" onclick="toggleClose(\''+h.k+'\')">Keep</button></td></tr>';
+      }
+      return '<tr class="held-row"><td><div class="strat held"><span class="pill held">Held</span><div><div class="nm">'+h.nm+'</div><div class="ty">Iron Condor</div></div></div></td>'+
+        '<td>'+money(h.riskc)+'</td><td>'+h.qty+' \uD83D\uDD12</td><td>'+money(h.committed)+'</td><td>'+pct+'%</td>'+
+        '<td><button class="rowbtn close" onclick="toggleClose(\''+h.k+'\')">Close</button></td></tr>';
+    }).join('');
+
+    document.getElementById('new-body').innerHTML=news.map(function(n){
+      if(n.removed){
+        return '<tr class="removed"><td><div class="strat new"><span class="pill new">New</span><div><div class="nm">'+n.nm+'</div><div class="ty">Iron Condor</div></div></div></td>'+
+          '<td>'+money(n.riskc)+'</td><td>\u2014</td><td>removed</td><td>\u2014</td>'+
+          '<td><button class="rowbtn" onclick="toggleRemove(\''+n.k+'\')">Undo</button></td></tr>';
+      }
+      var amt=n.riskc*n.qty;
+      var pct= available>0 ? Math.round(amt/available*100) : 0;
+      return '<tr><td><div class="strat new"><span class="pill new">New</span><div><div class="nm">'+n.nm+'</div><div class="ty">Iron Condor</div></div></div></td>'+
+        '<td>'+money(n.riskc)+'</td>'+
+        '<td><div class="qstep"><button class="qbtn" onclick="step(\''+n.k+'\',-1)">\u2212</button><span class="qval">'+n.qty+'</span><button class="qbtn" onclick="step(\''+n.k+'\',1)">+</button></div></td>'+
+        '<td>'+money(amt)+'</td><td>'+pct+'%</td>'+
+        '<td><button class="rowbtn close" onclick="toggleRemove(\''+n.k+'\')">\u2715 Remove</button></td></tr>';
+    }).join('');
+
+    document.getElementById('wf-committed').textContent=money(committedActive);
+    document.getElementById('wf-committed-sub').textContent=heldCount+' held'+(closeCount? ' \u00b7 '+closeCount+' closing':' \u00b7 already executed');
+    document.getElementById('wf-available').textContent=money(available);
+    document.getElementById('wf-available-sub').textContent= closeCount? ('incl. '+money(freed)+' freed by closing') : (Math.round(available/BUDGET*100)+'% of budget');
+    document.getElementById('wf-unalloc').textContent=money(unalloc);
+    document.getElementById('note-avail').textContent=money(available);
+    document.getElementById('key-c').textContent=money(committedActive);
+    document.getElementById('key-n').textContent=money(allocNew);
+    document.getElementById('key-u').textContent=money(unalloc);
+
+    document.getElementById('bar-c').style.width=(committedActive/BUDGET*100)+'%';
+    document.getElementById('bar-n').style.width=(allocNew/BUDGET*100)+'%';
+    document.getElementById('bar-u').style.width=(Math.max(0,unalloc)/BUDGET*100)+'%';
+
+    var label='Execute \u00b7 open '+openCount;
+    if(closeCount) label+=' \u00b7 close '+closeCount;
+    document.getElementById('execbtn').textContent=label;
+
+    var over=document.getElementById('overmsg');
+    var uw=document.getElementById('wf-unalloc');
+    if(unalloc<0){ over.style.display='inline'; over.textContent='Over available by '+money(-unalloc)+' \u2014 reduce a new position or close a held one'; uw.classList.add('over'); }
+    else { over.style.display='none'; uw.classList.remove('over'); }
+  }
+  function step(k,d){ var n=news.find(function(x){return x.k===k;}); n.qty=Math.max(0,n.qty+d); render(); }
+  function toggleRemove(k){ var n=news.find(function(x){return x.k===k;}); n.removed=!n.removed; render(); }
+  function toggleClose(k){ var h=held.find(function(x){return x.k===k;}); h.closing=!h.closing; render(); }
+  function resetEqual(){
+    var committedActive=held.filter(function(h){return !h.closing;}).reduce(function(s,h){return s+h.committed;},0);
+    var available=BUDGET-committedActive;
+    var active=news.filter(function(n){return !n.removed;});
+    var share= active.length? available/active.length : 0;
+    active.forEach(function(n){ n.qty=Math.floor(share/n.riskc); });
+    render();
+  }
+  render();
+</script>
+</body></html>

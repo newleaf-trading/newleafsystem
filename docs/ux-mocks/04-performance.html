@@ -1,0 +1,180 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=DM+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green-950:#062e22; --green-900:#073827; --green-850:#0b4330; --green-800:#0f4a36;
+  --green-700:#155b43; --green-100:#e7f1ec; --gold:#c9a96e; --gold-soft:#f4ead4;
+  --cream:#f7f3ea; --paper:#fffdf8; --page:#fbfaf7;
+  --text:#172033; --muted:#6b7280; --line:#e8e2d8; --line-soft:#f0ebe0;
+  --red:#d94f4f; --red-deep:#b5392f; --red-soft:#fff1ef; --red-line:#ffd6d1;
+  --profit:#16835f; --profit-deep:#0d6347; --profit-soft:#edf8f3;
+  --amber:#bd7c19; --amber-soft:#fff7e8;
+  --radius:18px; --radius-sm:12px; --shadow:0 16px 44px rgba(18,32,27,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:'DM Sans',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  background:var(--page);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.5}
+.serif{font-family:'Fraunces',Georgia,serif}
+.mono{font-family:'Space Mono',ui-monospace,SFMono-Regular,monospace}
+a{color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+.eyebrow{text-transform:uppercase;letter-spacing:.16em;font-size:11px;font-weight:500;color:var(--gold);}
+.muted{color:var(--muted)}
+.pos{color:var(--profit)} .neg{color:var(--red)}
+
+.topbar{background:var(--green-950);color:#fff;height:64px;display:flex;align-items:center;padding:0 28px;position:sticky;top:0;z-index:20}
+.topbar .brand{font-family:'Fraunces',serif;font-size:20px;margin-right:30px;letter-spacing:-.01em}
+.topbar .brand b{font-weight:500} .topbar .brand i{color:var(--gold);font-style:italic;font-weight:400}
+.topbar nav{display:flex;gap:2px;flex:1}
+.topbar nav a{color:#b6c7bf;text-decoration:none;text-transform:uppercase;letter-spacing:.13em;font-size:11px;font-weight:500;padding:9px 14px;border-radius:8px;transition:.15s}
+.topbar nav a:hover{color:#fff}
+.topbar nav a.active{color:#fff;background:rgba(255,255,255,.08)}
+.topbar .meta{display:flex;align-items:center;gap:16px;color:#9fb2aa;font-size:12px;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:#7e9488;display:inline-block;margin-right:7px;vertical-align:middle}
+.ask{border:1px solid rgba(201,169,110,.5);color:#f0dcae;background:rgba(201,169,110,.08);
+  padding:8px 15px;border-radius:8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:500}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--gold);color:var(--green-950);
+  display:grid;place-items:center;font-weight:600;margin-left:14px;font-size:14px}
+
+.card{background:var(--paper);border:0.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.breadcrumb{font-size:13px;color:var(--muted);padding:22px 0 6px}
+.breadcrumb a{text-decoration:none}
+.breadcrumb span{margin:0 8px;color:var(--line)}
+
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:500;letter-spacing:.08em;
+  text-transform:uppercase;padding:5px 11px;border-radius:20px}
+.b-action{background:rgba(216,90,48,.16);color:#c2521f}
+.b-strat{background:rgba(201,169,110,.16);color:#9a7b3a}
+.b-neutral{background:rgba(255,255,255,.1);color:#cdbb93}
+.b-review{background:var(--red-soft);color:var(--red-deep)}
+.b-watch{background:var(--amber-soft);color:var(--amber)}
+.b-near{background:var(--profit-soft);color:var(--profit-deep)}
+.b-time{background:var(--amber-soft);color:var(--amber)}
+.b-loss{background:var(--red-soft);color:var(--red-deep)}
+.b-profit{background:var(--profit-soft);color:var(--profit-deep)}
+
+.btn{font-family:inherit;font-size:14px;font-weight:500;border-radius:11px;padding:13px 20px;border:0;cursor:pointer}
+.btn-primary{background:var(--red);color:#fff}
+.btn-ghost{background:rgba(255,255,255,.08);color:#eef3f0;border:0.5px solid rgba(255,255,255,.16)}
+.btn-ai{background:rgba(255,255,255,.05);color:#f0dcae;border:0.5px solid rgba(201,169,110,.4)}
+
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.metric{background:var(--paper);border:0.5px solid var(--line);border-radius:var(--radius-sm);padding:16px 18px}
+.metric .lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.metric .val{font-family:'Space Mono',monospace;font-size:30px;font-weight:500;margin-top:6px;line-height:1}
+.metric .sub{font-size:12px;color:var(--muted);margin-top:6px}
+
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.rise{animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+</style></head><body>
+<style>
+  .pgh{padding:26px 0 6px}
+  .pgh h1{font-family:'Fraunces',serif;font-weight:500;font-size:40px;margin:6px 0 4px}
+  .pgh p{margin:0;color:var(--muted);font-size:14px}
+  .grow{display:grid;grid-template-columns:1.7fr 1fr;gap:18px;margin-top:18px}
+  .panel{padding:22px 24px}
+  .panel h3{font-family:'Fraunces',serif;font-weight:500;font-size:20px;margin:0}
+  .chartwrap{position:relative;height:230px;margin-top:14px}
+  .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:230px;text-align:center;color:var(--muted)}
+  .empty .ico{font-size:26px;margin-bottom:8px}
+  .sec{margin-top:18px;padding:22px 24px}
+  .sec .head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .sec h3{font-family:'Fraunces',serif;font-weight:500;font-size:22px;margin:0}
+  .sec .sub{font-size:13px;color:var(--muted)}
+  table.t{width:100%;border-collapse:collapse;font-size:14px}
+  table.t th{text-align:right;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:500;padding:10px 8px}
+  table.t th:first-child,table.t td:first-child{text-align:left}
+  table.t td{text-align:right;padding:15px 8px;border-top:0.5px solid var(--line-soft)}
+  table.t .tk{font-weight:500;font-size:15px} table.t .tk small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+  table.t .num{font-family:'Space Mono'}
+  .stat{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:5px 12px;border-radius:20px}
+  .st-review{background:var(--red-soft);color:var(--red-deep)} .st-near{background:var(--profit-soft);color:var(--profit-deep)} .st-watch{background:var(--amber-soft);color:var(--amber)}
+  .stat .d{width:7px;height:7px;border-radius:50%;background:currentColor}
+  @media(max-width:980px){.metrics{grid-template-columns:repeat(2,1fr)}.grow{grid-template-columns:1fr}}
+</style>
+
+<div class="topbar">
+  <div class="brand"><b>Leaf</b> <i>System</i></div>
+  <nav><a href="#">Home</a><a href="#">Discover</a><a href="#">Build</a><a href="#">Positions</a><a href="#" class="active">Performance</a><a href="#">Admin</a></nav>
+  <div class="meta"><span><span class="dot"></span>Markets Closed</span><span class="ask">⚡ Ask AI</span><span class="avatar">M</span></div>
+</div>
+
+<div class="wrap">
+  <div class="pgh">
+    <div class="eyebrow">Track record</div>
+    <h1 class="serif">Performance</h1>
+    <p>Portfolio growth, returns, and trade history with clean, investor-grade reporting.</p>
+  </div>
+
+  <div class="metrics" style="margin-top:16px;grid-template-columns:repeat(5,1fr)">
+    <div class="metric rise"><div class="lbl">Total P&amp;L</div><div class="val pos">+$524</div><div class="sub">realised +$763 · unrealised −$239</div></div>
+    <div class="metric rise" style="animation-delay:.04s"><div class="lbl">Today's P&amp;L</div><div class="val neg">−$18</div><div class="sub">across 3 active positions</div></div>
+    <div class="metric rise" style="animation-delay:.08s"><div class="lbl">Unrealised</div><div class="val neg">−$239</div><div class="sub">3 active positions</div></div>
+    <div class="metric rise" style="animation-delay:.12s"><div class="lbl">Realised</div><div class="val pos">+$763</div><div class="sub">5 closed trades</div></div>
+    <div class="metric rise" style="animation-delay:.16s"><div class="lbl">Win rate</div><div class="val">80%</div><div class="sub">4 of 5 trades</div></div>
+  </div>
+
+  <div class="card rise" style="margin-top:16px;padding:18px 24px;animation-delay:.06s">
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px 22px">
+      <div class="eyebrow" style="margin-right:6px">Portfolio P&amp;L reconciliation</div>
+      <span class="mono" style="font-size:15px">Realised <b class="pos">+$763</b></span>
+      <span class="muted">+</span>
+      <span class="mono" style="font-size:15px">Unrealised <b class="neg">−$239</b></span>
+      <span class="muted">=</span>
+      <span class="mono" style="font-size:15px">Total <b class="pos">+$524</b></span>
+      <span class="muted" style="margin-left:auto">Today's change <b class="neg mono">−$18</b></span>
+    </div>
+  </div>
+
+  <div class="grow">
+    <div class="card panel rise" style="animation-delay:.08s">
+      <div style="display:flex;justify-content:space-between"><h3 class="serif">Portfolio growth</h3><span class="sub" style="color:var(--muted);font-size:13px">$210K starting capital</span></div>
+      <div class="chartwrap">
+        <svg width="100%" height="230" viewBox="0 0 700 230" preserveAspectRatio="none">
+          <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(22,131,95,.16)"/><stop offset="1" stop-color="rgba(22,131,95,0)"/></linearGradient></defs>
+          <line x1="0" y1="150" x2="700" y2="150" stroke="var(--line)" stroke-dasharray="4 5"/>
+          <path d="M0,150 C160,150 220,140 340,132 C470,123 560,108 700,96 L700,230 L0,230 Z" fill="url(#g)"/>
+          <path d="M0,150 C160,150 220,140 340,132 C470,123 560,108 700,96" fill="none" stroke="var(--green-900)" stroke-width="2.2"/>
+        </svg>
+        <span style="position:absolute;left:0;bottom:4px;font-size:11px;color:var(--muted)">Start</span>
+        <span style="position:absolute;right:0;bottom:4px;font-size:11px;color:var(--muted)">5/29</span>
+      </div>
+    </div>
+    <div class="card panel rise" style="animation-delay:.12s">
+      <h3 class="serif">Monthly returns</h3>
+      <div class="empty"><div class="ico">📊</div><b style="color:var(--text)">No monthly data yet</b><p style="margin:6px 0 0;font-size:13px;max-width:22em">Record P&amp;L snapshots over time to see monthly return breakdowns.</p></div>
+    </div>
+  </div>
+
+  <div class="card sec rise" style="animation-delay:.14s">
+    <div class="eyebrow">Open risk</div>
+    <div class="head"><div><h3 class="serif" style="display:inline">Active positions</h3></div><span class="sub">$16,780 portfolio max loss · $5,820 max profit available · <span class="neg">3 need review: 1 time · 1 loss · 1 profit-take</span></span></div>
+    <table class="t">
+      <thead><tr><th>Ticker</th><th>Strategy</th><th>Qty</th><th>Total P&amp;L</th><th>Day</th><th>% of max profit</th><th>Return on risk</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="tk">ABNB<small>7d to expiry</small></td><td>Iron Condor</td><td class="num">44</td><td class="num pos">+$176</td><td class="num pos">+$26</td><td class="num pos">+6%</td><td class="num pos">+3.1%</td><td><span class="stat st-watch"><span class="d"></span>Time review · low capture</span></td></tr>
+        <tr><td class="tk">BIDU<small>20d to expiry</small></td><td>Iron Condor</td><td class="num">13</td><td class="num neg">−$611</td><td class="num neg">−$53</td><td class="num neg">−28%</td><td class="num neg">−10.9%</td><td><span class="stat st-review"><span class="d"></span>Loss review · under pressure</span></td></tr>
+        <tr><td class="tk">AMZN<small>14d to expiry</small></td><td>Iron Condor</td><td class="num">4</td><td class="num pos">+$196</td><td class="num pos">+$9</td><td class="num pos">+39%</td><td class="num pos">+3.6%</td><td><span class="stat st-near"><span class="d"></span>Profit review · harvest</span></td></tr>
+      </tbody>
+    </table>
+    <div style="font-size:12px;color:var(--muted);margin-top:12px">Return on risk = P&amp;L ÷ max loss. % of max profit = P&amp;L ÷ max profit. Both read from the same canonical total-dollar P&amp;L shown on the position card, the positions list, and the home flags.</div>
+  </div>
+
+  <div class="card sec rise" style="animation-delay:.16s">
+    <div class="eyebrow">Closed performance · track record</div>
+    <div class="head"><div><h3 class="serif" style="display:inline">Closed trades history</h3></div><span class="sub">5 trades · realised <span class="pos">+$763</span> · 80% win rate</span></div>
+    <table class="t">
+      <thead><tr><th>Ticker</th><th>Strategy</th><th>Qty</th><th>Entry credit</th><th>P&amp;L</th><th>Return</th><th>Reason</th><th>Closed</th></tr></thead>
+      <tbody>
+        <tr><td class="tk">ABNB</td><td>Iron Condor</td><td class="num">3</td><td class="num">$406</td><td class="num pos">+$16</td><td class="num pos">+1.3%</td><td>Manual close</td><td class="num">May 29</td></tr>
+        <tr><td class="tk">HON</td><td>BWB (Put)</td><td class="num">1</td><td class="num">$42</td><td class="num pos">+$42</td><td class="num pos">+100%</td><td>—</td><td class="num">May 28</td></tr>
+        <tr><td class="tk">SHOP</td><td>Iron Condor</td><td class="num">10</td><td class="num">$1,585</td><td class="num pos">+$339</td><td class="num pos">+2.1%</td><td>—</td><td class="num">May 28</td></tr>
+        <tr><td class="tk">UBER</td><td>Iron Condor</td><td class="num">12</td><td class="num">$189</td><td class="num pos">+$366</td><td class="num pos">+16.1%</td><td>Manual close</td><td class="num">May 28</td></tr>
+        <tr><td class="tk">CRM</td><td>Iron Condor</td><td class="num">8</td><td class="num">$1,130</td><td class="num">$0</td><td class="num muted">—</td><td>Manual close</td><td class="num">May 28</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="height:48px"></div>
+</div>
+</body></html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=DM+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green-950:#062e22; --green-900:#073827; --green-850:#0b4330; --green-800:#0f4a36;
+  --green-700:#155b43; --green-100:#e7f1ec; --gold:#c9a96e; --gold-soft:#f4ead4;
+  --cream:#f7f3ea; --paper:#fffdf8; --page:#fbfaf7;
+  --text:#172033; --muted:#6b7280; --line:#e8e2d8; --line-soft:#f0ebe0;
+  --red:#d94f4f; --red-deep:#b5392f; --red-soft:#fff1ef; --red-line:#ffd6d1;
+  --profit:#16835f; --profit-deep:#0d6347; --profit-soft:#edf8f3;
+  --amber:#bd7c19; --amber-soft:#fff7e8;
+  --radius:18px; --radius-sm:12px; --shadow:0 16px 44px rgba(18,32,27,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:'DM Sans',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  background:var(--page);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.5}
+.serif{font-family:'Fraunces',Georgia,serif}
+.mono{font-family:'Space Mono',ui-monospace,SFMono-Regular,monospace}
+a{color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+.eyebrow{text-transform:uppercase;letter-spacing:.16em;font-size:11px;font-weight:500;color:var(--gold);}
+.muted{color:var(--muted)}
+.pos{color:var(--profit)} .neg{color:var(--red)}
+
+.topbar{background:var(--green-950);color:#fff;height:64px;display:flex;align-items:center;padding:0 28px;position:sticky;top:0;z-index:20}
+.topbar .brand{font-family:'Fraunces',serif;font-size:20px;margin-right:30px;letter-spacing:-.01em}
+.topbar .brand b{font-weight:500} .topbar .brand i{color:var(--gold);font-style:italic;font-weight:400}
+.topbar nav{display:flex;gap:2px;flex:1}
+.topbar nav a{color:#b6c7bf;text-decoration:none;text-transform:uppercase;letter-spacing:.13em;font-size:11px;font-weight:500;padding:9px 14px;border-radius:8px;transition:.15s}
+.topbar nav a:hover{color:#fff}
+.topbar nav a.active{color:#fff;background:rgba(255,255,255,.08)}
+.topbar .meta{display:flex;align-items:center;gap:16px;color:#9fb2aa;font-size:12px;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:#7e9488;display:inline-block;margin-right:7px;vertical-align:middle}
+.ask{border:1px solid rgba(201,169,110,.5);color:#f0dcae;background:rgba(201,169,110,.08);
+  padding:8px 15px;border-radius:8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:500}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--gold);color:var(--green-950);
+  display:grid;place-items:center;font-weight:600;margin-left:14px;font-size:14px}
+
+.card{background:var(--paper);border:0.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.breadcrumb{font-size:13px;color:var(--muted);padding:22px 0 6px}
+.breadcrumb a{text-decoration:none}
+.breadcrumb span{margin:0 8px;color:var(--line)}
+
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:500;letter-spacing:.08em;
+  text-transform:uppercase;padding:5px 11px;border-radius:20px}
+.b-action{background:rgba(216,90,48,.16);color:#c2521f}
+.b-strat{background:rgba(201,169,110,.16);color:#9a7b3a}
+.b-neutral{background:rgba(255,255,255,.1);color:#cdbb93}
+.b-review{background:var(--red-soft);color:var(--red-deep)}
+.b-watch{background:var(--amber-soft);color:var(--amber)}
+.b-near{background:var(--profit-soft);color:var(--profit-deep)}
+.b-time{background:var(--amber-soft);color:var(--amber)}
+.b-loss{background:var(--red-soft);color:var(--red-deep)}
+.b-profit{background:var(--profit-soft);color:var(--profit-deep)}
+
+.btn{font-family:inherit;font-size:14px;font-weight:500;border-radius:11px;padding:13px 20px;border:0;cursor:pointer}
+.btn-primary{background:var(--red);color:#fff}
+.btn-ghost{background:rgba(255,255,255,.08);color:#eef3f0;border:0.5px solid rgba(255,255,255,.16)}
+.btn-ai{background:rgba(255,255,255,.05);color:#f0dcae;border:0.5px solid rgba(201,169,110,.4)}
+
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.metric{background:var(--paper);border:0.5px solid var(--line);border-radius:var(--radius-sm);padding:16px 18px}
+.metric .lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.metric .val{font-family:'Space Mono',monospace;font-size:30px;font-weight:500;margin-top:6px;line-height:1}
+.metric .sub{font-size:12px;color:var(--muted);margin-top:6px}
+
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.rise{animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+</style></head><body>
+<style>
+  .hero-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:18px;margin-top:8px}
+  .hero-dark{background:linear-gradient(160deg,var(--green-900),var(--green-950));color:#eef3f0;
+    border-radius:var(--radius);padding:26px 28px;position:relative;overflow:hidden}
+  .hero-dark .row{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+  .hero-dark h1{font-family:'Fraunces',serif;font-weight:500;font-size:40px;margin:16px 0 10px;letter-spacing:-.01em}
+  .spot{display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-size:22px}
+  .spot .live{width:9px;height:9px;border-radius:50%;background:#e0b34a;box-shadow:0 0 0 4px rgba(224,179,74,.18)}
+  .verdict{font-family:'Fraunces',serif;font-style:italic;font-size:18px;line-height:1.5;color:#d6e2db;margin:18px 0 22px;max-width:30em}
+  .actions{display:flex;gap:10px;flex-wrap:wrap}
+  .pnl-block{text-align:right}
+  .pnl-block .cap{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#9fb6ac}
+  .pnl-block .big{font-family:'Space Mono',monospace;font-size:46px;font-weight:500;line-height:1.05}
+  .pnl-block .impact{font-size:12px;color:#9fb6ac;margin-top:2px}
+  .pnl-math{margin-top:14px;background:rgba(255,255,255,.05);border:0.5px solid rgba(255,255,255,.1);
+    border-radius:12px;padding:11px 14px;font-family:'Space Mono',monospace;font-size:13px;color:#cdd9d2;text-align:right;line-height:1.7}
+  .pnl-math b{color:#fff}
+  .badges{display:flex;gap:8px;flex-wrap:wrap}
+
+  .summary{background:var(--paper);border:0.5px solid var(--line);border-radius:var(--radius);padding:24px 26px}
+  .summary .top{display:flex;justify-content:space-between;align-items:flex-start}
+  .summary h2{font-family:'Fraunces',serif;font-weight:500;font-size:24px;margin:4px 0 0}
+  .summary .lede{font-size:18px;font-weight:500;line-height:1.45;margin:16px 0 0}
+  .callout{background:var(--profit-soft);border-left:3px solid var(--profit);border-radius:0 10px 10px 0;
+    padding:13px 16px;margin:16px 0;font-size:14px;color:#244e41}
+  .srow{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-top:0.5px solid var(--line-soft);font-size:14px}
+  .srow .k{color:var(--muted)} .srow .v{font-family:'Space Mono',monospace;font-weight:500}
+  .srow.step .v{font-family:'DM Sans';font-weight:500}
+
+  .gauge-card{margin-top:18px;padding:24px 26px}
+  .gauge-head{display:flex;justify-content:space-between;align-items:center}
+  .gauge-head h3{font-family:'Fraunces',serif;font-weight:500;font-size:22px;margin:2px 0 0}
+  .toggle{display:flex;background:var(--cream);border:0.5px solid var(--line);border-radius:10px;padding:3px;font-size:13px;font-weight:500}
+  .toggle button{border:0;background:none;font-family:inherit;font-size:13px;font-weight:500;color:var(--muted);padding:7px 14px;border-radius:8px;cursor:pointer}
+  .toggle button.active{background:var(--green-950);color:#fff}
+  .track{position:relative;height:30px;border-radius:9px;overflow:hidden;background:#efece4;margin:26px 0 8px}
+  .zone-loss{position:absolute;left:0;top:0;bottom:0;background:rgba(217,79,79,.22)}
+  .zone-profit{position:absolute;right:0;top:0;bottom:0;background:rgba(22,131,95,.20)}
+  .be{position:absolute;top:-6px;bottom:-6px;width:0;border-left:1.5px dashed rgba(23,32,51,.4)}
+  .marker{position:absolute;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;
+    background:var(--profit);border:3px solid var(--paper);box-shadow:0 2px 8px rgba(0,0,0,.18)}
+  .marker.lossm{background:var(--red)}
+  .mlabel{position:absolute;top:38px;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:13px;font-weight:500}
+  .ends{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:28px}
+  .ends .mid{color:var(--text)}
+  .ctx{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
+  .ctx .c{background:var(--cream);border:0.5px solid var(--line);border-radius:12px;padding:15px 17px}
+  .ctx .c h4{margin:0 0 6px;font-size:14px;font-weight:500}
+  .ctx .c p{margin:0;font-size:13px;color:var(--muted);line-height:1.55}
+
+  .lower{display:grid;grid-template-columns:1.55fr 1fr;gap:18px;margin-top:18px}
+  .legs{padding:22px 24px}
+  .legs h3{font-family:'Fraunces',serif;font-weight:500;font-size:20px;margin:0 0 4px}
+  .legs .meta{font-size:12px;color:var(--muted);margin-bottom:14px;font-family:'Space Mono',monospace}
+  table.legs-t{width:100%;border-collapse:collapse;font-size:14px}
+  table.legs-t th{text-align:right;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500;padding:8px 6px}
+  table.legs-t th:first-child,table.legs-t td:first-child{text-align:left}
+  table.legs-t td{text-align:right;padding:13px 6px;border-top:0.5px solid var(--line-soft);font-family:'Space Mono',monospace}
+  .tag{font-size:11px;font-weight:500;letter-spacing:.05em;padding:3px 9px;border-radius:6px;font-family:'DM Sans'}
+  .t-sell{background:var(--red-soft);color:var(--red-deep)} .t-buy{background:var(--profit-soft);color:var(--profit-deep)}
+  .netrow td{border-top:1px solid var(--line)!important;font-weight:500}
+  .greeks{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+  .greeks .g{background:var(--cream);border:0.5px solid var(--line);border-radius:10px;padding:12px 14px}
+  .greeks .g .lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .greeks .g .v{font-family:'Space Mono',monospace;font-size:19px;font-weight:500;margin-top:3px}
+  .greeks .g .d{font-size:11px;color:var(--muted)}
+
+  .rail .card{padding:20px 22px;margin-bottom:18px}
+  .rail h3{font-family:'Fraunces',serif;font-weight:500;font-size:19px;margin:2px 0 0}
+  .ring{display:flex;align-items:center;gap:16px;margin:14px 0}
+  .ring svg{flex-shrink:0}
+  .ring p{margin:0;font-size:13px;color:var(--muted);line-height:1.5}
+  .rec{background:var(--amber-soft);border:0.5px solid #f0e0b8;border-radius:10px;padding:12px 14px;margin-top:6px}
+  .rec b{color:var(--amber);font-size:13px} .rec p{margin:6px 0 0;font-size:13px;line-height:1.5}
+  .timeline .ti{display:flex;gap:12px;padding:6px 0}
+  .timeline .tdot{width:11px;height:11px;border-radius:50%;margin-top:5px;flex-shrink:0}
+  .timeline small{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .timeline p{margin:3px 0 0;font-size:13px;color:var(--text);line-height:1.5}
+  @media(max-width:980px){.hero-grid,.lower{grid-template-columns:1fr}.metrics,.ctx,.greeks{grid-template-columns:repeat(2,1fr)}}
+</style>
+
+<div class="topbar">
+  <div class="brand"><b>Leaf</b> <i>System</i></div>
+  <nav><a href="#">Home</a><a href="#">Discover</a><a href="#">Build</a><a href="#" class="active">Positions</a><a href="#">Performance</a><a href="#">Admin</a></nav>
+  <div class="meta"><span><span class="dot"></span>Markets Closed</span><span class="ask">⚡ Ask AI</span><span class="avatar">M</span></div>
+</div>
+
+<div class="wrap">
+  <div class="breadcrumb">← <a href="#">Positions</a><span>/</span>ABNB<span>/</span>Iron Condor</div>
+
+  <div class="hero-grid">
+    <div class="hero-dark rise">
+      <div class="row">
+        <div>
+          <div class="badges">
+            <span class="badge b-time">Time review</span>
+            <span class="badge b-strat">Iron Condor</span>
+            <span class="badge b-neutral">44 contracts</span>
+            <span class="badge b-neutral">7 DTE</span>
+          </div>
+          <h1 class="serif">ABNB Iron Condor</h1>
+          <div class="muted" style="font-size:13px;color:#9fb6ac">Entered 2026-05-28 · 44 contracts · 7 days remaining</div>
+          <div class="spot" style="margin-top:14px"><span class="live"></span><b>$133.31</b><span style="font-size:14px;color:#e88a7e">−$1.19 · −0.88%</span><span style="font-size:12px;color:#7f968c">~15 min delay</span></div>
+        </div>
+        <div class="pnl-block">
+          <div class="cap">Total position P&amp;L</div>
+          <div class="big pos">+$176</div>
+          <div class="impact">Total since entry · the real position impact</div>
+          <div style="margin-top:10px;font-family:'Space Mono',monospace;font-size:14px;color:#cdd9d2">Today <b class="pos">+$26</b> <span style="color:#7f968c">· +$0.59/contract</span></div>
+          <div class="pnl-math"><b>+$4</b> per contract<br>× <b>44</b> contracts<br>= <b class="pos">+$176</b> total</div>
+        </div>
+      </div>
+      <div class="verdict">Position is in modest profit, but time risk is high. The trade has only 7 DTE remaining and is entering the gamma-risk zone with just 6% of the credit captured.</div>
+      <div class="actions">
+        <button class="btn btn-primary">Review adjustments</button>
+        <button class="btn btn-ghost">Hold &amp; monitor</button>
+        <button class="btn btn-ai">⚡ Ask AI</button>
+      </div>
+    </div>
+
+    <div class="summary rise" style="animation-delay:.06s">
+      <div class="top"><div class="eyebrow">Decision summary</div><span class="badge b-time">Time review</span></div>
+      <h2 class="serif">What should I understand?</h2>
+      <p class="lede">You are up <span class="pos">$176</span> — that's <span class="pos">+$4</span> per contract across 44. Only <span class="pos">6%</span> of max profit, and <b>0%</b> of max loss used. Flagged for time, not loss.</p>
+      <div class="callout">The loss isn't the problem — there isn't one yet. The trade is flagged because only 7 days remain and price moves get harder to manage this close to expiry.</div>
+      <div class="srow"><span class="k">Current P&amp;L</span><span class="v pos">+$176 profit</span></div>
+      <div class="srow"><span class="k">Remaining downside from here</span><span class="v">$5,852 until max loss</span></div>
+      <div class="srow"><span class="k">Max profit left</span><span class="v">$2,948 remaining</span></div>
+      <div class="srow step"><span class="k">Recommended next step</span><span class="v">Review close or roll</span></div>
+    </div>
+  </div>
+
+  <div class="metrics" style="margin-top:18px;grid-template-columns:repeat(5,1fr)">
+    <div class="metric rise" style="animation-delay:.04s"><div class="lbl">Total P&amp;L</div><div class="val pos">+$176</div><div class="sub">profit since entry · +$4 × 44</div></div>
+    <div class="metric rise" style="animation-delay:.06s"><div class="lbl">Today's P&amp;L</div><div class="val pos">+$26</div><div class="sub">+$0.59/contract · vs spot −0.88%</div></div>
+    <div class="metric rise" style="animation-delay:.08s"><div class="lbl">Profit captured</div><div class="val pos">6%</div><div class="sub">+$176 of $3,124 max profit</div></div>
+    <div class="metric rise" style="animation-delay:.12s"><div class="lbl">Loss used</div><div class="val">0%</div><div class="sub">$0 of $5,676 max loss</div></div>
+    <div class="metric rise" style="animation-delay:.16s"><div class="lbl">Time state</div><div class="val neg">7 DTE</div><div class="sub">gamma risk · review close or roll</div></div>
+  </div>
+
+  <div class="card gauge-card rise" style="animation-delay:.1s">
+    <div class="gauge-head">
+      <div><div class="eyebrow">Outcome range</div><h3 class="serif" id="gtitle">Total position view</h3></div>
+      <div class="toggle"><button class="active" data-mode="total">Total position</button><button data-mode="per">Per contract</button></div>
+    </div>
+    <div class="track">
+      <div class="zone-loss" style="width:64.5%"></div>
+      <div class="zone-profit" style="width:35.5%"></div>
+      <div class="be" style="left:64.5%"></div>
+      <div class="marker" style="left:66.5%"></div>
+      <div class="mlabel pos" id="mlabel" style="left:66.5%">+$176 now</div>
+    </div>
+    <div class="ends"><span id="endL">Max loss −$5,676</span><span class="mid">Break-even $0</span><span id="endR">Max profit +$3,124</span></div>
+    <div class="ctx">
+      <div class="c"><h4>Loss context</h4><p>You're +$176. You'd have to give back $5,852 to reach max loss, and $2,948 of profit is still on the table.</p></div>
+      <div class="c"><h4>Time context</h4><p>Only 7 days remain, so small price moves can create larger P&amp;L swings near expiry.</p></div>
+      <div class="c"><h4>Decision context</h4><p>Review a close or roll because time risk is high — not because the current P&amp;L is dangerous.</p></div>
+    </div>
+  </div>
+
+  <div class="lower">
+    <div class="card legs rise" style="animation-delay:.12s">
+      <h3 class="serif">Position legs — entry vs current</h3>
+      <div class="meta">Expiry 2026-06-05 · 7 DTE · Entry credit $3.18/share ($318/contract)</div>
+      <table class="legs-t">
+        <thead><tr><th>Action</th><th>Strike</th><th>Entry</th><th>Current</th><th>Leg P&amp;L</th><th>Delta</th><th>Theta</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag t-sell">Sell</span></td><td>$138 Call</td><td>$1.35</td><td>$0.92</td><td class="pos">+$43</td><td>−0.247</td><td>0.147</td></tr>
+          <tr><td><span class="tag t-buy">Buy</span></td><td>$140 Call</td><td>$0.92</td><td>$0.47</td><td class="neg">−$45</td><td>0.152</td><td>−0.105</td></tr>
+          <tr><td><span class="tag t-sell">Sell</span></td><td>$126 Put</td><td>$0.53</td><td>$0.33</td><td class="pos">+$20</td><td>0.108</td><td>0.081</td></tr>
+          <tr><td><span class="tag t-buy">Buy</span></td><td>$124 Put</td><td>$0.38</td><td>$0.24</td><td class="neg">−$14</td><td>0.000</td><td>0.000</td></tr>
+          <tr class="netrow"><td colspan="4" style="text-align:left">Net P&amp;L per contract &nbsp;<span class="muted" style="font-weight:400">Δ 0.013 · Θ 0.123 · V −0.049</span></td><td class="pos">+$4</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+      <div class="greeks">
+        <div class="g"><div class="lbl">Delta</div><div class="v">0.013</div><div class="d">Directional exposure</div></div>
+        <div class="g"><div class="lbl">Theta</div><div class="v">$0.12</div><div class="d">Daily time decay</div></div>
+        <div class="g"><div class="lbl">Vega</div><div class="v">−0.049</div><div class="d">Volatility sensitivity</div></div>
+        <div class="g"><div class="lbl">Gamma</div><div class="v">−0.041</div><div class="d">Delta acceleration</div></div>
+      </div>
+    </div>
+
+    <div class="rail rise" style="animation-delay:.16s">
+      <div class="card">
+        <div class="eyebrow">Health score</div><h3 class="serif">Why flagged?</h3>
+        <div class="ring">
+          <svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="none" stroke="#eee5d6" stroke-width="6"/><circle cx="32" cy="32" r="27" fill="none" stroke="var(--amber)" stroke-width="6" stroke-linecap="round" stroke-dasharray="170" stroke-dashoffset="64" transform="rotate(-90 32 32)"/><text x="32" y="38" text-anchor="middle" font-family="Space Mono" font-size="18" fill="var(--text)">62</text></svg>
+          <p>The position isn't underwater, but the short remaining time makes the trade less forgiving.</p>
+        </div>
+        <div class="rec"><b>Recommended message</b><p>"Profit is on the table but time risk is high. Review a roll or close before gamma exposure increases."</p></div>
+      </div>
+      <div class="card">
+        <div class="eyebrow">Breakdown</div><h3 class="serif">Position math</h3>
+        <div class="srow"><span class="k">Per-contract P&amp;L</span><span class="v pos">+$4</span></div>
+        <div class="srow"><span class="k">Contracts</span><span class="v">44</span></div>
+        <div class="srow"><span class="k">Total P&amp;L</span><span class="v pos">+$176</span></div>
+        <div class="srow"><span class="k">Today's P&amp;L</span><span class="v pos">+$26</span></div>
+        <div class="srow"><span class="k">Max profit</span><span class="v">$3,124</span></div>
+        <div class="srow"><span class="k">Max loss</span><span class="v">$5,676</span></div>
+        <div class="srow"><span class="k">Capital deployed</span><span class="v">8%</span></div>
+      </div>
+      <div class="card timeline">
+        <div class="eyebrow">Timeline</div><h3 class="serif">What changed?</h3>
+        <div class="ti"><span class="tdot" style="background:var(--profit)"></span><div><small>Position opened</small><p>Opened 44 ABNB iron condors at $3.18 credit per contract.</p></div></div>
+        <div class="ti"><span class="tdot" style="background:var(--red)"></span><div><small>Current state</small><p>Unrealised P&amp;L is +$176 total, up +$26 today. Only 7 days remain, so the trade needs review.</p></div></div>
+      </div>
+    </div>
+  </div>
+  <div style="height:48px"></div>
+</div>
+
+<script>
+  var data={total:{l:"Max loss −$5,676",r:"Max profit +$3,124",m:"+$176 now",title:"Total position view"},
+            per:{l:"Max loss −$129",r:"Max profit +$71",m:"+$4 now",title:"Per-contract view"}};
+  document.querySelectorAll('.toggle button').forEach(function(b){
+    b.onclick=function(){
+      document.querySelectorAll('.toggle button').forEach(function(x){x.classList.remove('active')});
+      b.classList.add('active');
+      var d=data[b.dataset.mode];
+      document.getElementById('endL').textContent=d.l;
+      document.getElementById('endR').textContent=d.r;
+      document.getElementById('mlabel').textContent=d.m;
+      document.getElementById('gtitle').textContent=d.title;
+    };
+  });
+</script>
+</body></html>

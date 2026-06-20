@@ -1,0 +1,218 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=DM+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green-950:#062e22; --green-900:#073827; --green-850:#0b4330; --green-800:#0f4a36;
+  --green-700:#155b43; --green-100:#e7f1ec; --gold:#c9a96e; --gold-soft:#f4ead4;
+  --cream:#f7f3ea; --paper:#fffdf8; --page:#fbfaf7;
+  --text:#172033; --muted:#6b7280; --line:#e8e2d8; --line-soft:#f0ebe0;
+  --red:#d94f4f; --red-deep:#b5392f; --red-soft:#fff1ef; --red-line:#ffd6d1;
+  --profit:#16835f; --profit-deep:#0d6347; --profit-soft:#edf8f3;
+  --amber:#bd7c19; --amber-soft:#fff7e8;
+  --radius:18px; --radius-sm:12px; --shadow:0 16px 44px rgba(18,32,27,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:'DM Sans',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  background:var(--page);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.5}
+.serif{font-family:'Fraunces',Georgia,serif}
+.mono{font-family:'Space Mono',ui-monospace,SFMono-Regular,monospace}
+a{color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+.eyebrow{text-transform:uppercase;letter-spacing:.16em;font-size:11px;font-weight:500;color:var(--gold);}
+.muted{color:var(--muted)}
+.pos{color:var(--profit)} .neg{color:var(--red)}
+
+.topbar{background:var(--green-950);color:#fff;height:64px;display:flex;align-items:center;padding:0 28px;position:sticky;top:0;z-index:20}
+.topbar .brand{font-family:'Fraunces',serif;font-size:20px;margin-right:30px;letter-spacing:-.01em}
+.topbar .brand b{font-weight:500} .topbar .brand i{color:var(--gold);font-style:italic;font-weight:400}
+.topbar nav{display:flex;gap:2px;flex:1}
+.topbar nav a{color:#b6c7bf;text-decoration:none;text-transform:uppercase;letter-spacing:.13em;font-size:11px;font-weight:500;padding:9px 14px;border-radius:8px;transition:.15s}
+.topbar nav a:hover{color:#fff}
+.topbar nav a.active{color:#fff;background:rgba(255,255,255,.08)}
+.topbar .meta{display:flex;align-items:center;gap:16px;color:#9fb2aa;font-size:12px;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:#7e9488;display:inline-block;margin-right:7px;vertical-align:middle}
+.ask{border:1px solid rgba(201,169,110,.5);color:#f0dcae;background:rgba(201,169,110,.08);
+  padding:8px 15px;border-radius:8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:500}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--gold);color:var(--green-950);
+  display:grid;place-items:center;font-weight:600;margin-left:14px;font-size:14px}
+
+.card{background:var(--paper);border:0.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.breadcrumb{font-size:13px;color:var(--muted);padding:22px 0 6px}
+.breadcrumb a{text-decoration:none}
+.breadcrumb span{margin:0 8px;color:var(--line)}
+
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:500;letter-spacing:.08em;
+  text-transform:uppercase;padding:5px 11px;border-radius:20px}
+.b-action{background:rgba(216,90,48,.16);color:#c2521f}
+.b-strat{background:rgba(201,169,110,.16);color:#9a7b3a}
+.b-neutral{background:rgba(255,255,255,.1);color:#cdbb93}
+.b-review{background:var(--red-soft);color:var(--red-deep)}
+.b-watch{background:var(--amber-soft);color:var(--amber)}
+.b-near{background:var(--profit-soft);color:var(--profit-deep)}
+.b-time{background:var(--amber-soft);color:var(--amber)}
+.b-loss{background:var(--red-soft);color:var(--red-deep)}
+.b-profit{background:var(--profit-soft);color:var(--profit-deep)}
+
+.btn{font-family:inherit;font-size:14px;font-weight:500;border-radius:11px;padding:13px 20px;border:0;cursor:pointer}
+.btn-primary{background:var(--red);color:#fff}
+.btn-ghost{background:rgba(255,255,255,.08);color:#eef3f0;border:0.5px solid rgba(255,255,255,.16)}
+.btn-ai{background:rgba(255,255,255,.05);color:#f0dcae;border:0.5px solid rgba(201,169,110,.4)}
+
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.metric{background:var(--paper);border:0.5px solid var(--line);border-radius:var(--radius-sm);padding:16px 18px}
+.metric .lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.metric .val{font-family:'Space Mono',monospace;font-size:30px;font-weight:500;margin-top:6px;line-height:1}
+.metric .sub{font-size:12px;color:var(--muted);margin-top:6px}
+
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.rise{animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+</style></head><body>
+<style>
+  .hero{background:linear-gradient(155deg,#fbf6ec,#f3ede0);border:0.5px solid var(--line);border-radius:24px;padding:30px 34px;margin-top:18px}
+  .hero .greet{font-family:'Fraunces',serif;font-style:italic;font-size:14px;color:var(--muted)}
+  .hero h1{font-family:'Fraunces',serif;font-weight:500;font-size:42px;margin:8px 0 8px;letter-spacing:-.01em}
+  .hero h1 i{color:var(--gold);font-style:italic}
+  .hero .lede{margin:0;color:var(--muted);font-size:15px;max-width:36em}
+  .flow{display:flex;align-items:flex-start;justify-content:space-between;margin:34px 0 10px}
+  .node{display:flex;flex-direction:column;align-items:center;gap:10px;width:120px;text-align:center}
+  .node .circ{width:64px;height:64px;border-radius:50%;border:1px solid var(--line);background:var(--paper);display:grid;place-items:center;font-size:22px;color:var(--green-800);position:relative}
+  .node.last .circ{background:var(--green-950);color:var(--gold);border-color:var(--green-950)}
+  .node .b{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;border-radius:10px;display:grid;place-items:center;font-size:11px;font-family:'Space Mono';font-weight:600;padding:0 5px}
+  .b-green{background:var(--green-950);color:#fff} .b-red{background:var(--red);color:#fff}
+  .node h4{font-family:'Fraunces',serif;font-weight:500;font-size:18px;margin:0}
+  .node small{font-size:12px;color:var(--muted)}
+  .node.last small{color:var(--red-deep)}
+  .fline{flex:1;height:1px;background:var(--line);margin-top:32px}
+  .herofoot{display:flex;justify-content:space-between;align-items:center;border-top:0.5px solid var(--line);margin-top:24px;padding-top:18px}
+  .herofoot .stats{font-family:'Space Mono';font-size:13px;color:var(--muted)}
+  .herofoot .stats b{color:var(--red-deep)}
+  .herofoot .hbtns{display:flex;gap:10px}
+  .hbtn{font-size:13px;font-weight:500;border-radius:10px;padding:11px 18px;cursor:pointer;border:0.5px solid var(--line);background:var(--paper)}
+  .hbtn.dark{background:var(--green-950);color:#fff;border-color:var(--green-950)}
+
+  .sech{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:500;margin:30px 0 12px}
+  .dsum{display:flex;flex-wrap:wrap;align-items:center;gap:8px 22px;background:var(--cream);border:0.5px solid var(--line);border-radius:12px;padding:14px 20px;margin-bottom:12px}
+  .dsum .lead{font-weight:500;font-size:15px;margin-right:6px}
+  .dsum span{font-size:13px;color:var(--muted)}
+  .dsum b{font-family:'Space Mono';font-weight:500;color:var(--text)}
+  .flag{display:flex;align-items:center;gap:18px;background:linear-gradient(90deg,#fff8f3,var(--paper));
+    border:0.5px solid var(--line);border-left:3px solid var(--red);border-radius:0 12px 12px 0;padding:15px 20px;margin-bottom:10px}
+  .flag.good{border-left-color:var(--profit)}
+  .flag.time{border-left-color:var(--amber)}
+  .flag .badge{flex-shrink:0}
+  .flag .sym{font-family:'Fraunces',serif;font-size:20px;font-weight:500;width:72px;flex-shrink:0}
+  .flag .fctx{flex:1;display:flex;gap:10px 26px;flex-wrap:wrap;align-items:center}
+  .flag .fctx .f{font-size:13px;color:var(--muted)}
+  .flag .fctx .f b{font-family:'Space Mono';font-size:15px;font-weight:500;color:var(--text)}
+  .flag .fctx .f.t{color:var(--red-deep);font-weight:500}
+  .flag .fctx .f.tt{color:var(--amber);font-weight:500}
+  .flag .fctx .f.tp{color:var(--profit-deep);font-weight:500}
+  .flag .rv{background:var(--green-950);color:#fff;border:0;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:500;cursor:pointer;flex-shrink:0}
+  .ontrack{display:flex;justify-content:space-between;align-items:center;background:var(--cream);border:0.5px solid var(--line);border-radius:12px;padding:13px 18px;font-size:14px;color:var(--muted)}
+
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:8px}
+  .disc{border:0.5px solid var(--line);border-radius:12px;background:var(--paper);padding:4px 0}
+  .disc .d{display:flex;justify-content:space-between;align-items:center;padding:15px 18px;border-bottom:0.5px solid var(--line-soft)}
+  .disc .d:last-child{border-bottom:0}
+  .disc .d .n{font-weight:500} .disc .d .n small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+  .disc .d .roc{font-family:'Space Mono';color:var(--profit);font-weight:500}
+  .viewall{text-align:center;background:var(--cream);border:0.5px solid var(--line);border-radius:12px;padding:14px;font-weight:500;margin-top:10px;cursor:pointer}
+  .perfcards .pc{background:var(--paper);border:0.5px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:12px}
+  .perfcards .pc .lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .perfcards .pc .v{font-family:'Space Mono';font-size:28px;font-weight:500;margin-top:5px}
+  .perfcards .pc .s{font-size:12px;color:var(--muted);margin-top:3px}
+  @media(max-width:980px){.twocol{grid-template-columns:1fr}.flow{overflow-x:auto}}
+</style>
+
+<div class="topbar">
+  <div class="brand"><b>Leaf</b> <i>System</i></div>
+  <nav><a href="#" class="active">Home</a><a href="#">Discover</a><a href="#">Build</a><a href="#">Positions</a><a href="#">Performance</a><a href="#">Admin</a></nav>
+  <div class="meta"><span><span class="dot"></span>Markets Closed</span><span class="ask">⚡ Ask AI</span><span class="avatar">M</span></div>
+</div>
+
+<div class="wrap">
+  <div class="hero rise">
+    <div class="greet">Good evening, Manish — Friday, May 29</div>
+    <div class="eyebrow" style="margin-top:8px">The options lifecycle</div>
+    <h1 class="serif">From signal to <i>safeguard</i>.</h1>
+    <p class="lede">NewLeaf carries every options trade through five disciplined stages. No gaps between research and risk.</p>
+    <div class="flow">
+      <div class="node"><div class="circ">🔍<span class="b b-green">3</span></div><h4 class="serif">Discover</h4><small>3 new setups</small></div>
+      <div class="fline"></div>
+      <div class="node"><div class="circ">⑂</div><h4 class="serif">Decide</h4><small>Probability &amp; fit</small></div>
+      <div class="fline"></div>
+      <div class="node"><div class="circ">▤</div><h4 class="serif">Build</h4><small>Strategy &amp; legs</small></div>
+      <div class="fline"></div>
+      <div class="node"><div class="circ">⚡</div><h4 class="serif">Execute</h4><small>Fill with edge</small></div>
+      <div class="fline"></div>
+      <div class="node last"><div class="circ">🛡<span class="b b-red">3</span></div><h4 class="serif">Defend</h4><small>3 exits flagged</small></div>
+    </div>
+    <div class="herofoot">
+      <div class="stats">3 active positions &nbsp;·&nbsp; 8% capital deployed &nbsp;·&nbsp; today <span class="neg">−$18</span> &nbsp;·&nbsp; <b>3 need review</b>: 1 time · 1 loss · 1 profit-take</div>
+      <div class="hbtns"><button class="hbtn dark">Review exits →</button><button class="hbtn">Discover ideas</button></div>
+    </div>
+  </div>
+
+  <div class="sech">Defend · today's decision summary</div>
+  <div class="dsum rise" style="animation-delay:.04s">
+    <span class="lead">3 need review: 1 time · 1 loss · 1 profit-take</span>
+    <span>Today's P&amp;L <b class="neg">−$18</b></span>
+    <span>Open P&amp;L <b class="neg">−$239</b></span>
+    <span>Portfolio max loss <b>$16,780</b></span>
+    <span>Max profit available <b class="pos">$5,820</b></span>
+  </div>
+
+  <div class="flag time rise" style="animation-delay:.06s">
+    <span class="badge b-time">Time review</span>
+    <span class="sym serif">ABNB</span>
+    <div class="fctx">
+      <span class="f"><b class="pos">+$176</b> total <span style="color:var(--muted)">· +$4 × 44</span></span>
+      <span class="f">6% captured</span>
+      <span class="f tt">7 DTE · profitable but low capture</span>
+    </div>
+    <button class="rv">Review</button>
+  </div>
+  <div class="flag rise" style="animation-delay:.1s">
+    <span class="badge b-loss">Loss review</span>
+    <span class="sym serif">BIDU</span>
+    <div class="fctx">
+      <span class="f"><b class="neg">−$611</b> total <span style="color:var(--muted)">· −$47 × 13</span></span>
+      <span class="f">11% max loss used</span>
+      <span class="f t">20 DTE · under pressure</span>
+    </div>
+    <button class="rv">Review</button>
+  </div>
+  <div class="flag good rise" style="animation-delay:.14s">
+    <span class="badge b-profit">Profit review</span>
+    <span class="sym serif">AMZN</span>
+    <div class="fctx">
+      <span class="f"><b class="pos">+$196</b> total <span style="color:var(--muted)">· +$49 × 4</span></span>
+      <span class="f">39% captured</span>
+      <span class="f tp">14 DTE · consider harvest</span>
+    </div>
+    <button class="rv">Review</button>
+  </div>
+  <div class="ontrack rise" style="animation-delay:.16s"><span>ℹ️ &nbsp;0 other positions on track</span><a href="#" style="font-weight:500;color:var(--green-800)">View all</a></div>
+
+  <div class="twocol">
+    <div>
+      <div class="sech">Discover · new in research</div>
+      <div class="disc rise" style="animation-delay:.1s">
+        <div class="d"><div class="n">BA<small>Broken Wing Butterfly · 28 DTE</small></div><div class="roc">100% ROC</div></div>
+        <div class="d"><div class="n">CRM<small>Broken Wing Butterfly · 28 DTE</small></div><div class="roc">100% ROC</div></div>
+        <div class="d"><div class="n">ADBE<small>Broken Wing Butterfly · 28 DTE</small></div><div class="roc">100% ROC</div></div>
+      </div>
+      <div class="viewall">View all strategies</div>
+    </div>
+    <div class="perfcards">
+      <div class="sech">Performance · this month</div>
+      <div class="pc rise" style="animation-delay:.1s"><div class="lbl">Total P&amp;L</div><div class="v pos">+$524</div><div class="s">realised +$763 · unrealised −$239</div></div>
+      <div class="pc rise" style="animation-delay:.13s"><div class="lbl">Today's P&amp;L</div><div class="v neg">−$18</div><div class="s">across 3 active positions</div></div>
+      <div class="pc rise" style="animation-delay:.16s"><div class="lbl">Win rate</div><div class="v">80%</div><div class="s">4 / 5 trades</div></div>
+      <div class="pc rise" style="animation-delay:.19s"><div class="lbl">Capital deployed</div><div class="v">$16,780</div><div class="s">8% of $210,000</div></div>
+    </div>
+  </div>
+  <div style="height:48px"></div>
+</div>
+</body></html>

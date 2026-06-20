@@ -46,7 +46,7 @@ Available strikes (sample):
 ${chainStr}`;
 
     llm.resetUsage();
-    const raw = await llm.call(modelMap[mode] ?? 'qwq', { system, user, maxTokens: 1200 });
+    const raw = await llm.call(modelMap[mode] ?? 'qwen-max', { system, user, maxTokens: 1200 });
 
     try {
       const start = raw.indexOf('{'), end = raw.lastIndexOf('}');

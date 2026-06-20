@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-export type ModelTier = 'claude-sonnet' | 'claude-haiku' | 'gpt-4' | 'grok' | 'deepseek' | 'deepseek-r1' | 'qwq' | 'qwen-max' | 'gemini-pro' | 'gemini-flash';
+export type ModelTier = 'claude-sonnet' | 'claude-haiku' | 'gpt-4' | 'gpt-5.5' | 'grok' | 'deepseek' | 'deepseek-r1' | 'qwen-max' | 'qwen-plus' | 'qwen3-max' | 'gemini-pro' | 'gemini-flash';
 
 export interface LLMCall { system: string; user: string; maxTokens?: number; }
 
@@ -29,11 +29,13 @@ const PRICING: Record<ModelTier, { input: number; output: number }> = {
   'claude-sonnet': { input: 3, output: 15 },
   'claude-haiku':  { input: 0.80, output: 4 },
   'gpt-4':         { input: 2.50, output: 10 },
+  'gpt-5.5':       { input: 3, output: 12 },
   'grok':          { input: 3, output: 15 },
   'deepseek':      { input: 0.27, output: 1.10 },
   'deepseek-r1':   { input: 0.55, output: 2.19 },
-  'qwq':           { input: 0.30, output: 1.20 },
   'qwen-max':      { input: 1.60, output: 6.40 },
+  'qwen-plus':     { input: 0.80, output: 3.20 },
+  'qwen3-max':     { input: 2.00, output: 8.00 },
   'gemini-pro':    { input: 1.25, output: 5.00 },
   'gemini-flash':  { input: 0.075, output: 0.30 },
 };
@@ -93,11 +95,13 @@ export class LLMRouter {
         case 'claude-sonnet': result = await this.callClaude('claude-sonnet-4-20250514', model, opts); break;
         case 'claude-haiku':  result = await this.callClaude('claude-haiku-4-5-20251001', model, opts); break;
         case 'gpt-4':         result = await this.callOpenAI('gpt-4o', model, opts); break;
+        case 'gpt-5.5':       result = await this.callOpenAI('gpt-5.5', model, opts); break;
         case 'grok':          result = await this.callXAI('grok-4', model, opts); break;
         case 'deepseek':      result = await this.callDeepSeek('deepseek-chat', model, opts); break;
         case 'deepseek-r1':   result = await this.callDeepSeek('deepseek-reasoner', model, opts); break;
-        case 'qwq':           result = await this.callQwen('qwen-plus', model, opts); break;
         case 'qwen-max':      result = await this.callQwen('qwen-max', model, opts); break;
+        case 'qwen-plus':     result = await this.callQwen('qwen-plus', model, opts); break;
+        case 'qwen3-max':     result = await this.callQwen('qwen3-max', model, opts); break;
         case 'gemini-pro':    result = await this.callGemini('gemini-2.5-pro', model, opts); break;
         case 'gemini-flash':  result = await this.callGemini('gemini-2.5-flash', model, opts); break;
         default: result = '';

@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NewLeaf Reasoning Upgrade Plan — Hedge Fund-Level Analysis</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #232733;
+      --border: #2d3140;
+      --text: #e4e8f0;
+      --muted: #8b92a8;
+      --accent: #6c8cff;
+      --green: #4ade80;
+      --yellow: #fbbf24;
+      --red: #f87171;
+      --orange: #fb923c;
+      --purple: #a78bfa;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+    h3 { font-size: 1.1rem; margin: 1.5rem 0 0.75rem; color: var(--text); }
+    p, li { color: var(--muted); font-size: 0.9rem; }
+    .subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 2rem; }
+
+    /* Cards */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 1rem 0; }
+    .card-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+    .card-header .badge { font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 20px; font-weight: 600; text-transform: uppercase; }
+    .badge-fast { background: rgba(74, 222, 128, 0.15); color: var(--green); }
+    .badge-reasoning { background: rgba(108, 140, 255, 0.15); color: var(--accent); }
+    .badge-deep { background: rgba(167, 139, 250, 0.15); color: var(--purple); }
+    .badge-batch { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+    .badge-new { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+    th { background: var(--surface2); color: var(--text); padding: 0.75rem; text-align: left; font-weight: 600; }
+    td { padding: 0.75rem; border-bottom: 1px solid var(--border); color: var(--muted); }
+    tr:hover td { background: var(--surface2); }
+
+    /* Flow diagram */
+    .flow { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 1rem 0; }
+    .flow-step { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.8rem; }
+    .flow-arrow { color: var(--accent); font-weight: bold; }
+    .flow-step.highlight { border-color: var(--accent); background: rgba(108, 140, 255, 0.1); }
+    .flow-step.new { border-color: var(--red); background: rgba(248, 113, 113, 0.08); }
+
+    /* Grid */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1rem; margin: 1rem 0; }
+
+    /* Model comparison */
+    .model-bar { display: flex; align-items: center; gap: 0.75rem; margin: 0.5rem 0; }
+    .model-name { width: 120px; font-size: 0.8rem; font-weight: 600; }
+    .model-time { flex: 1; height: 24px; background: var(--surface2); border-radius: 4px; position: relative; overflow: hidden; }
+    .model-time .fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-size: 0.7rem; font-weight: 600; }
+    .model-time .fill.fast { background: linear-gradient(90deg, rgba(74, 222, 128, 0.3), rgba(74, 222, 128, 0.1)); color: var(--green); }
+    .model-time .fill.medium { background: linear-gradient(90deg, rgba(108, 140, 255, 0.3), rgba(108, 140, 255, 0.1)); color: var(--accent); }
+    .model-time .fill.slow { background: linear-gradient(90deg, rgba(248, 113, 113, 0.3), rgba(248, 113, 113, 0.1)); color: var(--red); }
+
+    /* Phase timeline */
+    .timeline { position: relative; padding-left: 2rem; margin: 1.5rem 0; }
+    .timeline::before { content: ''; position: absolute; left: 0.5rem; top: 0; bottom: 0; width: 2px; background: var(--border); }
+    .timeline-item { position: relative; margin-bottom: 1.5rem; }
+    .timeline-item::before { content: ''; position: absolute; left: -1.65rem; top: 0.5rem; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--accent); background: var(--bg); }
+    .timeline-item.done::before { background: var(--green); border-color: var(--green); }
+    .timeline-item .phase-label { font-size: 0.7rem; color: var(--accent); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+
+    /* Code blocks */
+    pre { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; font-size: 0.8rem; margin: 0.75rem 0; }
+    code { font-family: 'JetBrains Mono', 'Fira Code', monospace; color: var(--green); }
+
+    /* Cost breakdown */
+    .cost-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+    .cost-row:last-child { border-bottom: none; }
+    .cost-label { font-size: 0.85rem; }
+    .cost-value { font-size: 0.85rem; font-weight: 600; }
+    .cost-value.cheap { color: var(--green); }
+    .cost-value.moderate { color: var(--yellow); }
+    .cost-value.expensive { color: var(--red); }
+
+    /* Architecture diagram */
+    .arch-layer { border-left: 3px solid var(--border); padding: 1rem 1.5rem; margin: 0.75rem 0; }
+    .arch-layer.l1 { border-color: var(--green); }
+    .arch-layer.l2 { border-color: var(--accent); }
+    .arch-layer.l3 { border-color: var(--purple); }
+    .arch-layer.l4 { border-color: var(--yellow); }
+    .arch-layer .layer-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem; }
+
+    ul { padding-left: 1.5rem; margin: 0.5rem 0; }
+    li { margin: 0.3rem 0; }
+
+    .tag { display: inline-block; font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 4px; margin-right: 0.3rem; }
+    .tag-model { background: rgba(108, 140, 255, 0.15); color: var(--accent); }
+    .tag-time { background: rgba(74, 222, 128, 0.15); color: var(--green); }
+    .tag-cost { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+
+    .callout { background: rgba(108, 140, 255, 0.08); border: 1px solid rgba(108, 140, 255, 0.2); border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; }
+    .callout-title { font-weight: 700; font-size: 0.85rem; color: var(--accent); margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <h1>NewLeaf Reasoning Upgrade Plan</h1>
+    <p class="subtitle">Adding hedge fund-level analysis with reasoning models (qwen3-max) to the Discover pipeline</p>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <h2>1. Model Benchmark Results</h2>
+
+    <div class="card">
+      <h3>Latency Comparison (Same Prompt, DashScope)</h3>
+      <div class="model-bar">
+        <span class="model-name">qwen-plus</span>
+        <div class="model-time"><div class="fill fast" style="width: 4%">1.1s</div></div>
+      </div>
+      <div class="model-bar">
+        <span class="model-name">qwen-max</span>
+        <div class="model-time"><div class="fill fast" style="width: 7%">1.7s</div></div>
+      </div>
+      <div class="model-bar">
+        <span class="model-name">qwen3-max</span>
+        <div class="model-time"><div class="fill medium" style="width: 8%">2.4s</div></div>
+      </div>
+      <div class="model-bar">
+        <span class="model-name">qwen3.5-plus</span>
+        <div class="model-time"><div class="fill slow" style="width: 55%">17s</div></div>
+      </div>
+      <div class="model-bar">
+        <span class="model-name">qwen3.7-max</span>
+        <div class="model-time"><div class="fill slow" style="width: 95%">29s</div></div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-title">Model Selection Decision</div>
+      <p><strong>Fast tasks</strong>: qwen-plus (1.1s, cheapest, concise) — market reads, explanations, narratives<br>
+      <strong>Reasoning tasks</strong>: qwen3-max (2.4s, concise, newest generation) — thesis, risk, scenarios<br>
+      <strong>Batch/offline only</strong>: qwen3.7-max (29s) — only for nightly calibration jobs, never real-time</p>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <h2>2. Current Pipeline — What Exists Today</h2>
+
+    <div class="flow">
+      <div class="flow-step">Market Data (Alpaca)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">Technical Analysis (RSI, ADX, SMA)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">Gamma Analysis (OI walls)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">Score (3 pillars)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">Select Strategy (gates)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step highlight">LLM Explains (qwen-max)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">Discover UI</div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Task</th><th>Method</th><th>Model</th><th>Time</th><th>Quality</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Technical Analysis</td><td>Deterministic code</td><td>None</td><td>10ms</td><td>Good but discrete (5-state)</td></tr>
+        <tr><td>Gamma Wall Detection</td><td>Deterministic code</td><td>None</td><td>20ms</td><td>Good (multi-factor blend)</td></tr>
+        <tr><td>Strategy Selection</td><td>Gate hierarchy</td><td>None</td><td>5ms</td><td>Works but not outcome-validated</td></tr>
+        <tr><td>Market Read</td><td>LLM synthesis</td><td>qwen-max</td><td>1.7s</td><td>Basic — no verification</td></tr>
+        <tr><td>Strategy Explanation</td><td>LLM narrate</td><td>claude-sonnet</td><td>3s</td><td>Shallow — forbidden from re-ranking</td></tr>
+        <tr><td>Strike Selection</td><td>LLM + chain data</td><td>claude-haiku</td><td>2s</td><td>No math, synthetic PoP estimates</td></tr>
+        <tr><td>Event Risk</td><td>LLM knowledge</td><td>gemini-flash</td><td>1s</td><td>Knowledge cutoff problem</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <div class="callout-title">The Gap</div>
+      <p>Today's LLM role is <strong>explain what the engine decided</strong>. A hedge fund needs LLMs to <strong>reason about WHY a trade will work, WHAT could go wrong, and WHEN to exit</strong>. The engine decides the structure; the reasoning layer provides conviction and risk management.</p>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <h2>3. Target Pipeline — With Reasoning Layer</h2>
+
+    <div class="flow">
+      <div class="flow-step">Market Data</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">Technical + Gamma Analysis</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">Score + Select Strategy</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step new">REASONING LAYER (qwen3-max)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step highlight">Fast Explanation (qwen-plus)</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">Discover UI</div>
+    </div>
+
+    <h3>New Reasoning Tasks (6 parallel calls to qwen3-max)</h3>
+
+    <div class="grid">
+      <!-- Task 1: Thesis Generation -->
+      <div class="card">
+        <div class="card-header">
+          <span class="badge badge-reasoning">Reasoning</span>
+          <strong>1. Thesis Generation</strong>
+        </div>
+        <p><strong>Question answered:</strong> "Why will this specific trade make money?"</p>
+        <p style="margin-top: 0.5rem"><strong>Input:</strong> Engine pick + technicals + gamma walls + IV regime + sector context</p>
+        <p><strong>Output:</strong></p>
+        <ul>
+          <li>Bull thesis (why price stays in range / moves in direction)</li>
+          <li>Key catalyst or structural driver</li>
+          <li>Conviction score (1-10) with reasoning chain</li>
+          <li>Time horizon match (does DTE align with thesis?)</li>
+        </ul>
+        <p style="margin-top: 0.5rem"><span class="tag tag-model">qwen3-max</span><span class="tag tag-time">2-3s</span><span class="tag tag-cost">~$0.003</span></p>
+      </div>
+
+      <!-- Task 2: Risk Assessment -->
+      <div class="card">
+        <div class="card-header">
+          <span class="badge badge-reasoning">Reasoning</span>
+          <strong>2. Risk Assessment</strong>
+        </div>
+        <p><strong>Question answered:</strong> "What would make this thesis wrong?"</p>
+        <p style="margin-top: 0.5rem"><strong>Input:</strong> Thesis + position structure + Greeks + event calendar</p>
+        <p><strong>Output:</strong></p>
+        <ul>
+          <li>Top 3 risk scenarios with probability estimates</li>
+          <li>Max pain scenario (what kills the trade?)</li>
+          <li>Tail risk events (earnings, Fed, geopolitical)</li>
+          <li>Greeks vulnerability (vega blow-up, gamma scalping against you)</li>
+        </ul>
+        <p style="margin-top: 0.5rem"><span class="tag tag-model">qwen3-max</span><span class="tag tag-time">2-3s</span><span class="tag tag-cost">~$0.003</span></p>
+      </div>
+
+      <!-- Task 3: Scenario Analysis -->
+      <div class="card">
+        <div class="card-header">
+          <span class="badge badge-reasoning">Reasoning</span>
+          <strong>3. Scenario P&L Analysis</strong>
+        </div>
+        <p><strong>Question answered:</strong> "What's my P&L at different spot levels at different times?"</p>
+        <p style="margin-top: 0.5rem"><strong>Input:</strong> Legs + Greeks + IV surface + DTE</p>
+        <p><strong>Output:</strong></p>
+        <ul>
+          <li>P&L grid: spot -5%/-2.5%/0%/+2.5%/+5% at 7/14/21 DTE</li>
+          <li>Breakeven evolution over time</li>
+          <li>Best case / base case / worst case with probabilities</li>
+          <li>Probability of profit at each time horizon</li>
+        </ul>
+        <p style="margin-top: 0.5rem"><span class="tag tag-model">qwen3-max</span><span class="tag tag-time">2-3s</span><span class="tag tag-cost">~$0.004</span></p>
+      </div>
+
+      <!-- Task 4: Exit Strategy -->
+      <div class="card">
+        <div class="card-header">
+          <span class="badge badge-reasoning">Reasoning</span>
+          <strong>4. Exit Strategy & Adjustments</strong>
+        </div>
+        <p><strong>Question answered:</strong> "When do I take profit, cut loss, or adjust?"</p>
+        <p style="margin-top: 0.5rem"><strong>Input:</strong> Strategy + legs + theta schedule + gamma walls + DTE</p>
+        <p><strong>Output:</strong></p>
+        <ul>
+          <li>Profit target: close at X% of max profit (with reasoning)</li>
+          <li>Stop loss: close at X% of max loss (with reasoning)</li>
+          <li>Adjustment triggers: if delta > X, roll short strike</li>
+          <li>Time-based rules: close at N DTE regardless</li>
+          <li>Roll strategy if profitable early</li>
+        </ul>
+        <p style="margin-top: 0.5rem"><span class="tag tag-model">qwen3-max</span><span class="tag tag-time">2-3s</span><span class="tag tag-cost">~$0.003</span></p>
+      </div>
+
+      <!-- Task 5: Cross-Asset Context -->
+      <div class="card">
+        <div class="card-header">
+          <span class="badge badge-reasoning">Reasoning</span>
+          <strong>5. Cross-Asset & Regime Context</strong>
+        </div>
+        <p><strong>Question answered:</strong> "Does the macro environment support or contradict this trade?"</p>
+        <p style="margin-top: 0.5rem"><strong>Input:</strong> Ticker sector + SPY/VIX regime + correlation data + sector ETF trend</p>
+        <p><strong>Output:</strong></p>
+        <ul>
+          <li>Market regime: risk-on / risk-off / rotation</li>
+          <li>Sector momentum: leading / lagging / mean-reverting</li>
+          <li>VIX environment: is selling premium smart right now?</li>
+          <li>Correlation risk: will this move with the index?</li>
+          <li>Regime alignment score (does macro support the thesis?)</li>
+        </ul>
+        <p style="margin-top: 0.5rem"><span class="tag tag-model">qwen3-max</span><span class="tag tag-time">2-3s</span><span class="tag tag-cost">~$0.003</span></p>
+      </div>
+
+      <!-- Task 6: Position Sizing -->
+      <div class="card">
+        <div class="card-header">
+          <span class="badge badge-reasoning">Reasoning</span>
+          <strong>6. Position Sizing & Conviction</strong>
+        </div>
+        <p><strong>Question answered:</strong> "How much should I risk on this trade?"</p>
+        <p style="margin-top: 0.5rem"><strong>Input:</strong> R:R ratio + conviction score + risk scenarios + portfolio context</p>
+        <p><strong>Output:</strong></p>
+        <ul>
+          <li>Recommended allocation (% of portfolio)</li>
+          <li>Number of contracts at different account sizes ($10K/$25K/$50K/$100K)</li>
+          <li>Max loss in dollars at each size</li>
+          <li>Kelly criterion estimate (edge / odds)</li>
+          <li>Scaling plan: add on dips or all-in at entry?</li>
+        </ul>
+        <p style="margin-top: 0.5rem"><span class="tag tag-model">qwen3-max</span><span class="tag tag-time">2-3s</span><span class="tag tag-cost">~$0.003</span></p>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <h2>4. Architecture — How It Fits Together</h2>
+
+    <div class="arch-layer l1">
+      <div class="layer-title" style="color: var(--green);">Layer 0: Deterministic Engine (exists, no change)</div>
+      <p>Technical analysis + Gamma walls + Score + Strategy selection. Pure functions, no I/O, 30ms total.</p>
+      <pre><code>analyzeTechnicals() → calcScore() → getDirection() → selectStrategy()</code></pre>
+    </div>
+
+    <div class="arch-layer l2">
+      <div class="layer-title" style="color: var(--accent);">Layer 1: Reasoning Layer (NEW — qwen3-max, parallel calls)</div>
+      <p>Six reasoning tasks fired in parallel after engine selects strategy. Total wall-clock: ~3s (parallel).</p>
+      <pre><code>POST /api/reasoning/analyze
+Input: { ticker, expiry, enginePick, technicals, gamma, chain, spyRegime, vixLevel }
+
+// All 6 calls fire in parallel via Promise.all()
+const [thesis, risk, scenarios, exit, regime, sizing] = await Promise.all([
+  reasonThesis(data),       // qwen3-max: 2-3s
+  reasonRisk(data),         // qwen3-max: 2-3s
+  reasonScenarios(data),    // qwen3-max: 2-3s
+  reasonExit(data),         // qwen3-max: 2-3s
+  reasonRegime(data),       // qwen3-max: 2-3s
+  reasonSizing(data),       // qwen3-max: 2-3s
+])
+
+Output: ReasoningAnalysis {
+  thesis: { bull, catalyst, conviction: 1-10, timeHorizonMatch: boolean }
+  risk: { scenarios: [{name, probability, impact, hedge}], maxPain, tailRisk }
+  scenarios: { pnlGrid: number[][], breakevens, bestCase, baseCase, worstCase }
+  exit: { profitTarget, stopLoss, adjustments: [], timeRule, rollStrategy }
+  regime: { marketRegime, sectorMomentum, vixEnvironment, correlationRisk, alignmentScore }
+  sizing: { allocation, contracts: {}, maxLossDollars, kellyEstimate, scalingPlan }
+
+  // Meta
+  totalConviction: number,  // Weighted average of thesis + regime alignment
+  overallGrade: "A" | "B" | "C" | "D",  // Composite
+  shouldPublish: boolean    // conviction > 6 AND regime alignment > 0.5
+}</code></pre>
+    </div>
+
+    <div class="arch-layer l3">
+      <div class="layer-title" style="color: var(--purple);">Layer 2: Fast Explanation (existing, switch to qwen-plus)</div>
+      <p>Quick narration of the reasoning layer's findings for the UI. Takes structured output from Layer 1 and produces user-friendly text.</p>
+      <pre><code>// Existing StrategyAdvisor.explain() — now receives reasoning context
+// Switch model from qwen-max to qwen-plus (faster, cheaper, same quality for narration)
+const explanation = await advisor.explain({
+  ...enginePick,
+  reasoningContext: { thesis, risk, exit }  // NEW: pass reasoning findings
+})</code></pre>
+    </div>
+
+    <div class="arch-layer l4">
+      <div class="layer-title" style="color: var(--yellow);">Layer 3: Outcome Feedback (future — qwen3.7-max, batch only)</div>
+      <p>Nightly job: compare past thesis predictions against actual outcomes. Tune conviction model.</p>
+      <pre><code>// Nightly cron (not real-time, runs at market close)
+// Uses qwen3.7-max for deep reasoning about WHY picks succeeded/failed
+const feedback = await analyzeOutcomes({
+  recentPicks: last30Days,
+  outcomes: actualPnL,
+  model: 'qwen3.7-max'  // 30s is fine for batch
+})</code></pre>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <h2>5. Model Assignment — New vs Current</h2>
+
+    <table>
+      <thead>
+        <tr><th>Service</th><th>Current Model</th><th>Proposed Model</th><th>Reason</th><th>Latency Change</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>ai-read (market read)</td>
+          <td>qwen-max (1.7s)</td>
+          <td style="color: var(--green)"><strong>qwen-plus (1.1s)</strong></td>
+          <td>Pure synthesis, doesn't need reasoning</td>
+          <td style="color: var(--green)">-35%</td>
+        </tr>
+        <tr>
+          <td>recommend (strategy explain)</td>
+          <td>claude-sonnet (3s, $0.01)</td>
+          <td style="color: var(--green)"><strong>qwen-plus (1.1s)</strong></td>
+          <td>Explanation only — reasoning layer handles depth</td>
+          <td style="color: var(--green)">-63%</td>
+        </tr>
+        <tr>
+          <td>picks-narrative</td>
+          <td>claude-sonnet (3s)</td>
+          <td style="color: var(--green)"><strong>qwen-plus (1.1s)</strong></td>
+          <td>Formatting/writing task</td>
+          <td style="color: var(--green)">-63%</td>
+        </tr>
+        <tr>
+          <td>ai-events</td>
+          <td>gemini-flash (1s)</td>
+          <td>gemini-flash (1s)</td>
+          <td>Already cheap + fast (knowledge cutoff mitigated by reasoning layer)</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>ai-strikes</td>
+          <td>claude-haiku (2s)</td>
+          <td style="color: var(--green)"><strong>qwen-plus (1.1s)</strong></td>
+          <td>Pattern matching, not reasoning</td>
+          <td style="color: var(--green)">-45%</td>
+        </tr>
+        <tr style="background: rgba(108, 140, 255, 0.05)">
+          <td><strong>reasoning-thesis</strong></td>
+          <td style="color: var(--muted)">— (doesn't exist)</td>
+          <td style="color: var(--accent)"><strong>qwen3-max (2.4s)</strong></td>
+          <td>Needs multi-step reasoning about conflicting signals</td>
+          <td><span class="badge badge-new">NEW</span></td>
+        </tr>
+        <tr style="background: rgba(108, 140, 255, 0.05)">
+          <td><strong>reasoning-risk</strong></td>
+          <td style="color: var(--muted)">— (doesn't exist)</td>
+          <td style="color: var(--accent)"><strong>qwen3-max (2.4s)</strong></td>
+          <td>Needs if/then chains, scenario branching</td>
+          <td><span class="badge badge-new">NEW</span></td>
+        </tr>
+        <tr style="background: rgba(108, 140, 255, 0.05)">
+          <td><strong>reasoning-scenarios</strong></td>
+          <td style="color: var(--muted)">— (doesn't exist)</td>
+          <td style="color: var(--accent)"><strong>qwen3-max (2.4s)</strong></td>
+          <td>Probability weighting, P&L math at multiple spots</td>
+          <td><span class="badge badge-new">NEW</span></td>
+        </tr>
+        <tr style="background: rgba(108, 140, 255, 0.05)">
+          <td><strong>reasoning-exit</strong></td>
+          <td style="color: var(--muted)">— (doesn't exist)</td>
+          <td style="color: var(--accent)"><strong>qwen3-max (2.4s)</strong></td>
+          <td>Multi-branch conditional planning</td>
+          <td><span class="badge badge-new">NEW</span></td>
+        </tr>
+        <tr style="background: rgba(108, 140, 255, 0.05)">
+          <td><strong>reasoning-regime</strong></td>
+          <td style="color: var(--muted)">— (doesn't exist)</td>
+          <td style="color: var(--accent)"><strong>qwen3-max (2.4s)</strong></td>
+          <td>Cross-asset correlation reasoning</td>
+          <td><span class="badge badge-new">NEW</span></td>
+        </tr>
+        <tr style="background: rgba(108, 140, 255, 0.05)">
+          <td><strong>reasoning-sizing</strong></td>
+          <td style="color: var(--muted)">— (doesn't exist)</td>
+          <td style="color: var(--accent)"><strong>qwen3-max (2.4s)</strong></td>
+          <td>Math + portfolio logic + risk limits</td>
+          <td><span class="badge badge-new">NEW</span></td>
+        </tr>
+        <tr style="background: rgba(167, 139, 250, 0.05)">
+          <td><strong>batch-outcome-analysis</strong></td>
+          <td style="color: var(--muted)">— (doesn't exist)</td>
+          <td style="color: var(--purple)"><strong>qwen3.7-max (30s)</strong></td>
+          <td>Deep batch analysis — nightly only, never real-time</td>
+          <td><span class="badge badge-batch">BATCH</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <h2>6. Cost Analysis</h2>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Current Cost Per Discover Request</h3>
+        <div class="cost-row"><span class="cost-label">ai-read (qwen-max)</span><span class="cost-value">$0.0008</span></div>
+        <div class="cost-row"><span class="cost-label">recommend (claude-sonnet)</span><span class="cost-value">$0.0100</span></div>
+        <div class="cost-row"><span class="cost-label">ai-strikes (claude-haiku)</span><span class="cost-value">$0.0020</span></div>
+        <div class="cost-row" style="border-top: 2px solid var(--border); font-weight: 700"><span class="cost-label"><strong>Total per request</strong></span><span class="cost-value expensive">$0.0128</span></div>
+        <div class="cost-row"><span class="cost-label">Daily (100 requests)</span><span class="cost-value expensive">$1.28</span></div>
+      </div>
+
+      <div class="card">
+        <h3>Proposed Cost Per Discover Request</h3>
+        <div class="cost-row"><span class="cost-label">ai-read (qwen-plus)</span><span class="cost-value cheap">$0.0003</span></div>
+        <div class="cost-row"><span class="cost-label">recommend/explain (qwen-plus)</span><span class="cost-value cheap">$0.0005</span></div>
+        <div class="cost-row"><span class="cost-label">6x reasoning (qwen3-max, parallel)</span><span class="cost-value moderate">$0.0180</span></div>
+        <div class="cost-row" style="border-top: 2px solid var(--border); font-weight: 700"><span class="cost-label"><strong>Total per request</strong></span><span class="cost-value moderate">$0.0188</span></div>
+        <div class="cost-row"><span class="cost-label">Daily (100 requests)</span><span class="cost-value moderate">$1.88</span></div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-title">Cost Delta: +$0.006 per request (+47%)</div>
+      <p>For +47% cost increase, you get: thesis with conviction scoring, 3 risk scenarios, full P&L grid, exit rules, regime alignment, and position sizing. The fast tasks (read, explain, strikes) actually get <strong>cheaper</strong> by switching from claude-sonnet/qwen-max to qwen-plus.</p>
+      <p style="margin-top: 0.5rem"><strong>Optimization:</strong> Cache reasoning results for 15 min (same ticker+expiry). Most users view the same top picks within minutes of each other. Effective cost with caching: ~$0.005/request.</p>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <h2>7. Latency Budget</h2>
+
+    <table>
+      <thead>
+        <tr><th>Step</th><th>Current</th><th>Proposed</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Fetch market data (parallel)</td><td>600-800ms</td><td>600-800ms</td><td>No change</td></tr>
+        <tr><td>Deterministic engine</td><td>30ms</td><td>30ms</td><td>No change</td></tr>
+        <tr><td>LLM explain (sequential)</td><td>3s (claude-sonnet)</td><td>—</td><td>Replaced by parallel reasoning</td></tr>
+        <tr style="background: rgba(108, 140, 255, 0.05)"><td><strong>6x Reasoning (parallel)</strong></td><td>—</td><td><strong>2.5-3s</strong></td><td>All 6 calls fire simultaneously</td></tr>
+        <tr style="background: rgba(74, 222, 128, 0.05)"><td>Fast explain (qwen-plus)</td><td>—</td><td><strong>1.1s</strong></td><td>After reasoning completes</td></tr>
+        <tr style="font-weight: 700"><td><strong>Total wall-clock</strong></td><td><strong>4.5s</strong></td><td><strong>4.5-5s</strong></td><td>Same latency, 10x more depth</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <div class="callout-title">Key Insight: Parallel Reasoning = Free Depth</div>
+      <p>Because all 6 reasoning calls fire in parallel (Promise.all), the wall-clock time is the slowest single call (~3s), not the sum. You get 6x more analysis for the cost of 1 sequential call. The fast explanation (qwen-plus, 1.1s) runs after reasoning completes and can reference their findings.</p>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <h2>8. Reasoning Prompts — Detailed Design</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-reasoning">Core</span>
+        <strong>Thesis Generation Prompt</strong>
+      </div>
+      <pre><code>SYSTEM:
+You are a senior options strategist at a systematic hedge fund. Your job is to
+construct a conviction-scored thesis for why a specific trade will profit.
+
+Think step by step:
+1. Identify the PRIMARY driver (is this a volatility trade, directional trade, or income trade?)
+2. Identify the STRUCTURAL edge (what gives this trade positive expected value?)
+3. Assess TIME HORIZON alignment (does the catalyst timeline match DTE?)
+4. Score conviction 1-10 with explicit reasoning for each point
+
+Be brutally honest. If conviction is below 5, say so clearly.
+Do NOT rubber-stamp the engine's decision — challenge it.
+
+USER:
+Engine selected: {strategy} ({direction}, score {score}/100)
+Ticker: {symbol} at ${spot}
+DTE: {dte} days, Expiry: {expiry}
+
+TECHNICALS:
+- Trend: {trendState} (score {trendScore}/1.0, strength: {strength})
+- RSI(14): {rsi} | ADX(14): {adx}
+- Bollinger Width: {bbWidth}% | Vol Regime: {volRegime}
+- Price vs SMAs: {smaSummary}
+
+GAMMA STRUCTURE:
+- Put Wall: ${putWall} | Call Wall: ${callWall}
+- Band Width: {bandWidth}% | Confidence: {confidence}%
+- Condor Gate: {condorAllowed}
+
+IV ENVIRONMENT:
+- ATM IV: {atmIv}% | Realized Vol 30d: {rv30}%
+- IV/RV Ratio: {ivRvRatio} | IV Rank: {ivRank}
+
+RESPOND IN JSON:
+{
+  "primaryDriver": "volatility_selling" | "directional" | "income" | "mean_reversion",
+  "structuralEdge": "string — what gives this positive EV",
+  "catalyst": "string — what will make money flow your way",
+  "timeHorizonMatch": true/false,
+  "timeHorizonReasoning": "string",
+  "conviction": 1-10,
+  "convictionReasoning": "string — step by step why this number",
+  "bearCase": "string — what's the strongest argument AGAINST this trade",
+  "thesis": "string — 2-3 sentence thesis statement"
+}</code></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-reasoning">Core</span>
+        <strong>Risk Assessment Prompt</strong>
+      </div>
+      <pre><code>SYSTEM:
+You are the risk manager at a systematic options fund. Your job is to identify
+everything that could go wrong with a proposed trade. You are the devil's advocate.
+
+Think through:
+1. MARKET RISK: What spot price move kills this trade? How likely is that move?
+2. VOLATILITY RISK: What IV change hurts most? (crush for long vega, spike for short vega)
+3. TIME RISK: What if nothing happens and theta decays differently than expected?
+4. EVENT RISK: Earnings, dividends, Fed, sector news within DTE window
+5. LIQUIDITY RISK: Can you exit cleanly if wrong? Wide bid/ask = trapped
+
+For each scenario, estimate:
+- Probability (be realistic, not alarmist)
+- P&L impact (% of max loss)
+- Hedge or mitigation available
+
+USER:
+Position: {strategy} on {symbol}
+Legs: {legsDetail}
+Net Credit: ${netCredit} | Max Loss: ${maxLoss}
+Net Greeks: delta={netDelta}, gamma={netGamma}, theta={netTheta}, vega={netVega}
+DTE: {dte} days
+
+Spot: ${spot} | ATM IV: {atmIv}% | ADX: {adx}
+Put Wall: ${putWall} | Call Wall: ${callWall}
+Earnings in: {earningsDays} days | Ex-Div: {exDivDays} days
+
+RESPOND IN JSON:
+{
+  "scenarios": [
+    {
+      "name": "string",
+      "type": "market" | "volatility" | "time" | "event" | "liquidity",
+      "probability": 0.0-1.0,
+      "trigger": "string — what causes this",
+      "pnlImpact": "string — e.g. '-80% of max loss'",
+      "mitigation": "string — what you can do about it"
+    }
+  ],
+  "maxPainScenario": "string — the single worst realistic outcome",
+  "overallRiskGrade": "LOW" | "MODERATE" | "HIGH" | "EXTREME",
+  "riskRewardVerdict": "string — is the reward worth the risk?",
+  "killSwitch": "string — the ONE condition that means 'exit immediately'"
+}</code></pre>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-reasoning">Core</span>
+        <strong>Exit Strategy Prompt</strong>
+      </div>
+      <pre><code>SYSTEM:
+You are a trade management specialist. You must produce a clear, actionable exit
+plan that a retail trader can follow without hesitation.
+
+Rules:
+- Every trade needs a profit target, stop loss, and time exit
+- Be specific with numbers (close at 50% of max profit, not "take profit early")
+- Consider theta acceleration (last 2 weeks decay fastest)
+- Account for gamma risk expansion as strikes approach spot
+
+USER:
+Position: {strategy} on {symbol} | DTE: {dte}
+Legs: {legsDetail}
+Net Credit: ${netCredit} | Max Profit: ${maxProfit} | Max Loss: ${maxLoss}
+Net Theta: ${netTheta}/day (at current spot)
+Put Wall: ${putWall} | Call Wall: ${callWall}
+
+Current P&L zones:
+- Full profit zone: ${lowerBE} to ${upperBE}
+- Partial profit zone: extending ${buffer}% beyond breakevens
+- Loss zone: beyond breakevens
+
+RESPOND IN JSON:
+{
+  "profitTarget": {
+    "percentage": number,  // e.g. 50 means "close at 50% of max profit"
+    "reasoning": "string",
+    "typicalDaysToHit": number
+  },
+  "stopLoss": {
+    "percentage": number,  // e.g. 200 means "close if loss reaches 2x credit received"
+    "spotTrigger": number | null,  // spot price that triggers exit
+    "reasoning": "string"
+  },
+  "timeExit": {
+    "daysBeforeExpiry": number,  // e.g. 7 means "close with 7 DTE remaining"
+    "reasoning": "string"
+  },
+  "adjustments": [
+    {
+      "trigger": "string — when this happens",
+      "action": "string — do this",
+      "newRisk": "string — how risk profile changes"
+    }
+  ],
+  "rollingStrategy": {
+    "shouldRoll": boolean,
+    "trigger": "string",
+    "targetExpiry": "string — how far out to roll"
+  },
+  "summary": "string — 1 sentence management rule"
+}</code></pre>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <h2>9. Implementation — File Changes</h2>
+
+    <table>
+      <thead>
+        <tr><th>File</th><th>Change</th><th>Effort</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>api/src/llm/router.ts</code></td>
+          <td>Add <code>qwen-plus</code> and <code>qwen3-max</code> to ModelTier + pricing + routing</td>
+          <td>Small</td>
+        </tr>
+        <tr>
+          <td><code>api/src/llm/model-assignments.ts</code></td>
+          <td>Add 6 new reasoning assignments + update existing to qwen-plus</td>
+          <td>Small</td>
+        </tr>
+        <tr>
+          <td><code>api/src/agents/reasoner.ts</code></td>
+          <td><strong>NEW FILE</strong> — ReasoningEngine class with 6 parallel reasoning methods</td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td><code>api/src/routes/ai-reasoning.ts</code></td>
+          <td><strong>NEW FILE</strong> — POST /api/reasoning/analyze endpoint</td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td><code>api/src/routes/ai.ts</code></td>
+          <td>Wire reasoning into /api/recommend flow (call after engine, before explain)</td>
+          <td>Small</td>
+        </tr>
+        <tr>
+          <td><code>api/src/agents/advisor.ts</code></td>
+          <td>Accept reasoningContext in explain() — reference thesis/risk in explanation</td>
+          <td>Small</td>
+        </tr>
+        <tr>
+          <td><code>api/src/types.ts</code></td>
+          <td>Add ReasoningAnalysis interface + sub-types</td>
+          <td>Small</td>
+        </tr>
+        <tr>
+          <td><code>api/src/app.ts</code></td>
+          <td>Register new /api/reasoning routes</td>
+          <td>Trivial</td>
+        </tr>
+        <tr>
+          <td><code>web/src/trading/pages/DiscoverPageNew.jsx</code></td>
+          <td>Display reasoning cards (thesis, risk, exit) in pick detail view</td>
+          <td>Medium</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <h2>10. Implementation Phases</h2>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <span class="phase-label">Phase 1 — Model Swap (1 day)</span>
+        <h3>Switch fast tasks to qwen-plus</h3>
+        <ul>
+          <li>Add <code>qwen-plus</code> to LLM router (ModelTier, pricing, callQwen routing)</li>
+          <li>Update model-assignments: ai-read, recommend, picks-narrative, ai-strikes → qwen-plus</li>
+          <li>Deploy and verify latency improvement (should drop from 3s to 1.1s on those routes)</li>
+          <li>No user-facing change — same responses, just faster</li>
+        </ul>
+      </div>
+
+      <div class="timeline-item">
+        <span class="phase-label">Phase 2 — Reasoning Engine (3-4 days)</span>
+        <h3>Build the 6 parallel reasoning tasks</h3>
+        <ul>
+          <li>Add <code>qwen3-max</code> to LLM router</li>
+          <li>Create <code>api/src/agents/reasoner.ts</code> with ReasoningEngine class</li>
+          <li>Implement 6 reasoning methods with prompts from Section 8</li>
+          <li>Create <code>api/src/routes/ai-reasoning.ts</code> (POST /api/reasoning/analyze)</li>
+          <li>Add 15-min cache layer (same ticker+expiry = cached reasoning)</li>
+          <li>Test locally with 5 tickers, validate output quality</li>
+        </ul>
+      </div>
+
+      <div class="timeline-item">
+        <span class="phase-label">Phase 3 — Integration (2 days)</span>
+        <h3>Wire reasoning into Discover flow</h3>
+        <ul>
+          <li>Modify /api/recommend to optionally call reasoning layer (flag: <code>deep=true</code>)</li>
+          <li>Pass reasoning context to StrategyAdvisor.explain()</li>
+          <li>Return reasoning results in API response alongside existing fields</li>
+          <li>Update Discover UI with reasoning cards (thesis, risk, exit panels)</li>
+        </ul>
+      </div>
+
+      <div class="timeline-item">
+        <span class="phase-label">Phase 4 — Conviction Gate (1 day)</span>
+        <h3>Use reasoning to filter weak picks</h3>
+        <ul>
+          <li>If thesis conviction < 5, flag pick as "low conviction" in UI</li>
+          <li>If risk grade = EXTREME, add warning banner</li>
+          <li>If regime alignment < 0.3, show "macro headwinds" indicator</li>
+          <li>Optional: auto-suppress picks below conviction threshold from "Top Picks"</li>
+        </ul>
+      </div>
+
+      <div class="timeline-item">
+        <span class="phase-label">Phase 5 — Outcome Feedback Loop (future)</span>
+        <h3>Use real P&L to validate reasoning quality</h3>
+        <ul>
+          <li>Store thesis conviction + risk grade alongside recommendation_log</li>
+          <li>After expiry: correlate conviction score with actual win/loss</li>
+          <li>Nightly batch (qwen3.7-max): analyze where reasoning was wrong</li>
+          <li>Adjust prompt instructions based on systematic biases</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <h2>11. Quality Gates — How to Know It's Working</h2>
+
+    <table>
+      <thead>
+        <tr><th>Metric</th><th>Current</th><th>Target</th><th>How to Measure</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Conviction score correlation with win rate</td>
+          <td>N/A (no conviction)</td>
+          <td>r > 0.3</td>
+          <td>After 50+ picks with outcomes: regress conviction vs actual P&L</td>
+        </tr>
+        <tr>
+          <td>Risk scenario accuracy</td>
+          <td>N/A</td>
+          <td>70%+ of losses predicted by a named scenario</td>
+          <td>Post-mortem: was the loss mode one of the 3 identified scenarios?</td>
+        </tr>
+        <tr>
+          <td>Exit rule effectiveness</td>
+          <td>N/A (no exit rules)</td>
+          <td>Following exit rules improves P&L vs hold-to-expiry</td>
+          <td>Backtest: simulated early exit vs actual expiry outcomes</td>
+        </tr>
+        <tr>
+          <td>Regime alignment accuracy</td>
+          <td>N/A</td>
+          <td>High-alignment picks outperform low-alignment</td>
+          <td>Split picks by regime score quartile, compare win rates</td>
+        </tr>
+        <tr>
+          <td>Latency (P95)</td>
+          <td>4.5s</td>
+          <td>&lt; 5.5s</td>
+          <td>API response time logging</td>
+        </tr>
+        <tr>
+          <td>Cost per request</td>
+          <td>$0.013</td>
+          <td>&lt; $0.020</td>
+          <td>Token usage tracking (already built)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <h2>12. Discover UI — What the User Sees</h2>
+
+    <div class="card">
+      <h3>Before (Current)</h3>
+      <div style="background: var(--surface2); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; font-family: monospace; font-size: 0.8rem;">
+        <div style="color: var(--green); font-weight: bold; margin-bottom: 0.5rem;">NVDA — Iron Condor (Neutral)</div>
+        <div style="color: var(--muted);">Score: 78/100 | Band: 8.3% | Confidence: 65%</div>
+        <div style="color: var(--muted); margin-top: 0.5rem;">"NVDA shows neutral momentum with moderate IV, gamma walls contain price action within 8% band. Iron condor setup is favorable."</div>
+        <div style="color: var(--muted); margin-top: 0.5rem; font-size: 0.7rem;">— That's it. No thesis, no risk, no exit plan.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>After (With Reasoning Layer)</h3>
+      <div style="background: var(--surface2); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; font-family: monospace; font-size: 0.8rem;">
+        <div style="color: var(--green); font-weight: bold; margin-bottom: 0.5rem;">NVDA — Iron Condor (Neutral) | Conviction: 7/10 | Grade: B+</div>
+        <div style="color: var(--muted);">Score: 78/100 | Band: 8.3% | Confidence: 65% | Regime: Aligned</div>
+
+        <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(108, 140, 255, 0.08); border-left: 3px solid var(--accent); border-radius: 4px;">
+          <div style="color: var(--accent); font-weight: bold; font-size: 0.75rem;">THESIS</div>
+          <div style="color: var(--text); margin-top: 0.25rem;">Volatility selling trade. Post-earnings IV crush + strong gamma walls create structural edge. OI concentration at $850P/$950C pins price for next 18 days. IV/RV ratio 1.3 = overpriced options = sell premium.</div>
+          <div style="color: var(--muted); margin-top: 0.25rem; font-size: 0.7rem;">Catalyst: IV mean-reversion + theta decay acceleration at 21 DTE</div>
+        </div>
+
+        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(248, 113, 113, 0.08); border-left: 3px solid var(--red); border-radius: 4px;">
+          <div style="color: var(--red); font-weight: bold; font-size: 0.75rem;">RISK (Moderate)</div>
+          <div style="color: var(--text); margin-top: 0.25rem;">
+            1. Sector rotation out of tech (25% prob, -60% impact)<br>
+            2. Surprise guidance revision (10% prob, max loss)<br>
+            3. VIX spike >25 expands IV beyond walls (15% prob, -40% impact)
+          </div>
+          <div style="color: var(--red); margin-top: 0.25rem; font-size: 0.7rem;">Kill switch: Close immediately if spot breaks $840 (below put wall - 1%)</div>
+        </div>
+
+        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(74, 222, 128, 0.08); border-left: 3px solid var(--green); border-radius: 4px;">
+          <div style="color: var(--green); font-weight: bold; font-size: 0.75rem;">EXIT PLAN</div>
+          <div style="color: var(--text); margin-top: 0.25rem;">
+            Take profit: Close at 50% of max credit ($1.85 collected → close at $0.93 debit)<br>
+            Stop loss: Close if loss reaches 2x credit ($3.70 debit)<br>
+            Time exit: Close with 7 DTE regardless of P&L<br>
+            Adjust: If short put tested, roll down $10 and out 1 week
+          </div>
+        </div>
+
+        <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(251, 191, 36, 0.08); border-left: 3px solid var(--yellow); border-radius: 4px;">
+          <div style="color: var(--yellow); font-weight: bold; font-size: 0.75rem;">SIZING ($25K account)</div>
+          <div style="color: var(--text); margin-top: 0.25rem;">
+            2 contracts | Max risk: $740 (3% of account) | Potential profit: $370
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <h2>13. Router Changes — Technical Spec</h2>
+
+    <div class="card">
+      <h3>LLM Router Updates (router.ts)</h3>
+      <pre><code>// Add to ModelTier type
+export type ModelTier = 'claude-sonnet' | 'claude-haiku' | 'gpt-4' | 'grok' |
+  'deepseek' | 'deepseek-r1' | 'qwen-max' | 'qwen-plus' | 'qwen3-max' |
+  'gemini-pro' | 'gemini-flash';
+
+// Add to PRICING
+'qwen-plus':   { input: 0.80, output: 3.20 },   // Cheapest Qwen, fastest
+'qwen3-max':   { input: 2.00, output: 8.00 },   // Reasoning model (estimate)
+
+// Add to call() switch
+case 'qwen-plus':   result = await this.callQwen('qwen-plus', model, opts); break;
+case 'qwen3-max':   result = await this.callQwen('qwen3-max', model, opts); break;</code></pre>
+    </div>
+
+    <div class="card">
+      <h3>ReasoningEngine Class (agents/reasoner.ts)</h3>
+      <pre><code>import { LLMRouter } from '../llm/router.js';
+import { getModel } from '../llm/model-assignments.js';
+
+export interface ReasoningAnalysis {
+  thesis: ThesisResult;
+  risk: RiskResult;
+  scenarios: ScenarioResult;
+  exit: ExitResult;
+  regime: RegimeResult;
+  sizing: SizingResult;
+  meta: {
+    totalConviction: number;      // 1-10, weighted
+    overallGrade: string;         // A/B/C/D
+    shouldPublish: boolean;       // conviction > 6 AND regime > 0.5
+    totalCostUsd: number;
+    wallClockMs: number;
+  };
+}
+
+export class ReasoningEngine {
+  private router: LLMRouter;
+
+  constructor(router: LLMRouter) {
+    this.router = router;
+  }
+
+  async analyze(data: ReasoningInput): Promise&lt;ReasoningAnalysis&gt; {
+    const t0 = Date.now();
+    const model = getModel('reasoning-thesis'); // qwen3-max
+
+    // All 6 reasoning calls in parallel
+    const [thesis, risk, scenarios, exit, regime, sizing] = await Promise.all([
+      this.reasonThesis(model, data),
+      this.reasonRisk(model, data),
+      this.reasonScenarios(model, data),
+      this.reasonExit(model, data),
+      this.reasonRegime(model, data),
+      this.reasonSizing(model, data),
+    ]);
+
+    // Compute meta scores
+    const totalConviction = this.computeConviction(thesis, regime);
+    const overallGrade = this.computeGrade(totalConviction, risk);
+
+    return {
+      thesis, risk, scenarios, exit, regime, sizing,
+      meta: {
+        totalConviction,
+        overallGrade,
+        shouldPublish: totalConviction > 6 && regime.alignmentScore > 0.5,
+        totalCostUsd: this.router.getUsage().totalCost,
+        wallClockMs: Date.now() - t0,
+      }
+    };
+  }
+}</code></pre>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <h2>14. Trading Scenarios — What Analysis Each Needs</h2>
+
+    <p style="margin-bottom: 1.5rem;">Every recommendation lands in one of these market scenarios. Each scenario demands different reasoning depth and analysis type. This is the complete decision matrix for model assignment.</p>
+
+    <!-- ─── Scenario 1: High IV Premium Selling ─── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-reasoning">Reasoning</span>
+        <strong>Scenario 1: High IV — Premium Selling Opportunity</strong>
+      </div>
+      <table>
+        <tr><th style="width:150px">Trigger</th><td>IV Rank > 50% | ATM IV > 35% | IV/RV ratio > 1.2</td></tr>
+        <tr><th>Strategies</th><td>Iron Condor, Iron Butterfly, Short Strangle, Credit Spreads</td></tr>
+        <tr><th>Example</th><td>NVDA IV rank 72, ATM IV 48%, after sector sell-off. Premiums inflated.</td></tr>
+      </table>
+      <h3 style="margin-top: 1rem; font-size: 0.95rem;">Analysis Required:</h3>
+      <table>
+        <thead><tr><th>Analysis Task</th><th>Model Tier</th><th>Why Needed</th><th>Key Question</th></tr></thead>
+        <tbody>
+          <tr><td>IV Mean-Reversion Timing</td><td><span class="tag tag-model">qwen3-max</span></td><td>Need to reason whether IV will actually crush or if it's structurally elevated</td><td>"Is this IV spike temporary (event-driven) or structural (regime change)?"</td></tr>
+          <tr><td>IV Term Structure Analysis</td><td><span class="tag tag-model">qwen3-max</span></td><td>Compare front-month vs back-month IV — is the skew normal or inverted?</td><td>"Is front-month IV inflated relative to back months? Calendar opportunity?"</td></tr>
+          <tr><td>Historical IV Percentile Context</td><td><span class="tag tag-model">qwen-plus</span></td><td>Simple lookup — where is current IV vs 1-year range</td><td>"What percentile is current IV at?"</td></tr>
+          <tr><td>Strike Width Optimization</td><td><span class="tag tag-model">qwen3-max</span></td><td>Wider strikes = more credit but less probability. Requires trade-off reasoning</td><td>"Given this IV level, what's the optimal wing width for 70% PoP?"</td></tr>
+          <tr><td>Vega Risk Quantification</td><td><span class="tag tag-model">qwen3-max</span></td><td>If IV expands further, what's the P&L impact? Multi-step Greeks math</td><td>"If IV jumps another 10 points, how much do I lose before theta saves me?"</td></tr>
+          <tr><td>Catalyst Calendar Check</td><td><span class="tag tag-model">qwen-plus</span></td><td>Verify no earnings/Fed within DTE that could spike IV further</td><td>"What event caused this IV spike and is another one coming?"</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 1rem; padding: 0.75rem; background: var(--surface2); border-radius: 6px; font-size: 0.8rem;">
+        <strong style="color: var(--accent);">Hedge Fund Edge:</strong> <span style="color: var(--muted);">A hedge fund would compare current IV to historical distribution, check if the IV spike is driven by realized moves (justified) or fear (opportunity), and size the trade based on expected IV mean-reversion timeline vs theta decay rate.</span>
+      </div>
+    </div>
+
+    <!-- ─── Scenario 2: Low IV — Cheap Options ─── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-reasoning">Reasoning</span>
+        <strong>Scenario 2: Low IV — Buying Cheap Volatility</strong>
+      </div>
+      <table>
+        <tr><th style="width:150px">Trigger</th><td>IV Rank < 20% | ATM IV < 20% | IV/RV ratio < 0.8 | Vol squeeze detected</td></tr>
+        <tr><th>Strategies</th><td>Calendar Spread, Diagonal Spread, Long Straddle, Debit Spreads</td></tr>
+        <tr><th>Example</th><td>MSFT in tight consolidation, BB width at 6-month low, IV crushed to 18%. Coiled spring.</td></tr>
+      </table>
+      <h3 style="margin-top: 1rem; font-size: 0.95rem;">Analysis Required:</h3>
+      <table>
+        <thead><tr><th>Analysis Task</th><th>Model Tier</th><th>Why Needed</th><th>Key Question</th></tr></thead>
+        <tbody>
+          <tr><td>Volatility Expansion Catalyst</td><td><span class="tag tag-model">qwen3-max</span></td><td>Need to identify WHAT will cause vol to expand — without a catalyst, cheap vol stays cheap</td><td>"What's the trigger that breaks this stock out of consolidation?"</td></tr>
+          <tr><td>Historical Squeeze Duration</td><td><span class="tag tag-model">qwen3-max</span></td><td>How long do squeezes typically last for this ticker? DTE must match</td><td>"Does DTE give enough time for vol expansion to occur?"</td></tr>
+          <tr><td>Direction Bias Assessment</td><td><span class="tag tag-model">qwen3-max</span></td><td>If buying vol, should you be directional or neutral? Requires weighing multiple signals</td><td>"When this breaks, which direction is more likely and why?"</td></tr>
+          <tr><td>Theta Bleed Budget</td><td><span class="tag tag-model">qwen-plus</span></td><td>How much time decay do you eat while waiting? Simple math</td><td>"At current theta, how many days can I hold before losing 30% of premium?"</td></tr>
+          <tr><td>Vega Leverage Calculation</td><td><span class="tag tag-model">qwen-plus</span></td><td>If IV expands by X points, what's the vega-driven profit?</td><td>"How many IV points of expansion do I need to break even after theta?"</td></tr>
+          <tr><td>Alternative Structure Comparison</td><td><span class="tag tag-model">qwen3-max</span></td><td>Calendar vs diagonal vs straddle — which maximizes vega exposure with least theta bleed?</td><td>"Which structure gives best vega/theta ratio for this setup?"</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 1rem; padding: 0.75rem; background: var(--surface2); border-radius: 6px; font-size: 0.8rem;">
+        <strong style="color: var(--accent);">Hedge Fund Edge:</strong> <span style="color: var(--muted);">Buying cheap vol without a catalyst is a classic retail trap. The reasoning model must identify whether there's an information asymmetry (upcoming event market isn't pricing) or a structural trigger (BB squeeze about to fire). Without this, the thesis is "vol is cheap" which isn't a trade.</span>
+      </div>
+    </div>
+
+    <!-- ─── Scenario 3: Strong Trend ─── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-reasoning">Reasoning</span>
+        <strong>Scenario 3: Strong Directional Trend</strong>
+      </div>
+      <table>
+        <tr><th style="width:150px">Trigger</th><td>ADX > 30 | Trend score > 0.65 or < 0.35 | Price above/below all SMAs | Strong momentum</td></tr>
+        <tr><th>Strategies</th><td>Bull Put Spread, Bear Call Spread, Diagonal (directional), Broken Wing Butterfly</td></tr>
+        <tr><th>Example</th><td>META ADX 38, RSI 68, price above SMA 20/50/100/200. Strong bullish trend.</td></tr>
+      </table>
+      <h3 style="margin-top: 1rem; font-size: 0.95rem;">Analysis Required:</h3>
+      <table>
+        <thead><tr><th>Analysis Task</th><th>Model Tier</th><th>Why Needed</th><th>Key Question</th></tr></thead>
+        <tbody>
+          <tr><td>Trend Exhaustion Detection</td><td><span class="tag tag-model">qwen3-max</span></td><td>Is the trend mature (about to reverse) or young (more room to run)?</td><td>"How extended is this trend? RSI 68 — is it overbought or just strong?"</td></tr>
+          <tr><td>Support/Resistance Mapping</td><td><span class="tag tag-model">qwen3-max</span></td><td>Where will the trend pause or reverse? Strike placement depends on this</td><td>"Where are the nearest support levels if this pulls back?"</td></tr>
+          <tr><td>Sector Confirmation</td><td><span class="tag tag-model">qwen3-max</span></td><td>Is the sector also trending or is this stock diverging? Divergence = risk</td><td>"Is the sector ETF confirming this move or is this a single-name story?"</td></tr>
+          <tr><td>Gamma Wall Alignment</td><td><span class="tag tag-model">qwen-plus</span></td><td>Are gamma walls supporting or opposing the trend direction?</td><td>"Does call wall act as magnet or ceiling? Is put wall supporting?"</td></tr>
+          <tr><td>Directional Strike Selection</td><td><span class="tag tag-model">qwen3-max</span></td><td>Where to sell short strike — below gamma wall? At SMA50? Needs multi-factor reasoning</td><td>"What's the safest short strike that still gives attractive premium?"</td></tr>
+          <tr><td>Trend Reversal Kill Switch</td><td><span class="tag tag-model">qwen3-max</span></td><td>Define specific exit trigger if trend breaks</td><td>"At what price/indicator level is the trend thesis invalidated?"</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 1rem; padding: 0.75rem; background: var(--surface2); border-radius: 6px; font-size: 0.8rem;">
+        <strong style="color: var(--accent);">Hedge Fund Edge:</strong> <span style="color: var(--muted);">Retail sells puts in a trend without asking "how old is this trend?" A 3-week trend with ADX 35 is different from a 6-month trend with ADX 35. The latter has higher mean-reversion risk. Reasoning model must assess trend age, acceleration, and exhaustion signals (RSI divergence, volume decline).</span>
+      </div>
+    </div>
+
+    <!-- ─── Scenario 4: Range-Bound / Neutral ─── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-fast">Mixed</span>
+        <strong>Scenario 4: Range-Bound Consolidation</strong>
+      </div>
+      <table>
+        <tr><th style="width:150px">Trigger</th><td>ADX < 20 | Neutral trend | Tight gamma band (3-12%) | BB squeeze | Sideways 2+ weeks</td></tr>
+        <tr><th>Strategies</th><td>Iron Condor (primary), Iron Butterfly, Short Strangle</td></tr>
+        <tr><th>Example</th><td>AAPL ADX 18, RSI 52, pinned between $188 put wall and $198 call wall. Classic condor setup.</td></tr>
+      </table>
+      <h3 style="margin-top: 1rem; font-size: 0.95rem;">Analysis Required:</h3>
+      <table>
+        <thead><tr><th>Analysis Task</th><th>Model Tier</th><th>Why Needed</th><th>Key Question</th></tr></thead>
+        <tbody>
+          <tr><td>Range Persistence Probability</td><td><span class="tag tag-model">qwen3-max</span></td><td>Will the range HOLD for the DTE period? This is the core thesis bet</td><td>"What's the probability that spot stays between walls for N more days?"</td></tr>
+          <tr><td>Breakout Direction Bias</td><td><span class="tag tag-model">qwen3-max</span></td><td>If range breaks, which direction? Determines BWB vs IC vs directional adjustment</td><td>"If this consolidation resolves, up or down? What drives it?"</td></tr>
+          <tr><td>Gamma Wall Strength Assessment</td><td><span class="tag tag-model">qwen3-max</span></td><td>Are walls strong enough to contain? High OI + dealer hedging = stronger</td><td>"How much OI is at each wall? Is it enough to pin price?"</td></tr>
+          <tr><td>Optimal DTE Selection</td><td><span class="tag tag-model">qwen-plus</span></td><td>Shorter DTE = faster theta but less margin for error</td><td>"21 DTE vs 35 DTE — which gives better risk-adjusted return?"</td></tr>
+          <tr><td>Wing Width Optimization</td><td><span class="tag tag-model">qwen3-max</span></td><td>Tighter wings = more credit, less PoP. Balance premium collected vs safety</td><td>"Given this band width, should wings be at the walls or beyond?"</td></tr>
+          <tr><td>Event Scan Within Range</td><td><span class="tag tag-model">qwen-plus</span></td><td>Any catalyst that could break the range before expiry?</td><td>"Are there earnings, Fed, or sector events in the DTE window?"</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 1rem; padding: 0.75rem; background: var(--surface2); border-radius: 6px; font-size: 0.8rem;">
+        <strong style="color: var(--accent);">Hedge Fund Edge:</strong> <span style="color: var(--muted);">The key question isn't "is it ranging?" (the engine already determined that) but "will the range PERSIST for the trade duration?" This requires reasoning about upcoming catalysts, whether consolidation is accumulation (bullish breakout) vs distribution (bearish breakdown), and the rate of theta decay vs probability of breach.</span>
+      </div>
+    </div>
+
+    <!-- ─── Scenario 5: Pre-Earnings ─── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-deep">Deep Reasoning</span>
+        <strong>Scenario 5: Pre-Earnings (Event-Driven)</strong>
+      </div>
+      <table>
+        <tr><th style="width:150px">Trigger</th><td>Earnings within DTE window | IV skew elevated in expiry week | Unusual options activity</td></tr>
+        <tr><th>Strategies</th><td>Iron Condor (post-earnings expiry), Calendar Spread (sell pre-earnings, buy post), BWB</td></tr>
+        <tr><th>Example</th><td>AMZN earnings in 8 days, IV rank jumped to 85%, expected move $12 (±6%). Sell the event.</td></tr>
+      </table>
+      <h3 style="margin-top: 1rem; font-size: 0.95rem;">Analysis Required:</h3>
+      <table>
+        <thead><tr><th>Analysis Task</th><th>Model Tier</th><th>Why Needed</th><th>Key Question</th></tr></thead>
+        <tbody>
+          <tr><td>Expected Move vs Historical Move</td><td><span class="tag tag-model">qwen3-max</span></td><td>Is options market overpricing or underpricing the earnings move? Core edge.</td><td>"Market implies $12 move. Last 8 earnings averaged $8. Is there alpha in selling?"</td></tr>
+          <tr><td>Earnings Surprise Direction Prediction</td><td><span class="tag tag-model">qwen3-max</span></td><td>Based on sector trends, guidance, analyst revisions — lean on direction</td><td>"Given recent sector data and guidance, is a beat or miss more likely?"</td></tr>
+          <tr><td>IV Crush Magnitude Estimation</td><td><span class="tag tag-model">qwen3-max</span></td><td>How much IV will collapse after earnings? Directly impacts profit.</td><td>"Front-month IV is 65%, back-month 35%. How much crush to expect?"</td></tr>
+          <tr><td>Post-Earnings Gap Risk</td><td><span class="tag tag-model">qwen3-max</span></td><td>Can the stock gap through your short strikes overnight? Binary event risk.</td><td>"What's the probability of a gap beyond my breakevens?"</td></tr>
+          <tr><td>Optimal Expiry Selection</td><td><span class="tag tag-model">qwen3-max</span></td><td>Sell the earnings-week expiry (max crush) or next-week (more cushion)?</td><td>"Same-week expiry captures more crush but no time to recover if wrong."</td></tr>
+          <tr><td>Hedge Structure</td><td><span class="tag tag-model">qwen3-max</span></td><td>Should you buy a cheap far-OTM put/call as tail hedge? Cost-benefit analysis</td><td>"Does paying $0.15 for a far-OTM wing improve risk/reward enough?"</td></tr>
+          <tr><td>Historical Earnings Pattern Analysis</td><td><span class="tag tag-model">qwen3-max</span></td><td>Does this stock tend to gap and fade? Gap and run? Mean revert within days?</td><td>"What's AMZN's post-earnings behavior pattern over last 4 quarters?"</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 1rem; padding: 0.75rem; background: var(--surface2); border-radius: 6px; font-size: 0.8rem;">
+        <strong style="color: var(--accent);">Hedge Fund Edge:</strong> <span style="color: var(--muted);">Earnings trades are the HIGHEST reasoning demand. The model must compare implied move vs historical realized move (statistical edge), assess whether "this time is different" (new product launch, macro headwind), and design a structure that profits from IV crush even if direction is wrong. This is where qwen3-max earns its cost — a fast model can't do this multi-dimensional trade-off.</span>
+      </div>
+    </div>
+
+    <!-- ─── Scenario 6: Post-Earnings IV Crush ─── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-reasoning">Reasoning</span>
+        <strong>Scenario 6: Post-Earnings — IV Crush Already Happened</strong>
+      </div>
+      <table>
+        <tr><th style="width:150px">Trigger</th><td>Earnings just passed (< 5 days) | IV collapsed 30%+ | New gamma walls forming post-move</td></tr>
+        <tr><th>Strategies</th><td>Iron Condor (new range), Directional Spread (with momentum), Calendar (cheap back-month)</td></tr>
+        <tr><th>Example</th><td>GOOGL reported 2 days ago, gapped +4%. IV crushed from 42% to 22%. New range establishing.</td></tr>
+      </table>
+      <h3 style="margin-top: 1rem; font-size: 0.95rem;">Analysis Required:</h3>
+      <table>
+        <thead><tr><th>Analysis Task</th><th>Model Tier</th><th>Why Needed</th><th>Key Question</th></tr></thead>
+        <tbody>
+          <tr><td>Post-Gap Continuation Analysis</td><td><span class="tag tag-model">qwen3-max</span></td><td>Does the gap fill, extend, or consolidate? Determines strategy direction</td><td>"Is this gap-and-go or gap-and-fade?"</td></tr>
+          <tr><td>New Range Definition</td><td><span class="tag tag-model">qwen3-max</span></td><td>Where are new support/resistance forming post-move?</td><td>"Where will new gamma walls form? What's the post-earnings trading range?"</td></tr>
+          <tr><td>IV Floor Assessment</td><td><span class="tag tag-model">qwen-plus</span></td><td>Is IV done crushing or could it go lower?</td><td>"At 22%, is IV at its floor for this stock or can it compress further?"</td></tr>
+          <tr><td>Follow-Through Probability</td><td><span class="tag tag-model">qwen3-max</span></td><td>After a strong earnings move, how often does momentum continue?</td><td>"Given the quality of the earnings beat, will funds rotate in or take profit?"</td></tr>
+          <tr><td>Timing (Wait vs Enter Now)</td><td><span class="tag tag-model">qwen3-max</span></td><td>Should you wait for new OI to establish or enter immediately?</td><td>"Is it better to wait 2-3 days for new gamma walls to form?"</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ─── Scenario 7: Breakout / Gamma Wall Breach ─── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-deep">Deep Reasoning</span>
+        <strong>Scenario 7: Gamma Wall Breach — Breakout in Progress</strong>
+      </div>
+      <table>
+        <tr><th style="width:150px">Trigger</th><td>Spot crosses above call wall or below put wall | Band breach detected | Momentum accelerating</td></tr>
+        <tr><th>Strategies</th><td>Directional Spread (ride breakout), BWB (fade breakout), Diagonal (direction + time)</td></tr>
+        <tr><th>Example</th><td>TSLA broke above $280 call wall with volume. Gamma squeeze potential as dealers delta-hedge.</td></tr>
+      </table>
+      <h3 style="margin-top: 1rem; font-size: 0.95rem;">Analysis Required:</h3>
+      <table>
+        <thead><tr><th>Analysis Task</th><th>Model Tier</th><th>Why Needed</th><th>Key Question</th></tr></thead>
+        <tbody>
+          <tr><td>Breakout Legitimacy</td><td><span class="tag tag-model">qwen3-max</span></td><td>Is this a real breakout (volume + catalyst) or a false breakout (low volume, mean-reverts)?</td><td>"Is volume confirming? Is there a fundamental catalyst or just positioning?"</td></tr>
+          <tr><td>Gamma Squeeze Assessment</td><td><span class="tag tag-model">qwen3-max</span></td><td>If call wall breached, dealers must buy delta. How much further can this push?</td><td>"How much dealer hedging flow is there? What's the next resistance?"</td></tr>
+          <tr><td>Fade vs Ride Decision</td><td><span class="tag tag-model">qwen3-max</span></td><td>The hardest trade decision: is this the start or the end of the move?</td><td>"Given volume, OI positioning, and momentum — chase or fade?"</td></tr>
+          <tr><td>New Target Identification</td><td><span class="tag tag-model">qwen3-max</span></td><td>Where does the breakout run to? Next OI concentration? Round number? All-time high?</td><td>"What's the measured move target? Where's the next wall?"</td></tr>
+          <tr><td>IV Expansion Impact</td><td><span class="tag tag-model">qwen-plus</span></td><td>Breakouts often spike IV — does that help or hurt your structure?</td><td>"IV jumping from 30% to 45% — how does that affect debit spread value?"</td></tr>
+          <tr><td>Stop Placement</td><td><span class="tag tag-model">qwen3-max</span></td><td>If breakout fails and price re-enters range, where to exit?</td><td>"If price falls back below the broken wall, is the thesis dead?"</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 1rem; padding: 0.75rem; background: var(--surface2); border-radius: 6px; font-size: 0.8rem;">
+        <strong style="color: var(--accent);">Hedge Fund Edge:</strong> <span style="color: var(--muted);">Breakouts are the most dangerous scenario for iron condors. If you're already in a condor and the wall breaks, the reasoning model must decide: "close now and take the loss" vs "hold and hope it reverts." This is EXACTLY where reasoning > fast model — it needs to weigh momentum, volume, catalyst strength, and dealer positioning to make the call.</span>
+      </div>
+    </div>
+
+    <!-- ─── Scenario 8: Macro Shock / VIX Spike ─── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-deep">Deep Reasoning</span>
+        <strong>Scenario 8: Macro Shock — VIX Spike / Market Stress</strong>
+      </div>
+      <table>
+        <tr><th style="width:150px">Trigger</th><td>VIX > 25 | SPY down 2%+ in session | Sector-wide sell-off | Correlation spike (all stocks moving together)</td></tr>
+        <tr><th>Strategies</th><td>Defensive (close risky shorts), Opportunistic (sell elevated premium), Hedges (put spreads)</td></tr>
+        <tr><th>Example</th><td>Fed surprise rate decision, VIX spikes to 28, all tech down 3%. Existing condors under pressure.</td></tr>
+      </table>
+      <h3 style="margin-top: 1rem; font-size: 0.95rem;">Analysis Required:</h3>
+      <table>
+        <thead><tr><th>Analysis Task</th><th>Model Tier</th><th>Why Needed</th><th>Key Question</th></tr></thead>
+        <tbody>
+          <tr><td>Shock Duration Assessment</td><td><span class="tag tag-model">qwen3-max</span></td><td>Is this a 1-day panic (buy the dip) or start of sustained selloff?</td><td>"Is this a one-day VIX spike or a regime change?"</td></tr>
+          <tr><td>Correlation Regime Detection</td><td><span class="tag tag-model">qwen3-max</span></td><td>When everything moves together, diversification fails. Portfolio risk compounds.</td><td>"Are my positions correlated in this sell-off? Total portfolio delta?"</td></tr>
+          <tr><td>Existing Position Triage</td><td><span class="tag tag-model">qwen3-max</span></td><td>Which open positions are most at risk? Priority: close the worst, hold the safe ones</td><td>"Which of my current positions breach breakevens if this continues?"</td></tr>
+          <tr><td>Opportunity in Fear</td><td><span class="tag tag-model">qwen3-max</span></td><td>Panic selling = overpriced puts. Is it time to sell premium into the spike?</td><td>"Is IV high enough to sell premium profitably, or will it go higher?"</td></tr>
+          <tr><td>Hedge Construction</td><td><span class="tag tag-model">qwen3-max</span></td><td>SPY puts? VIX calls? Collar existing positions? Cost-benefit of each</td><td>"What's the cheapest hedge that protects against 5% more downside?"</td></tr>
+          <tr><td>Recovery Playbook</td><td><span class="tag tag-model">qwen3-max</span></td><td>If this is temporary, what to buy on the recovery? What signals recovery?</td><td>"What's the signal that the panic is over? VIX < X? SPY reclaims Y?"</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 1rem; padding: 0.75rem; background: var(--surface2); border-radius: 6px; font-size: 0.8rem;">
+        <strong style="color: var(--accent);">Hedge Fund Edge:</strong> <span style="color: var(--muted);">This is the scenario where the MOST money is made AND lost. A fast model says "VIX is high, sell premium." A reasoning model asks "WHY is VIX high? Is it pricing something real (debt ceiling, liquidity crisis) or reflexive (fear feeding fear)?" The answer determines whether you sell into panic (aggressive) or hedge and wait (defensive).</span>
+      </div>
+    </div>
+
+    <!-- ─── Scenario 9: Mean Reversion / Oversold ─── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-reasoning">Reasoning</span>
+        <strong>Scenario 9: Mean Reversion — Oversold/Overbought Extreme</strong>
+      </div>
+      <table>
+        <tr><th style="width:150px">Trigger</th><td>RSI < 30 or > 70 | Price > 2 ATR from SMA20 | Bollinger Band breach | 3+ consecutive down/up days</td></tr>
+        <tr><th>Strategies</th><td>Bull Put Spread (oversold), Bear Call Spread (overbought), Calendar (low IV after selloff)</td></tr>
+        <tr><th>Example</th><td>AMD RSI 24, down 12% in 5 days on sector rotation. 2.5 ATR below SMA20. Oversold bounce candidate.</td></tr>
+      </table>
+      <h3 style="margin-top: 1rem; font-size: 0.95rem;">Analysis Required:</h3>
+      <table>
+        <thead><tr><th>Analysis Task</th><th>Model Tier</th><th>Why Needed</th><th>Key Question</th></tr></thead>
+        <tbody>
+          <tr><td>Oversold vs Broken Distinction</td><td><span class="tag tag-model">qwen3-max</span></td><td>Is this "oversold" (will bounce) or "broken" (will keep falling)? The most critical question.</td><td>"Is this a pullback in a bull trend or a trend reversal?"</td></tr>
+          <tr><td>Fundamental Support Check</td><td><span class="tag tag-model">qwen3-max</span></td><td>Is the selloff justified by fundamentals (downgrade, missed earnings) or technical?</td><td>"Did something fundamental change or is this just positioning/sentiment?"</td></tr>
+          <tr><td>Historical Mean-Reversion Win Rate</td><td><span class="tag tag-model">qwen3-max</span></td><td>At this RSI/ATR extension level, what's the historical bounce rate?</td><td>"When this stock hits RSI 24, what % of times does it rally 5%+ within 2 weeks?"</td></tr>
+          <tr><td>Catalyst for Bounce</td><td><span class="tag tag-model">qwen3-max</span></td><td>Mean reversion needs a trigger — what will cause buyers to step in?</td><td>"What level or event will attract institutional buying?"</td></tr>
+          <tr><td>Gamma Floor Identification</td><td><span class="tag tag-model">qwen-plus</span></td><td>Where is put OI concentrated? Dealers long puts = they buy stock as hedge = support</td><td>"Is there a put wall below that could provide a floor?"</td></tr>
+          <tr><td>Timing the Entry</td><td><span class="tag tag-model">qwen3-max</span></td><td>Catching a falling knife: enter now or wait for reversal signal?</td><td>"Wait for RSI to turn up, or sell put at support now?"</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 1rem; padding: 0.75rem; background: var(--surface2); border-radius: 6px; font-size: 0.8rem;">
+        <strong style="color: var(--accent);">Hedge Fund Edge:</strong> <span style="color: var(--muted);">"Buy the dip" kills more retail accounts than anything else. The reasoning model must distinguish between a PULLBACK (healthy correction in uptrend, buy the dip works) and a BREAKDOWN (trend reversal, catching a falling knife). This requires multi-timeframe analysis: is the weekly trend still intact even though daily is oversold?</span>
+      </div>
+    </div>
+
+    <!-- ─── Scenario 10: Wide Gamma Band / BWB Territory ─── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-reasoning">Reasoning</span>
+        <strong>Scenario 10: Wide Gamma Band — Butterfly Territory</strong>
+      </div>
+      <table>
+        <tr><th style="width:150px">Trigger</th><td>Band width 15-40% | Condor gate FAILS (too wide) | BWB gate passes | High OI but dispersed</td></tr>
+        <tr><th>Strategies</th><td>Broken Wing Butterfly (primary), Wide Iron Condor, Ratio Spread</td></tr>
+        <tr><th>Example</th><td>NFLX put wall $580, call wall $720 — 24% band width. Too wide for condor. BWB at put wall.</td></tr>
+      </table>
+      <h3 style="margin-top: 1rem; font-size: 0.95rem;">Analysis Required:</h3>
+      <table>
+        <thead><tr><th>Analysis Task</th><th>Model Tier</th><th>Why Needed</th><th>Key Question</th></tr></thead>
+        <tbody>
+          <tr><td>Body Placement Decision</td><td><span class="tag tag-model">qwen3-max</span></td><td>Put BWB body at put wall? Call wall? Or somewhere else? Multi-factor decision.</td><td>"Should the body be at the put wall (support bet) or lower (cheaper entry)?"</td></tr>
+          <tr><td>Asymmetric Wing Ratio</td><td><span class="tag tag-model">qwen3-max</span></td><td>How wide should the broken wing be? More broken = more credit but more risk</td><td>"Given IV level and expected move, what wing ratio maximizes risk-adjusted return?"</td></tr>
+          <tr><td>Direction Lean Assessment</td><td><span class="tag tag-model">qwen3-max</span></td><td>BWB is directional — put BWB profits if stock stays flat/goes up. Is that likely?</td><td>"Is the neutral-to-bullish bias warranted or should I use call BWB instead?"</td></tr>
+          <tr><td>Max Loss Scenario</td><td><span class="tag tag-model">qwen3-max</span></td><td>BWB has asymmetric loss — blow-up is big but rare. Must quantify.</td><td>"If spot crashes through the broken wing, what's my actual dollar loss?"</td></tr>
+          <tr><td>Roll/Adjust Triggers</td><td><span class="tag tag-model">qwen3-max</span></td><td>When spot moves toward the broken wing, when to adjust?</td><td>"At what spot price should I roll the body or close the position?"</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ─── Scenario 11: Dividend / Ex-Date ─── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-fast">Mixed</span>
+        <strong>Scenario 11: Dividend Ex-Date Within DTE</strong>
+      </div>
+      <table>
+        <tr><th style="width:150px">Trigger</th><td>Ex-dividend date within DTE | Deep ITM short calls at risk of assignment | Yield > 1%</td></tr>
+        <tr><th>Strategies</th><td>Adjust existing positions (avoid assignment), Calendar (capture IV around ex-date)</td></tr>
+        <tr><th>Example</th><td>JPM ex-div in 12 days, $1.15 dividend. Short $195 call ITM — assignment risk high.</td></tr>
+      </table>
+      <h3 style="margin-top: 1rem; font-size: 0.95rem;">Analysis Required:</h3>
+      <table>
+        <thead><tr><th>Analysis Task</th><th>Model Tier</th><th>Why Needed</th><th>Key Question</th></tr></thead>
+        <tbody>
+          <tr><td>Early Assignment Probability</td><td><span class="tag tag-model">qwen3-max</span></td><td>Is ITM short call at risk? Depends on time value vs dividend amount</td><td>"Is extrinsic value on my short call less than the dividend? (if yes, expect assignment)"</td></tr>
+          <tr><td>Stock Drop Impact</td><td><span class="tag tag-model">qwen-plus</span></td><td>Stock drops by dividend amount on ex-date — how does that affect my structure?</td><td>"Does the $1.15 drop bring spot closer to my short put?"</td></tr>
+          <tr><td>Position Adjustment</td><td><span class="tag tag-model">qwen3-max</span></td><td>Should you close before ex-date, roll out, or accept assignment risk?</td><td>"Is it cheaper to close now or take assignment and sell covered call?"</td></tr>
+          <tr><td>Pin Risk at Ex-Date</td><td><span class="tag tag-model">qwen-plus</span></td><td>Stock often pins near round strikes on ex-date. Does this help or hurt?</td><td>"Will the ex-date stock drop push me into a good or bad zone?"</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ─── Scenario 12: Sector Rotation ─── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-reasoning">Reasoning</span>
+        <strong>Scenario 12: Sector Rotation — Money Moving Between Sectors</strong>
+      </div>
+      <table>
+        <tr><th style="width:150px">Trigger</th><td>Sector ETF diverging from SPY | Multiple stocks in same sector trending same direction | Fund flow data</td></tr>
+        <tr><th>Strategies</th><td>Directional Spreads (ride rotation), Pairs (long strong sector, short weak), BWB</td></tr>
+        <tr><th>Example</th><td>XLK (tech) down 5% in 2 weeks while XLF (financials) up 3%. Classic rotation out of growth into value.</td></tr>
+      </table>
+      <h3 style="margin-top: 1rem; font-size: 0.95rem;">Analysis Required:</h3>
+      <table>
+        <thead><tr><th>Analysis Task</th><th>Model Tier</th><th>Why Needed</th><th>Key Question</th></tr></thead>
+        <tbody>
+          <tr><td>Rotation Persistence</td><td><span class="tag tag-model">qwen3-max</span></td><td>Is this rotation just starting (more room to run) or exhausting (mean revert)?</td><td>"Are institutional flows confirming this rotation or is it retail-driven?"</td></tr>
+          <tr><td>Single-Name vs Sector Decision</td><td><span class="tag tag-model">qwen3-max</span></td><td>Trade the sector ETF (safer) or pick best single name (more upside)?</td><td>"Which specific stock benefits MOST from this rotation and why?"</td></tr>
+          <tr><td>Macro Driver Identification</td><td><span class="tag tag-model">qwen3-max</span></td><td>What's driving rotation? Rates? Growth expectations? Risk appetite? Determines duration</td><td>"Is this rates-driven (will persist until Fed pivots) or sentiment-driven (temporary)?"</td></tr>
+          <tr><td>Correlation Impact on Portfolio</td><td><span class="tag tag-model">qwen3-max</span></td><td>If user already has tech positions, adding more tech exposure compounds risk</td><td>"Given existing positions, does this trade increase or diversify portfolio risk?"</td></tr>
+          <tr><td>Relative Value Comparison</td><td><span class="tag tag-model">qwen3-max</span></td><td>Compare IV levels across sector stocks — which offers best premium?</td><td>"Among tech names, which has the cheapest/richest IV for a directional trade?"</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ─── Scenario 13: Low Liquidity / Wide Spreads ─── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-fast">Fast + Guard</span>
+        <strong>Scenario 13: Low Liquidity — Wide Bid/Ask Spreads</strong>
+      </div>
+      <table>
+        <tr><th style="width:150px">Trigger</th><td>Bid/ask spread > 10% of mid | OI < 100 contracts | Volume < 50/day at target strikes</td></tr>
+        <tr><th>Strategies</th><td>AVOID or scale down. If proceeding: limit orders only, wider stops, smaller size</td></tr>
+        <tr><th>Example</th><td>CRWD $350 put has $2.80 bid / $3.40 ask (21% spread). Slippage eats 10% of max profit immediately.</td></tr>
+      </table>
+      <h3 style="margin-top: 1rem; font-size: 0.95rem;">Analysis Required:</h3>
+      <table>
+        <thead><tr><th>Analysis Task</th><th>Model Tier</th><th>Why Needed</th><th>Key Question</th></tr></thead>
+        <tbody>
+          <tr><td>Slippage Impact Calculation</td><td><span class="tag tag-model">qwen-plus</span></td><td>How much does the wide spread reduce actual profit vs theoretical?</td><td>"After slippage on entry AND exit, what's my real max profit?"</td></tr>
+          <tr><td>Alternative Strike Search</td><td><span class="tag tag-model">qwen-plus</span></td><td>Nearby strikes might have better liquidity. Find the tightest spreads.</td><td>"Is there a strike $5 away with 3x the volume and half the spread?"</td></tr>
+          <tr><td>Exit Difficulty Warning</td><td><span class="tag tag-model">qwen3-max</span></td><td>Getting IN is half the problem. Getting OUT in a panic is worse. Liquidity evaporates in stress.</td><td>"If this goes wrong, can I exit at a reasonable price or am I trapped?"</td></tr>
+          <tr><td>Size Recommendation</td><td><span class="tag tag-model">qwen-plus</span></td><td>Lower size = less market impact. How many contracts before you move the market?</td><td>"At what contract count does my order become a significant % of daily volume?"</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 1rem; padding: 0.75rem; background: var(--surface2); border-radius: 6px; font-size: 0.8rem;">
+        <strong style="color: var(--accent);">Hedge Fund Edge:</strong> <span style="color: var(--muted);">Institutional traders care about liquidity above all else. A "great trade" with no exit is a prison. The reasoning model should DOWNGRADE conviction for illiquid setups and potentially REJECT the trade entirely if slippage > 15% of max profit.</span>
+      </div>
+    </div>
+
+    <!-- ─── Scenario 14: Multi-Leg Adjustment ─── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-deep">Deep Reasoning</span>
+        <strong>Scenario 14: Existing Position Under Pressure — Adjustment Decision</strong>
+      </div>
+      <table>
+        <tr><th style="width:150px">Trigger</th><td>Spot approaching short strike | P&L at -50% to -100% of credit | Delta expanding | DTE < 10 with risk</td></tr>
+        <tr><th>Strategies</th><td>Roll out in time, Roll strikes, Convert (IC → directional), Close and re-enter, Add hedge leg</td></tr>
+        <tr><th>Example</th><td>You sold IC on SPY. Short put at $530, spot now at $533. 3 DTE. Delta blown out. Roll or close?</td></tr>
+      </table>
+      <h3 style="margin-top: 1rem; font-size: 0.95rem;">Analysis Required:</h3>
+      <table>
+        <thead><tr><th>Analysis Task</th><th>Model Tier</th><th>Why Needed</th><th>Key Question</th></tr></thead>
+        <tbody>
+          <tr><td>Close vs Roll Decision</td><td><span class="tag tag-model">qwen3-max</span></td><td>The HARDEST decision in options: take the loss or extend the trade? Sunk cost vs new risk.</td><td>"Is the original thesis still valid? Or am I just hoping?"</td></tr>
+          <tr><td>Roll Credit/Debit Analysis</td><td><span class="tag tag-model">qwen3-max</span></td><td>Can I roll for a credit (reducing cost basis) or does rolling cost money?</td><td>"What credit/debit to roll to next expiry at same/wider strikes?"</td></tr>
+          <tr><td>New Risk Profile After Roll</td><td><span class="tag tag-model">qwen3-max</span></td><td>Rolling changes everything: new DTE, new Greeks, new breakevens. Must re-assess.</td><td>"After rolling, what are my new breakevens and what's the probability of profit?"</td></tr>
+          <tr><td>Conversion Option</td><td><span class="tag tag-model">qwen3-max</span></td><td>Instead of rolling, convert IC to butterfly or vertical? May reduce risk.</td><td>"Can I close one side (the winning side) and let the tested side run as directional?"</td></tr>
+          <tr><td>Emotional Override Check</td><td><span class="tag tag-model">qwen3-max</span></td><td>Is the user making a rational decision or panic/hope-driven?</td><td>"Is this adjustment rational or am I just avoiding taking a loss?"</td></tr>
+          <tr><td>Max Pain Anchor</td><td><span class="tag tag-model">qwen-plus</span></td><td>Where is options max pain for this expiry? Price gravitates there at expiry.</td><td>"Where is max pain? Does that help or hurt my position?"</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top: 1rem; padding: 0.75rem; background: var(--surface2); border-radius: 6px; font-size: 0.8rem;">
+        <strong style="color: var(--accent);">Hedge Fund Edge:</strong> <span style="color: var(--muted);">Adjustments are where most retail traders bleed out — they keep rolling losers until the loss compounds beyond recovery. A reasoning model must ask "is my original thesis STILL valid?" not "how do I avoid this loss?" If the thesis is dead, the answer is CLOSE, not ROLL. This is emotional override territory where reasoning > instinct.</span>
+      </div>
+    </div>
+
+    <!-- ─── Scenario 15: Multiple Expiries / Term Structure Play ─── -->
+    <div class="card">
+      <div class="card-header">
+        <span class="badge badge-reasoning">Reasoning</span>
+        <strong>Scenario 15: IV Term Structure — Calendar/Diagonal Opportunity</strong>
+      </div>
+      <table>
+        <tr><th style="width:150px">Trigger</th><td>Front-month IV >> back-month IV (inverted) | IV/RV ratio < 0.8 in back months | Earnings between expiries</td></tr>
+        <tr><th>Strategies</th><td>Calendar Spread (sell expensive front, buy cheap back), Diagonal (directional calendar)</td></tr>
+        <tr><th>Example</th><td>AAPL front-month IV 32%, back-month IV 24%. Sell June weekly at 32%, buy July monthly at 24%. Harvest term structure.</td></tr>
+      </table>
+      <h3 style="margin-top: 1rem; font-size: 0.95rem;">Analysis Required:</h3>
+      <table>
+        <thead><tr><th>Analysis Task</th><th>Model Tier</th><th>Why Needed</th><th>Key Question</th></tr></thead>
+        <tbody>
+          <tr><td>Term Structure Anomaly Detection</td><td><span class="tag tag-model">qwen3-max</span></td><td>Is the inversion justified (earnings/event) or an anomaly (mispricing)?</td><td>"Why is front-month IV elevated? Will it persist or normalize?"</td></tr>
+          <tr><td>Convergence Timeline</td><td><span class="tag tag-model">qwen3-max</span></td><td>When will the term structure normalize? Must happen before front-month expiry</td><td>"How quickly will front IV crush back to normal after the event passes?"</td></tr>
+          <tr><td>Vega/Theta Balance</td><td><span class="tag tag-model">qwen3-max</span></td><td>Calendar is short front vega, long back vega. Net position depends on IV moves</td><td>"If IV drops across the board, does my calendar lose or gain?"</td></tr>
+          <tr><td>Strike Selection for Max Theta</td><td><span class="tag tag-model">qwen-plus</span></td><td>ATM gives most theta but most gamma risk. Slightly OTM might be better.</td><td>"ATM calendar or slightly OTM for better theta/gamma ratio?"</td></tr>
+          <tr><td>Spot Movement Sensitivity</td><td><span class="tag tag-model">qwen3-max</span></td><td>Calendars lose if spot moves too far from strike. How much room do you have?</td><td>"If spot moves $X, how much does my calendar lose? What's the breakeven range?"</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <h2>15. Scenario → Analysis Matrix (Summary)</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Scenario</th>
+          <th>Fast Tasks (qwen-plus)</th>
+          <th>Reasoning Tasks (qwen3-max)</th>
+          <th>Total LLM Calls</th>
+          <th>Critical Question</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1. High IV (sell premium)</strong></td>
+          <td>IV percentile, catalyst check</td>
+          <td>IV persistence, strike width, vega risk, term structure</td>
+          <td>2 fast + 4 reasoning</td>
+          <td>Will IV actually crush?</td>
+        </tr>
+        <tr>
+          <td><strong>2. Low IV (buy vol)</strong></td>
+          <td>Theta budget, vega leverage</td>
+          <td>Expansion catalyst, squeeze duration, direction bias, structure comparison</td>
+          <td>2 fast + 4 reasoning</td>
+          <td>What triggers the vol expansion?</td>
+        </tr>
+        <tr>
+          <td><strong>3. Strong trend</strong></td>
+          <td>Gamma wall alignment</td>
+          <td>Trend exhaustion, support/resistance, sector confirm, strike selection, kill switch</td>
+          <td>1 fast + 5 reasoning</td>
+          <td>Is the trend exhausted?</td>
+        </tr>
+        <tr>
+          <td><strong>4. Range-bound</strong></td>
+          <td>DTE selection, event scan</td>
+          <td>Range persistence, breakout direction, wall strength, wing width</td>
+          <td>2 fast + 4 reasoning</td>
+          <td>Will the range hold?</td>
+        </tr>
+        <tr>
+          <td><strong>5. Pre-earnings</strong></td>
+          <td>—</td>
+          <td>Expected vs historical move, direction prediction, crush estimate, gap risk, expiry selection, hedge, pattern analysis</td>
+          <td>0 fast + 7 reasoning</td>
+          <td>Is the implied move overpriced?</td>
+        </tr>
+        <tr>
+          <td><strong>6. Post-earnings</strong></td>
+          <td>IV floor check</td>
+          <td>Gap continuation, new range, follow-through, timing</td>
+          <td>1 fast + 4 reasoning</td>
+          <td>Gap-and-go or gap-and-fade?</td>
+        </tr>
+        <tr>
+          <td><strong>7. Gamma breakout</strong></td>
+          <td>IV expansion impact</td>
+          <td>Breakout legitimacy, gamma squeeze, fade vs ride, new target, stop placement</td>
+          <td>1 fast + 5 reasoning</td>
+          <td>Real breakout or false?</td>
+        </tr>
+        <tr>
+          <td><strong>8. Macro shock (VIX spike)</strong></td>
+          <td>—</td>
+          <td>Shock duration, correlation, position triage, opportunity assessment, hedge construction, recovery plan</td>
+          <td>0 fast + 6 reasoning</td>
+          <td>Panic or regime change?</td>
+        </tr>
+        <tr>
+          <td><strong>9. Mean reversion</strong></td>
+          <td>Gamma floor check</td>
+          <td>Oversold vs broken, fundamental check, historical win rate, bounce catalyst, entry timing</td>
+          <td>1 fast + 5 reasoning</td>
+          <td>Pullback or breakdown?</td>
+        </tr>
+        <tr>
+          <td><strong>10. Wide gamma (BWB)</strong></td>
+          <td>—</td>
+          <td>Body placement, wing ratio, direction lean, max loss scenario, adjustment triggers</td>
+          <td>0 fast + 5 reasoning</td>
+          <td>Where to place the body?</td>
+        </tr>
+        <tr>
+          <td><strong>11. Dividend risk</strong></td>
+          <td>Stock drop impact, pin risk</td>
+          <td>Assignment probability, position adjustment</td>
+          <td>2 fast + 2 reasoning</td>
+          <td>Will I get assigned?</td>
+        </tr>
+        <tr>
+          <td><strong>12. Sector rotation</strong></td>
+          <td>—</td>
+          <td>Rotation persistence, name selection, macro driver, correlation, relative value</td>
+          <td>0 fast + 5 reasoning</td>
+          <td>Is the rotation starting or ending?</td>
+        </tr>
+        <tr>
+          <td><strong>13. Low liquidity</strong></td>
+          <td>Slippage calc, alt strikes, size recommendation</td>
+          <td>Exit difficulty warning</td>
+          <td>3 fast + 1 reasoning</td>
+          <td>Can I exit if wrong?</td>
+        </tr>
+        <tr>
+          <td><strong>14. Position adjustment</strong></td>
+          <td>Max pain anchor</td>
+          <td>Close vs roll, roll analysis, new risk profile, conversion, emotional check</td>
+          <td>1 fast + 5 reasoning</td>
+          <td>Is my thesis still valid?</td>
+        </tr>
+        <tr>
+          <td><strong>15. Term structure play</strong></td>
+          <td>Strike selection</td>
+          <td>Anomaly detection, convergence timeline, vega/theta balance, spot sensitivity</td>
+          <td>1 fast + 4 reasoning</td>
+          <td>Is the inversion an anomaly?</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ══════════════════════════════════��════════════════ -->
+    <h2>16. Scenario Detection — How Engine Routes to Right Analysis</h2>
+
+    <div class="card">
+      <h3>Automatic Scenario Classification (Deterministic, pre-LLM)</h3>
+      <pre><code>function classifyScenario(data: EngineInput): Scenario[] {
+  const scenarios: Scenario[] = [];
+
+  // High IV premium selling
+  if (data.ivRank > 50 || data.atmIv > 35 || data.ivRvRatio > 1.2)
+    scenarios.push('HIGH_IV_SELL');
+
+  // Low IV vol buying
+  if (data.ivRank < 20 || data.atmIv < 20 || data.ivRvRatio < 0.8)
+    scenarios.push('LOW_IV_BUY');
+
+  // Strong trend
+  if (data.adx > 30 && data.trendScore !== 0.5)
+    scenarios.push('STRONG_TREND');
+
+  // Range-bound
+  if (data.adx < 20 && data.bandWidth >= 3 && data.bandWidth <= 15)
+    scenarios.push('RANGE_BOUND');
+
+  // Pre-earnings
+  if (data.earningsDaysOut > 0 && data.earningsDaysOut <= data.dte)
+    scenarios.push('PRE_EARNINGS');
+
+  // Post-earnings
+  if (data.daysSinceEarnings <= 5)
+    scenarios.push('POST_EARNINGS');
+
+  // Gamma breakout
+  if (data.spot > data.callWall || data.spot < data.putWall)
+    scenarios.push('GAMMA_BREAKOUT');
+
+  // Macro shock
+  if (data.vix > 25 || data.spyChange < -0.02)
+    scenarios.push('MACRO_SHOCK');
+
+  // Mean reversion
+  if (data.rsi < 30 || data.rsi > 70)
+    scenarios.push('MEAN_REVERSION');
+
+  // Wide band (BWB territory)
+  if (data.bandWidth > 15 && data.bandWidth <= 40)
+    scenarios.push('WIDE_BAND_BWB');
+
+  // Dividend within DTE
+  if (data.exDivDays > 0 && data.exDivDays <= data.dte)
+    scenarios.push('DIVIDEND_RISK');
+
+  // Low liquidity
+  if (data.bidAskSpreadPct > 0.10 || data.strikeOI < 100)
+    scenarios.push('LOW_LIQUIDITY');
+
+  // Term structure opportunity
+  if (data.frontIv / data.backIv > 1.3)
+    scenarios.push('TERM_STRUCTURE');
+
+  return scenarios;  // Can be MULTIPLE scenarios simultaneously
+}
+
+// Route to appropriate analysis tasks based on detected scenarios
+function getRequiredAnalysis(scenarios: Scenario[]): AnalysisTask[] {
+  const tasks: Set&lt;AnalysisTask&gt; = new Set();
+
+  for (const scenario of scenarios) {
+    SCENARIO_ANALYSIS_MAP[scenario].forEach(task => tasks.add(task));
+  }
+
+  // De-duplicate and prioritize (max 8 reasoning calls to control cost)
+  return prioritize([...tasks], MAX_REASONING_CALLS);
+}</code></pre>
+    </div>
+
+    <div class="callout">
+      <div class="callout-title">Key Design Decision: Dynamic Task Selection</div>
+      <p>Instead of always running all 6 reasoning tasks, the system detects which scenarios apply and selects only the RELEVANT reasoning prompts. This means:</p>
+      <ul style="margin-top: 0.5rem;">
+        <li><strong>Range-bound AAPL</strong>: 4 reasoning calls (range persistence, breakout direction, wall strength, wing width) = ~$0.012</li>
+        <li><strong>Pre-earnings AMZN</strong>: 7 reasoning calls (full earnings analysis suite) = ~$0.021</li>
+        <li><strong>Simple high-IV sell</strong>: 4 reasoning calls (IV persistence, strike width, vega risk, catalyst) = ~$0.012</li>
+        <li><strong>Macro shock + existing position</strong>: 6+5 = 11 reasoning calls (capped at 8 via priority) = ~$0.024</li>
+      </ul>
+      <p style="margin-top: 0.5rem;">Average across all scenarios: <strong>~5 reasoning calls per request</strong>, all parallel. Cost: ~$0.015. Latency: 2.5-3s.</p>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <h2>17. What Each Model Tier Handles (Final Assignment)</h2>
+
+    <div class="grid">
+      <div class="card" style="border-color: var(--green);">
+        <div class="card-header">
+          <span class="badge badge-fast">qwen-plus (1.1s)</span>
+          <strong>Fast — No Reasoning Needed</strong>
+        </div>
+        <ul>
+          <li>Market read synthesis (summarize indicators)</li>
+          <li>Strategy explanation (narrate engine's decision)</li>
+          <li>Picks narrative (weekly writing)</li>
+          <li>Simple calculations (slippage, theta budget, vega leverage)</li>
+          <li>Lookups (IV percentile, historical range, catalyst calendar)</li>
+          <li>Pattern matching (alternative strikes, gamma alignment check)</li>
+          <li>Formatting (analysis to user-friendly text)</li>
+        </ul>
+        <p style="margin-top: 0.75rem; color: var(--green); font-size: 0.8rem; font-weight: 600;">Rule: If the answer can be derived from ONE data source without weighing trade-offs → qwen-plus</p>
+      </div>
+
+      <div class="card" style="border-color: var(--accent);">
+        <div class="card-header">
+          <span class="badge badge-reasoning">qwen3-max (2.4s)</span>
+          <strong>Reasoning — Multi-Step Logic Required</strong>
+        </div>
+        <ul>
+          <li>Thesis generation (weigh conflicting signals, score conviction)</li>
+          <li>Risk assessment (if/then scenario branching, probability estimation)</li>
+          <li>Trend exhaustion analysis (multi-timeframe, divergence detection)</li>
+          <li>Breakout legitimacy (volume, catalyst, positioning — multi-factor)</li>
+          <li>Close vs roll decisions (sunk cost reasoning, new risk/reward)</li>
+          <li>Optimal structure selection (compare 3 strategies, trade-offs)</li>
+          <li>Position sizing (Kelly, correlation, portfolio context)</li>
+          <li>Exit strategy design (conditional multi-branch planning)</li>
+          <li>Cross-asset regime assessment (macro → sector → single name)</li>
+          <li>Earnings implied vs realized analysis (statistical reasoning)</li>
+        </ul>
+        <p style="margin-top: 0.75rem; color: var(--accent); font-size: 0.8rem; font-weight: 600;">Rule: If the answer requires weighing MULTIPLE conflicting signals or making a JUDGMENT CALL → qwen3-max</p>
+      </div>
+
+      <div class="card" style="border-color: var(--purple);">
+        <div class="card-header">
+          <span class="badge badge-deep">qwen3.7-max (30s)</span>
+          <strong>Deep — Batch/Offline Only</strong>
+        </div>
+        <ul>
+          <li>Outcome analysis (why did picks succeed/fail this week?)</li>
+          <li>Scoring weight calibration (are 40/35/25 pillar weights optimal?)</li>
+          <li>Gate threshold tuning (is 0.60 confidence the right condor gate?)</li>
+          <li>Systematic bias detection (are we always wrong on X type of trade?)</li>
+          <li>Strategy performance review (iron condors 72% win rate, BWB 45% — adjust?)</li>
+          <li>Prompt tuning (which reasoning prompts produce best conviction-to-outcome correlation?)</li>
+        </ul>
+        <p style="margin-top: 0.75rem; color: var(--purple); font-size: 0.8rem; font-weight: 600;">Rule: If it runs NIGHTLY with no user waiting and needs DEEP multi-document analysis → qwen3.7-max</p>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <h2>18. Final Summary — Before vs After</h2>
+
+    <table>
+      <thead>
+        <tr><th>Dimension</th><th>Before</th><th>After</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Analysis depth</td><td>40-word explanation</td><td>Full thesis + risk + exit + sizing</td></tr>
+        <tr><td>Conviction scoring</td><td>None — all picks look equal</td><td>1-10 score, grade A-D, publish gate</td></tr>
+        <tr><td>Risk identification</td><td>None</td><td>3 scenarios + kill switch + max pain</td></tr>
+        <tr><td>Exit rules</td><td>None — "hold to expiry"</td><td>Profit target, stop loss, time exit, adjustments</td></tr>
+        <tr><td>Position sizing</td><td>None — user guesses</td><td>Account-scaled contracts + max risk %</td></tr>
+        <tr><td>Macro alignment</td><td>None</td><td>Regime + sector + VIX context scored</td></tr>
+        <tr><td>Latency</td><td>4.5s</td><td>4.5-5s (same)</td></tr>
+        <tr><td>Cost per request</td><td>$0.013</td><td>$0.019 (with cache: ~$0.005)</td></tr>
+        <tr><td>Models used</td><td>claude-sonnet + qwen-max</td><td>qwen-plus (fast) + qwen3-max (reasoning)</td></tr>
+        <tr><td>User trust</td><td>"Why this trade?" — no answer</td><td>Full transparent reasoning chain</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout" style="margin-top: 2rem;">
+      <div class="callout-title">Next Step</div>
+      <p><strong>Phase 1</strong> (model swap to qwen-plus) can ship today with zero risk. It just makes existing endpoints faster and cheaper. Phases 2-3 (reasoning layer) is a 5-day build with high impact. Phase 4 (conviction gate) makes the product genuinely smarter by filtering weak picks before users see them.</p>
+    </div>
+
+  </div>
+</body>
+</html>

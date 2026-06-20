@@ -608,6 +608,8 @@
             <span style="font-size:12px;color:var(--ink-muted)">Strategies scored for this setup</span>
           </div>
           <div id="strategy-cards"></div>
+          <!-- Engine Analysis (debug) -->
+          <div id="engine-analysis" style="display:none;margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;font-size:12px;font-family:var(--mono)"></div>
           <div style="text-align:center;margin-top:14px">
             <button onclick="setS2Mode('manual')" style="background:none;border:none;color:var(--teal);font-size:12px;cursor:pointer;text-decoration:underline">None of these &#8212; build my own</button>
           </div>
@@ -1174,18 +1176,23 @@
 
     const R2_BASE = 'https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev';
 
-    async function loadGammaChart() {
+    async function loadGammaChart(retryCount = 0) {
       if (!state.ticker || !state.selectedExpiry) return;
       try {
         // Fetch full gamma analysis from Yahoo OI Service (no R2 dependency)
         const gaRes = await apiCall(`/api/gamma-analysis/${state.ticker}/${state.selectedExpiry}`);
+        if (!gaRes.ok) throw new Error(`Gamma analysis API returned ${gaRes.status}`);
         const gaData = await gaRes.json();
+
+        // If API returned an error flag (degraded mode), log it but continue with whatever data we got
+        if (gaData.error) console.warn('Gamma analysis degraded:', gaData.error);
+
         const a = gaData.analysis || {};
         const spot = gaData.spot || state.spot;
 
         // Also fetch OI by strike for the chart
         const oiRes = await apiCall(`/api/gamma/${state.ticker}/${state.selectedExpiry}`);
-        const oiData = await oiRes.json();
+        const oiData = oiRes.ok ? await oiRes.json() : {};
 
         state.gammaData = oiData;
         // Build r2-compatible shape for gammaChart.js
@@ -1231,21 +1238,64 @@
         state.volConf = a.volumeConfidence ?? null;
         state.deltaConf = a.deltaConfidence ?? null;
 
+        state.gammaError = null;
         renderWallCards();
 
         // Render gamma chart in deep-dive
         renderGammaAnalysis(oiData, state.r2Data, spot);
-      } catch (_) {}
+      } catch (err) {
+        console.error('Gamma wall load failed:', err);
+        // Auto-retry once after 3 seconds
+        if (retryCount < 1) {
+          state.gammaError = 'retrying';
+          renderWallCards();
+          await new Promise(r => setTimeout(r, 3000));
+          return loadGammaChart(retryCount + 1);
+        }
+        state.gammaError = err.message || 'Failed to load gamma data';
+        renderWallCards();
+      }
     }
 
     function renderWallCards() {
+      // Show wall cards row (even on error — so user sees the error state)
+      show($('#wall-cards-row'));
+
+      // Handle error/retry states
+      if (state.gammaError === 'retrying') {
+        $('#oi-put-wall').textContent = '...';
+        $('#oi-call-wall').textContent = '...';
+        $('#gex-put-wall').textContent = '...';
+        $('#gex-call-wall').textContent = '...';
+        return;
+      }
+      if (state.gammaError) {
+        const errText = 'FAILED';
+        $('#oi-put-wall').textContent = errText;
+        $('#oi-call-wall').textContent = errText;
+        $('#gex-put-wall').textContent = errText;
+        $('#gex-call-wall').textContent = errText;
+        [$('#oi-put-wall'), $('#oi-call-wall'), $('#gex-put-wall'), $('#gex-call-wall')].forEach(el => {
+          el.style.color = 'var(--ink-faint)';
+          el.style.fontSize = '12px';
+          el.title = state.gammaError;
+        });
+        console.warn('Gamma wall error:', state.gammaError);
+        return;
+      }
+
+      // Reset styles in case of previous error
+      [$('#oi-put-wall'), $('#oi-call-wall')].forEach(el => { el.style.fontSize = ''; el.style.color = ''; el.title = ''; });
+      $('#gex-put-wall').style.fontSize = ''; $('#gex-put-wall').title = '';
+      $('#gex-call-wall').style.fontSize = ''; $('#gex-call-wall').title = '';
+      $('#gex-put-wall').style.color = ''; $('#gex-call-wall').style.color = '';
+
       // OI walls
       $('#oi-put-wall').textContent = state.putWall ? `$${state.putWall}` : '---';
       $('#oi-call-wall').textContent = state.callWall ? `$${state.callWall}` : '---';
       // GEX walls
       $('#gex-put-wall').textContent = state.gexPutWall ? `$${state.gexPutWall}` : (state.putWall ? `$${state.putWall}` : '---');
       $('#gex-call-wall').textContent = state.gexCallWall ? `$${state.gexCallWall}` : (state.callWall ? `$${state.callWall}` : '---');
-      if (state.putWall || state.callWall) show($('#wall-cards-row'));
       // ATM IV
       if (state.atmIv) $('#stat-iv').textContent = state.atmIv.toFixed(1) + '%';
       // Confidence
@@ -1576,7 +1626,7 @@
             apiCall(`/api/chain/${state.ticker}/${state.selectedExpiry}`),
             apiCall('/api/recommend', {
               method: 'POST',
-              body: { ticker: state.ticker, expiry: state.selectedExpiry, modelMode: 'budget-qwq' }
+              body: { ticker: state.ticker, expiry: state.selectedExpiry, modelMode: window.USER_MODEL_MODE || 'budget-qwq' }
             })
           ]);
           if (!recRes.ok) throw new Error(`API returned ${recRes.status} — ${recRes.status === 429 ? 'rate limited, try again in a minute' : recRes.statusText}`);
@@ -1604,6 +1654,8 @@
             state.adx = data.indicators.adx14 ?? state.adx;
             state.atr14 = data.indicators.atr14 ?? state.atr14;
           }
+          // Store engine snapshot for Invest position logging (gate values)
+          if (data.engineSnapshot) state.engineSnapshot = data.engineSnapshot;
           addCost(data.cost);
           // Track recommend usage (metered)
           if (!isDemo && window.trackUsage) window.trackUsage('recommend', state.ticker, {
@@ -1647,6 +1699,74 @@
           </div>
         `;
       }).join('');
+
+      // Render engine analysis debug panel
+      renderEngineAnalysis();
+    }
+
+    function renderEngineAnalysis() {
+      const el = $('#engine-analysis');
+      const snap = state.engineSnapshot;
+      if (!snap || !snap.gateValues) { el.style.display = 'none'; return; }
+      el.style.display = 'block';
+      const gv = snap.gateValues;
+      const trace = snap.gateTrace || [];
+
+      const fmtVal = (v, dp) => v === null || v === undefined ? '<span style="color:var(--red);font-weight:700">MISSING</span>' : typeof v === 'number' ? v.toFixed(dp ?? 2) : v;
+      const warn = (v) => v === null || v === undefined || v === 0;
+
+      el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <span style="font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:700;color:var(--teal)">Engine Analysis</span>
+          <span style="font-size:10px;color:var(--ink-muted)">deterministic — no LLM involved</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+          <div style="padding:8px;background:${warn(gv.blendedConfidence) ? 'rgba(226,75,74,.08)' : 'rgba(15,61,46,.04)'};border-radius:6px">
+            <div style="font-size:9px;color:var(--ink-muted);text-transform:uppercase">Blended Conf</div>
+            <div style="font-size:16px;font-weight:700;${warn(gv.blendedConfidence) ? 'color:var(--red)' : ''}">${fmtVal(gv.blendedConfidence, 3)}</div>
+            <div style="font-size:9px;color:var(--ink-muted)">OI:${fmtVal(gv.oiConfidence,2)} GEX:${fmtVal(gv.gexConfidence,2)} Δ:${fmtVal(gv.deltaConfidence,2)} Vol:${fmtVal(gv.volumeConfidence,2)}</div>
+          </div>
+          <div style="padding:8px;background:${warn(gv.atmIv) ? 'rgba(226,75,74,.08)' : 'rgba(15,61,46,.04)'};border-radius:6px">
+            <div style="font-size:9px;color:var(--ink-muted);text-transform:uppercase">ATM IV</div>
+            <div style="font-size:16px;font-weight:700;${warn(gv.atmIv) ? 'color:var(--red)' : ''}">${gv.atmIv ? fmtVal(gv.atmIv, 1) + '%' : fmtVal(null)}</div>
+            <div style="font-size:9px;color:var(--ink-muted)">IV/RV: ${fmtVal(gv.ivRvRatio, 3)}</div>
+          </div>
+          <div style="padding:8px;background:rgba(15,61,46,.04);border-radius:6px">
+            <div style="font-size:9px;color:var(--ink-muted);text-transform:uppercase">Trend</div>
+            <div style="font-size:16px;font-weight:700">${fmtVal(gv.trendStrength)}</div>
+            <div style="font-size:9px;color:var(--ink-muted)">ADX: ${fmtVal(gv.adx, 1)} | ${fmtVal(gv.volatilityRegime)}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+          <div style="padding:8px;background:rgba(15,61,46,.04);border-radius:6px">
+            <div style="font-size:9px;color:var(--ink-muted);text-transform:uppercase">Band Width</div>
+            <div style="font-size:16px;font-weight:700">${fmtVal(gv.bandWidthPct, 1)}%</div>
+            <div style="font-size:9px;color:var(--ink-muted)">Walls: $${fmtVal(gv.putWall,0)}–$${fmtVal(gv.callWall,0)}</div>
+          </div>
+          <div style="padding:8px;background:rgba(15,61,46,.04);border-radius:6px">
+            <div style="font-size:9px;color:var(--ink-muted);text-transform:uppercase">Score</div>
+            <div style="font-size:16px;font-weight:700">${fmtVal(gv.compositeScore, 0)} / 100</div>
+            <div style="font-size:9px;color:var(--ink-muted)">γ:${gv.scorePillars?.gamma ?? '?'} iv:${gv.scorePillars?.iv ?? '?'} t:${gv.scorePillars?.trend ?? '?'}</div>
+          </div>
+          <div style="padding:8px;background:rgba(15,61,46,.04);border-radius:6px">
+            <div style="font-size:9px;color:var(--ink-muted);text-transform:uppercase">Data Quality</div>
+            <div style="font-size:16px;font-weight:700;${warn(gv.atmIv) ? 'color:var(--red)' : 'color:var(--green)'}">${gv.atmIv ? 'OK' : 'GAPS'}</div>
+            <div style="font-size:9px;color:var(--ink-muted)">Δ dark: ${gv.deltaConfidence === 0 ? 'yes' : 'no'}</div>
+          </div>
+        </div>
+        ${trace.length ? `
+        <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px">
+          <div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;font-weight:700;color:var(--ink-muted);margin-bottom:8px">Gate Cascade (first pass wins)</div>
+          ${trace.map(g => `
+            <div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:11px;${g.passed ? '' : 'opacity:.5'}">
+              <span style="font-size:10px;width:14px;text-align:center">${g.passed ? '✓' : '✗'}</span>
+              <span style="font-weight:700;min-width:150px">${g.gate}</span>
+              <span style="color:var(--ink-muted)">${g.reason}</span>
+            </div>
+          `).join('')}
+        </div>
+        ` : ''}
+      `;
     }
 
     function selectStrategy(index) {
@@ -2127,7 +2247,7 @@
             legs: verifyLegs,
             netCredit: state.legs.reduce((s, l) => s + (l.side === 'short' ? l.mid : -l.mid), 0),
             source: 'investor_draft',
-            modelMode: 'budget-qwq'
+            modelMode: window.USER_MODEL_MODE || 'budget-qwq'
           }
         }).then(r => r.json());
       }
@@ -2238,7 +2358,7 @@
           const models = state.verifyData?.cost?.calls?.map(c => c.model).filter(Boolean) || ['pipeline'];
           const cost = state.verifyData?.cost?.totalCost || state.totalCost || 0.05;
           const tokens = state.totalTokens || 10000;
-          console.log('[Usage] Tracking verify for', state.ticker, '| models:', models, '| cost:', cost);
+          console.log('[Usage] Tracking verify for', state.ticker, '| models:', models, '| cost:', cost, '| mode:', window.USER_MODEL_MODE);
           await window.trackUsage('verify', state.ticker, { models: [...new Set(models)], cost, tokens });
           console.log('[Usage] Track success');
         } catch (e) { console.error('[Usage] Track error:', e); }
@@ -2703,6 +2823,8 @@
           riskReport: state.riskReport,
           sentiment: state.verifyData?.sentiment || null,
           analysis: state.verifyData || null,
+          // Invest Layer 1: engine gate values for position logging
+          engineSnapshot: state.engineSnapshot || null,
         };
 
         const res = await apiCall('/api/publish-from-analysis', { method: 'POST', body: payload });
@@ -2822,6 +2944,15 @@ window.fbServerTimestamp = () => serverTimestamp();
 // ── Usage tracking & rate limiting ──────────────────────────────────────
 // Default limit; overridden by user's tier-based dailyLimit from Firestore
 let DAILY_LIMIT = 5;
+// Model mode derived from user's tier (on window so regular scripts can access)
+window.USER_MODEL_MODE = 'budget-qwq';
+const TIER_MODEL_MAP = {
+  explorer: 'budget-v3',
+  starter: 'budget-v3',
+  trader: 'budget-qwq',
+  premium: 'premium',
+  institutional: 'premium',
+};
 
 function todayKey() {
   return new Date().toISOString().split('T')[0]; // YYYY-MM-DD
@@ -2840,13 +2971,15 @@ window.checkUsageLimit = async function() {
   // Read user's tier-based limit
   try {
     const userSnap = await getDoc(doc(db, 'discover_usage', uid));
-    if (userSnap.exists() && userSnap.data().dailyLimit != null) {
-      DAILY_LIMIT = userSnap.data().dailyLimit;
+    if (userSnap.exists()) {
+      const ud = userSnap.data();
+      if (ud.dailyLimit != null) DAILY_LIMIT = ud.dailyLimit;
+      if (ud.tier && TIER_MODEL_MAP[ud.tier]) window.USER_MODEL_MODE = TIER_MODEL_MAP[ud.tier];
     }
   } catch {}
   const dailySnap = await getDoc(doc(db, 'discover_usage', uid, 'daily', day));
   const used = dailySnap.exists() ? (dailySnap.data().count || 0) : 0;
-  return { allowed: used < DAILY_LIMIT, used, limit: DAILY_LIMIT, tier: DAILY_LIMIT === 25 ? 'institutional' : DAILY_LIMIT === 5 ? 'trader' : DAILY_LIMIT === 3 ? 'starter' : 'explorer' };
+  return { allowed: used < DAILY_LIMIT, used, limit: DAILY_LIMIT, modelMode: window.USER_MODEL_MODE || 'budget-qwq', tier: DAILY_LIMIT === 25 ? 'institutional' : DAILY_LIMIT === 10 ? 'premium' : DAILY_LIMIT === 5 ? 'trader' : DAILY_LIMIT === 3 ? 'starter' : 'explorer' };
 };
 
 // Log a usage event and increment daily counter

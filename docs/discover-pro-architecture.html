@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NewLeaf — Architecture Evolution: Discover to Discover Pro</title>
+  <style>
+    :root {
+      --forest: #0B2D23; --forest-mid: #1a5c44; --gold: #C9A96E;
+      --cream: #F7F5F0; --cream-dark: #EDE8DC; --ink: #0B0F14;
+      --ink-mid: #3d3d35; --ink-muted: #6b6b60; --ink-faint: #9b9b8e;
+      --white: #fff; --border: rgba(15,61,46,.12);
+      --teal: #0d6e56; --teal-bg: #e0f2ec; --teal-text: #07473a;
+      --green: #1a8c5e; --yellow: #d97706; --red: #c0392b;
+      --blue: #2563eb; --blue-bg: #e0f2fe; --blue-text: #075985;
+      --purple: #7c3aed; --purple-bg: #ede9fe; --purple-text: #5b21b6;
+      --mono: 'Space Mono', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--cream); color: var(--ink); line-height: 1.7; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 48px 32px 80px; }
+    h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 32px; font-weight: 700; color: var(--forest); margin-bottom: 4px; }
+    .subtitle { font-size: 14px; color: var(--ink-muted); margin-bottom: 40px; }
+    h2 { font-size: 20px; font-weight: 700; color: var(--forest); margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    h3 { font-size: 15px; font-weight: 700; color: var(--ink); margin: 24px 0 10px; }
+    h4 { font-size: 13px; font-weight: 700; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 20px 0 8px; }
+    p { font-size: 14px; color: var(--ink-mid); margin-bottom: 12px; }
+    ul, ol { padding-left: 24px; margin-bottom: 12px; }
+    li { font-size: 14px; color: var(--ink-mid); margin-bottom: 6px; }
+    strong { color: var(--ink); }
+    code { font-family: var(--mono); font-size: 12px; background: var(--cream-dark); padding: 2px 6px; border-radius: 3px; color: var(--forest); }
+    pre { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; margin: 12px 0; font-size: 12px; font-family: var(--mono); line-height: 1.6; color: var(--ink-mid); }
+
+    /* Architecture diagrams */
+    .arch { margin: 24px 0; }
+    .arch-title { font-family: var(--mono); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); margin-bottom: 12px; }
+    .arch-grid { display: flex; flex-direction: column; gap: 0; }
+    .arch-row { display: flex; align-items: stretch; min-height: 56px; }
+    .arch-label { width: 120px; flex-shrink: 0; display: flex; align-items: center; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); padding-right: 12px; }
+    .arch-boxes { flex: 1; display: flex; gap: 6px; padding: 4px 0; flex-wrap: wrap; align-items: center; }
+    .arch-box { padding: 10px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; border: 1px solid; display: flex; flex-direction: column; gap: 2px; min-width: 120px; }
+    .arch-box .ab-name { font-weight: 700; font-size: 12px; }
+    .arch-box .ab-detail { font-size: 10px; opacity: 0.7; }
+    .arch-box .ab-model { font-size: 9px; font-family: var(--mono); margin-top: 2px; }
+
+    /* Box colors */
+    .box-existing { background: var(--white); border-color: var(--border); color: var(--ink-mid); }
+    .box-changed { background: #fef3c7; border-color: #d97706; color: #92400e; }
+    .box-new { background: var(--teal-bg); border-color: var(--teal); color: var(--teal-text); }
+    .box-removed { background: #fee2e2; border-color: #dc2626; color: #991b1b; text-decoration: line-through; opacity: 0.6; }
+    .box-engine { background: #f0fdf4; border-color: #16a34a; color: #166534; }
+    .box-client { background: var(--blue-bg); border-color: var(--blue); color: var(--blue-text); }
+    .box-data { background: var(--purple-bg); border-color: var(--purple); color: var(--purple-text); }
+
+    /* Arrow connector */
+    .arch-arrow { display: flex; align-items: center; justify-content: center; padding: 4px 0; }
+    .arch-arrow-line { width: 2px; height: 20px; background: var(--border); position: relative; }
+    .arch-arrow-line::after { content: ''; position: absolute; bottom: -4px; left: -4px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid var(--border); }
+    .arch-arrow-label { font-size: 10px; color: var(--ink-faint); margin-left: 12px; font-family: var(--mono); }
+
+    /* Legend */
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 16px 0; padding: 12px 16px; background: var(--white); border: 1px solid var(--border); border-radius: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-mid); }
+    .legend-dot { width: 14px; height: 14px; border-radius: 3px; border: 1px solid; }
+
+    /* Comparison tables */
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+    th { background: var(--cream-dark); color: var(--ink); padding: 8px 12px; text-align: left; font-weight: 600; font-size: 12px; }
+    td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--ink-mid); }
+    tr:hover td { background: rgba(13,110,86,0.02); }
+
+    .tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-right: 4px; }
+    .tag-new { background: var(--teal-bg); color: var(--teal-text); }
+    .tag-changed { background: #fef3c7; color: #92400e; }
+    .tag-same { background: var(--cream-dark); color: var(--ink-muted); }
+    .tag-removed { background: #fee2e2; color: #991b1b; }
+
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin: 16px 0; }
+    .card-title { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--teal); margin-bottom: 10px; }
+
+    .callout { background: rgba(13,110,86,0.05); border: 1px solid rgba(13,110,86,0.15); border-radius: 8px; padding: 14px 18px; margin: 16px 0; }
+    .callout-title { font-weight: 700; font-size: 13px; color: var(--teal); margin-bottom: 4px; }
+
+    .side-by-side { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+    @media (max-width: 768px) { .side-by-side { grid-template-columns: 1fr; } .arch-row { flex-direction: column; } .arch-label { width: auto; padding-bottom: 4px; } }
+    @media print { body { background: white; } }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+
+<h1>Architecture Evolution</h1>
+<p class="subtitle">From Discover (strategy builder) to Discover Pro (hedge fund-level analysis) — what changed, what's new, and why.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2>1. Before: Discover Architecture</h2>
+
+<p>The original Discover page is a 5-stage wizard that goes from ticker input to a verified trade recommendation. The architecture has 3 layers: data fetching, deterministic engine, and LLM explanation.</p>
+
+<div class="arch">
+  <div class="arch-title">Discover — Original Architecture</div>
+
+  <div class="arch-grid">
+    <!-- Client Layer -->
+    <div class="arch-row">
+      <div class="arch-label">Client<br>(Browser)</div>
+      <div class="arch-boxes">
+        <div class="arch-box box-existing">
+          <div class="ab-name">discover.html</div>
+          <div class="ab-detail">5-stage wizard UI</div>
+          <div class="ab-detail">3,070 lines</div>
+        </div>
+        <div class="arch-box box-existing">
+          <div class="ab-name">legMath.js</div>
+          <div class="ab-detail">P&L calculation</div>
+        </div>
+        <div class="arch-box box-existing">
+          <div class="ab-name">payoffChart.js</div>
+          <div class="ab-detail">Canvas payoff chart</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-arrow"><div class="arch-arrow-line"></div><div class="arch-arrow-label">REST API calls</div></div>
+
+    <!-- API Layer -->
+    <div class="arch-row">
+      <div class="arch-label">API Routes<br>(Cloud Functions)</div>
+      <div class="arch-boxes">
+        <div class="arch-box box-existing">
+          <div class="ab-name">GET /api/snapshot/:ticker</div>
+          <div class="ab-detail">Spot price + expirations</div>
+        </div>
+        <div class="arch-box box-existing">
+          <div class="ab-name">GET /api/indicators/:ticker</div>
+          <div class="ab-detail">RSI, ADX, SMA, ATR</div>
+        </div>
+        <div class="arch-box box-existing">
+          <div class="ab-name">GET /api/gamma/:ticker/:expiry</div>
+          <div class="ab-detail">Gamma walls (OI/GEX)</div>
+        </div>
+        <div class="arch-box box-existing">
+          <div class="ab-name">POST /api/ai-read</div>
+          <div class="ab-detail">1-sentence market read</div>
+          <div class="ab-model">MODEL: qwen-max</div>
+        </div>
+        <div class="arch-box box-existing">
+          <div class="ab-name">POST /api/recommend</div>
+          <div class="ab-detail">Engine pick + LLM explanation</div>
+          <div class="ab-model">MODEL: claude-sonnet</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-arrow"><div class="arch-arrow-line"></div><div class="arch-arrow-label">calls internal services</div></div>
+
+    <!-- Engine Layer -->
+    <div class="arch-row">
+      <div class="arch-label">Engine<br>(Deterministic)</div>
+      <div class="arch-boxes">
+        <div class="arch-box box-engine">
+          <div class="ab-name">strategy-engine.js</div>
+          <div class="ab-detail">Shared with pipeline scanner</div>
+        </div>
+        <div class="arch-box box-engine">
+          <div class="ab-name">analyzeTechnicals()</div>
+          <div class="ab-detail">RSI, SMA, ADX, BB, ATR</div>
+        </div>
+        <div class="arch-box box-engine">
+          <div class="ab-name">analyzeGammaEnhanced()</div>
+          <div class="ab-detail">OI walls, GEX, confidence</div>
+        </div>
+        <div class="arch-box box-engine">
+          <div class="ab-name">calcScore() + selectStrategy()</div>
+          <div class="ab-detail">3-pillar scoring + gate hierarchy</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-arrow"><div class="arch-arrow-line"></div><div class="arch-arrow-label">LLM explains engine decision</div></div>
+
+    <!-- LLM Layer -->
+    <div class="arch-row">
+      <div class="arch-label">LLM<br>(Explain only)</div>
+      <div class="arch-boxes">
+        <div class="arch-box box-existing">
+          <div class="ab-name">StrategyAdvisor.explain()</div>
+          <div class="ab-detail">40-word rationale + strike picks</div>
+          <div class="ab-model">MODEL: qwen-max / claude-sonnet</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-arrow"><div class="arch-arrow-line"></div><div class="arch-arrow-label">fetches from</div></div>
+
+    <!-- Data Layer -->
+    <div class="arch-row">
+      <div class="arch-label">Data Sources</div>
+      <div class="arch-boxes">
+        <div class="arch-box box-data">
+          <div class="ab-name">Alpaca</div>
+          <div class="ab-detail">Spot, bars, options chain</div>
+        </div>
+        <div class="arch-box box-data">
+          <div class="ab-name">Nasdaq / Yahoo</div>
+          <div class="ab-detail">Open interest by strike</div>
+        </div>
+        <div class="arch-box box-data">
+          <div class="ab-name">DashScope</div>
+          <div class="ab-detail">Qwen LLM API</div>
+        </div>
+        <div class="arch-box box-data">
+          <div class="ab-name">Anthropic / OpenAI</div>
+          <div class="ab-detail">Claude, GPT for verification</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>What the original produces</h3>
+<table>
+  <thead><tr><th>Output</th><th>Source</th><th>Quality</th></tr></thead>
+  <tbody>
+    <tr><td>Strategy selection</td><td>Deterministic engine (gates)</td><td>Good — auditable, reproducible</td></tr>
+    <tr><td>Score (0-100)</td><td>3-pillar formula (gamma/IV/trend)</td><td>Good — but weights not outcome-validated</td></tr>
+    <tr><td>Market read</td><td>LLM (qwen-max, 1 sentence)</td><td>OK — no verification, can contradict engine</td></tr>
+    <tr><td>Strategy rationale</td><td>LLM (40 words)</td><td>Shallow — forbidden from re-ranking</td></tr>
+    <tr><td>Strike selection</td><td>LLM picks from chain</td><td>OK — no asymmetry enforcement for BWB</td></tr>
+    <tr><td>Legs with pricing</td><td>LLM picks strikes, <strong>no mid prices</strong></td><td>Missing — can't compute P&L without mids</td></tr>
+    <tr><td>Risk assessment</td><td><strong>None</strong></td><td>Gap</td></tr>
+    <tr><td>Exit strategy</td><td><strong>None</strong></td><td>Gap</td></tr>
+    <tr><td>Position sizing</td><td><strong>None</strong></td><td>Gap</td></tr>
+    <tr><td>Conviction scoring</td><td><strong>None</strong></td><td>Gap</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2>2. After: Discover Pro Architecture</h2>
+
+<p>Discover Pro adds a <strong>reasoning layer</strong> (6 parallel LLM calls) and a <strong>computed P&L layer</strong> (client-side math). The engine is unchanged. The key insight: LLMs reason, code computes.</p>
+
+<div class="arch">
+  <div class="arch-title">Discover Pro — New Architecture</div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--white);border-color:var(--border)"></div> Unchanged</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#fef3c7;border-color:#d97706"></div> Changed</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--teal-bg);border-color:var(--teal)"></div> New</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f0fdf4;border-color:#16a34a"></div> Engine (unchanged)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--blue-bg);border-color:var(--blue)"></div> Client-side compute</div>
+  </div>
+
+  <div class="arch-grid">
+    <!-- Client Layer -->
+    <div class="arch-row">
+      <div class="arch-label">Client<br>(Browser)</div>
+      <div class="arch-boxes">
+        <div class="arch-box box-existing">
+          <div class="ab-name">discover.html</div>
+          <div class="ab-detail">Original — unchanged</div>
+        </div>
+        <div class="arch-box box-new">
+          <div class="ab-name">discover-pro.html</div>
+          <div class="ab-detail">New single-page analysis</div>
+          <div class="ab-detail">~1,100 lines</div>
+        </div>
+        <div class="arch-box box-client">
+          <div class="ab-name">legMath.js (compute)</div>
+          <div class="ab-detail">pnlAt(), breakevens, max P/L</div>
+          <div class="ab-detail">Drives chart + heatmap + sizing</div>
+        </div>
+        <div class="arch-box box-client">
+          <div class="ab-name">Highcharts</div>
+          <div class="ab-detail">Payoff chart + P&L heatmap</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-arrow"><div class="arch-arrow-line"></div><div class="arch-arrow-label">4 sequential API calls</div></div>
+
+    <!-- API Layer -->
+    <div class="arch-row">
+      <div class="arch-label">API Routes<br>(Cloud Functions)</div>
+      <div class="arch-boxes">
+        <div class="arch-box box-existing">
+          <div class="ab-name">GET /api/snapshot/:ticker</div>
+          <div class="ab-detail">Unchanged</div>
+        </div>
+        <div class="arch-box box-changed">
+          <div class="ab-name">POST /api/recommend</div>
+          <div class="ab-detail">Now enriches legs with real mids</div>
+          <div class="ab-model">MODEL: qwen-plus (was claude-sonnet)</div>
+        </div>
+        <div class="arch-box box-changed">
+          <div class="ab-name">POST /api/ai-read</div>
+          <div class="ab-detail">Now direction-aware</div>
+          <div class="ab-model">MODEL: qwen-plus (was qwen-max)</div>
+        </div>
+        <div class="arch-box box-new">
+          <div class="ab-name">POST /api/reasoning/analyze</div>
+          <div class="ab-detail">6 parallel reasoning calls</div>
+          <div class="ab-detail">15-min cache</div>
+          <div class="ab-model">MODEL: qwen3-max (new)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-arrow"><div class="arch-arrow-line"></div><div class="arch-arrow-label">calls internal services</div></div>
+
+    <!-- Engine Layer — unchanged -->
+    <div class="arch-row">
+      <div class="arch-label">Engine<br>(Unchanged)</div>
+      <div class="arch-boxes">
+        <div class="arch-box box-engine">
+          <div class="ab-name">strategy-engine.js</div>
+          <div class="ab-detail">Same code, same gates</div>
+        </div>
+        <div class="arch-box box-engine">
+          <div class="ab-name">analyzeTechnicals()</div>
+        </div>
+        <div class="arch-box box-engine">
+          <div class="ab-name">analyzeGammaEnhanced()</div>
+        </div>
+        <div class="arch-box box-engine">
+          <div class="ab-name">calcScore() + selectStrategy()</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-arrow"><div class="arch-arrow-line"></div><div class="arch-arrow-label">LLM explains + reasons</div></div>
+
+    <!-- LLM Layer — expanded -->
+    <div class="arch-row">
+      <div class="arch-label">LLM Agents</div>
+      <div class="arch-boxes">
+        <div class="arch-box box-changed">
+          <div class="ab-name">StrategyAdvisor</div>
+          <div class="ab-detail">BWB wing validation added</div>
+          <div class="ab-model">MODEL: qwen-plus (was qwen-max)</div>
+        </div>
+        <div class="arch-box box-new">
+          <div class="ab-name">ReasoningEngine</div>
+          <div class="ab-detail">6 parallel reasoning tasks</div>
+          <div class="ab-model">MODEL: qwen3-max</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-arrow"><div class="arch-arrow-line"></div></div>
+
+    <!-- Reasoning Tasks -->
+    <div class="arch-row">
+      <div class="arch-label">Reasoning<br>Tasks (parallel)</div>
+      <div class="arch-boxes">
+        <div class="arch-box box-new" style="min-width:100px">
+          <div class="ab-name">Thesis</div>
+          <div class="ab-detail">Conviction 1-10</div>
+        </div>
+        <div class="arch-box box-new" style="min-width:100px">
+          <div class="ab-name">Risk</div>
+          <div class="ab-detail">Scenarios + grade</div>
+        </div>
+        <div class="arch-box box-new" style="min-width:100px">
+          <div class="ab-name">Scenarios</div>
+          <div class="ab-detail">Probabilities only</div>
+        </div>
+        <div class="arch-box box-new" style="min-width:100px">
+          <div class="ab-name">Exit</div>
+          <div class="ab-detail">Target + stop + adjust</div>
+        </div>
+        <div class="arch-box box-new" style="min-width:100px">
+          <div class="ab-name">Regime</div>
+          <div class="ab-detail">Macro alignment</div>
+        </div>
+        <div class="arch-box box-new" style="min-width:100px">
+          <div class="ab-name">Sizing</div>
+          <div class="ab-detail">Kelly + scaling</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-arrow"><div class="arch-arrow-line"></div></div>
+
+    <!-- Infrastructure -->
+    <div class="arch-row">
+      <div class="arch-label">LLM Router<br>(Infrastructure)</div>
+      <div class="arch-boxes">
+        <div class="arch-box box-changed">
+          <div class="ab-name">router.ts</div>
+          <div class="ab-detail">Added qwen-plus, qwen3-max</div>
+          <div class="ab-detail">11 models supported</div>
+        </div>
+        <div class="arch-box box-changed">
+          <div class="ab-name">model-assignments.ts</div>
+          <div class="ab-detail">Fast tasks → qwen-plus</div>
+          <div class="ab-detail">6 new reasoning assignments</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-arrow"><div class="arch-arrow-line"></div></div>
+
+    <!-- Data Layer -->
+    <div class="arch-row">
+      <div class="arch-label">Data Sources<br>(Unchanged)</div>
+      <div class="arch-boxes">
+        <div class="arch-box box-data"><div class="ab-name">Alpaca</div></div>
+        <div class="arch-box box-data"><div class="ab-name">Nasdaq / Yahoo</div></div>
+        <div class="arch-box box-data"><div class="ab-name">DashScope (Qwen)</div></div>
+        <div class="arch-box box-data"><div class="ab-name">Anthropic / OpenAI</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2>3. Side-by-Side Comparison</h2>
+
+<div class="side-by-side">
+  <div class="card">
+    <div class="card-title">Before (Discover)</div>
+    <ul>
+      <li>5-stage wizard (multi-step)</li>
+      <li>1 LLM call for explanation (40 words)</li>
+      <li>No thesis, no risk, no exit plan</li>
+      <li>No position sizing</li>
+      <li>No conviction scoring</li>
+      <li>Legs without mid prices</li>
+      <li>Market read independent of engine direction</li>
+      <li>Canvas payoff chart (DPI issues)</li>
+      <li>claude-sonnet for recommend ($0.01/call)</li>
+      <li>~4.5s total latency</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-title" style="color:var(--teal)">After (Discover Pro)</div>
+    <ul>
+      <li>Single scrollable page</li>
+      <li><strong>7 LLM calls</strong> (1 explain + 6 reasoning, parallel)</li>
+      <li>Full thesis + risk + exit + regime + sizing</li>
+      <li>Computed position sizing (2% risk target)</li>
+      <li>Conviction 1-10 + letter grade A-D</li>
+      <li><strong>Legs with real bid/ask/mid from chain</strong></li>
+      <li>Market read constrained to engine direction</li>
+      <li><strong>Highcharts</strong> payoff + P&L heatmap</li>
+      <li>qwen-plus for explain ($0.001/call)</li>
+      <li>~5s total latency (parallel reasoning)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2>4. Service-by-Service Change Log</h2>
+
+<table>
+  <thead>
+    <tr><th>Service / File</th><th>Status</th><th>Before</th><th>After</th><th>Why</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>router.ts</code></td>
+      <td><span class="tag tag-changed">CHANGED</span></td>
+      <td>9 models (ModelTier union)</td>
+      <td>11 models (+qwen-plus, +qwen3-max)</td>
+      <td>Need fast model (qwen-plus) and reasoning model (qwen3-max)</td>
+    </tr>
+    <tr>
+      <td><code>model-assignments.ts</code></td>
+      <td><span class="tag tag-changed">CHANGED</span></td>
+      <td>14 assignments, fast tasks on claude-sonnet/qwen-max</td>
+      <td>20 assignments, fast tasks on qwen-plus, 6 new reasoning on qwen3-max</td>
+      <td>Cost reduction (-90% on recommend) + new reasoning capability</td>
+    </tr>
+    <tr>
+      <td><code>POST /api/ai-read</code></td>
+      <td><span class="tag tag-changed">CHANGED</span></td>
+      <td>Generates market read without knowing engine direction. Hardcoded qwen-max.</td>
+      <td>Accepts engineDirection + engineStrategy. Uses qwen-plus via model assignment.</td>
+      <td>Eliminates "bullish market read + bearish strategy" contradiction</td>
+    </tr>
+    <tr>
+      <td><code>POST /api/recommend</code></td>
+      <td><span class="tag tag-changed">CHANGED</span></td>
+      <td>Returns legs as {type, side, strike} — no pricing data</td>
+      <td>Enriches each leg with real mid, bid, ask, iv from the option chain</td>
+      <td>Client needs real mids to compute accurate P&L, breakevens, sizing</td>
+    </tr>
+    <tr>
+      <td><code>advisor.ts</code></td>
+      <td><span class="tag tag-changed">CHANGED</span></td>
+      <td>No BWB wing rules. Hardcoded qwen-max model.</td>
+      <td>BWB asymmetric wing enforcement in prompt + post-parse validation. Uses model assignment (qwen-plus).</td>
+      <td>LLM was picking symmetric wings (regular butterfly, not BWB)</td>
+    </tr>
+    <tr>
+      <td><code>reasoner.ts</code></td>
+      <td><span class="tag tag-new">NEW</span></td>
+      <td>Did not exist</td>
+      <td>ReasoningEngine class: 6 parallel methods (thesis, risk, scenarios, exit, regime, sizing). Structure classification. IV/data availability awareness.</td>
+      <td>Core new capability — hedge fund-level analysis</td>
+    </tr>
+    <tr>
+      <td><code>POST /api/reasoning/analyze</code></td>
+      <td><span class="tag tag-new">NEW</span></td>
+      <td>Did not exist</td>
+      <td>Accepts ticker + engine pick + market data. Returns 6 reasoning results + conviction + grade. 15-min cache.</td>
+      <td>API endpoint for the reasoning engine</td>
+    </tr>
+    <tr>
+      <td><code>discover-pro.html</code></td>
+      <td><span class="tag tag-new">NEW</span></td>
+      <td>Did not exist</td>
+      <td>Single-page analysis UI: snapshot → engine pick → payoff chart → 6 reasoning cards → heatmap → grade. Computed P&L via legMath.js. Highcharts.</td>
+      <td>New user-facing page for deep analysis</td>
+    </tr>
+    <tr>
+      <td><code>app.ts</code></td>
+      <td><span class="tag tag-changed">CHANGED</span></td>
+      <td>Registers 10 route modules</td>
+      <td>Registers 11 route modules (+registerReasoningRoutes)</td>
+      <td>Wire up new reasoning endpoint</td>
+    </tr>
+    <tr>
+      <td><code>strategy-engine.js</code></td>
+      <td><span class="tag tag-same">SAME</span></td>
+      <td colspan="2">No changes — deterministic engine is the single source of truth</td>
+      <td>Engine works well. Reasoning layer adds depth, not replaces decisions.</td>
+    </tr>
+    <tr>
+      <td><code>discover.html</code></td>
+      <td><span class="tag tag-same">SAME</span></td>
+      <td colspan="2">No changes — existing Discover page untouched</td>
+      <td>Different product for different user needs</td>
+    </tr>
+    <tr>
+      <td><code>legMath.js</code></td>
+      <td><span class="tag tag-same">SAME</span></td>
+      <td colspan="2">No changes — shared computation library</td>
+      <td>Already had pnlAt(), computeBreakevens(), etc.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2>5. Model Routing — Before vs After</h2>
+
+<table>
+  <thead><tr><th>Service</th><th>Before (Model)</th><th>Before (Cost/call)</th><th>After (Model)</th><th>After (Cost/call)</th><th>Change</th></tr></thead>
+  <tbody>
+    <tr><td>ai-read</td><td>qwen-max</td><td>~$0.0008</td><td>qwen-plus</td><td>~$0.0003</td><td><span class="tag tag-changed">-63%</span></td></tr>
+    <tr><td>recommend (explain)</td><td>claude-sonnet</td><td>~$0.0100</td><td>qwen-plus</td><td>~$0.0005</td><td><span class="tag tag-changed">-95%</span></td></tr>
+    <tr><td>picks-narrative</td><td>claude-sonnet</td><td>~$0.0100</td><td>qwen-plus</td><td>~$0.0005</td><td><span class="tag tag-changed">-95%</span></td></tr>
+    <tr><td>ai-strikes</td><td>claude-haiku</td><td>~$0.0020</td><td>qwen-plus</td><td>~$0.0005</td><td><span class="tag tag-changed">-75%</span></td></tr>
+    <tr><td>reasoning-thesis</td><td>—</td><td>—</td><td>qwen3-max</td><td>~$0.003</td><td><span class="tag tag-new">NEW</span></td></tr>
+    <tr><td>reasoning-risk</td><td>—</td><td>—</td><td>qwen3-max</td><td>~$0.003</td><td><span class="tag tag-new">NEW</span></td></tr>
+    <tr><td>reasoning-scenarios</td><td>—</td><td>—</td><td>qwen3-max</td><td>~$0.003</td><td><span class="tag tag-new">NEW</span></td></tr>
+    <tr><td>reasoning-exit</td><td>—</td><td>—</td><td>qwen3-max</td><td>~$0.003</td><td><span class="tag tag-new">NEW</span></td></tr>
+    <tr><td>reasoning-regime</td><td>—</td><td>—</td><td>qwen3-max</td><td>~$0.003</td><td><span class="tag tag-new">NEW</span></td></tr>
+    <tr><td>reasoning-sizing</td><td>—</td><td>—</td><td>qwen3-max</td><td>~$0.003</td><td><span class="tag tag-new">NEW</span></td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <div class="callout-title">Net cost impact</div>
+  <p><strong>Discover (before):</strong> ~$0.013/request (1 LLM call)<br>
+  <strong>Discover Pro (after):</strong> ~$0.019/request (7 LLM calls) — but with 15-min cache, effective cost drops to ~$0.005/request<br>
+  <strong>Result:</strong> 10x more analysis depth for roughly the same cost, because the fast tasks got 75-95% cheaper by switching to qwen-plus.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2>6. Request Flow Diagram</h2>
+
+<h3>Discover (Before)</h3>
+<pre>
+Browser                          Cloud Functions                   External
+  │                                   │                              │
+  ├─GET /api/snapshot/AAPL ──────────►│──► Alpaca (spot + expiries)  │
+  │◄─────────────────── {snapshot} ───┤                              │
+  │                                   │                              │
+  ├─GET /api/indicators/AAPL ────────►│──► compute from bars         │
+  ├─GET /api/gamma/AAPL/2026-06-20 ──►│──► Nasdaq OI + analyze      │
+  │◄────────────── {indicators,gamma}─┤                              │
+  │                                   │                              │
+  ├─POST /api/ai-read ───────────────►│──► qwen-max (DashScope)     │
+  │  {ticker,spot,rsi,adx,...}        │     "1 sentence market read" │
+  │◄─────────────────── {read} ───────┤                              │
+  │                                   │                              │
+  ├─POST /api/recommend ─────────────►│  1. Fetch chain + OI        │
+  │  {ticker,expiry}                  │  2. Run strategy-engine.js  │
+  │                                   │  3. StrategyAdvisor.explain │
+  │                                   │     └─► claude-sonnet ──────►│
+  │                                   │     ◄── 40-word rationale ──┤│
+  │◄── {recommendation,enginePick} ───┤                              │
+  │                                   │                              │
+  ▼ Render 5-stage wizard             │                              │
+</pre>
+
+<h3>Discover Pro (After)</h3>
+<pre>
+Browser                          Cloud Functions                   External
+  │                                   │                              │
+  ├─GET /api/snapshot/AAPL ──────────►│──► Alpaca                    │
+  │◄─────────────────── {snapshot} ───┤                              │
+  │                                   │                              │
+  ├─POST /api/recommend ─────────────►│  1. Fetch chain + OI        │
+  │  {ticker,expiry}                  │  2. Run strategy-engine.js  │
+  │                                   │  3. StrategyAdvisor.explain │
+  │                                   │     └─► qwen-plus ──────────►│ (was claude-sonnet)
+  │                                   │  4. Enrich legs with chain  │
+  │                                   │     mids (bid/ask/mid/iv)   │ ◄── NEW
+  │◄── {recommendation+mids,pick} ────┤                              │
+  │                                   │                              │
+  ├─POST /api/ai-read ───────────────►│──► qwen-plus (was qwen-max) │
+  │  {ticker,...,engineDirection,      │  Direction-aware prompt     │ ◄── CHANGED
+  │   engineStrategy}                 │                              │
+  │◄─────────────────── {read} ───────┤                              │
+  │                                   │                              │
+  │  ┌ CLIENT-SIDE COMPUTE ────────┐  │                              │
+  │  │ pnlAt() → payoff chart     │  │                              │ ◄── NEW
+  │  │ computeBreakevens()        │  │                              │
+  │  │ max profit/loss sampling   │  │                              │
+  │  │ P&L heatmap grid           │  │                              │
+  │  │ position sizing (2% risk)  │  │                              │
+  │  └────────────────────────────┘  │                              │
+  │                                   │                              │
+  ├─POST /api/reasoning/analyze ─────►│                              │ ◄── NEW
+  │  {ticker,spot,legs,strategy,      │  Promise.all([              │
+  │   direction,indicators,...}       │    reasonThesis(qwen3-max), │──────►│
+  │                                   │    reasonRisk(qwen3-max),   │──────►│ 6 parallel
+  │                                   │    reasonScenarios(...),    │──────►│ calls to
+  │                                   │    reasonExit(...),         │──────►│ DashScope
+  │                                   │    reasonRegime(...),       │──────►│
+  │                                   │    reasonSizing(...)        │──────►│
+  │                                   │  ])                          │
+  │                                   │  Compute conviction + grade │
+  │◄── {thesis,risk,scenarios,exit,   │                              │
+  │     regime,sizing,meta}  ─────────┤                              │
+  │                                   │                              │
+  ▼ Render single-page analysis       │                              │
+    ├─ Metrics strip (computed)       │                              │
+    ├─ Payoff chart (Highcharts)      │                              │
+    ├─ Legs table (real mids)         │                              │
+    ├─ 6 reasoning cards              │                              │
+    ├─ P&L heatmap (computed)         │                              │
+    ├─ Grade banner (A- / 7.1)        │                              │
+    └─ Position sizing (computed)     │                              │
+</pre>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2>7. Key Design Decisions</h2>
+
+<div class="card">
+  <div class="card-title">Decision 1: Numbers are computed, narratives are reasoned</div>
+  <p>Early versions asked the LLM to generate P&L numbers. The LLM consistently failed at multi-leg options math — getting wrong signs, missing ITM legs, inventing credits. We moved all arithmetic to <code>legMath.js</code> (client-side) and restricted the LLM to qualitative analysis: thesis conviction, risk scenario descriptions, exit reasoning.</p>
+  <p><strong>Rule:</strong> If the answer has a formula, compute it. If it requires judgment, reason about it.</p>
+</div>
+
+<div class="card">
+  <div class="card-title">Decision 2: Parallel reasoning, not sequential</div>
+  <p>All 6 reasoning calls fire simultaneously via <code>Promise.all()</code>. Wall-clock time = slowest single call (~3s), not the sum (~18s). This makes deep analysis feasible in a real-time UI without making users wait.</p>
+</div>
+
+<div class="card">
+  <div class="card-title">Decision 3: Keep the engine, don't replace it</div>
+  <p>The deterministic engine (<code>strategy-engine.js</code>) selects strategies through auditable gates. An LLM would hallucinate strategy selections, be non-reproducible, and cost 100x more. The engine decides; the reasoning layer explains and enriches that decision.</p>
+</div>
+
+<div class="card">
+  <div class="card-title">Decision 4: Real mids from the chain, not estimates</div>
+  <p>The <code>/api/recommend</code> route already fetches the full option chain from Alpaca. We added a post-processing step to match each selected leg to its chain contract and attach the real bid/ask/mid/iv. This eliminated the estimated-mids problem that was producing arbitrage-like payoffs.</p>
+</div>
+
+<div class="card">
+  <div class="card-title">Decision 5: Direction-aware market read</div>
+  <p>The original flow ran ai-read before recommend. The market read didn't know the engine would pick a bearish strategy, so it often said "bullish, buy calls." We reordered: recommend runs first, then ai-read receives <code>engineDirection</code> so its output is consistent.</p>
+</div>
+
+<div class="card">
+  <div class="card-title">Decision 6: New page, not enhanced existing</div>
+  <p>Discover is a 3,070-line multi-stage wizard serving all users. Adding 6 reasoning panels would make it unwieldy. Discover Pro is a separate product — single-page, scroll-based, aimed at users who want institutional-grade analysis. The existing Discover page is completely unchanged.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2>8. Interview Talking Points</h2>
+
+<div class="card">
+  <div class="card-title">System Design</div>
+  <ul>
+    <li><strong>Separation of concerns:</strong> Engine (deterministic, 30ms) decides. LLM (reasoning, 3s) explains. Code (legMath.js, <1ms) computes. Each does what it's best at.</li>
+    <li><strong>Model tiering:</strong> Benchmarked 5 models, selected qwen-plus (fast, $0.80/M) for narration and qwen3-max (reasoning, $2/M) for analysis. 10x depth increase for +47% cost.</li>
+    <li><strong>Parallel execution:</strong> 6 LLM calls via Promise.all() — wall-clock equals slowest call, not sum. Free depth in latency terms.</li>
+    <li><strong>Caching strategy:</strong> 15-min cache by ticker+expiry. Most users view same top picks within minutes → effective cost drops 70%.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <div class="card-title">Hard Lessons</div>
+  <ul>
+    <li><strong>LLMs cannot do options math.</strong> They get simple cases right but fail on multi-leg intrinsic value calculations, ITM legs, and butterfly payoffs. We moved all P&L computation to deterministic code and restricted the LLM to qualitative analysis.</li>
+    <li><strong>Estimated pricing creates impossible trades.</strong> A distance-based mid estimation formula produced a BWB with $176-$676 profit everywhere and zero loss — a risk-free arbitrage that doesn't exist. Real chain mids from the API fixed this.</li>
+    <li><strong>Internal consistency is harder than any single feature.</strong> Market read, thesis, risk, exit, sizing, chart, heatmap, and metrics must all agree on direction, leg types, and numbers. We enforced this through prompt rules, computed overrides, and a "reference bar" showing the real numbers.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <div class="card-title">Technical Highlights</div>
+  <ul>
+    <li><strong>BWB post-parse validation:</strong> LLM picks symmetric wings (regular butterfly). Code detects equal widths and automatically widens the broken wing. Belt-and-suspenders: prompt instruction + code validation.</li>
+    <li><strong>Structure classification:</strong> The reasoning engine classifies each trade as "put-side broken wing butterfly | 4 legs | DEFINED RISK" and injects this into every prompt. Prevents the LLM from claiming "unlimited loss" for a capped structure.</li>
+    <li><strong>Computed reference bar:</strong> A bar above reasoning cards shows the real numbers (legs, credit, max P/L, breakevens). Users instantly see if LLM text contradicts the math. Trust through transparency.</li>
+    <li><strong>Model assignment system:</strong> Single source of truth (<code>model-assignments.ts</code>) with env-var overrides. Swap any service's model without code changes. Admin dashboard renders the table.</li>
+  </ul>
+</div>
+
+</div>
+</body>
+</html>

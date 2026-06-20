@@ -1,0 +1,316 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=DM+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green-950:#062e22; --green-900:#073827; --green-850:#0b4330; --green-800:#0f4a36;
+  --green-700:#155b43; --green-100:#e7f1ec; --gold:#c9a96e; --gold-soft:#f4ead4;
+  --cream:#f7f3ea; --paper:#fffdf8; --page:#fbfaf7;
+  --text:#172033; --muted:#6b7280; --line:#e8e2d8; --line-soft:#f0ebe0;
+  --red:#d94f4f; --red-deep:#b5392f; --red-soft:#fff1ef; --red-line:#ffd6d1;
+  --profit:#16835f; --profit-deep:#0d6347; --profit-soft:#edf8f3;
+  --amber:#bd7c19; --amber-soft:#fff7e8;
+  --radius:18px; --radius-sm:12px; --shadow:0 16px 44px rgba(18,32,27,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:'DM Sans',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  background:var(--page);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.5}
+.serif{font-family:'Fraunces',Georgia,serif}
+.mono{font-family:'Space Mono',ui-monospace,SFMono-Regular,monospace}
+a{color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+.eyebrow{text-transform:uppercase;letter-spacing:.16em;font-size:11px;font-weight:500;color:var(--gold);}
+.muted{color:var(--muted)}
+.pos{color:var(--profit)} .neg{color:var(--red)}
+
+.topbar{background:var(--green-950);color:#fff;height:64px;display:flex;align-items:center;padding:0 28px;position:sticky;top:0;z-index:20}
+.topbar .brand{font-family:'Fraunces',serif;font-size:20px;margin-right:30px;letter-spacing:-.01em}
+.topbar .brand b{font-weight:500} .topbar .brand i{color:var(--gold);font-style:italic;font-weight:400}
+.topbar nav{display:flex;gap:2px;flex:1}
+.topbar nav a{color:#b6c7bf;text-decoration:none;text-transform:uppercase;letter-spacing:.13em;font-size:11px;font-weight:500;padding:9px 14px;border-radius:8px;transition:.15s}
+.topbar nav a:hover{color:#fff}
+.topbar nav a.active{color:#fff;background:rgba(255,255,255,.08)}
+.topbar .meta{display:flex;align-items:center;gap:16px;color:#9fb2aa;font-size:12px;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:#7e9488;display:inline-block;margin-right:7px;vertical-align:middle}
+.ask{border:1px solid rgba(201,169,110,.5);color:#f0dcae;background:rgba(201,169,110,.08);
+  padding:8px 15px;border-radius:8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:500}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--gold);color:var(--green-950);
+  display:grid;place-items:center;font-weight:600;margin-left:14px;font-size:14px}
+
+.card{background:var(--paper);border:0.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.breadcrumb{font-size:13px;color:var(--muted);padding:22px 0 6px}
+.breadcrumb a{text-decoration:none}
+.breadcrumb span{margin:0 8px;color:var(--line)}
+
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:500;letter-spacing:.08em;
+  text-transform:uppercase;padding:5px 11px;border-radius:20px}
+.b-action{background:rgba(216,90,48,.16);color:#c2521f}
+.b-strat{background:rgba(201,169,110,.16);color:#9a7b3a}
+.b-neutral{background:rgba(255,255,255,.1);color:#cdbb93}
+.b-review{background:var(--red-soft);color:var(--red-deep)}
+.b-watch{background:var(--amber-soft);color:var(--amber)}
+.b-near{background:var(--profit-soft);color:var(--profit-deep)}
+.b-time{background:var(--amber-soft);color:var(--amber)}
+.b-loss{background:var(--red-soft);color:var(--red-deep)}
+.b-profit{background:var(--profit-soft);color:var(--profit-deep)}
+
+.btn{font-family:inherit;font-size:14px;font-weight:500;border-radius:11px;padding:13px 20px;border:0;cursor:pointer}
+.btn-primary{background:var(--red);color:#fff}
+.btn-ghost{background:rgba(255,255,255,.08);color:#eef3f0;border:0.5px solid rgba(255,255,255,.16)}
+.btn-ai{background:rgba(255,255,255,.05);color:#f0dcae;border:0.5px solid rgba(201,169,110,.4)}
+
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.metric{background:var(--paper);border:0.5px solid var(--line);border-radius:var(--radius-sm);padding:16px 18px}
+.metric .lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.metric .val{font-family:'Space Mono',monospace;font-size:30px;font-weight:500;margin-top:6px;line-height:1}
+.metric .sub{font-size:12px;color:var(--muted);margin-top:6px}
+
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.rise{animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+</style></head><body>
+<style>
+  .stepper{display:flex;align-items:center;gap:0;margin:26px 0 18px}
+  .step{display:flex;flex-direction:column;align-items:center;gap:7px}
+  .step .o{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--line);background:var(--paper)}
+  .step.done .o{background:var(--green-950);border-color:var(--green-950);color:#fff;width:22px;height:22px;display:grid;place-items:center;font-size:11px;font-family:'Space Mono'}
+  .step.cur .o{border-color:var(--gold);background:var(--gold);width:18px;height:18px}
+  .step small{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .step.cur small,.step.done small{color:var(--green-950)}
+  .seg{flex:1;height:1px;background:var(--line);margin:0 8px 24px}
+  .breadcrumb{font-size:13px;color:var(--muted);padding:8px 0 6px}
+
+  .hero-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:18px;margin-top:8px}
+  .hero-dark{background:linear-gradient(160deg,var(--green-900),var(--green-950));color:#eef3f0;border-radius:var(--radius);padding:26px 28px}
+  .hero-dark .row{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+  .hero-dark h1{font-family:'Fraunces',serif;font-weight:500;font-size:38px;margin:16px 0 8px}
+  .badges{display:flex;gap:8px;flex-wrap:wrap}
+  .spot{display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-size:20px;margin-top:6px}
+  .spot .live{width:9px;height:9px;border-radius:50%;background:#e0b34a;box-shadow:0 0 0 4px rgba(224,179,74,.18)}
+  .verdict{font-family:'Fraunces',serif;font-style:italic;font-size:18px;line-height:1.5;color:#d6e2db;margin:16px 0 18px;max-width:34em}
+  .rrblock{text-align:right}
+  .rrblock .cap{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#9fb6ac}
+  .rrblock .big{font-family:'Space Mono',monospace;font-size:44px;font-weight:500;line-height:1.05;color:#eef3f0}
+  .rrblock .mm{margin-top:12px;background:rgba(255,255,255,.05);border:0.5px solid rgba(255,255,255,.1);border-radius:12px;padding:11px 14px;font-family:'Space Mono',monospace;font-size:13px;text-align:right;line-height:1.8}
+  .sizer{display:flex;align-items:center;gap:12px;margin:4px 0 18px}
+  .sizer label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#9fb6ac}
+  .stepbtn{width:32px;height:32px;border-radius:8px;border:0.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;font-size:18px;cursor:pointer}
+  .qtyval{font-family:'Space Mono',monospace;font-size:18px;min-width:34px;text-align:center}
+  .actions{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{font-family:inherit;font-size:14px;font-weight:500;border-radius:11px;padding:13px 22px;border:0;cursor:pointer}
+  .btn-take{background:#1f9d6f;color:#fff}
+  .btn-ghost{background:rgba(255,255,255,.08);color:#eef3f0;border:0.5px solid rgba(255,255,255,.16)}
+
+  .summary{background:var(--paper);border:0.5px solid var(--line);border-radius:var(--radius);padding:24px 26px}
+  .summary .top{display:flex;justify-content:space-between;align-items:flex-start}
+  .summary h2{font-family:'Fraunces',serif;font-weight:500;font-size:23px;margin:4px 0 0}
+  .summary .lede{font-size:17px;font-weight:500;line-height:1.45;margin:16px 0 0}
+  .callout{background:var(--profit-soft);border-left:3px solid var(--profit);border-radius:0 10px 10px 0;padding:13px 16px;margin:16px 0;font-size:14px;color:#244e41}
+  .srow{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-top:0.5px solid var(--line-soft);font-size:14px}
+  .srow .k{color:var(--muted)} .srow .v{font-family:'Space Mono',monospace;font-weight:500}
+
+  .gauge-card{margin-top:18px;padding:24px 26px}
+  .gauge-card h3{font-family:'Fraunces',serif;font-weight:500;font-size:21px;margin:2px 0 0}
+  .track{position:relative;height:30px;border-radius:9px;overflow:hidden;background:#efece4;margin:24px 0 8px}
+  .zone-loss{position:absolute;left:0;top:0;bottom:0;background:rgba(217,79,79,.22)}
+  .zone-profit{position:absolute;right:0;top:0;bottom:0;background:rgba(22,131,95,.20)}
+  .be{position:absolute;top:-6px;bottom:-6px;width:0;border-left:1.5px dashed rgba(23,32,51,.4)}
+  .ends{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:24px}
+  .ends .mid{color:var(--text)}
+  .ctx{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
+  .ctx .c{background:var(--cream);border:0.5px solid var(--line);border-radius:12px;padding:15px 17px}
+  .ctx .c h4{margin:0 0 6px;font-size:14px;font-weight:500} .ctx .c p{margin:0;font-size:13px;color:var(--muted);line-height:1.55}
+
+  .lower{display:grid;grid-template-columns:1.55fr 1fr;gap:18px;margin-top:18px}
+  .legs{padding:22px 24px}
+  .legs h3{font-family:'Fraunces',serif;font-weight:500;font-size:20px;margin:0 0 4px}
+  .legs .meta{font-size:12px;color:var(--muted);margin-bottom:12px;font-family:'Space Mono',monospace}
+  table.legs-t{width:100%;border-collapse:collapse;font-size:14px}
+  table.legs-t th{text-align:right;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500;padding:8px 6px}
+  table.legs-t th:first-child,table.legs-t td:first-child{text-align:left}
+  table.legs-t td{text-align:right;padding:13px 6px;border-top:0.5px solid var(--line-soft);font-family:'Space Mono',monospace}
+  .tag{font-size:11px;font-weight:500;letter-spacing:.05em;padding:3px 9px;border-radius:6px;font-family:'DM Sans'}
+  .t-sell{background:var(--red-soft);color:var(--red-deep)} .t-buy{background:var(--profit-soft);color:var(--profit-deep)}
+  .netrow td{border-top:1px solid var(--line)!important;font-weight:500}
+  .payoff{margin-top:18px;padding:22px 24px}
+  .payoff h3{font-family:'Fraunces',serif;font-weight:500;font-size:20px;margin:0 0 12px}
+
+  .rail .card{padding:20px 22px;margin-bottom:18px}
+  .rail h3{font-family:'Fraunces',serif;font-weight:500;font-size:19px;margin:2px 0 0}
+  .ring{display:flex;align-items:center;gap:16px;margin:14px 0}
+  .ring p{margin:0;font-size:13px;color:var(--muted);line-height:1.5}
+  .plan{background:var(--amber-soft);border:0.5px solid #f0e0b8;border-radius:10px;padding:12px 14px;margin-top:6px}
+  .plan b{color:var(--amber);font-size:13px} .plan p{margin:6px 0 0;font-size:13px;line-height:1.5}
+  @media(max-width:980px){.hero-grid,.lower{grid-template-columns:1fr}.metrics,.ctx{grid-template-columns:repeat(2,1fr)}}
+</style>
+
+<div class="topbar">
+  <div class="brand"><b>Leaf</b> <i>System</i></div>
+  <nav><a href="#">Home</a><a href="#" class="active">Discover</a><a href="#">Build</a><a href="#">Positions</a><a href="#">Performance</a><a href="#">Admin</a></nav>
+  <div class="meta"><span><span class="dot"></span>Markets Closed</span><span class="ask">⚡ Ask AI</span><span class="avatar">M</span></div>
+</div>
+
+<div class="wrap">
+  <div class="stepper">
+    <div class="step done"><span class="o">✓</span><small>Discover</small></div><div class="seg"></div>
+    <div class="step cur"><span class="o"></span><small>Decide</small></div><div class="seg"></div>
+    <div class="step"><span class="o"></span><small>Build</small></div><div class="seg"></div>
+    <div class="step"><span class="o"></span><small>Execute</small></div><div class="seg"></div>
+    <div class="step"><span class="o"></span><small>Defend</small></div>
+  </div>
+
+  <div class="eyebrow">Decide · candidate setup</div>
+  <h1 class="serif" style="font-size:38px;font-weight:500;margin:6px 0 4px">ADBE Iron Condor</h1>
+  <p class="muted" style="margin:0;font-size:14px">Range-bound thesis with elevated IV — a defined-risk premium setup. You haven't entered this yet.</p>
+  <div class="breadcrumb">← <a href="#">Discover</a><span style="margin:0 8px;color:var(--line)">/</span>ADBE<span style="margin:0 8px;color:var(--line)">/</span>Iron Condor</div>
+
+  <div class="hero-grid">
+    <div class="hero-dark rise">
+      <div class="row">
+        <div>
+          <div class="badges">
+            <span class="badge b-near">Candidate</span>
+            <span class="badge b-strat">Iron Condor</span>
+            <span class="badge b-neutral">28 DTE</span>
+            <span class="badge b-neutral">70% probability</span>
+          </div>
+          <h1 class="serif">ADBE Iron Condor</h1>
+          <div class="spot"><span class="live"></span><b>$259.21</b><span style="font-size:13px;color:#9fb6ac">~15 min delay</span></div>
+        </div>
+        <div class="rrblock">
+          <div class="cap">Reward : Risk</div>
+          <div class="big">0.81×</div>
+          <div class="mm">Max profit <b class="pos" id="h-mp">+$2,240</b><br>Max loss <b class="neg" id="h-ml">−$2,760</b><br><span style="color:#9fb6ac"><span id="h-qty">10</span> contracts</span></div>
+        </div>
+      </div>
+      <div class="verdict">A defined-risk condor on ADBE. You'd risk up to <b style="color:#e8998d" id="v-ml">$2,760</b> to make up to <b style="color:#8fc79e" id="v-mp">$2,240</b>, with a 70% chance of finishing in the profit zone between $245.76 and $272.24.</div>
+      <div class="sizer">
+        <label>Size</label>
+        <button class="stepbtn" onclick="setQty(-1)">−</button>
+        <span class="qtyval" id="qty">10</span>
+        <button class="stepbtn" onclick="setQty(1)">+</button>
+        <label>contracts</label>
+      </div>
+      <div class="actions">
+        <button class="btn btn-take">Take this trade</button>
+        <button class="btn btn-ghost">Save for later</button>
+        <button class="btn btn-ghost">Pass</button>
+      </div>
+    </div>
+
+    <div class="summary rise" style="animation-delay:.06s">
+      <div class="top"><div class="eyebrow">What you'd take on</div><span class="badge b-near">Defined risk</span></div>
+      <h2 class="serif">Should I take this?</h2>
+      <p class="lede">Risk <span class="neg" id="l-ml">$2,760</span> to make <span class="pos" id="l-mp">$2,240</span> — a <b>0.81×</b> reward:risk with a <b>70%</b> probability of profit.</p>
+      <div class="callout">Profit is capped and loss is capped — you keep the full credit if ADBE stays inside the wings at expiry. Nothing is at risk until you execute.</div>
+      <div class="srow"><span class="k">Probability of profit</span><span class="v">70%</span></div>
+      <div class="srow"><span class="k">Profit zone (at expiry)</span><span class="v">$245.76 – $272.24</span></div>
+      <div class="srow"><span class="k">Capital required</span><span class="v" id="s-cap">$2,760</span></div>
+      <div class="srow"><span class="k">Recommended next step</span><span class="v" style="font-family:'DM Sans'">Build &amp; size, then execute</span></div>
+    </div>
+  </div>
+
+  <div class="metrics" style="margin-top:18px;grid-template-columns:repeat(5,1fr)">
+    <div class="metric rise" style="animation-delay:.04s"><div class="lbl">Probability of profit</div><div class="val">70%</div><div class="sub">price stays inside wings</div></div>
+    <div class="metric rise" style="animation-delay:.06s"><div class="lbl">Reward : risk</div><div class="val">0.81×</div><div class="sub">$224 credit vs $276 risk / contract</div></div>
+    <div class="metric rise" style="animation-delay:.08s"><div class="lbl">Max profit</div><div class="val pos" id="m-mp">+$2,240</div><div class="sub">if it expires inside the wings</div></div>
+    <div class="metric rise" style="animation-delay:.12s"><div class="lbl">Max loss</div><div class="val neg" id="m-ml">−$2,760</div><div class="sub">if it breaches a long strike</div></div>
+    <div class="metric rise" style="animation-delay:.16s"><div class="lbl">Capital required</div><div class="val" id="m-cap">$2,760</div><div class="sub">= max loss · defined</div></div>
+  </div>
+
+  <div class="card gauge-card rise" style="animation-delay:.1s">
+    <div class="eyebrow">Risk vs reward at this size</div><h3 class="serif">Outcome range</h3>
+    <div class="track">
+      <div class="zone-loss" style="width:55.2%"></div>
+      <div class="zone-profit" style="width:44.8%"></div>
+      <div class="be" style="left:55.2%"></div>
+    </div>
+    <div class="ends"><span id="g-ml">Max loss −$2,760</span><span class="mid">Break-even $0</span><span id="g-mp">Max profit +$2,240</span></div>
+    <div style="font-size:12px;color:var(--muted);margin-top:8px">No marker yet — you're not in this trade. The split shows magnitude: you risk more than you can make (0.81×), but a 70% probability is the trade-off. Proportions stay fixed at any size; only the dollar labels scale.</div>
+    <div class="ctx">
+      <div class="c"><h4>Reward context</h4><p>You risk <span id="c-ml">$2,760</span> to make <span id="c-mp">$2,240</span>. Full profit if ADBE settles between $245.76 and $272.24.</p></div>
+      <div class="c"><h4>Probability context</h4><p>70% chance of finishing in the profit zone, based on current implied volatility.</p></div>
+      <div class="c"><h4>Time context</h4><p>28 DTE — room to manage. Plan to take profit near 50% and defend or roll by 21 DTE.</p></div>
+    </div>
+  </div>
+
+  <div class="lower">
+    <div>
+      <div class="card legs rise" style="animation-delay:.12s">
+        <h3 class="serif">Structure — the legs you'd open</h3>
+        <div class="meta">ADBE · expiry 2026-06-26 · 28 DTE · net credit $2.24/share ($224/contract)</div>
+        <table class="legs-t">
+          <thead><tr><th>Action</th><th>Strike</th><th>Type</th><th>Price</th><th>Delta</th><th>Theta</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag t-sell">Sell</span></td><td>$270</td><td>Call</td><td>$1.95</td><td>−0.24</td><td>0.15</td></tr>
+            <tr><td><span class="tag t-buy">Buy</span></td><td>$275</td><td>Call</td><td>$0.83</td><td>+0.13</td><td>−0.10</td></tr>
+            <tr><td><span class="tag t-sell">Sell</span></td><td>$248</td><td>Put</td><td>$1.78</td><td>+0.21</td><td>0.12</td></tr>
+            <tr><td><span class="tag t-buy">Buy</span></td><td>$243</td><td>Put</td><td>$0.66</td><td>−0.11</td><td>−0.07</td></tr>
+            <tr class="netrow"><td colspan="3" style="text-align:left">Net credit per contract</td><td class="pos">+$224</td><td>+0.01</td><td>0.10</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card payoff rise" style="animation-delay:.14s">
+        <h3 class="serif">Payoff at expiration</h3>
+        <svg width="100%" height="280" viewBox="0 0 700 320" preserveAspectRatio="xMidYMid meet" style="overflow:visible">
+          <rect x="40" y="156" width="118.2" height="144" fill="rgba(217,79,79,.10)"/>
+          <rect x="561.7" y="156" width="118.3" height="144" fill="rgba(217,79,79,.10)"/>
+          <rect x="158.2" y="40" width="403.5" height="116" fill="rgba(22,131,95,.12)"/>
+          <line x1="40" y1="156" x2="680" y2="156" stroke="var(--line)" stroke-dasharray="4 5"/>
+          <text x="36" y="44" text-anchor="end" font-family="Space Mono" font-size="11" fill="var(--muted)">+$224</text>
+          <text x="36" y="160" text-anchor="end" font-family="Space Mono" font-size="11" fill="var(--muted)">$0</text>
+          <text x="36" y="304" text-anchor="end" font-family="Space Mono" font-size="11" fill="var(--muted)">−$276</text>
+          <polyline points="40,300 116.2,300 192.4,40 527.6,40 603.8,300 680,300" fill="none" stroke="var(--profit)" stroke-width="2.4"/>
+          <line x1="363.2" y1="20" x2="363.2" y2="310" stroke="var(--gold)" stroke-dasharray="3 4"/>
+          <text x="363.2" y="16" text-anchor="middle" font-family="Space Mono" font-size="11" fill="var(--amber)">now $259</text>
+          <text x="158.2" y="318" text-anchor="middle" font-family="Space Mono" font-size="10" fill="var(--muted)">BE 245.76</text>
+          <text x="561.7" y="318" text-anchor="middle" font-family="Space Mono" font-size="10" fill="var(--muted)">BE 272.24</text>
+        </svg>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">Flat max profit while ADBE stays between the short strikes; losses are capped by the long wings at $243 and $275.</div>
+      </div>
+    </div>
+
+    <div class="rail rise" style="animation-delay:.16s">
+      <div class="card">
+        <div class="eyebrow">Fit score</div><h3 class="serif">Why this setup?</h3>
+        <div class="ring">
+          <svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="none" stroke="#eee5d6" stroke-width="6"/><circle cx="32" cy="32" r="27" fill="none" stroke="var(--profit)" stroke-width="6" stroke-linecap="round" stroke-dasharray="170" stroke-dashoffset="44" transform="rotate(-90 32 32)"/><text x="32" y="38" text-anchor="middle" font-family="Space Mono" font-size="18" fill="var(--text)">74</text></svg>
+          <p>Elevated IV rank and a range-bound chart favour selling premium. Defined risk and 70% PoP make it a clean fit.</p>
+        </div>
+        <div class="plan"><b>Trade plan</b><p>Take profit near 50% of max (≈ +$1,120 at 10 lots). Defend or roll by 21 DTE if a wing is tested.</p></div>
+      </div>
+      <div class="card">
+        <div class="eyebrow">Breakdown</div><h3 class="serif">Trade math</h3>
+        <div class="srow"><span class="k">Credit per contract</span><span class="v pos">+$224</span></div>
+        <div class="srow"><span class="k">Width</span><span class="v">$5.00</span></div>
+        <div class="srow"><span class="k">Max profit · <span id="b-qty">10</span> lots</span><span class="v pos" id="b-mp">+$2,240</span></div>
+        <div class="srow"><span class="k">Max loss · <span id="b-qty2">10</span> lots</span><span class="v neg" id="b-ml">−$2,760</span></div>
+        <div class="srow"><span class="k">Breakevens</span><span class="v">245.76 / 272.24</span></div>
+        <div class="srow"><span class="k">Capital required</span><span class="v" id="b-cap">$2,760</span></div>
+      </div>
+    </div>
+  </div>
+  <div style="height:48px"></div>
+</div>
+
+<script>
+  var qty=10, MPC=224, MLC=276;
+  function fmt(n){return (n<0?'−$':'+$')+Math.abs(n).toLocaleString('en-US');}
+  function plain(n){return '$'+Math.abs(n).toLocaleString('en-US');}
+  function render(){
+    var mp=MPC*qty, ml=MLC*qty, cap=ml;
+    var setT=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+    setT('qty',qty); setT('h-qty',qty); setT('b-qty',qty); setT('b-qty2',qty);
+    setT('h-mp','+$'+mp.toLocaleString()); setT('h-ml','−$'+ml.toLocaleString());
+    setT('v-mp',plain(mp)); setT('v-ml',plain(ml));
+    setT('l-mp',plain(mp)); setT('l-ml',plain(ml));
+    setT('s-cap',plain(cap)); setT('m-cap',plain(cap)); setT('b-cap',plain(cap));
+    setT('m-mp','+$'+mp.toLocaleString()); setT('m-ml','−$'+ml.toLocaleString());
+    setT('b-mp','+$'+mp.toLocaleString()); setT('b-ml','−$'+ml.toLocaleString());
+    setT('c-mp',plain(mp)); setT('c-ml',plain(ml));
+    setT('g-mp','Max profit +$'+mp.toLocaleString()); setT('g-ml','Max loss −$'+ml.toLocaleString());
+  }
+  function setQty(d){ qty=Math.max(1,qty+d); render(); }
+  render();
+</script>
+</body></html>

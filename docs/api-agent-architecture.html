@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf API & Agent Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=DM+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--forest:#062e22;--green:#0f4a36;--gold:#c9a96e;--cream:#f7f3ea;--paper:#fffdf8;--page:#fbfaf7;--text:#172033;--muted:#6b7280;--line:#e8e2d8;--profit:#16835f;--loss:#d94f4f;--amber:#bd7c19;--teal:#1a7070;--purple:#5a3a8a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--page);color:var(--text);line-height:1.7}
+.wrap{max-width:960px;margin:0 auto;padding:40px 28px 80px}
+h1{font-family:'Fraunces',serif;font-weight:500;font-size:42px;color:var(--forest);margin-bottom:8px}
+h1 i{color:var(--gold);font-style:italic}
+h2{font-family:'Fraunces',serif;font-weight:500;font-size:26px;color:var(--forest);margin:48px 0 12px;padding-top:24px;border-top:1px solid var(--line)}
+h3{font-family:'Fraunces',serif;font-weight:500;font-size:20px;color:var(--green);margin:28px 0 8px}
+h4{font-size:14px;font-weight:600;color:var(--text);margin:16px 0 6px}
+p,li{font-size:15px;margin-bottom:10px}
+.subtitle{font-size:16px;color:var(--muted);margin-bottom:32px}
+code{font-family:'Space Mono',monospace;font-size:12px;background:var(--cream);padding:2px 6px;border-radius:4px;color:var(--green)}
+pre{font-family:'Space Mono',monospace;font-size:11.5px;background:var(--forest);color:#d6e2db;padding:18px 20px;border-radius:10px;overflow-x:auto;margin:12px 0 20px;line-height:1.55}
+pre b{color:var(--gold);font-weight:400}
+pre .c{color:#7f968c}
+table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:13.5px}
+th{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 10px;border-bottom:2px solid var(--line)}
+td{padding:10px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.card{background:var(--paper);border:.5px solid var(--line);border-radius:14px;padding:20px 24px;margin:16px 0;box-shadow:0 8px 24px rgba(18,32,27,.04)}
+.card h4{margin-top:0}
+.badge{display:inline-block;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:20px;font-weight:600}
+.b-green{background:#edf8f3;color:#0d6347}
+.b-amber{background:#fff7e8;color:#bd7c19}
+.b-red{background:#fff1ef;color:#b5392f}
+.b-teal{background:#e0f2f2;color:#1a7070}
+.b-purple{background:#f0e8f8;color:#5a3a8a}
+.b-grey{background:#f0ebe0;color:#6b7280}
+.flow-diagram{background:var(--forest);color:#d6e2db;border-radius:12px;padding:24px 28px;margin:20px 0;font-family:'Space Mono',monospace;font-size:12px;line-height:1.8;overflow-x:auto}
+.flow-diagram b{color:var(--gold)}
+.flow-diagram .dim{color:#7f968c}
+.callout{background:#edf8f3;border-left:3px solid var(--profit);border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0;font-size:14px;color:#244e41}
+.callout.warn{background:#fff7e8;border-left-color:var(--amber);color:#7a4a07}
+ol,ul{padding-left:24px;margin-bottom:14px}
+.toc{margin:20px 0 40px}
+.toc a{text-decoration:none;color:var(--green);font-size:14px;display:block;padding:3px 0}
+.toc a:hover{color:var(--gold)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:700px){.cols{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>API &amp; Agent <i>Architecture</i></h1>
+<p class="subtitle">How we built the API, how agents work, and how the 8-agent verification orchestration produces a verdict — May 2026</p>
+
+<div class="toc">
+  <b style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)">Contents</b>
+  <a href="#overview">1. System overview</a>
+  <a href="#api">2. API layer</a>
+  <a href="#agents">3. Agent system</a>
+  <a href="#orchestration">4. Orchestration flow</a>
+  <a href="#models">5. Model selection &amp; budget modes</a>
+  <a href="#data">6. Market data integration</a>
+  <a href="#auth">7. Authentication &amp; tiers</a>
+  <a href="#cost">8. Cost tracking</a>
+  <a href="#files">9. File inventory</a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="overview">1. System Overview</h2>
+
+<p>The NewLeaf API is a <b>Fastify + TypeScript</b> service deployed as a Firebase Cloud Function (2nd gen). It serves two main purposes:</p>
+<ol>
+  <li><b>Market data feeds</b> — live prices, option chains, indicators, gamma analysis, sentiment</li>
+  <li><b>AI-powered trade verification</b> — an 8-agent adversarial pipeline that evaluates trade ideas</li>
+</ol>
+
+<div class="flow-diagram">
+<b>Request flow</b>
+<br><br>
+Client (discover.html / strategy-builder / Invest SPA)
+<br>&nbsp;&nbsp;↓
+<br>POST /verify  { ticker, legs, netCredit, modelMode }
+<br>&nbsp;&nbsp;↓
+<br><b>Auth middleware</b> → validate API key → resolve user tier
+<br>&nbsp;&nbsp;↓
+<br><b>RBAC middleware</b> → require 'premium' tier
+<br>&nbsp;&nbsp;↓
+<br><b>VerificationOrchestrator.verify()</b>
+<br>&nbsp;&nbsp;├─ <b>4 Analysts</b> (parallel)  → evidence
+<br>&nbsp;&nbsp;├─ <b>2 Researchers</b> (debate, 2 rounds) → arguments
+<br>&nbsp;&nbsp;├─ <b>Risk Manager</b> → portfolio fit
+<br>&nbsp;&nbsp;├─ <b>Judge</b> → verdict + confidence
+<br>&nbsp;&nbsp;└─ <b>Trade Fixer</b> (if marginal/fail) → suggested fix
+<br>&nbsp;&nbsp;↓
+<br>Response { verdict, evidence, debate, riskReport, cost }
+<br>&nbsp;&nbsp;↓
+<br><b>onSend hook</b> → track LLM usage to Firestore (fire-and-forget)
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="api">2. API Layer</h2>
+
+<h3>Stack</h3>
+<ul>
+  <li><b>Framework:</b> Fastify with TypeScript</li>
+  <li><b>Deployment:</b> Firebase Cloud Functions (2nd gen, Node 22)</li>
+  <li><b>Validation:</b> Zod schemas</li>
+  <li><b>Caching:</b> In-memory (TTL per endpoint: 5-60 min, keyed by SHA256)</li>
+  <li><b>State:</b> In-memory dev / Firestore prod (JobStore)</li>
+</ul>
+
+<h3>Endpoints</h3>
+<table>
+  <tr><th>Endpoint</th><th>Tier</th><th>Purpose</th></tr>
+  <tr><td><code>GET /health</code></td><td><span class="badge b-grey">free</span></td><td>Liveness check</td></tr>
+  <tr><td><code>GET /api/snapshot/:ticker</code></td><td><span class="badge b-grey">free</span></td><td>Stock price + calculated expiry dates</td></tr>
+  <tr><td><code>GET /api/chain/:ticker/:expiry</code></td><td><span class="badge b-green">basic</span></td><td>Option chain grouped by strike</td></tr>
+  <tr><td><code>GET /api/indicators/:ticker</code></td><td><span class="badge b-green">basic</span></td><td>RSI, SMA, Bollinger, ADX, ATR</td></tr>
+  <tr><td><code>GET /api/gamma/:ticker/:expiry</code></td><td><span class="badge b-green">basic</span></td><td>Gamma walls + OI by strike</td></tr>
+  <tr><td><code>GET /api/sentiment/:ticker</code></td><td><span class="badge b-green">basic</span></td><td>Sentiment polarity + catalysts</td></tr>
+  <tr><td><code>POST /api/ai-read</code></td><td><span class="badge b-teal">premium</span></td><td>One-sentence market read</td></tr>
+  <tr><td><code>POST /api/recommend</code></td><td><span class="badge b-teal">premium</span></td><td>Strategy recommendation (engine + LLM)</td></tr>
+  <tr><td><code>POST /verify</code></td><td><span class="badge b-teal">premium</span></td><td>8-agent adversarial verification</td></tr>
+  <tr><td><code>POST /api/publish-from-analysis</code></td><td><span class="badge b-teal">premium</span></td><td>Publish verified tile to Firestore</td></tr>
+  <tr><td><code>POST /admin/keys</code></td><td><span class="badge b-purple">admin</span></td><td>API key management</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="agents">3. Agent System</h2>
+
+<p>Every agent extends <code>BaseAgent&lt;Input, Report&gt;</code> which provides model selection (premium vs budget), structured output parsing via Zod, and cost tracking.</p>
+
+<h3>The 8 verification agents</h3>
+
+<div class="cols">
+  <div class="card">
+    <h4><span class="badge b-green">Analyst</span> Technical Analyst</h4>
+    <p>Trend regime (SMA alignment), RSI overbought/oversold, breakout risk vs short strike proximity.</p>
+    <p><b>Model:</b> Claude Sonnet / Deepseek<br>
+    <b>Input:</b> Trade idea + live indicators<br>
+    <b>Output:</b> Trend state, RSI assessment, risk level</p>
+  </div>
+  <div class="card">
+    <h4><span class="badge b-green">Analyst</span> Gamma Analyst</h4>
+    <p>Gamma wall integrity (0-1), flip distance, band containment. Is spot inside the gamma walls?</p>
+    <p><b>Model:</b> Claude Sonnet / Deepseek<br>
+    <b>Input:</b> Trade idea + OI data + gamma walls<br>
+    <b>Output:</b> Wall strength, flip risk, containment assessment</p>
+  </div>
+  <div class="card">
+    <h4><span class="badge b-green">Analyst</span> IV Analyst</h4>
+    <p>IV rank, term structure (normal/flat/backwardated), premium fairness (rich/fair/thin).</p>
+    <p><b>Model:</b> Claude Haiku / Deepseek<br>
+    <b>Input:</b> Trade idea + IV surface data<br>
+    <b>Output:</b> IV assessment, premium quality</p>
+  </div>
+  <div class="card">
+    <h4><span class="badge b-green">Analyst</span> Sentiment Analyst</h4>
+    <p>News polarity (-1 to +1), catalysts in the DTE window, earnings proximity.</p>
+    <p><b>Model:</b> Deepseek (always budget)<br>
+    <b>Input:</b> Trade idea + Serper search results<br>
+    <b>Output:</b> Polarity score, catalyst list</p>
+  </div>
+  <div class="card">
+    <h4><span class="badge b-teal">Researcher</span> Bull Researcher</h4>
+    <p>Advocates FOR the trade using analyst evidence. Round 2: directly rebuts Bear's thesis.</p>
+    <p><b>Model:</b> GPT-4 / Deepseek<br>
+    <b>Rounds:</b> 2 (opening → rebuttal)</p>
+  </div>
+  <div class="card">
+    <h4><span class="badge b-teal">Researcher</span> Bear Researcher</h4>
+    <p>Argues AGAINST the trade. Highlights risks the analysts surfaced. Round 2: counters Bull's rebuttal.</p>
+    <p><b>Model:</b> GPT-4 / Deepseek<br>
+    <b>Rounds:</b> 2 (opening → counter-rebuttal)</p>
+  </div>
+  <div class="card">
+    <h4><span class="badge b-amber">Risk</span> Risk Manager</h4>
+    <p>Portfolio fit: position count, sector exposure, theta/vega impact. Returns: cleared / reduce_size / blocked.</p>
+    <p><b>Model:</b> Claude Sonnet / Deepseek<br>
+    <b>Input:</b> Evidence + debate + portfolio state</p>
+  </div>
+  <div class="card">
+    <h4><span class="badge b-red">Judge</span> Final Verdict</h4>
+    <p>Weighs all evidence in a fixed hierarchy: Risk &gt; IV &gt; Gamma &gt; Technical &gt; Sentiment. Produces pass/marginal/fail + 0-100 confidence + flip conditions.</p>
+    <p><b>Model:</b> Claude Sonnet / Qwen-Max (critical)<br>
+    <b>Confidence scale:</b><br>
+    80-100: strong conviction<br>
+    60-79: moderate (most evidence aligns)<br>
+    40-59: low / marginal<br>
+    0-39: fail territory</p>
+  </div>
+</div>
+
+<div class="card">
+  <h4><span class="badge b-purple">Fixer</span> Trade Fixer (conditional)</h4>
+  <p>Only runs if verdict is marginal or fail. Suggests one of three actions:</p>
+  <ul>
+    <li><b>Adjust</b> — same strategy, different strikes (e.g. "move short call from 255 to 260")</li>
+    <li><b>Wait</b> — condition to re-evaluate (e.g. "wait for IV rank past 35")</li>
+    <li><b>Switch</b> — different strategy entirely (e.g. "consider a bear put spread instead")</li>
+  </ul>
+  <p><b>Model:</b> Claude Sonnet / Qwen-Max (critical)</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="orchestration">4. Orchestration Flow</h2>
+
+<p>The orchestrator (<code>orchestrator.ts</code>, 93 lines) coordinates the 8 agents in a fixed pipeline. It's the single entry point for verification.</p>
+
+<div class="flow-diagram">
+<b>Phase 1: EVIDENCE</b> <span class="dim">(parallel — 4 concurrent LLM calls)</span>
+<br>
+<br>&nbsp;&nbsp;┌─ Technical Analyst ──→ TechnicalReport
+<br>&nbsp;&nbsp;├─ Gamma Analyst ─────→ GammaReport
+<br>&nbsp;&nbsp;├─ IV Analyst ────────→ IVReport
+<br>&nbsp;&nbsp;└─ Sentiment Analyst ─→ SentimentReport
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>evidence</b> (aggregate)
+<br>
+<br><b>Phase 2: DEBATE</b> <span class="dim">(sequential — 4 stages)</span>
+<br>
+<br>&nbsp;&nbsp;Bull R1 ──→ "RSI 58 confirms neutral, theta accelerates..."
+<br>&nbsp;&nbsp;Bear R1 ──→ "IV rank 22 is thin, gamma flip at 1.5 strikes..."
+<br>&nbsp;&nbsp;Bull R2 ──→ "Wall integrity 0.62 has held, premium compensates..."
+<br>&nbsp;&nbsp;Bear R2 ──→ "Wall fails 40% under pressure, credit only 21%..."
+<br>
+<br><b>Phase 3: RISK</b>
+<br>
+<br>&nbsp;&nbsp;Risk Manager ──→ { portfolioFit: "reduce_size", thetaImpact, vegaImpact }
+<br>
+<br><b>Phase 4: VERDICT</b>
+<br>
+<br>&nbsp;&nbsp;Judge ──→ { call: "marginal", confidence: 51, flipConditions: [...] }
+<br>
+<br>&nbsp;&nbsp;<span class="dim">Weighing hierarchy (hardcoded, non-negotiable):</span>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;1. Risk (hard limits)
+<br>&nbsp;&nbsp;&nbsp;&nbsp;2. IV / premium adequacy
+<br>&nbsp;&nbsp;&nbsp;&nbsp;3. Gamma / flow positioning
+<br>&nbsp;&nbsp;&nbsp;&nbsp;4. Technical / trend
+<br>&nbsp;&nbsp;&nbsp;&nbsp;5. Sentiment (tiebreaker only)
+<br>
+<br><b>Phase 5: FIX</b> <span class="dim">(only if marginal or fail)</span>
+<br>
+<br>&nbsp;&nbsp;Trade Fixer ──→ { action: "adjust", suggestion: "Move short call to 260" }
+</div>
+
+<div class="callout">
+  <b>Key design decision: Debate over voting.</b> Instead of having analysts vote pass/fail independently (which hides disagreement), the bull/bear debate surfaces the strongest evidence on each side. The judge then weighs it — this produces better verdicts than simple consensus.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="models">5. Model Selection &amp; Budget Modes</h2>
+
+<p>Each agent has a <b>premium model</b> (default) and an optional <b>budget override</b>. The client selects the mode via <code>modelMode</code>:</p>
+
+<table>
+  <tr><th>Agent</th><th>Premium</th><th>Budget-V3</th><th>Budget-R1</th><th>Budget-QWQ</th></tr>
+  <tr><td>Technical</td><td>Claude Sonnet</td><td>Deepseek</td><td>Deepseek</td><td>Deepseek</td></tr>
+  <tr><td>Gamma</td><td>Claude Sonnet</td><td>Deepseek</td><td>Deepseek</td><td>Deepseek</td></tr>
+  <tr><td>IV</td><td>Claude Haiku</td><td>Deepseek</td><td>Deepseek</td><td>Deepseek</td></tr>
+  <tr><td>Sentiment</td><td>Deepseek</td><td>Deepseek</td><td>Deepseek</td><td>Deepseek</td></tr>
+  <tr><td>Bull/Bear</td><td>GPT-4</td><td>Deepseek</td><td>Deepseek</td><td>Deepseek</td></tr>
+  <tr><td>Risk</td><td>Claude Sonnet</td><td>Deepseek</td><td>Deepseek</td><td>Deepseek</td></tr>
+  <tr><td>Judge</td><td>Claude Sonnet</td><td>Deepseek</td><td>Deepseek-R1</td><td><b>Qwen-Max</b></td></tr>
+  <tr><td>Fixer</td><td>Claude Sonnet</td><td>Deepseek</td><td>Deepseek-R1</td><td><b>Qwen-Max</b></td></tr>
+</table>
+
+<p><b>Critical model logic:</b> The Judge and Fixer use stronger models in budget modes because verdict quality is non-negotiable — a cheap verdict defeats the purpose of verification.</p>
+
+<h3>Cost per verification (approximate)</h3>
+<table>
+  <tr><th>Mode</th><th>Cost</th><th>Models used</th></tr>
+  <tr><td>Premium</td><td>~$0.15-0.25</td><td>Claude Sonnet + GPT-4 + Haiku</td></tr>
+  <tr><td>Budget-V3</td><td>~$0.02-0.04</td><td>Deepseek (all agents)</td></tr>
+  <tr><td>Budget-QWQ</td><td>~$0.04-0.06</td><td>Deepseek + Qwen-Max (judge/fixer)</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="data">6. Market Data Integration</h2>
+
+<div class="cols">
+  <div class="card">
+    <h4>Alpaca (primary)</h4>
+    <ul>
+      <li>Stock snapshots (OHLCV, bid/ask)</li>
+      <li>Historical bars (250-400 days)</li>
+      <li>Option chains with Greeks (delta, gamma, theta, vega, IV)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Nasdaq (OI data)</h4>
+    <ul>
+      <li>Real open interest by strike</li>
+      <li>Gamma wall detection</li>
+      <li>Put/call wall identification</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Yahoo (fallback)</h4>
+    <ul>
+      <li>Firebase Cloud Function (Python 3.10)</li>
+      <li>Expiry dates + option chains</li>
+      <li>Used when Alpaca/Nasdaq unavailable</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Serper (sentiment)</h4>
+    <ul>
+      <li>Google News search for ticker</li>
+      <li>Reddit/WSB mentions</li>
+      <li>Social sentiment polarity</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout warn">
+  <b>Market data is optional.</b> If Alpaca is unavailable (after hours, rate limits), agents reason without live data — they degrade, not fail. The verdict may have lower confidence without live indicators.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="auth">7. Authentication &amp; Tiers</h2>
+
+<p>Every request (except <code>/health</code>) requires an <code>X-API-Key</code> header. The key resolves to a user tier:</p>
+
+<table>
+  <tr><th>Tier</th><th>Level</th><th>Access</th></tr>
+  <tr><td><span class="badge b-grey">free</span></td><td>0</td><td>Health check, stock snapshots</td></tr>
+  <tr><td><span class="badge b-green">basic</span></td><td>1</td><td>+ option chains, indicators, gamma, sentiment</td></tr>
+  <tr><td><span class="badge b-teal">premium</span></td><td>2</td><td>+ AI read, recommendations, verification, publishing</td></tr>
+  <tr><td><span class="badge b-purple">admin</span></td><td>3</td><td>+ API key management</td></tr>
+</table>
+
+<p><b>Dev mode:</b> <code>DEV_API_KEY</code> env var + <code>DEV_API_ROLE</code> (defaults to admin). No Firestore lookup.</p>
+<p><b>Prod mode:</b> Looks up key in Firestore <code>apiKeys</code> collection. Increments <code>requestCount</code> and updates <code>lastUsedAt</code> on each request (fire-and-forget).</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="cost">8. Cost Tracking</h2>
+
+<p>Every LLM call is tracked through the <code>LLMRouter</code>. After each response, a Fastify <code>onSend</code> hook writes usage to Firestore:</p>
+
+<pre>
+<span class="c">// Tracked per request:</span>
+{
+  <b>llmCallCount</b>: increment(N),     <span class="c">// total calls in this request</span>
+  <b>llmTokens</b>:    increment(total),  <span class="c">// input + output tokens</span>
+  <b>llmCost</b>:      increment(cost),   <span class="c">// USD cost</span>
+  <b>lastTicker</b>:   "AAPL",           <span class="c">// from request body</span>
+  <b>lastUsedAt</b>:   serverTimestamp()
+}
+</pre>
+
+<p>Pricing per million tokens:</p>
+<table>
+  <tr><th>Model</th><th>Input</th><th>Output</th></tr>
+  <tr><td>Claude Sonnet</td><td>$3.00</td><td>$15.00</td></tr>
+  <tr><td>Claude Haiku</td><td>$0.80</td><td>$4.00</td></tr>
+  <tr><td>GPT-4</td><td>$2.50</td><td>$10.00</td></tr>
+  <tr><td>Deepseek</td><td>$0.27</td><td>$1.10</td></tr>
+  <tr><td>Deepseek-R1</td><td>$0.55</td><td>$2.19</td></tr>
+  <tr><td>Qwen-Max</td><td>$1.60</td><td>$6.40</td></tr>
+  <tr><td>QWQ</td><td>$0.30</td><td>$1.20</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="router">9. LLM Router — Deep Dive</h2>
+
+<p>The <code>LLMRouter</code> (<code>llm/router.ts</code>, 252 lines) is the single gateway for ALL LLM calls in the system. No agent calls a model directly — every call goes through the router, which handles provider selection, token counting, cost calculation, and full trace recording.</p>
+
+<h3>Architecture</h3>
+
+<div class="flow-diagram">
+<b>LLMRouter internals</b>
+<br><br>
+Agent.run()
+<br>&nbsp;&nbsp;↓
+<br>router.<b>call</b>(modelTier, { system, user, maxTokens })
+<br>&nbsp;&nbsp;↓
+<br>switch (modelTier) {
+<br>&nbsp;&nbsp;'claude-sonnet' → <b>callClaude</b>('claude-sonnet-4-20250514')  <span class="dim">// Anthropic SDK</span>
+<br>&nbsp;&nbsp;'claude-haiku'  → <b>callClaude</b>('claude-haiku-4-5-20251001') <span class="dim">// Anthropic SDK</span>
+<br>&nbsp;&nbsp;'gpt-4'         → <b>callOpenAI</b>('gpt-4o')                    <span class="dim">// OpenAI SDK</span>
+<br>&nbsp;&nbsp;'grok'          → <b>callXAI</b>('grok-4')                       <span class="dim">// xAI (OpenAI-compatible)</span>
+<br>&nbsp;&nbsp;'deepseek'      → <b>callDeepSeek</b>('deepseek-chat')           <span class="dim">// DeepSeek API</span>
+<br>&nbsp;&nbsp;'deepseek-r1'   → <b>callDeepSeek</b>('deepseek-reasoner')       <span class="dim">// DeepSeek reasoning</span>
+<br>&nbsp;&nbsp;'qwq'           → <b>callQwen</b>('qwen-plus')                   <span class="dim">// via CF Worker proxy</span>
+<br>&nbsp;&nbsp;'qwen-max'      → <b>callQwen</b>('qwen-max')                    <span class="dim">// via CF Worker proxy</span>
+<br>&nbsp;&nbsp;'gemini-pro'    → <b>callGemini</b>('gemini-2.5-pro')            <span class="dim">// Google AI SDK</span>
+<br>&nbsp;&nbsp;'gemini-flash'  → <b>callGemini</b>('gemini-2.5-flash')          <span class="dim">// Google AI SDK</span>
+<br>}
+<br>&nbsp;&nbsp;↓
+<br>Record: { model, inputTokens, outputTokens, cost, durationMs }
+<br>&nbsp;&nbsp;→ push to <b>_usage[]</b> (aggregate) + <b>_traces[]</b> (full prompts)
+</div>
+
+<h3>SDK clients (7 providers)</h3>
+
+<table>
+  <tr><th>Provider</th><th>SDK</th><th>Base URL</th><th>Models</th></tr>
+  <tr><td>Anthropic</td><td><code>@anthropic-ai/sdk</code></td><td>Default</td><td>Claude Sonnet 4, Claude Haiku 4.5</td></tr>
+  <tr><td>OpenAI</td><td><code>openai</code></td><td>Default</td><td>GPT-4o</td></tr>
+  <tr><td>xAI</td><td><code>openai</code> (compatible)</td><td><code>api.x.ai/v1</code></td><td>Grok-4</td></tr>
+  <tr><td>DeepSeek</td><td><code>openai</code> (compatible)</td><td><code>api.deepseek.com</code></td><td>deepseek-chat, deepseek-reasoner</td></tr>
+  <tr><td>DashScope (Qwen)</td><td><code>openai</code> (compatible)</td><td>CF Worker proxy*</td><td>qwen-plus, qwen-max</td></tr>
+  <tr><td>Google</td><td><code>@google/generative-ai</code></td><td>Default</td><td>Gemini 2.5 Pro, Gemini 2.5 Flash</td></tr>
+  <tr><td>Together AI</td><td><code>openai</code> (compatible)</td><td><code>api.together.xyz/v1</code></td><td>Fallback</td></tr>
+</table>
+
+<p style="font-size:13px;color:var(--muted)">* Qwen (DashScope) is routed through a Cloudflare Worker proxy because DashScope's servers are unreachable from GCP Cloud Functions. The worker at <code>QWEN_PROXY_URL</code> forwards the OpenAI-compatible request.</p>
+
+<h3>How tracking works</h3>
+
+<p>Every LLM call records two things:</p>
+
+<div class="cols">
+  <div class="card">
+    <h4>Usage (aggregate)</h4>
+    <pre style="font-size:11px;margin:8px 0">
+_usage.push({
+  <b>model</b>: 'claude-sonnet',
+  <b>inputTokens</b>: 1847,
+  <b>outputTokens</b>: 523,
+  <b>cost</b>: 0.01339  <span class="c">// USD</span>
+});</pre>
+    <p style="font-size:13px">Returned to the client as <code>response.cost</code> with totals.</p>
+  </div>
+  <div class="card">
+    <h4>Trace (full debug)</h4>
+    <pre style="font-size:11px;margin:8px 0">
+_traces.push({
+  <b>model</b>: 'claude-sonnet',
+  <b>system</b>: "You are a gamma...",
+  <b>user</b>: "Analyze AAPL...",
+  <b>response</b>: "{wallIntegrity:0.62...",
+  <b>inputTokens</b>: 1847,
+  <b>outputTokens</b>: 523,
+  <b>cost</b>: 0.01339,
+  <b>durationMs</b>: 3420
+});</pre>
+    <p style="font-size:13px">Full prompt + response for debugging. Available via <code>response.traces</code>.</p>
+  </div>
+</div>
+
+<h3>Firestore persistence (post-response)</h3>
+
+<p>After the response is sent, a Fastify <code>onSend</code> hook writes accumulated usage to the API key's Firestore document — fire-and-forget, never blocks the response:</p>
+
+<pre>
+<span class="c">// app.ts onSend hook — runs after response is sent</span>
+apiKeyDocRef.update({
+  <b>llmCallCount</b>:  FieldValue.increment(cost.calls.length),   <span class="c">// e.g. +9 for a full verification</span>
+  <b>llmTokens</b>:     FieldValue.increment(totalTokens),         <span class="c">// input + output</span>
+  <b>llmCost</b>:       FieldValue.increment(totalCost),           <span class="c">// USD, 6 decimal places</span>
+  <b>lastTicker</b>:    'AAPL',                                    <span class="c">// from request body</span>
+  <b>requestCount</b>:  FieldValue.increment(1),                   <span class="c">// HTTP-level (from auth)</span>
+  <b>lastUsedAt</b>:    serverTimestamp()
+});
+</pre>
+
+<h3>Lifecycle per request</h3>
+
+<ol>
+  <li><code>router.resetUsage()</code> — clears <code>_usage[]</code> and <code>_traces[]</code> at the start of each request</li>
+  <li>Agents call <code>router.call(model, prompt)</code> — each call appends to both arrays</li>
+  <li><code>router.getUsage()</code> — returns aggregate (total cost, total tokens, per-call breakdown)</li>
+  <li><code>router.getTraces()</code> — returns full prompt/response pairs for debugging</li>
+  <li>onSend hook — persists totals to Firestore after response</li>
+</ol>
+
+<h3>Rate limiting &amp; quotas</h3>
+
+<div class="callout warn">
+  <b>Currently: tracking only, no enforcement.</b> The system tracks <code>llmCallCount</code>, <code>llmTokens</code>, and <code>llmCost</code> per API key in Firestore, but does not enforce rate limits or spending caps. This is by design for the current single-tenant setup — the tracking data is available for dashboarding and future enforcement.
+  <br><br>
+  To add enforcement, check the accumulated values in the auth middleware before allowing the request:
+  <pre style="font-size:11px;margin:8px 0;background:var(--forest);color:#d6e2db;border-radius:6px;padding:12px">
+<span class="c">// Future: rate limiting in auth middleware</span>
+const data = apiKeyDoc.data();
+if (data.llmCost > data.costCap) {
+  return reply.code(429).send({ error: 'Cost cap exceeded' });
+}
+if (data.llmCallCount > data.dailyCallLimit) {
+  return reply.code(429).send({ error: 'Daily call limit reached' });
+}</pre>
+</div>
+
+<h3>Mock mode</h3>
+
+<p>Setting <code>USE_MOCK_LLM=true</code> returns <code>{ mocked: true, model, timestamp }</code> for all calls — zero cost, instant response. Used for integration testing without burning API credits.</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="files">10. File Inventory</h2>
+
+<h3>App shell</h3>
+<table>
+  <tr><th>File</th><th>Lines</th><th>Purpose</th></tr>
+  <tr><td><code>src/app.ts</code></td><td>96</td><td>Fastify setup, middleware, route registration</td></tr>
+  <tr><td><code>src/functions.ts</code></td><td>90</td><td>Firebase Cloud Functions entry point</td></tr>
+  <tr><td><code>src/types.ts</code></td><td>108</td><td>Zod schemas for all input/output types</td></tr>
+  <tr><td><code>src/orchestrator.ts</code></td><td>93</td><td>Verification pipeline coordinator</td></tr>
+</table>
+
+<h3>Agents (11 files)</h3>
+<table>
+  <tr><th>File</th><th>Agent</th><th>Role</th></tr>
+  <tr><td><code>agents/base.ts</code></td><td>BaseAgent</td><td>Abstract base class with model selection</td></tr>
+  <tr><td><code>agents/analysts/technical.ts</code></td><td>TechnicalAnalyst</td><td>Trend + RSI + breakout risk</td></tr>
+  <tr><td><code>agents/analysts/gamma.ts</code></td><td>GammaAnalyst</td><td>Wall integrity + flow positioning</td></tr>
+  <tr><td><code>agents/analysts/iv.ts</code></td><td>IVAnalyst</td><td>IV rank + premium fairness</td></tr>
+  <tr><td><code>agents/analysts/sentiment.ts</code></td><td>SentimentAnalyst</td><td>News polarity + catalysts</td></tr>
+  <tr><td><code>agents/researchers/bull.ts</code></td><td>BullResearcher</td><td>Advocate (2-round debate)</td></tr>
+  <tr><td><code>agents/researchers/bear.ts</code></td><td>BearResearcher</td><td>Skeptic (2-round debate)</td></tr>
+  <tr><td><code>agents/risk.ts</code></td><td>RiskManager</td><td>Portfolio fit + hard limits</td></tr>
+  <tr><td><code>agents/judge.ts</code></td><td>Judge</td><td>Final verdict + confidence</td></tr>
+  <tr><td><code>agents/fixer.ts</code></td><td>TradeFixer</td><td>Suggest adjustment if marginal/fail</td></tr>
+  <tr><td><code>agents/advisor.ts</code></td><td>StrategyAdvisor</td><td>LLM explains engine's pick</td></tr>
+</table>
+
+<h3>Tools &amp; data (7 files)</h3>
+<table>
+  <tr><th>File</th><th>Purpose</th></tr>
+  <tr><td><code>tools/alpaca.ts</code></td><td>Stock snapshots, bars, option chains</td></tr>
+  <tr><td><code>tools/market-data.ts</code></td><td>Aggregate all market data into one object</td></tr>
+  <tr><td><code>tools/indicators.ts</code></td><td>RSI, SMA, Bollinger, ADX, ATR computation</td></tr>
+  <tr><td><code>tools/nasdaq-oi.ts</code></td><td>Open interest + gamma wall detection</td></tr>
+  <tr><td><code>tools/sentiment.ts</code></td><td>Multi-engine sentiment analysis</td></tr>
+  <tr><td><code>tools/serper.ts</code></td><td>Google News + Reddit search via Serper API</td></tr>
+  <tr><td><code>tools/strategy-engine.ts</code></td><td>Deterministic strategy scoring</td></tr>
+</table>
+
+<h3>Infrastructure</h3>
+<table>
+  <tr><th>File</th><th>Purpose</th></tr>
+  <tr><td><code>llm/router.ts</code></td><td>LLM call routing + token/cost tracking</td></tr>
+  <tr><td><code>state/store.ts</code></td><td>Job state management (in-memory / Firestore)</td></tr>
+  <tr><td><code>middleware/auth.ts</code></td><td>API key validation + user resolution</td></tr>
+  <tr><td><code>middleware/rbac.ts</code></td><td>Tier-based access control</td></tr>
+  <tr><td><code>lib/cache.ts</code></td><td>In-memory TTL cache</td></tr>
+  <tr><td><code>lib/firebase.ts</code></td><td>Firebase Admin SDK initialization</td></tr>
+</table>
+
+<hr>
+
+<p style="text-align:center;color:var(--muted);font-size:13px;margin-top:40px">
+  NewLeaf System · API &amp; Agent Architecture · May 2026<br>
+  <span style="color:var(--gold)">8 agents. One verdict. No fabricated numbers.</span>
+</p>
+
+</div>
+</body>
+</html>

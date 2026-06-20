@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NewLeaf — Indian Market Data Integration: Design Doc</title>
+  <style>
+    :root {
+      --forest: #0B2D23; --forest-mid: #1a5c44; --gold: #C9A96E;
+      --cream: #F7F5F0; --cream-dark: #EDE8DC; --ink: #0B0F14;
+      --ink-mid: #3d3d35; --ink-muted: #6b6b60; --ink-faint: #9b9b8e;
+      --white: #fff; --border: rgba(15,61,46,.12);
+      --teal: #0d6e56; --teal-bg: #e0f2ec; --teal-text: #07473a;
+      --green: #1a8c5e; --yellow: #d97706; --red: #c0392b;
+      --blue: #2563eb; --blue-bg: #e0f2fe; --blue-text: #075985;
+      --purple: #7c3aed; --purple-bg: #ede9fe; --purple-text: #5b21b6;
+      --saffron: #FF9933; --saffron-bg: #fff4e6; --saffron-text: #9a4a00;
+      --mono: 'Space Mono', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--cream); color: var(--ink); line-height: 1.7; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 48px 32px 80px; }
+    h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 32px; font-weight: 700; color: var(--forest); margin-bottom: 4px; }
+    .subtitle { font-size: 14px; color: var(--ink-muted); margin-bottom: 40px; }
+    h2 { font-size: 20px; font-weight: 700; color: var(--forest); margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    h3 { font-size: 15px; font-weight: 700; color: var(--ink); margin: 24px 0 10px; }
+    h4 { font-size: 13px; font-weight: 700; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 20px 0 8px; }
+    p { font-size: 14px; color: var(--ink-mid); margin-bottom: 12px; }
+    ul, ol { padding-left: 24px; margin-bottom: 12px; }
+    li { font-size: 14px; color: var(--ink-mid); margin-bottom: 6px; }
+    strong { color: var(--ink); }
+    code { font-family: var(--mono); font-size: 12px; background: var(--cream-dark); padding: 2px 6px; border-radius: 3px; color: var(--forest); }
+    pre { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; margin: 12px 0; font-size: 12px; font-family: var(--mono); line-height: 1.6; color: var(--ink-mid); }
+    a { color: var(--teal); }
+
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+    th { background: var(--cream-dark); color: var(--ink); padding: 8px 12px; text-align: left; font-weight: 600; font-size: 12px; vertical-align: top; }
+    td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--ink-mid); vertical-align: top; }
+    tr:hover td { background: rgba(13,110,86,0.02); }
+
+    .tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-right: 4px; white-space: nowrap; }
+    .tag-ok { background: var(--teal-bg); color: var(--teal-text); }
+    .tag-gap { background: #fee2e2; color: #991b1b; }
+    .tag-partial { background: #fef3c7; color: #92400e; }
+    .tag-same { background: var(--cream-dark); color: var(--ink-muted); }
+
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin: 16px 0; }
+    .card-title { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--teal); margin-bottom: 10px; }
+
+    .callout { background: rgba(13,110,86,0.05); border: 1px solid rgba(13,110,86,0.15); border-radius: 8px; padding: 14px 18px; margin: 16px 0; }
+    .callout-title { font-weight: 700; font-size: 13px; color: var(--teal); margin-bottom: 4px; }
+    .callout.warn { background: var(--saffron-bg); border-color: rgba(255,153,51,0.35); }
+    .callout.warn .callout-title { color: var(--saffron-text); }
+    .callout.danger { background: #fee2e2; border-color: #dc2626; }
+    .callout.danger .callout-title { color: #991b1b; }
+
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 16px 0; padding: 12px 16px; background: var(--white); border: 1px solid var(--border); border-radius: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-mid); }
+
+    .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 20px; }
+    .pill { font-family: var(--mono); font-size: 11px; padding: 4px 10px; border-radius: 20px; background: var(--white); border: 1px solid var(--border); color: var(--ink-muted); }
+
+    /* Flow / layer diagram */
+    .arch { margin: 24px 0; }
+    .arch-title { font-family: var(--mono); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); margin-bottom: 12px; }
+    .arch-row { display: flex; align-items: stretch; min-height: 56px; }
+    .arch-label { width: 130px; flex-shrink: 0; display: flex; align-items: center; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); padding-right: 12px; }
+    .arch-boxes { flex: 1; display: flex; gap: 6px; padding: 4px 0; flex-wrap: wrap; align-items: center; }
+    .arch-box { padding: 10px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; border: 1px solid; display: flex; flex-direction: column; gap: 2px; min-width: 130px; }
+    .arch-box .ab-name { font-weight: 700; font-size: 12px; }
+    .arch-box .ab-detail { font-size: 10px; opacity: 0.75; }
+    .box-existing { background: var(--white); border-color: var(--border); color: var(--ink-mid); }
+    .box-changed { background: #fef3c7; border-color: #d97706; color: #92400e; }
+    .box-new { background: var(--teal-bg); border-color: var(--teal); color: var(--teal-text); }
+    .box-data { background: var(--purple-bg); border-color: var(--purple); color: var(--purple-text); }
+    .box-broker { background: var(--saffron-bg); border-color: var(--saffron); color: var(--saffron-text); }
+    .arch-arrow { display: flex; align-items: center; justify-content: center; padding: 4px 0; }
+    .arch-arrow-line { width: 2px; height: 18px; background: var(--border); position: relative; }
+    .arch-arrow-line::after { content: ''; position: absolute; bottom: -4px; left: -4px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid var(--border); }
+    .arch-arrow-label { font-size: 10px; color: var(--ink-faint); margin-left: 12px; font-family: var(--mono); }
+
+    .toc { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 18px 22px; margin: 24px 0 8px; }
+    .toc ol { margin-bottom: 0; }
+    .toc a { text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    @media (max-width: 768px) { .arch-row { flex-direction: column; } .arch-label { width: auto; padding-bottom: 4px; } }
+    @media print { body { background: white; } a { color: var(--ink); } }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+
+<h1>Indian Market Data Integration</h1>
+<p class="subtitle">Design doc — what APIs &amp; data NewLeaf needs to support Indian (NSE/BSE) stocks &amp; options, and whether Zerodha + Groww are enough.</p>
+
+<div class="pill-row">
+  <span class="pill">Status: Proposal</span>
+  <span class="pill">Author: NewLeaf</span>
+  <span class="pill">Date: 2026-06-20</span>
+  <span class="pill">Scope: data layer + structural assumptions</span>
+</div>
+
+<div class="callout">
+  <div class="callout-title">TL;DR</div>
+  <p style="margin-bottom:0">Zerodha (Kite Connect) <em>or</em> Groww covers ~70% — the live/historical <strong>price + option-chain + open-interest</strong> layer. Neither is sufficient alone. You still need to (a) compute <strong>Greeks/IV</strong> yourself, (b) source an <strong>earnings / corporate-actions calendar</strong> elsewhere, (c) replace US-only <strong>sentiment</strong> sources, and (d) rewrite structural assumptions: <strong>lot sizes, expiries, symbol format, and the gamma model</strong>. If this is a multi-user product, broker APIs likely violate redistribution ToS — use a licensed data vendor instead.</p>
+</div>
+
+<div class="toc">
+  <ol>
+    <li><a href="#deps">What our system consumes today (US)</a></li>
+    <li><a href="#mapping">Data dependency → Indian source mapping</a></li>
+    <li><a href="#brokers">Are Zerodha + Groww enough?</a></li>
+    <li><a href="#gaps">The three gaps brokers don't cover</a></li>
+    <li><a href="#structural">Structural rewrites India forces</a></li>
+    <li><a href="#vendors">Vendor options &amp; recommendation</a></li>
+    <li><a href="#arch">Target architecture (adapter layer)</a></li>
+    <li><a href="#phasing">Phasing &amp; open questions</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="deps">1. What our system consumes today (US)</h2>
+<p>An inventory of the live pipeline (<code>pipeline/newleaf-pipeline.js</code>, <code>api/src/tools/*</code>, <code>generaterecommendations/*</code>) reduces to six data classes. Everything downstream — gamma walls, IV rank, recommendations — is derived from these.</p>
+
+<table>
+  <thead><tr><th style="width:22%">Data class</th><th style="width:30%">Current US provider</th><th>Used for</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Equity OHLCV / quotes</strong></td><td>Alpaca (<code>alpaca.ts</code>)</td><td>Price, 250-day bars → all technical indicators (SMA/RSI/MACD/ADX/ATR, computed locally)</td></tr>
+    <tr><td><strong>Option chain</strong> (strikes, expiries, bid/ask)</td><td>Alpaca + Nasdaq + Yahoo (yfinance)</td><td>Contract universe, ATM selection, premium snapshots</td></tr>
+    <tr><td><strong>Greeks + IV</strong> (δ/γ/θ/ν)</td><td>Alpaca options snapshots (Black-Scholes fallback)</td><td>IV rank, gamma exposure, payoff/risk math</td></tr>
+    <tr><td><strong>Open interest</strong> (per strike)</td><td>Nasdaq API → Yahoo fallback</td><td>Gamma walls (<code>GEX = γ × OI × spot</code>), OI buildup</td></tr>
+    <tr><td><strong>Events calendar</strong></td><td>Yahoo (earnings + ex-div) + FMP (ex-div)</td><td>Event-aware strategy gating, vol expectations</td></tr>
+    <tr><td><strong>News / sentiment</strong></td><td>Serper, Reddit, StockTwits, Claude/Grok/Gemini</td><td>Sentiment scoring, catalyst detection</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="mapping">2. Data dependency → Indian source mapping</h2>
+
+<div class="legend">
+  <div class="legend-item"><span class="tag tag-ok">COVERED</span> broker API provides it</div>
+  <div class="legend-item"><span class="tag tag-partial">PARTIAL</span> available but needs work / unproven</div>
+  <div class="legend-item"><span class="tag tag-gap">GAP</span> no broker coverage — source elsewhere</div>
+</div>
+
+<table>
+  <thead><tr><th style="width:24%">Dependency</th><th style="width:24%">Kite Connect (Zerodha)</th><th style="width:24%">Groww API</th><th>Verdict</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Equity OHLCV / quotes</strong></td>
+      <td>Live ticks via WebSocket + historical candles (<em>historical is a paid add-on</em>)</td>
+      <td>Live + historical, NSE/BSE/MCX</td>
+      <td><span class="tag tag-ok">COVERED</span></td>
+    </tr>
+    <tr>
+      <td><strong>Option chain</strong> (strikes/expiries/bid-ask)</td>
+      <td>Full instruments master + quotes</td>
+      <td>Dedicated option-chain API</td>
+      <td><span class="tag tag-ok">COVERED</span></td>
+    </tr>
+    <tr>
+      <td><strong>Open interest</strong> per strike</td>
+      <td>OI in F&amp;O tick data; historical OI available on Kite</td>
+      <td>OI in option-chain payload</td>
+      <td><span class="tag tag-ok">COVERED</span></td>
+    </tr>
+    <tr>
+      <td><strong>Greeks (δ/γ/θ/ν) + IV</strong></td>
+      <td>❌ No Greeks via API — Zerodha says compute them yourself</td>
+      <td>⚠️ Docs claim Greeks in option-chain; newer / less proven</td>
+      <td><span class="tag tag-partial">PARTIAL</span> — we already do BS estimation (<code>newleaf-pipeline.js:435</code>); becomes mandatory</td>
+    </tr>
+    <tr>
+      <td><strong>Earnings + ex-dividend calendar</strong></td>
+      <td>❌ None</td>
+      <td>❌ None</td>
+      <td><span class="tag tag-gap">GAP</span></td>
+    </tr>
+    <tr>
+      <td><strong>News / sentiment</strong></td>
+      <td>❌ N/A</td>
+      <td>❌ N/A</td>
+      <td><span class="tag tag-gap">GAP</span> — StockTwits is US-only; needs India replacement</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <div class="callout-title">Pricing snapshot (verify before committing)</div>
+  <p style="margin-bottom:0">Kite Connect API is free to use, but <strong>historical data is a paid add-on</strong>. Groww API is <strong>₹499 + tax / month</strong>. Both are tied to a funded broker account.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="brokers">3. Are Zerodha + Groww enough?</h2>
+
+<p><strong>For the market-data spine (price + chain + OI): yes.</strong> For the full product as it stands today: <strong>no.</strong> They are <em>broker</em> APIs designed to trade <em>your own</em> account — not market-data platforms. Three data categories have zero broker coverage, and several deep structural assumptions break.</p>
+
+<div class="callout danger">
+  <div class="callout-title">⚠ Redistribution / ToS risk (the decisive factor)</div>
+  <p style="margin-bottom:0">Broker APIs are account-tied and intended for the account holder's own trading. Using one as a <strong>backend data feed serving other users</strong> can violate the terms and exchange data-licensing rules. If NewLeaf-India is a multi-user product, this alone pushes you off broker APIs and onto a licensed data vendor.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="gaps">4. The three gaps brokers don't cover</h2>
+
+<div class="card">
+  <div class="card-title">Gap 1 — Greeks &amp; IV engine</div>
+  <p style="margin-bottom:0">Compute via Black-Scholes from spot + strike + DTE + risk-free rate + dividend yield. <strong>Use the Indian risk-free rate (~6.5–7% T-bill / MIBOR), not US rates.</strong> NSE also publishes per-contract IV in its own option chain if you prefer to read rather than compute. We already have BS estimation as a fallback — this just promotes it to the primary path.</p>
+</div>
+
+<div class="card">
+  <div class="card-title">Gap 2 — Earnings / corporate-actions calendar</div>
+  <p style="margin-bottom:0">No broker provides this. Options: scrape NSE corporate-announcements + board-meeting (earnings) feed (fragile — cookies/rate-limits), or a fundamentals vendor with India coverage (Trendlyne, Tickertape, Screener.in — none have a clean official API; FMP / Alpha Vantage India coverage is spotty).</p>
+</div>
+
+<div class="card">
+  <div class="card-title">Gap 3 — Sentiment</div>
+  <p style="margin-bottom:0">Our Serper / Reddit / LLM stack mostly ports, but swap the India-irrelevant pieces: <strong>drop StockTwits</strong>, repoint Reddit at <code>r/IndianStreetBets</code> / <code>r/IndiaInvestments</code>, and lean on X/Twitter + Telegram + Moneycontrol for retail flow.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="structural">5. Structural rewrites India forces</h2>
+<p>These break <em>code</em>, not just data sources — they're the real cost of the port.</p>
+
+<table>
+  <thead><tr><th style="width:24%">Assumption (US)</th><th style="width:38%">India reality</th><th>Impact</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Wide options universe</strong> (232-symbol watchlist)</td>
+      <td>Only ~180–220 SEBI-approved F&amp;O stocks have options, plus indices (NIFTY, BANKNIFTY, FINNIFTY, MIDCPNIFTY, SENSEX). Most liquidity is in <strong>index</strong> options.</td>
+      <td>Equity strategies work broadly; option strategies restricted to the F&amp;O list. Watchlist needs an F&amp;O-eligibility flag.</td>
+    </tr>
+    <tr>
+      <td><strong>100-share contracts</strong></td>
+      <td>Options trade in <strong>lots</strong>. Lot sizes change periodically (SEBI keeps notional ₹5–10 lakh) — e.g. NIFTY moved to 65, BankNifty 30 for the Jan-2026 series.</td>
+      <td>Per-100-share premium / max-loss / sizing math (<code>legMath.js</code>) is wrong. Lot size must come from the instruments master, not a constant.</td>
+    </tr>
+    <tr>
+      <td><strong>Weekly expiries everywhere</strong></td>
+      <td>SEBI's 2024 rule collapsed weeklies to <strong>one benchmark index per exchange</strong>. BankNifty weeklies gone; stock options monthly only.</td>
+      <td>Weekly-theta-decay strategies lose most of their universe. Expiry calendar logic must be exchange-rule-aware.</td>
+    </tr>
+    <tr>
+      <td><strong>OCC symbol format</strong> (<code>AAPL240719C00150000</code>)</td>
+      <td>NSE tradingsymbols (e.g. <code>NIFTY26JAN24000CE</code>) + Kite instrument tokens.</td>
+      <td>Full rewrite of the OCC parser (<code>alpaca.ts:92</code>) and any symbol-format assumptions downstream.</td>
+    </tr>
+    <tr>
+      <td><strong>Gamma-wall (GEX) model</strong></td>
+      <td>Dealer-positioning concept is US-centric. Indian OI is retail/prop-dominated &amp; exchange-reported. Local equivalents: <strong>Max Pain, PCR, OI-based S/R</strong>.</td>
+      <td>The math (<code>γ × OI × spot</code>) ports, but the <em>interpretation</em> doesn't. Reframe the narrative + add Max Pain / PCR.</td>
+    </tr>
+    <tr>
+      <td><strong>US market hours / ET</strong></td>
+      <td>IST, 09:15–15:30. Different holiday calendar.</td>
+      <td>Scheduler / cron times, "EOD" snapshot windows, calendar feeds all shift to IST.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="vendors">6. Vendor options &amp; recommendation</h2>
+
+<table>
+  <thead><tr><th style="width:22%">Option</th><th style="width:30%">Gives you</th><th>Best when</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Kite Connect</strong> (Zerodha)</td><td>Price, chain, OI, historical. Most mature &amp; documented. No Greeks.</td><td>Single-user / your own account. Default starting point.</td></tr>
+    <tr><td><strong>Groww API</strong></td><td>Price, chain (claims Greeks), OI, historical. ₹499/mo. Newer.</td><td>Cheaper alternative; validate Greeks claim before relying on it.</td></tr>
+    <tr><td><strong>Angel One SmartAPI / Upstox</strong></td><td>Free broker APIs, popular for algo. Similar coverage.</td><td>Cost-sensitive comparison vs Zerodha.</td></tr>
+    <tr><td><strong>TrueData / Global Datafeeds (GDFL)</strong></td><td>NSE-authorized real-time feeds: tick + OI + historical, some Greeks.</td><td>Multi-user product — solves the redistribution problem.</td></tr>
+    <tr><td><strong>Sensibull / Opstra / Quantsapp</strong></td><td>Pre-computed Greeks, IV, OI-buildup, Max Pain, PCR.</td><td>Skip building the analytics layer; partner/API access required.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <div class="callout-title">Recommendation</div>
+  <ul style="margin-bottom:0">
+    <li><strong>Own account / single-user:</strong> start with <strong>Kite Connect</strong> for price + chain + OI, add our BS engine for Greeks/IV, bolt on an events + sentiment source. Groww (₹499/mo, claims Greeks) is a viable cheaper alternative.</li>
+    <li><strong>Product for other users:</strong> don't build on a broker feed — use a licensed vendor (<strong>TrueData / GDFL</strong>) or an analytics API (<strong>Sensibull / Quantsapp</strong>) to avoid the ToS problem and get Greeks/IV/Max-Pain precomputed.</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="arch">7. Target architecture (adapter layer)</h2>
+<p>The pipeline already has a clean data-tool boundary. The port introduces a <strong>region-aware data adapter</strong> behind the existing interface so the engine, gamma logic, and recommendation layer stay untouched. The Greeks/IV computation moves into shared code so both regions use it.</p>
+
+<div class="arch">
+  <div class="arch-title">Proposed data layer — India adapter behind existing interface</div>
+
+  <div class="arch-row">
+    <div class="arch-label">External</div>
+    <div class="arch-boxes">
+      <div class="arch-box box-broker"><div class="ab-name">Kite / Groww</div><div class="ab-detail">price · chain · OI</div></div>
+      <div class="arch-box box-data"><div class="ab-name">NSE / vendor</div><div class="ab-detail">events · IV (opt.)</div></div>
+      <div class="arch-box box-data"><div class="ab-name">Reddit / X / LLMs</div><div class="ab-detail">sentiment</div></div>
+    </div>
+  </div>
+  <div class="arch-arrow"><div class="arch-arrow-line"></div><div class="arch-arrow-label">normalize</div></div>
+
+  <div class="arch-row">
+    <div class="arch-label">Adapter<br>(new)</div>
+    <div class="arch-boxes">
+      <div class="arch-box box-new"><div class="ab-name">india-data.ts</div><div class="ab-detail">symbol map · lot sizes · expiries</div></div>
+      <div class="arch-box box-new"><div class="ab-name">greeks-engine</div><div class="ab-detail">BS: spot·K·DTE·r(IN)·div</div></div>
+      <div class="arch-box box-new"><div class="ab-name">events-india</div><div class="ab-detail">earnings · ex-div</div></div>
+    </div>
+  </div>
+  <div class="arch-arrow"><div class="arch-arrow-line"></div><div class="arch-arrow-label">same shape as US adapter</div></div>
+
+  <div class="arch-row">
+    <div class="arch-label">Engine<br>(unchanged)</div>
+    <div class="arch-boxes">
+      <div class="arch-box box-existing"><div class="ab-name">strategy-engine</div><div class="ab-detail">IV rank · payoff · risk</div></div>
+      <div class="arch-box box-changed"><div class="ab-name">gamma / GEX</div><div class="ab-detail">+ Max Pain · PCR</div></div>
+      <div class="arch-box box-existing"><div class="ab-name">recommendations</div><div class="ab-detail">LLM explanation</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item">⬜ existing / unchanged</div>
+  <div class="legend-item">🟨 changed</div>
+  <div class="legend-item">🟩 new</div>
+  <div class="legend-item">🟪 external data</div>
+  <div class="legend-item">🟧 broker API</div>
+</div>
+
+<p>Interface contract the India adapter must satisfy (mirrors what Alpaca/Nasdaq tools return today):</p>
+<pre>getQuote(symbol)            → { last, bid, ask, ohlc, prevClose }
+getBars(symbol, 1Day, n)    → [{ t, o, h, l, c, v }]
+getOptionChain(sym, expiry) → [{ strike, type, bid, ask, oi, iv?, lotSize }]
+getGreeks(contract)         → { delta, gamma, theta, vega, iv }   // computed if absent
+getExpiries(symbol)         → [date]   // exchange-rule aware (weekly vs monthly)
+getEvents(symbol)           → { nextEarnings?, exDividend? }</pre>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="phasing">8. Phasing &amp; open questions</h2>
+
+<h3>Suggested phasing</h3>
+<ol>
+  <li><strong>Phase 0 — Decide deployment model.</strong> Single-user vs multi-user determines broker-API vs licensed-vendor. <em>Blocks everything.</em></li>
+  <li><strong>Phase 1 — Data spine.</strong> Kite/Groww adapter: quotes, bars, chain, OI for indices + a handful of F&amp;O stocks. Symbol map + lot-size table from instruments master.</li>
+  <li><strong>Phase 2 — Greeks/IV engine.</strong> Promote BS to primary; wire Indian risk-free rate + dividend yield. Validate against NSE-published IV.</li>
+  <li><strong>Phase 3 — Events + sentiment.</strong> Earnings/ex-div feed; repoint sentiment sources to Indian platforms.</li>
+  <li><strong>Phase 4 — Analytics reframe.</strong> Add Max Pain / PCR; reframe gamma narrative; fix expiry/lot UI.</li>
+</ol>
+
+<h3>Open questions</h3>
+<ul>
+  <li>Single-user or multi-user product? (Determines ToS-legal data source.)</li>
+  <li>Index-options-first, or do we need single-stock F&amp;O from day one?</li>
+  <li>Compute Greeks ourselves, or buy a vendor that precomputes them (Sensibull/Quantsapp)?</li>
+  <li>Is the US system staying live in parallel (region toggle) or is this a fork?</li>
+  <li>Budget tolerance: free broker API (with ToS risk) vs paid licensed vendor.</li>
+</ul>
+
+<div class="callout warn">
+  <div class="callout-title">Note on volatile facts</div>
+  <p style="margin-bottom:0">Lot sizes, weekly-options rules, and broker API pricing change frequently (SEBI revises lot sizes periodically; the Jan-2026 series moved NIFTY to 65 / BankNifty to 30). Treat all specific numbers here as "verify at build time," and always read lot size + expiry rules from the live instruments master rather than hardcoding.</p>
+</div>
+
+<p style="margin-top:32px; font-size:12px; color:var(--ink-faint); font-family:var(--mono)">NewLeaf · Indian Market Data Integration · design proposal · 2026-06-20</p>
+
+</div>
+</body>
+</html>

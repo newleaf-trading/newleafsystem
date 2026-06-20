@@ -20,7 +20,7 @@ export abstract class BaseAgent<Input, Report> {
     switch (ctx.modelMode) {
       case 'budget-v3':  return 'deepseek';
       case 'budget-r1':  return 'deepseek-r1';
-      case 'budget-qwq': return 'qwq'; // qwen-plus for regular agents
+      case 'budget-qwq': return 'qwen-max';
       default:           return this.model;
     }
   }

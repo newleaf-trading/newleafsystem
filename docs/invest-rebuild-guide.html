@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf Invest Rebuild — Architecture & Publishing Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=DM+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --forest: #062e22; --green: #0f4a36; --gold: #c9a96e; --cream: #f7f3ea;
+  --paper: #fffdf8; --page: #fbfaf7; --text: #172033; --muted: #6b7280;
+  --line: #e8e2d8; --profit: #16835f; --loss: #d94f4f; --amber: #bd7c19;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--page); color: var(--text); line-height: 1.7; }
+.wrap { max-width: 900px; margin: 0 auto; padding: 40px 28px 80px; }
+h1 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 42px; color: var(--forest); margin-bottom: 8px; }
+h1 i { color: var(--gold); font-style: italic; }
+h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 26px; color: var(--forest); margin: 48px 0 12px; padding-top: 24px; border-top: 1px solid var(--line); }
+h3 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 20px; color: var(--green); margin: 28px 0 8px; }
+p, li { font-size: 15px; color: var(--text); margin-bottom: 12px; }
+.subtitle { font-size: 16px; color: var(--muted); margin-bottom: 32px; }
+.card { background: var(--paper); border: 0.5px solid var(--line); border-radius: 14px; padding: 20px 24px; margin: 16px 0; box-shadow: 0 8px 24px rgba(18,32,27,.04); }
+.card h4 { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+code { font-family: 'Space Mono', monospace; font-size: 13px; background: var(--cream); padding: 2px 6px; border-radius: 4px; color: var(--green); }
+pre { font-family: 'Space Mono', monospace; font-size: 12px; background: var(--forest); color: #d6e2db; padding: 18px 20px; border-radius: 10px; overflow-x: auto; margin: 12px 0 20px; line-height: 1.6; }
+pre b { color: var(--gold); font-weight: 400; }
+pre .comment { color: #7f968c; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 14px; }
+th { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--line); }
+td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.badge { display: inline-block; font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+.b-green { background: #edf8f3; color: #0d6347; }
+.b-amber { background: #fff7e8; color: #bd7c19; }
+.b-red { background: #fff1ef; color: #b5392f; }
+.b-grey { background: #f0ebe0; color: #6b7280; }
+.b-forest { background: #e7f1ec; color: #0f4a36; border: 0.5px solid #c3e4d6; }
+.flow { display: flex; align-items: center; gap: 0; margin: 20px 0; flex-wrap: wrap; }
+.flow .step { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; font-size: 13px; text-align: center; min-width: 120px; }
+.flow .step b { display: block; font-family: 'Fraunces', serif; font-size: 16px; margin-bottom: 2px; }
+.flow .arrow { color: var(--gold); font-size: 20px; padding: 0 8px; }
+.callout { background: #edf8f3; border-left: 3px solid var(--profit); border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 16px 0; font-size: 14px; color: #244e41; }
+.callout.warn { background: #fff7e8; border-left-color: var(--amber); color: #7a4a07; }
+.callout.danger { background: #fff1ef; border-left-color: var(--loss); color: #7a2520; }
+ol, ul { padding-left: 24px; margin-bottom: 16px; }
+li { margin-bottom: 6px; }
+.mono { font-family: 'Space Mono', monospace; }
+.toc { margin: 24px 0 40px; }
+.toc a { text-decoration: none; color: var(--green); font-size: 14px; display: block; padding: 4px 0; }
+.toc a:hover { color: var(--gold); }
+hr { border: none; border-top: 1px solid var(--line); margin: 40px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>NewLeaf Invest <i>Rebuild</i></h1>
+<p class="subtitle">Architecture decisions, what changed, and how to publish tiles — May 2026</p>
+
+<div class="toc">
+  <b style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)">Contents</b>
+  <a href="#what">1. What we built</a>
+  <a href="#why">2. Why — the problems it fixed</a>
+  <a href="#architecture">3. Architecture</a>
+  <a href="#data-flow">4. Data flow: signal → tile → screen</a>
+  <a href="#publishing">5. How to publish tiles</a>
+  <a href="#freshness">6. Freshness & centeredness</a>
+  <a href="#confidence">7. Tiered confidence model</a>
+  <a href="#files">8. Key files</a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="what">1. What We Built</h2>
+
+<p>A complete rebuild of the Invest surfaces — <b>Dashboard, Discover, Positions, Performance, Build, and two detail views (Defend + Decide)</b> — unified around one principle:</p>
+
+<div class="callout">
+  <b>Total-dollar P&L is the single stored truth.</b> Every other number is a pure derivation of it. No surface computes P&L independently. Per-contract is always <code>total / qty</code>, never the reverse.
+</div>
+
+<p>The rebuild also separated <b>scanner signals</b> (unpriced screen output from the pipeline) from <b>priced tiles</b> (real, tradeable candidates with live option chain pricing), introduced <b>freshness classification</b> (so stale candidates are flagged, not presented as live), and added a <b>tiered confidence model</b> (so adversarially-reviewed tiles are visually distinguished from PoP-only tiles).</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="why">2. Why — The Problems It Fixed</h2>
+
+<h3>P&L inconsistency</h3>
+<p>The same position showed different P&L on different screens. <code>maxProfit</code>/<code>maxLoss</code> were per-contract in some paths, total in others. One view multiplied per-contract by qty; another divided total by qty. The result: a <code>-628%</code> loss display on a profitable trade.</p>
+<p><b>Fix:</b> <code>derivePosition()</code> is the single derivation point. Every surface imports it. No surface recomputes.</p>
+
+<h3>3,489 unpriceable tiles polluting Discover</h3>
+<p>The pipeline scanner wrote ~111 signal docs per day to the <code>tiles</code> collection — with no legs, no premiums, no breakevens. Discover rendered them as tradeable candidates with placeholder numbers ($500 / $500 / 50% / 1.00×).</p>
+<p><b>Fix:</b> Scanner writes to <code>scanner_signals</code> (separate collection). Only priced tiles reach <code>tiles</code>. A read-time <code>priced</code> gate filters any that leak through.</p>
+
+<h3>Stale candidates shown as live</h3>
+<p>An ADBE iron condor with a profit zone of $217–$242 was shown with spot at $261 — already past the upper breakeven — but still said "70% probability" and "Take this trade."</p>
+<p><b>Fix:</b> <code>deriveCandidate()</code> classifies every candidate as <code>fresh</code>, <code>drifted</code>, <code>breached</code>, or <code>expired</code>. Breached/expired tiles are hidden from Discover. Drifted tiles show a warning banner.</p>
+
+<h3>Generic confidence field carrying three different signals</h3>
+<p>The <code>confidence</code> field was set from PoP (publish-pick), adversarial verdict (discover-publish), or gamma wall reliability (strategy-builder) — three conceptually different measures on one field.</p>
+<p><b>Fix:</b> Three named fields: <code>verdictConfidence</code>, <code>wallConfidence</code>, <code>oddsOfProfit</code>. One shared publish gate. No generic <code>confidence</code> written.</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="architecture">3. Architecture</h2>
+
+<h3>The canonical pipeline</h3>
+<div class="flow">
+  <div class="step"><b>Firestore</b>Raw doc</div>
+  <span class="arrow">→</span>
+  <div class="step"><b>toCanonical()</b>Normalize</div>
+  <span class="arrow">→</span>
+  <div class="step"><b>derivePosition()</b>All metrics</div>
+  <span class="arrow">→</span>
+  <div class="step"><b>Component Kit</b>Render</div>
+</div>
+
+<p><code>toCanonical()</code> is the only place where per-contract × qty conversion happens. After it, everything is total dollars. <code>derivePosition()</code> produces every display metric: P&L, daily, captured%, loss used%, review type, gauge position. Surfaces import it; they never recompute.</p>
+
+<h3>Key pure helpers</h3>
+<table>
+  <tr><th>Helper</th><th>What it does</th><th>Location</th></tr>
+  <tr><td><code>derivePosition(p)</code></td><td>All P&L metrics + review classification (time/loss/profit)</td><td><code>src/trading/lib/derivePosition.js</code></td></tr>
+  <tr><td><code>deriveCandidate(c, spot)</code></td><td>Freshness (fresh/drifted/breached/expired) + centeredness</td><td><code>src/trading/lib/deriveCandidate.js</code></td></tr>
+  <tr><td><code>toCanonical(doc, live)</code></td><td>Firestore position → canonical shape (total $)</td><td><code>src/trading/lib/toCanonical.js</code></td></tr>
+  <tr><td><code>tileToCanonical(tile, qty)</code></td><td>Firestore tile → canonical candidate shape</td><td><code>src/trading/lib/toCanonical.js</code></td></tr>
+  <tr><td><code>validateTile(tile)</code></td><td>Schema validation — rejects unpriced/broken tiles</td><td><code>src/trading/lib/tileSchema.js</code></td></tr>
+  <tr><td><code>applyPublishGate(tile)</code></td><td>Publish gate: verdict ≥65 or PoP ≥65</td><td><code>src/trading/lib/tileSchema.js</code> (ESM)<br><code>generaterecommendations/pricing-engine.cjs</code> (CJS)</td></tr>
+  <tr><td><code>deriveTier(tile)</code></td><td>Read-time tier: verified vs priced</td><td><code>src/trading/lib/tileSchema.js</code></td></tr>
+</table>
+
+<h3>Component kit</h3>
+<table>
+  <tr><th>Component</th><th>What</th></tr>
+  <tr><td><code>RiskGauge</code></td><td>Loss/profit zones, break-even, "now" marker with Total↔Per-contract toggle</td></tr>
+  <tr><td><code>MetricCard</code></td><td>Eyebrow label + mono value + sub-line</td></tr>
+  <tr><td><code>ReviewBadge</code></td><td>Review: time (amber), loss (red), profit (green). Freshness: fresh/drifted/breached/expired</td></tr>
+  <tr><td><code>LegsTable</code></td><td>Entry-only (candidate) vs entry+current (open position). Dev invariant: Σ legs = perContract</td></tr>
+  <tr><td><code>PayoffChart</code></td><td>Highcharts condor tent with spot line, center line, breakeven labels</td></tr>
+  <tr><td><code>MoneyBreakdown</code></td><td>"+$4 per contract × 44 contracts = +$176 total"</td></tr>
+  <tr><td><code>DteChip</code></td><td>Color-coded DTE badge (hot ≤7, warm ≤21, cool >21)</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="data-flow">4. Data Flow: Signal → Tile → Screen</h2>
+
+<div class="flow">
+  <div class="step"><b>Pipeline</b>R2 reports</div>
+  <span class="arrow">→</span>
+  <div class="step"><b>sync-r2</b><code>scanner_signals</code></div>
+  <span class="arrow">→</span>
+  <div class="step"><b>Funnel</b>Rank + price</div>
+  <span class="arrow">→</span>
+  <div class="step"><b>tiles</b>Priced candidates</div>
+  <span class="arrow">→</span>
+  <div class="step"><b>Discover</b>Fresh tiles only</div>
+</div>
+
+<div class="card">
+  <h4>Scanner signals (unpriced)</h4>
+  <p>Written by <code>pipeline/sync-r2-to-firestore-fixed.mjs</code> to <code>scanner_signals</code> collection. ~111 per day. Has symbol, strategy name, score, gamma data — <b>no legs, no premiums, no P&L</b>. Source: <code>pipeline-scanner</code>.</p>
+</div>
+
+<div class="card">
+  <h4>Priced tiles (tradeable)</h4>
+  <p>Written to <code>tiles</code> collection by one of four paths (see §5). Has real legs with premiums from a live option chain, computed maxProfit/maxLoss, breakevens, and PoP. Must pass <code>validateTile</code> + <code>applyPublishGate</code>.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="publishing">5. How to Publish Tiles</h2>
+
+<p>There are four ways to publish a priced tile to Discover. All four share one pricing engine and one validation path.</p>
+
+<h3>Option A: publish-pick CLI (recommended for manual picks)</h3>
+<pre>
+<b>cd generaterecommendations</b>
+
+<span class="comment"># Dry run first — shows the tile without writing</span>
+<b>node publish-pick.cjs AAPL --strategy "iron condor" --expiry 2026-07-18 --dry-run</b>
+
+<span class="comment"># Publish live</span>
+<b>node publish-pick.cjs AAPL --strategy "iron condor" --expiry 2026-07-18</b>
+
+<span class="comment"># Supported strategies:</span>
+<span class="comment">#   "iron condor"    — neutral, 4-leg</span>
+<span class="comment">#   "iron butterfly" — neutral, 4-leg (ATM)</span>
+<span class="comment">#   "bull put"       — bullish, 2-leg</span>
+<span class="comment">#   "bear call"      — bearish, 2-leg</span>
+</pre>
+
+<p>What it does:</p>
+<ol>
+  <li>Fetches live spot from Alpaca</li>
+  <li>Fetches live option chain (requires market hours)</li>
+  <li>Fetches gamma walls from R2</li>
+  <li>Builds the strategy (strike selection, P&L, greeks, breakevens, PoP)</li>
+  <li>Validates: ≥2 legs, premiums non-zero, maxProfit/maxLoss > 0, expiry present</li>
+  <li>Applies publish gate: PoP ≥ 65% (no verdict on this path)</li>
+  <li>Writes to <code>tiles/{tileId}</code></li>
+  <li>Fetches sentiment (optional, non-fatal on failure)</li>
+  <li>Runs LLM analysis for deep rationale</li>
+  <li>Writes to <code>analyses/{tileId}</code> and <code>weeklyPicks/{weekId}</code></li>
+</ol>
+
+<div class="callout warn">
+  <b>Market hours required.</b> Alpaca returns empty option chains after hours. If you see "0 calls, 0 puts loaded", wait for market open or use a different data source.
+</div>
+
+<h3>Option B: Discover Workbench (browser-based, with verification)</h3>
+<p>The <code>workbench/discover.html</code> page runs a 5-step flow: scan → build → verify → review → publish. The verification step runs an 8-agent adversarial pipeline (4 analysts + bull/bear debate + risk manager + judge). Tiles published this way carry <code>verdictConfidence</code> and show the "✓ Reviewed" badge.</p>
+<p>Endpoint: <code>POST /api/publish-from-analysis</code> (in <code>api/src/routes/publish.ts</code>)</p>
+
+<h3>Option C: Strategy Builder (browser-based, manual)</h3>
+<p>The <code>workbench/strategy-builder.html</code> page lets you manually select strikes from a live chain and publish directly. No adversarial verification — tiles are <code>priced</code> tier, not <code>verified</code>.</p>
+
+<h3>Option D: Daily Funnel (automated)</h3>
+<pre>
+<span class="comment"># Runs daily at 10:00am ET via pipeline/index.js</span>
+<b>node generaterecommendations/funnel-price.cjs</b>
+
+<span class="comment"># Or with options:</span>
+<b>node funnel-price.cjs --dry-run</b>       <span class="comment"># rank + price, don't write</span>
+<b>node funnel-price.cjs --n 20</b>          <span class="comment"># override target count (default 15)</span>
+</pre>
+
+<p>What the funnel does:</p>
+<ol>
+  <li>Reads active <code>scanner_signals</code></li>
+  <li>Ranks by <code>opportunityScore × gammaConfidence</code></li>
+  <li>Filters: priceable strategies only, confidence ≥ 0.3, dedupes by symbol+strategy</li>
+  <li>Selects top 2N buffer (prices more than needed)</li>
+  <li>Prices each off the live Alpaca chain (same builders as publish-pick)</li>
+  <li>Applies publish gate: PoP ≥ 65%</li>
+  <li>Quality-selects best N by R:R × 60 + PoP × 40</li>
+  <li>Deactivates prior <code>source: 'funnel-priced'</code> tiles (scoped — never touches manual tiles)</li>
+  <li>Writes fresh set to <code>tiles</code></li>
+</ol>
+
+<h3>What all four paths share</h3>
+<table>
+  <tr><th>Rule</th><th>Enforcement</th></tr>
+  <tr><td>≥ 2 legs with non-zero premiums</td><td><code>validateTileForWrite</code></td></tr>
+  <tr><td>maxProfit > 0, maxLoss > 0</td><td><code>validateTileForWrite</code></td></tr>
+  <tr><td>Expiry present</td><td><code>validateTileForWrite</code></td></tr>
+  <tr><td>underlyingPrice > 0</td><td><code>validateTileForWrite</code></td></tr>
+  <tr><td>No generic <code>confidence</code> field</td><td><code>validateTileForWrite</code> rule 11</td></tr>
+  <tr><td>PoP ≥ 65% (or verdict ≥ 65)</td><td><code>applyPublishGate</code></td></tr>
+  <tr><td>Breakevens valid [lower, upper] or absent</td><td><code>validateTileForWrite</code></td></tr>
+  <tr><td>PoP: null when uncomputable, never 50</td><td>All writers</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="freshness">6. Freshness & Centeredness</h2>
+
+<p>Every candidate on Discover is classified by <code>deriveCandidate()</code>:</p>
+
+<table>
+  <tr><th>State</th><th>Meaning</th><th>Badge</th><th>Action</th></tr>
+  <tr><td><span class="badge b-green">Fresh</span></td><td>Spot inside profit zone, within center band</td><td>Green rail</td><td>"Take this trade" enabled</td></tr>
+  <tr><td><span class="badge b-amber">Drifted</span></td><td>Spot near edge or moved ≥2% since structuring</td><td>Amber rail + banner</td><td>"Take this trade" + caveat</td></tr>
+  <tr><td><span class="badge b-red">Breached</span></td><td>Spot outside breakevens</td><td>Hidden from Discover</td><td>"Re-generate" only</td></tr>
+  <tr><td><span class="badge b-grey">Expired</span></td><td>DTE ≤ 0</td><td>Hidden from Discover</td><td>Cannot trade</td></tr>
+</table>
+
+<p><b>Centeredness</b> is computed from the midpoint of the short strikes (the design center of the max-profit plateau), not from spot-at-generation. Discover sorts by centeredness — most-centered first.</p>
+
+<div class="card">
+  <h4>Ideal entry stat</h4>
+  <p>Each candidate detail page shows: <b>"Best near $132.00 · spot $133.31 (centered)"</b> or <b>"4% toward calls"</b>. The payoff chart shows a green dashed "Center" line at the ideal entry point.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="confidence">7. Tiered Confidence Model</h2>
+
+<p>Three named fields replace the old generic <code>confidence</code>:</p>
+
+<table>
+  <tr><th>Field</th><th>Source</th><th>Scale</th><th>Gate input?</th></tr>
+  <tr><td><code>oddsOfProfit</code></td><td>Black-Scholes PoP from calcPoP</td><td>0–100</td><td>Yes (≥ 65 when no verdict)</td></tr>
+  <tr><td><code>verdictConfidence</code></td><td>8-agent adversarial pipeline judge</td><td>0–100 or null</td><td>Yes (≥ 65 overrides PoP; < 65 rejects)</td></tr>
+  <tr><td><code>wallConfidence</code></td><td>Gamma wall OI analysis</td><td>0–1</td><td>No (informational)</td></tr>
+</table>
+
+<h3>Publish gate logic</h3>
+<pre>
+<span class="comment">// applyPublishGate(tile)</span>
+if (verdictConfidence != null) {
+  if (verdictConfidence >= 65) → <b>PASS</b> (verified tier)
+  else                         → <b>REJECT</b> (adversary flagged it)
+} else {
+  if (oddsOfProfit >= 65)      → <b>PASS</b> (priced tier)
+  else                         → <b>REJECT</b> (PoP below floor)
+}
+</pre>
+
+<h3>Tier derivation (read-time, never stored)</h3>
+<table>
+  <tr><th>Tier</th><th>Condition</th><th>Badge</th></tr>
+  <tr><td><span class="badge b-forest">✓ Reviewed</span></td><td><code>verdictConfidence ≥ 65</code></td><td>Shows on Discover + DecidePage with confidence score</td></tr>
+  <tr><td>(no badge)</td><td>Everything else</td><td>Standard priced tile — no additional badge</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<h2 id="files">8. Key Files</h2>
+
+<h3>Pure helpers (web/src/trading/lib/)</h3>
+<table>
+  <tr><th>File</th><th>Exports</th></tr>
+  <tr><td><code>derivePosition.js</code></td><td><code>derivePosition()</code>, <code>recommendation()</code>, <code>REVIEW</code></td></tr>
+  <tr><td><code>deriveCandidate.js</code></td><td><code>deriveCandidate()</code>, <code>deriveCentering()</code>, <code>computeLiveDte()</code></td></tr>
+  <tr><td><code>toCanonical.js</code></td><td><code>toCanonical()</code>, <code>tileToCanonical()</code></td></tr>
+  <tr><td><code>tileSchema.js</code></td><td><code>validateTile()</code>, <code>applyPublishGate()</code>, <code>deriveTier()</code>, <code>findCruft()</code></td></tr>
+  <tr><td><code>money.js</code></td><td><code>usd()</code>, <code>signedUsd()</code>, <code>pct()</code>, <code>signedPct()</code></td></tr>
+  <tr><td><code>build/deriveAllocation.js</code></td><td><code>deriveAllocation()</code>, <code>buildExecutionBatch()</code>, <code>autoAllocateEqual()</code></td></tr>
+</table>
+
+<h3>Publishing (generaterecommendations/)</h3>
+<table>
+  <tr><th>File</th><th>What</th></tr>
+  <tr><td><code>pricing-engine.cjs</code></td><td>Shared builders, calcPoP, validateTileForWrite, applyPublishGate</td></tr>
+  <tr><td><code>publish-pick.cjs</code></td><td>CLI publisher — fetches chain, builds, validates, writes</td></tr>
+  <tr><td><code>funnel-rank.cjs</code></td><td>Ranking, dedup, quality select for the daily funnel</td></tr>
+  <tr><td><code>funnel-price.cjs</code></td><td>Orchestrator: rank → price → gate → write</td></tr>
+</table>
+
+<h3>Pipeline (pipeline/)</h3>
+<table>
+  <tr><th>File</th><th>What</th></tr>
+  <tr><td><code>sync-r2-to-firestore-fixed.mjs</code></td><td>Writes to <code>scanner_signals</code> (never <code>tiles</code>)</td></tr>
+  <tr><td><code>index.js</code></td><td>Scheduler: fast pipeline, daily OI, daily funnel (10am ET), weekly snapshot</td></tr>
+</table>
+
+<h3>Pages (web/src/trading/pages/)</h3>
+<table>
+  <tr><th>File</th><th>Route</th></tr>
+  <tr><td><code>DashboardPageNew.jsx</code></td><td><code>/invest</code></td></tr>
+  <tr><td><code>DiscoverPageNew.jsx</code></td><td><code>/invest/discover</code></td></tr>
+  <tr><td><code>PositionsPageNew.jsx</code></td><td><code>/invest/positions</code></td></tr>
+  <tr><td><code>PerformancePageRebuild.jsx</code></td><td><code>/invest/performance</code></td></tr>
+  <tr><td><code>BuildPageNew.jsx</code></td><td><code>/invest/build</code></td></tr>
+  <tr><td><code>DefendPage.jsx</code></td><td><code>/invest/strategy/:id</code> (open position)</td></tr>
+  <tr><td><code>DecidePage.jsx</code></td><td><code>/invest/strategy/:id</code> (candidate)</td></tr>
+  <tr><td><code>StrategyRouter.jsx</code></td><td>Routes to Defend or Decide based on status</td></tr>
+</table>
+
+<h3>Test suite</h3>
+<p><b>287 tests</b> across 11 test files. One known pre-existing failure (verdictEngine earnings fixture). Key test files:</p>
+<ul>
+  <li><code>derivePosition.test.js</code> — 39 tests (P&L, review, NaN guards, breach detection)</li>
+  <li><code>deriveCandidate.test.js</code> — 30 tests (freshness, centeredness, BWB, priced gate)</li>
+  <li><code>toCanonical.test.js</code> — 8 tests (leg normalization, short strikes, probability)</li>
+  <li><code>tileSchema.test.js</code> — 26 tests (validation, cruft detection, gate scenarios)</li>
+  <li><code>validatorConsistency.test.js</code> — 57 tests (all writers agree with schema)</li>
+  <li><code>splitIntegrity.test.js</code> — 12 tests (sync-r2 targets scanner_signals, funnel scoped)</li>
+  <li><code>funnelRank.test.js</code> — 15 tests (ranking, dedupe, quality select, PoP floor)</li>
+  <li><code>deriveAllocation.test.js</code> — 18 tests (budget math, batch, auto-allocate)</li>
+</ul>
+
+<hr>
+
+<p style="text-align:center;color:var(--muted);font-size:13px;margin-top:40px">
+  NewLeaf System · Invest Rebuild Guide · May 2026<br>
+  <span style="color:var(--gold)">One pricing path. One derivation engine. No fabricated numbers.</span>
+</p>
+
+</div>
+</body>
+</html>

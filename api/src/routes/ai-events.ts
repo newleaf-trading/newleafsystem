@@ -20,7 +20,7 @@ export function registerAIEventsRoutes(fastify: FastifyInstance, llm: LLMRouter)
     const validModes = ['premium', 'budget-v3', 'budget-r1', 'budget-qwq'] as const;
     const mode = validModes.includes(body.modelMode as any) ? body.modelMode as typeof validModes[number] : 'budget-qwq';
     const modelMap: Record<string, ModelTier> = {
-      'premium': 'qwq', 'budget-v3': 'deepseek', 'budget-r1': 'deepseek-r1', 'budget-qwq': 'qwq',
+      'premium': 'qwen-max', 'budget-v3': 'deepseek', 'budget-r1': 'deepseek-r1', 'budget-qwq': 'qwen-max',
     };
 
     const legsStr = (legs || []).map(l => `${l.action} ${l.type} $${l.strike}`).join(' | ');
@@ -41,7 +41,7 @@ Entry IV Rank: ${entryIvRank ?? 'unknown'}
 Current date: ${new Date().toISOString().split('T')[0]}`;
 
     llm.resetUsage();
-    const raw = await llm.call(modelMap[mode] ?? 'qwq', { system, user, maxTokens: 600 });
+    const raw = await llm.call(modelMap[mode] ?? 'qwen-max', { system, user, maxTokens: 600 });
 
     try {
       const start = raw.indexOf('{'), end = raw.lastIndexOf('}');
