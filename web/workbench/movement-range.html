@@ -398,7 +398,7 @@ function parseSymbol(sym, report) {
   const earningsDate = earningsCalendar[sym] || report.earningsDate || null;
   // Store optionChain for leg builder (flat array with expiry/dte per contract)
   const optionChain = report.optionChain || [];
-  return { symbol: sym, price: s.price, changePct: s.changePercent || 0, bars, atrPct: t.atrPct || 0.02, adx: t.adx14, rsi: t.rsi, putWall: g.analysis?.put_wall, callWall: g.analysis?.call_wall, sma50: t.sma50, sma100: t.sma100, sma200: t.sma200, bb: t.bb, atmIv: g.ivData?.atmIv || 0, rv: (t.realizedVol30d || 0) * 100, gammaConf: g.analysis?.confidence_score || 0, totalOI, oiAvailable: totalOI > 0, earningsDate, _gammaData: g, _techData: t, _optionChain: optionChain };
+  return { symbol: sym, price: s.price, changePct: s.changePercent || 0, bars, atrPct: t.atrPct || 0.02, adx: t.adx14, rsi: t.rsi, putWall: g.analysis?.put_wall, callWall: g.analysis?.call_wall, sma50: t.sma50, sma100: t.sma100, sma200: t.sma200, bb: t.bb, atmIv: g.ivData?.atmIv || 0, rv: (t.realizedVol30d || 0) * 100, gammaConf: g.analysis?.confidence_score || 0, totalOI, oiAvailable: totalOI > 0, earningsDate, _gammaData: g, _techData: t, _optionChain: optionChain, trend: report.trend || null };
 }
 
 function runAnalysis() {
@@ -539,7 +539,7 @@ function renderTable() {
     </div>` : '';
 
     document.getElementById('table-area').innerHTML = `<table><thead><tr>
-      <th ${thS('sq')}>Setup &#9660;</th><th>Symbol</th><th class="r">Price</th><th>Nearest zone</th>
+      <th ${thS('sq')}>Setup &#9660;</th><th>Trend <span style="font-size:8px;font-weight:700;letter-spacing:.03em;color:var(--muted);border:1px solid var(--border);border-radius:3px;padding:1px 4px;white-space:nowrap">SHADOW · ADVISORY · UNVALIDATED</span></th><th>Symbol</th><th class="r">Price</th><th>Nearest zone</th>
       <th>S/R Score</th><th>RQ</th><th>Evidence</th><th>Distance</th><th class="r">Med. 5d</th>
       <th>Premium</th><th>Suggested</th><th></th>
     </tr></thead><tbody>${displayRows.map(r => renderRow(r) + renderDetailRow(r)).join('')}</tbody></table>
@@ -616,8 +616,26 @@ function renderRow(r) {
   const ringColor = q.total >= 75 ? 'var(--green)' : q.total >= 65 ? 'var(--gold)' : 'var(--red)';
   const liqTag = !r.d.oiAvailable ? '<span class="tag-unverified">OI unverified</span>' : '';
 
+  // ── Phase 4a: advisory trend verdict — DISPLAY ONLY. Does not touch q.total or the sort. ──
+  const tr = r.d.trend;
+  let trendCell = '<span style="color:var(--muted)">--</span>';
+  if (tr) {
+    const pcls = { aligned: 'green', neutral: 'amber', conflicted: 'red' }[tr.verdict] || 'grey';
+    const m = tr.multipliers || {};
+    let adj = q.total;
+    if (tr.verdict === 'conflicted') adj = q.total * (m.conflictMultiplier ?? 1);
+    else if (tr.verdict === 'aligned') adj = q.total + (m.alignBonus ?? 0);
+    else if (tr.vcpActive) adj = q.total * (m.vcpNeutralMultiplier ?? 1);
+    adj = Math.round(Math.max(0, Math.min(100, adj)));
+    const upN = ['maStack', 'priceAboveStack', 'ma200Rising', 'rsPositive'].filter(k => tr.checks && tr.checks[k]).length;
+    const preview = adj !== q.total ? `<div style="font-size:10px;color:var(--muted)" title="preview of future live behaviour — NOT applied to the live score">would become ${adj}</div>` : '';
+    trendCell = `<span class="pill ${pcls}" title="up-core ${upN}/4${tr.vcpActive ? ' · VCP' : ''}${tr.overlap ? ' · overlaps velocity guard' : ''}">${tr.verdict.toUpperCase()}</span>`
+      + `<div class="ev" style="margin-top:2px;color:var(--muted)">up ${upN}/4${tr.vcpActive ? ' · vcp' : ''}${tr.overlap ? ' · overlap' : ''}</div>${preview}`;
+  }
+
   return `<tr class="row ${openDetail === d.symbol ? 'open' : ''}" onclick="toggleDetail('${d.symbol}')">
     <td><div class="score"><div class="ring" style="--p:${q.total};--c:${ringColor}"><i>${q.total}</i></div><div class="lbl">Setup<br>Quality</div></div></td>
+    <td>${trendCell}</td>
     <td class="sym"><b>${d.symbol}</b><span>${regLbl} · conf ${r.confidence}</span></td>
     <td class="r num">${d.price.toFixed(2)}<br><span style="color:${d.changePct >= 0 ? 'var(--green)' : 'var(--red)'}">${d.changePct >= 0 ? '+' : ''}${d.changePct.toFixed(1)}%</span></td>
     <td><span class="pill ${zonePill}">${zoneType} ZONE</span><div class="ev" style="margin-top:3px">${zoneDesc}</div></td>
@@ -638,7 +656,7 @@ function renderRow(r) {
 }
 
 function renderDetailRow(r) {
-  if (openDetail !== r.d.symbol) return `<tr class="detail"><td colspan="12"></td></tr>`;
+  if (openDetail !== r.d.symbol) return `<tr class="detail"><td colspan="13"></td></tr>`;
   const d = r.d, ns = r.nearS, nr = r.nearR, q = r.quality;
   const zonePanels = (stats, type) => stats.map(s => {
     const isS = type === 'support', rate = isS ? s.holdCount : s.rejectCount, lbl = isS ? 'holds' : 'rejects';
@@ -653,7 +671,7 @@ function renderDetailRow(r) {
   const breakdownLi = (label, val, weight) => `<div class="li"><span>${label}</span><span class="bbar"><i style="width:${val}%"></i></span><span class="w">${val} × ${weight}</span></div>`;
   const cont = r.containment;
 
-  return `<tr class="detail open"><td colspan="12">
+  return `<tr class="detail open"><td colspan="13">
     <div class="dgrid">
       <div class="panel"><div class="ph"><h4>Clustered zones</h4><span class="ev" style="font-size:10px">levels &lt; 0.6×ATR apart merged</span></div>
         ${zonePanels(r.sStats, 'support')}${zonePanels(r.rStats, 'resistance')}

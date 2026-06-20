@@ -45,6 +45,7 @@ const {
 
 // ── ATM Contracts for Strategy Builder ───────────────────────────────────────
 const { saveATMContracts } = require('./save-atm-contracts');
+const { computeTrendTemplate, DEFAULT_CONFIG: TREND_CFG } = require('../shared/trend/trend-template.cjs');
 
 // ── CLI ───────────────────────────────────────────────────────────────────────
 const args        = process.argv.slice(2);
@@ -612,6 +613,36 @@ function calcMonthlyPremium(contracts, spot) {
 }
 
 // ── Process one symbol ────────────────────────────────────────────────────────
+// ── Phase 4a: advisory trend verdict — attached to the report, DISPLAY-ONLY.
+// Never affects scoring/strategy/upload decisions; failures degrade to report.trend=null.
+// Benchmark = SPY's last report (≤15min/≤1day stale; fine for a trend signal), read once per run.
+let _benchBars;
+function getBenchBars() {
+  if (_benchBars !== undefined) return _benchBars;
+  try {
+    const spy = JSON.parse(fs.readFileSync(path.join(REPORTS_DIR, 'SPY', 'latest.json'), 'utf8'));
+    _benchBars = (spy.technicalData?.priceHistory || []).map(b => ({ date: (b.t || '').split('T')[0], open: b.o, high: b.h, low: b.l, close: b.c, volume: b.v || 0 }));
+  } catch { _benchBars = []; }
+  return _benchBars;
+}
+function attachTrend(report) {
+  try {
+    const t = report.technicalData || {};
+    const bars = (t.priceHistory || []).map(b => ({ date: (b.t || '').split('T')[0], open: b.o, high: b.h, low: b.l, close: b.c, volume: b.v || 0 }));
+    if (bars.length < TREND_CFG.minBars) { report.trend = null; return; }
+    const atrPct = t.atrPct;
+    const move3 = bars.length >= 4 ? bars[bars.length - 1].close / bars[bars.length - 4].close - 1 : 0;
+    const velocityGuardFired = atrPct > 0 && Math.abs(move3) > 3 * atrPct;
+    const tr = computeTrendTemplate({ bars, benchmarkBars: getBenchBars(), benchmarkSymbol: 'SPY', velocityGuardFired });
+    report.trend = {
+      verdict: tr.verdict, checks: tr.checks, down: tr.down, vcpActive: tr.vcpActive,
+      velocityGuardFired, overlap: tr.overlap, trendScore: tr.trendScore,
+      multipliers: { conflictMultiplier: TREND_CFG.conflictMultiplier, alignBonus: TREND_CFG.alignBonus, vcpNeutralMultiplier: TREND_CFG.vcpNeutralMultiplier },
+      source: 'shared/trend v0', advisory: 'SHADOW · ADVISORY · UNVALIDATED', asOf: report.meta?.date || null,
+    };
+  } catch (_) { report.trend = null; }
+}
+
 async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
   const hdrs   = alpacaHdrs(cfg);
   const log    = msg => console.log(`  ${C.gold('['+symbol+']')} ${msg}`);
@@ -906,6 +937,7 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
     }
   }
 
+  attachTrend(report); // advisory trend verdict — added before any write/upload so R2 carries it
   fs.writeFileSync(path.join(symDir, 'latest.json'), JSON.stringify(report));
   fs.writeFileSync(path.join(symDir, tsKey),          JSON.stringify(report));
   // Only daily/full runs write {date}.json — intraday never overwrites it
