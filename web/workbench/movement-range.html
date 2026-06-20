@@ -21,7 +21,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);f
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:13.5px;color:#B9C9C0;cursor:pointer;border-left:3px solid transparent;text-decoration:none}
 .nav-item.active{background:rgba(200,168,90,.12);color:#fff;border-left-color:var(--gold)}
 .nav-item:hover{color:#fff}
-.main{padding:30px 36px 80px;max-width:1280px}
+.main{padding:30px 36px 80px;max-width:1600px}
 .titlebar{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:6px}
 h1{font-family:'Fraunces',serif;font-weight:600;font-size:28px;color:var(--forest)}
 .sub{color:var(--muted);max-width:640px;margin-top:6px;line-height:1.5}
@@ -246,6 +246,8 @@ footer b{color:var(--forest)}
     <span class="filter-label">Sort</span>
     <select class="sort-select" id="sort-select" onchange="setSort(this.value)">
       <option value="sq">Setup Quality</option>
+      <option value="trend">Trend (aligned first)</option>
+      <option value="trend-risk">Trend (conflicted first)</option>
       <option value="rq">Range Quality</option>
       <option value="dist">Distance to centre</option>
       <option value="sScore">Support score</option>
@@ -512,6 +514,13 @@ function renderTable() {
       if (filters.sort === 'dist') return Math.abs((a.posInRange ?? 0.5) - 0.5) - Math.abs((b.posInRange ?? 0.5) - 0.5);
       if (filters.sort === 'sScore') return (b.nearS?.score || 0) - (a.nearS?.score || 0);
       if (filters.sort === 'rScore') return (b.nearR?.score || 0) - (a.nearR?.score || 0);
+      if (filters.sort === 'trend' || filters.sort === 'trend-risk') {
+        // Group by trend verdict, then Setup Quality desc within each group.
+        const order = filters.sort === 'trend-risk' ? { conflicted: 0, neutral: 1, aligned: 2 } : { aligned: 0, neutral: 1, conflicted: 2 };
+        const ra = order[a.d.trend?.verdict] ?? 3, rb = order[b.d.trend?.verdict] ?? 3;
+        if (ra !== rb) return ra - rb;
+        return b.quality.total - a.quality.total;
+      }
       return b.quality.total - a.quality.total; // default: sq
     });
   }
@@ -539,7 +548,7 @@ function renderTable() {
     </div>` : '';
 
     document.getElementById('table-area').innerHTML = `<table><thead><tr>
-      <th ${thS('sq')}>Setup &#9660;</th><th>Trend <span style="font-size:8px;font-weight:700;letter-spacing:.03em;color:var(--muted);border:1px solid var(--border);border-radius:3px;padding:1px 4px;white-space:nowrap">SHADOW · ADVISORY · UNVALIDATED</span></th><th>Symbol</th><th class="r">Price</th><th>Nearest zone</th>
+      <th ${thS('sq')}>Setup &#9660;</th><th>Trend <a href="/docs/trend-algorithm-design.html" target="_blank" title="How the trend verdict is calculated — checks, formulas, algorithm" style="font-size:8px;font-weight:700;letter-spacing:.03em;color:var(--muted);border:1px solid var(--border);border-radius:3px;padding:1px 4px;white-space:nowrap;text-decoration:none;cursor:pointer">SHADOW · ADVISORY · UNVALIDATED ↗</a></th><th>Symbol</th><th class="r">Price</th><th>Nearest zone</th>
       <th>S/R Score</th><th>RQ</th><th>Evidence</th><th>Distance</th><th class="r">Med. 5d</th>
       <th>Premium</th><th>Suggested</th><th></th>
     </tr></thead><tbody>${displayRows.map(r => renderRow(r) + renderDetailRow(r)).join('')}</tbody></table>
@@ -671,7 +680,53 @@ function renderDetailRow(r) {
   const breakdownLi = (label, val, weight) => `<div class="li"><span>${label}</span><span class="bbar"><i style="width:${val}%"></i></span><span class="w">${val} × ${weight}</span></div>`;
   const cont = r.containment;
 
+  // ── Trend overlay explainer — why the (advisory) score would change. Display-only. ──
+  const trendSection = (() => {
+    const tr = r.d.trend;
+    if (!tr) return '';
+    const vHex = { aligned: '#1a8c5e', neutral: '#b8800f', conflicted: '#c0392b' }[tr.verdict] || '#6b6b60';
+    const tint = { aligned: '#f0faf4', neutral: '#fbf6ec', conflicted: '#fdf2f1' }[tr.verdict] || '#f7f5f0';
+    const pcls = { aligned: 'green', neutral: 'amber', conflicted: 'red' }[tr.verdict] || 'grey';
+    const m = tr.multipliers || {};
+    const downN = [tr.down?.maStackDown, tr.down?.priceBelow200, tr.down?.rsNegative, tr.down?.ma200Falling].filter(Boolean).length;
+    let adj = q.total, mathLabel = 'no change', why = '';
+    if (tr.verdict === 'conflicted') {
+      adj = Math.round(q.total * (m.conflictMultiplier ?? 1));
+      mathLabel = `× ${m.conflictMultiplier} conflict multiplier`;
+      why = `The prevailing trend is fighting the short side — <b>${downN} of 4</b> down-template checks fire (inverted MA stack, price below the 200-day, negative relative strength${tr.down?.ma200Falling ? ', 200-day rolling over' : ''}). Selling puts at this support is selling <i>into</i> a downtrend — the falling-knife case the overlay exists to demote. The penalty is multiplicative, so the highest-Setup-Quality knives (which look most attractive) are discounted hardest.`;
+    } else if (tr.verdict === 'aligned') {
+      adj = Math.round(q.total + (m.alignBonus ?? 0));
+      mathLabel = `+ ${m.alignBonus} align bonus`;
+      why = `The trend backs the short side — <b>all four</b> up-template checks hold (rising 50&gt;150&gt;200 stack, price leading, positive relative strength vs SPY). An upward drift helps a bull-put hold its short strike, so the setup gets a small endorsement.`;
+    } else if (tr.vcpActive) {
+      adj = Math.round(q.total * (m.vcpNeutralMultiplier ?? 1));
+      mathLabel = `× ${m.vcpNeutralMultiplier} VCP discount`;
+      why = `No directional trend, but a volatility-contraction base is tightening — an imminent range expansion is the worst entry for a premium seller, so the score is discounted.`;
+    } else {
+      why = `No directional trend opinion — neither the up- nor down-template fires, so the setup is left unchanged.`;
+    }
+    const core = tr.verdict === 'conflicted'
+      ? [['MA stack inverted', tr.down?.maStackDown], ['Price &lt; 200-day', tr.down?.priceBelow200], ['RS negative', tr.down?.rsNegative], ['200-day falling', tr.down?.ma200Falling]]
+      : [['MA stack 50&gt;150&gt;200', tr.checks?.maStack], ['Price &gt; stack', tr.checks?.priceAboveStack], ['200-day rising', tr.checks?.ma200Rising], ['RS positive', tr.checks?.rsPositive]];
+    const chips = core.map(([label, ok]) => `<span style="font-size:11px;padding:3px 10px;border-radius:20px;${ok ? `background:${vHex}1a;color:${vHex};border:1px solid ${vHex}55;font-weight:600` : 'background:transparent;color:var(--muted);border:1px solid var(--line)'}">${ok ? '&#10003;' : '&#183;'} ${label}</span>`).join('');
+    const becomes = adj !== q.total ? `would become <b style="color:${vHex}">${adj}</b>` : `<b>unchanged</b>`;
+    return `<div style="background:${tint};border:1px solid ${vHex}40;border-radius:12px;padding:16px 18px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-family:'Fraunces',serif;font-size:15px;font-weight:700;color:var(--ink)">Trend overlay</span>
+          <span class="pill ${pcls}">${tr.verdict.toUpperCase()}</span>
+          <span style="font-size:9px;font-weight:700;letter-spacing:.04em;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:1px 6px">SHADOW · ADVISORY · UNVALIDATED</span>
+        </div>
+        <div style="font-size:13px;color:var(--ink)">Setup Quality <b>${q.total}</b> &nbsp;&#8594;&nbsp; ${becomes} <span style="color:var(--muted)">(${mathLabel})</span></div>
+      </div>
+      <div style="font-size:12.5px;color:var(--ink);opacity:.82;margin-top:10px;line-height:1.55;max-width:860px">${why}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">${chips}${tr.overlap ? '<span style="font-size:11px;padding:3px 10px;border-radius:20px;background:#fff3e0;color:#92400e;border:1px solid #d9770655;font-weight:600">also tripped the velocity guard (overlap)</span>' : ''}${tr.vcpActive ? '<span style="font-size:11px;padding:3px 10px;border-radius:20px;background:#eef;color:#5b21b6;border:1px solid #7c3aed55">VCP base tightening</span>' : ''}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:12px;font-style:italic">Display-only — your live Setup Quality is <b>unchanged</b>. This previews how the score would move once the trend filter is validated by the forward-test (placeholder multipliers).</div>
+    </div>`;
+  })();
+
   return `<tr class="detail open"><td colspan="13">
+    ${trendSection}
     <div class="dgrid">
       <div class="panel"><div class="ph"><h4>Clustered zones</h4><span class="ev" style="font-size:10px">levels &lt; 0.6×ATR apart merged</span></div>
         ${zonePanels(r.sStats, 'support')}${zonePanels(r.rStats, 'resistance')}
