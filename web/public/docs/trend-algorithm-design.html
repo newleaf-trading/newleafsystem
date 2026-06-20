@@ -77,6 +77,14 @@
 </div>
 
 <div class="toc">
+  <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);margin-bottom:6px">Plain-English overview</p>
+  <ol>
+    <li><a href="#why">Why this exists — the problem in plain English</a></li>
+    <li><a href="#alternatives">Why not an alternative approach?</a></li>
+    <li><a href="#improve">How the extra checks improve outcomes</a></li>
+    <li><a href="#lineage">What others do — the technical-analysis lineage</a></li>
+  </ol>
+  <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);margin:14px 0 6px">Technical reference</p>
   <ol>
     <li><a href="#io">Inputs &amp; contract</a></li>
     <li><a href="#pipeline">The pipeline (step by step)</a></li>
@@ -90,6 +98,72 @@
     <li><a href="#config">DEFAULT_CONFIG — every threshold</a></li>
     <li><a href="#worked">Worked example: TLT</a></li>
   </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="why">Why this exists — the problem in plain English</h2>
+<p>Our scanner is very good at one thing: finding price levels where a stock has <strong>bounced before</strong> — a "support zone" that held 5, 10, 20 times. It then suggests <strong>selling options</strong> (collecting premium) on a bet that the level holds again. The bull-put-spread "at support" is the classic version.</p>
+<p>The catch: it judges the <em>level</em>, but never the <em>direction the stock is travelling into that level</em>. A support that bounced 20 times looks rock-solid — but if the stock has been grinding <strong>down</strong> for months, that level is far more likely to finally give way. Selling puts there is <strong>catching a falling knife</strong>: you pocket a little premium, the floor breaks, and you take a loss many times that premium.</p>
+<div class="callout">
+  <div class="callout-title">The analogy</div>
+  <p style="margin-bottom:0">It's like rating a stair landing by how many people have stopped there — without noticing the building is on fire and everyone's running <em>down</em>. The landing's track record is irrelevant if the whole structure is heading for the basement. The trend overlay is the smoke detector: it asks <strong>"which way is this thing moving?"</strong> before you trust the level.</p>
+</div>
+<p>So the overlay adds the missing question. If the stock is in an <strong>uptrend</strong> into the support, the bounce thesis is backed → <em>endorse</em>. If it's in a <strong>downtrend</strong>, it's a falling knife → <em>demote</em>. If there's no clear trend → <em>stay neutral</em>. That's the entire job: it doesn't pick trades, it sanity-checks the ones the scanner already likes.</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="alternatives">Why not an alternative approach?</h2>
+<p>There are simpler things we could have done. Each has a real drawback that this design avoids:</p>
+<table>
+  <thead><tr><th style="width:24%">Alternative</th><th style="width:34%">What it would do</th><th>Why not (on its own)</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Keep reversion only</strong> (today)</td><td>Rank zones by how reliably they held.</td><td>Trend-blind — it ranks falling knives as <em>top</em> trades. That's the bug we're fixing.</td></tr>
+    <tr><td><strong>Switch to trend-following</strong></td><td>Only trade strong uptrends.</td><td>Throws away the whole income engine — you'd never sell premium at support again.</td></tr>
+    <tr><td><strong>Ask an AI "is this a good trade?"</strong></td><td>Let an LLM judge each setup.</td><td>Non-deterministic (different answer each run), can't be audited, and may invent numbers. Fails our consistency bar.</td></tr>
+    <tr><td><strong>One indicator</strong> (e.g. just the 200-day)</td><td>Demote anything below its 200-day MA.</td><td>Easily whipsawed — a healthy stock dips below its 200-day in normal pullbacks. One line is noisy.</td></tr>
+    <tr><td><strong>This overlay</strong></td><td>Reversion + a deterministic, multi-check trend <em>veto</em>.</td><td>Keeps the proven income engine, adds an auditable filter, and targets the exact failure mode.</td></tr>
+  </tbody>
+</table>
+<h3>What this approach buys us</h3>
+<ul>
+  <li><strong>Deterministic &amp; auditable</strong> — same inputs always give the same verdict, and you can read exactly which checks fired (no AI black box).</li>
+  <li><strong>Additive, not destructive</strong> — the validated reversion score is untouched; we only flag and (later) adjust. Nothing unproven can silently break the scanner.</li>
+  <li><strong>Multi-factor</strong> — several independent checks must agree, which filters out the false alarms any single signal produces.</li>
+  <li><strong>Targeted</strong> — it's tuned to catch the one thing that actually loses money here (selling support in a downtrend), not to be a general market-prediction model.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="improve">How the extra checks improve outcomes</h2>
+<p>Each check closes a different blind spot, and they reinforce each other:</p>
+<table>
+  <thead><tr><th style="width:26%">Check</th><th>What it catches that the others miss</th></tr></thead>
+  <tbody>
+    <tr><td><strong>MA stack</strong> (50/150/200 order)</td><td>The overall <em>structure</em> — stacked up = healthy uptrend; inverted = downtrend.</td></tr>
+    <tr><td><strong>Price vs stack</strong></td><td>Whether price is actually riding above its averages, or has already broken down beneath them.</td></tr>
+    <tr><td><strong>200-day slope</strong></td><td>The slow, reliable trend — and the <em>last</em> thing to turn, so we use it as confirmation, never a trigger.</td></tr>
+    <tr><td><strong>Relative strength vs SPY</strong></td><td>Whether the stock is <em>leading or lagging the market</em> — a stock falling while the market rises is a red flag a single price chart hides.</td></tr>
+    <tr><td><strong>52-week position</strong></td><td>Near highs = leader; sitting near the lows = laggard / likely knife.</td></tr>
+    <tr><td><strong>VCP</strong> (base tightening)</td><td>Whether a big move is coiling — an imminent expansion is the worst moment to sell premium.</td></tr>
+  </tbody>
+</table>
+<p><strong>Why combining beats any single one:</strong> one indicator throws off lots of false alarms (a strong stock can dip below its 200-day in a normal pullback). Requiring <strong>three or four to agree</strong> means we only demote when multiple independent signals point the same way — far fewer false demotions, and we still catch the genuine knives.</p>
+<p><strong>Why the asymmetry</strong> (slow to endorse — all four; quick to demote — any three): it's plain risk management. <em>Skipping</em> a decent trade costs you nothing; <em>taking</em> a falling knife costs real money. So the bar to bless a trade is high, and the bar to flag one is low.</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="lineage">What others do — the technical-analysis lineage</h2>
+<p>None of these checks are invented. They're a synthesis of frameworks that decades of professional technical analysis converged on — we just made them deterministic and pointed them at one job (vetoing premium-selling into a downtrend).</p>
+<table>
+  <thead><tr><th style="width:30%">Framework (who)</th><th>What it contributes here</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Minervini "Trend Template" / SEPA</strong> (Mark Minervini)</td><td>The direct basis: price above the 150/200-day, 50&gt;150&gt;200 stacked, 200-day rising, off the 52-week low, near the 52-week high, strong relative strength. Used by professional momentum traders. <strong>VCP</strong> is also his.</td></tr>
+    <tr><td><strong>CAN SLIM</strong> (William O'Neil / IBD)</td><td>The "L" = market <em>Leader</em>: a relative-strength rating and proximity to 52-week highs. Our RS + near-52w-high checks mirror this.</td></tr>
+    <tr><td><strong>Stage Analysis</strong> (Stan Weinstein)</td><td>Stage 2 (advancing) vs Stage 4 (declining) from a long MA + its slope. Our <code>conflicted</code> verdict is essentially "don't sell support in a Stage-4 decline."</td></tr>
+    <tr><td><strong>Mansfield Relative Strength</strong></td><td>Performance measured <em>against a benchmark index</em> — exactly our RS-vs-SPY line.</td></tr>
+    <tr><td><strong>Everyday classics</strong></td><td>Golden/death cross (50/200), moving-average ribbons, 52-week-high screens — the simpler cousins of the same ideas.</td></tr>
+  </tbody>
+</table>
+<div class="callout">
+  <div class="callout-title">The one-line takeaway</div>
+  <p style="margin-bottom:0">We took the trend signals that professionals already trust, made them <strong>deterministic and auditable</strong>, and applied them as a <strong>veto on the income engine</strong> — instead of reinventing a trend model or outsourcing the judgment to an AI.</p>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════ -->
