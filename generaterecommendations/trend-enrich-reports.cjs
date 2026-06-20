@@ -44,7 +44,20 @@ function readReport(sym) {
   try { return JSON.parse(fs.readFileSync(path.join(REPORTS_DIR, sym, 'latest.json'), 'utf8')); } catch { return null; }
 }
 
-function main() {
+const UPLOAD = process.argv.includes('--upload');
+
+// Re-upload the FULL enriched report (preserves OI + every other field, adds report.trend).
+// Resolves the S3 SDK + R2 creds from the pipeline dir, where the pipeline already uses them.
+function makeUploader() {
+  const { createRequire } = require('module');
+  const pipeReq = createRequire(path.join(__dirname, '..', 'pipeline', 'index.js'));
+  const { S3Client, PutObjectCommand } = pipeReq('@aws-sdk/client-s3');
+  const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'pipeline', 'config.json'), 'utf8')).r2;
+  const client = new S3Client({ region: 'auto', endpoint: cfg.endpoint, credentials: { accessKeyId: cfg.accessKeyId, secretAccessKey: cfg.secretAccessKey } });
+  return (key, body) => client.send(new PutObjectCommand({ Bucket: cfg.bucket, Key: key, Body: body, ContentType: 'application/json', CacheControl: 'public, max-age=300' }));
+}
+
+async function main() {
   const benchBars = normalizeBars(readReport(BENCHMARK)?.technicalData?.priceHistory);
   if (!benchBars.length) { console.error(`No ${BENCHMARK} report — cannot compute relative strength.`); process.exit(1); }
 
@@ -54,6 +67,7 @@ function main() {
 
   let enriched = 0, skipped = 0;
   const tally = { aligned: 0, neutral: 0, conflicted: 0 };
+  const toUpload = [];
   for (const sym of symbols) {
     const fp = path.join(REPORTS_DIR, sym, 'latest.json');
     const report = readReport(sym);
@@ -84,13 +98,26 @@ function main() {
     };
 
     if (!DRY) fs.writeFileSync(fp, JSON.stringify(report, null, 2));
+    if (UPLOAD && !DRY) toUpload.push({ key: `reports/${sym}/latest.json`, body: JSON.stringify(report) });
     enriched++;
   }
 
   console.log(`\n  Trend report enrichment${DRY ? ' (dry-run)' : ''}: ${enriched} enriched · ${skipped} skipped`);
   console.log(`  verdicts: aligned ${tally.aligned} · neutral ${tally.neutral} · conflicted ${tally.conflicted}`);
   console.log(`  attached field: report.trend (additive, advisory) · multipliers ${JSON.stringify(MULTIPLIERS)}`);
-  if (!DRY) console.log(`  ⚠ local only — not uploaded to R2 (Phase 4a is build-only; do not deploy)\n`);
+  if (UPLOAD && !DRY && toUpload.length) {
+    const put = makeUploader();
+    console.log(`  uploading ${toUpload.length} enriched reports to R2 (preserves OI + all fields, adds report.trend)...`);
+    let done = 0, failed = 0; const BATCH = 8;
+    for (let i = 0; i < toUpload.length; i += BATCH) {
+      const res = await Promise.allSettled(toUpload.slice(i, i + BATCH).map(u => put(u.key, u.body)));
+      done += res.filter(r => r.status === 'fulfilled').length;
+      failed += res.filter(r => r.status === 'rejected').length;
+    }
+    console.log(`  ✓ R2 upload: ${done} ok, ${failed} failed\n`);
+  } else if (!DRY) {
+    console.log(`  ⚠ local only — pass --upload to push report.trend to R2\n`);
+  }
 }
 
-main();
+main().catch(e => { console.error('Error:', e.message); process.exit(1); });
