@@ -26,8 +26,17 @@
 
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const R = require(path.join(__dirname, '..', 'shared', 'reaction', 'index.cjs'));
-const { computeTrendTemplate } = require(path.join(__dirname, '..', 'shared', 'trend', 'trend-template.cjs'));
+const { computeTrendTemplate, DEFAULT_CONFIG } = require(path.join(__dirname, '..', 'shared', 'trend', 'trend-template.cjs'));
+
+// Version-stamp the scoring logic. Accrual runs for months across an actively-changing
+// codebase; if setupQuality or trend-config semantics drift, the eventual study must be able
+// to detect it and segment/exclude affected weeks. The hash covers BOTH engines' tunables.
+const SCORING_VERSION = 'trend-v0+reaction-v2';
+const SCORING_HASH = crypto.createHash('sha256')
+  .update(JSON.stringify({ trend: DEFAULT_CONFIG, reactionWeights: R.SCORE_WEIGHTS }))
+  .digest('hex').slice(0, 12);
 
 const args = process.argv.slice(2);
 const DRY = args.includes('--dry-run');
@@ -150,6 +159,8 @@ function main() {
       signalDate,
       asOf: report.meta && report.meta.generatedAt,
       spot: +d.price.toFixed(2),
+      atrPct: d.atrPct ?? null,
+      atrAtSignal: d.atrPct ? +(d.atrPct * d.price).toFixed(4) : null, // ATR reference for MAE-in-ATR labelling
       setupQuality: rq.quality.total,
       setupQualityExclusion: rq.quality.exclusionReason || null,
       suggestedStrategy: rq.bias,                                   // reaction mapBias (canonical)
@@ -169,6 +180,9 @@ function main() {
       cohortBullPutAtSupport: /bull_put/.test(rq.bias),
       // outcome fields populated LATER by the forward-test harness (no lookahead here):
       outcome: null,
+      scoringVersion: SCORING_VERSION,
+      scoringHash: SCORING_HASH,
+      priceBasis: 'split-adjusted', // pipeline priceHistory uses adjustment=split; labeller must match
       provenance: { engine: 'shared/trend v0 + reaction', barsUsed: bars.length, benchmark: BENCHMARK, dataSource: 'pipeline/reports' },
     });
   }
@@ -177,12 +191,27 @@ function main() {
   const week = records.length ? isoWeek(records[0].signalDate || new Date().toISOString().split('T')[0]) : 'unknown';
   const by = v => records.filter(r => r.verdict === v);
   const bullPut = records.filter(r => r.cohortBullPutAtSupport);
+  // Task 5: overlap co-occurrence — accrue evidence on the trend-penalty vs velocity-guard
+  // redundancy question. Tracked, NOT analyzed (n far too small to conclude anything yet).
+  const conflicted = by('conflicted');
+  const coOccurrence = {
+    conflicted: conflicted.length,
+    velocityGuardFired: records.filter(r => r.velocityGuardFired).length,
+    overlap: records.filter(r => r.overlap).length,                                  // conflicted AND guard fired
+    conflictedNoGuard: conflicted.filter(r => !r.velocityGuardFired).length,
+    bullPut: {
+      conflicted: bullPut.filter(r => r.verdict === 'conflicted').length,
+      overlap: bullPut.filter(r => r.overlap).length,
+    },
+  };
   const summary = {
-    week, universe: symbols.length, scored: records.length, skipped: skipped.length,
-    cohorts: { aligned: by('aligned').length, neutral: by('neutral').length, conflicted: by('conflicted').length },
+    week, scoringVersion: SCORING_VERSION, scoringHash: SCORING_HASH,
+    universe: symbols.length, scored: records.length, skipped: skipped.length,
+    cohorts: { aligned: by('aligned').length, neutral: by('neutral').length, conflicted: conflicted.length },
     bullPutAtSupport: bullPut.length,
     conflictedBullPut: bullPut.filter(r => r.verdict === 'conflicted').length,
-    overlapCount: records.filter(r => r.overlap).length,
+    overlapCount: coOccurrence.overlap,
+    coOccurrence,
   };
 
   console.log(`\n  ═══ Trend Candidate Snapshot — ${week} ═══`);

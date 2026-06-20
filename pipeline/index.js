@@ -149,6 +149,16 @@ async function runWeeklySnapshot() {
   markWeeklySnapDone();
 }
 
+// Weekly trend candidate snapshot (forward-test accrual). Additive job — runs AFTER the
+// premium snapshot so the per-symbol reports it reads are fresh. Idempotent: the script
+// overwrites the ISO-week file, and the ranOkThisWeek/monitor guards prevent duplicate runs.
+async function runTrendCandidateSnapshot() {
+  console.log(`[${nowET()}] === Weekly Trend Candidate Snapshot (forward-test accrual) ===`);
+  const script = path.join(NEWLEAF_DIR, 'generaterecommendations', 'trend-candidate-snapshot.cjs');
+  if (!fs.existsSync(script)) throw new Error(`trend-candidate-snapshot.cjs not found at ${script}`);
+  await runJob('../generaterecommendations/trend-candidate-snapshot.cjs');
+}
+
 // Daily-OI sub-steps, tracked INDIVIDUALLY. Previously these were `.catch(console.error)`
 // (swallowed) inside one 'daily-oi' job, so a failed sync hid behind a green status and the
 // monitor never retried it. Now each step records its own status; the sequence skips any step
@@ -244,6 +254,7 @@ const SCHEDULED_JOBS = [
   { name: 'daily-funnel',    label: 'Daily funnel (publish picks)', cadence: 'daily', etMin: 10 * 60,      marketDay: true, run: runDailyFunnel },
   { name: 'event-calendar',  label: 'Event calendar refresh',     cadence: 'daily',  etMin: 16 * 60 + 15, marketDay: true, run: runEventCalendar },
   { name: 'weekly-snapshot', label: 'Weekly premium snapshot',    cadence: 'weekly', dow: 5, etMin: 16 * 60 + 30,            run: runWeeklySnapshot },
+  { name: 'weekly-trend-candidates', label: 'Weekly trend candidate snapshot', cadence: 'weekly', dow: 5, etMin: 16 * 60 + 35, run: runTrendCandidateSnapshot },
 ];
 
 // Monitor: re-run any daily/weekly job that is past its scheduled time and hasn't succeeded
@@ -334,6 +345,12 @@ if (ONCE) {
   cron.schedule('30 16 * * 5', async () => {
     if (jobStatus.ranOkThisWeek('weekly-snapshot')) return;
     await track('weekly-snapshot', runWeeklySnapshot);
+  }, TZ);
+
+  // Weekly trend candidate snapshot (forward-test accrual): Fridays 4:35pm ET, after the premium snapshot.
+  cron.schedule('35 16 * * 5', async () => {
+    if (jobStatus.ranOkThisWeek('weekly-trend-candidates')) return;
+    await track('weekly-trend-candidates', runTrendCandidateSnapshot);
   }, TZ);
 
   // Health check: every 5 min — restart down services + monitor (re-run any missed daily/weekly job).

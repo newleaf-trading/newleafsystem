@@ -13,9 +13,9 @@
  *   node trend.cjs SPGI --json
  *   node trend.cjs NFLX --narrate
  *
- * Data: FMP historical-price-eod (full OHLC), symbol only / no date params,
- *       full history sliced locally. (Full, not "light", because VCP + the
- *       approach-velocity ATR need true high/low that the light feed omits.)
+ * Data: Alpaca daily bars (split-adjusted OHLCV), ~540d sliced locally. Alpaca is
+ *       universe-wide (key auth, no per-symbol 402s like FMP) and shares one price
+ *       basis with the pipeline reports + the labeller's outcome bars.
  *
  * Setup quality: the REAL reaction-engine setupQuality needs IV/OI/zone touches
  *       an EOD feed cannot supply — that wiring is Phase 4 (selector integration).
@@ -38,7 +38,7 @@ function getFlag(name, def = null) {
 const FLAG_VALUES = new Set(['--benchmark', '--sq', '--bars', '--benchmark-bars']);
 const SYMBOL = (args.find(a => !a.startsWith('--') && !FLAG_VALUES.has(args[args.indexOf(a) - 1])) || '').toUpperCase();
 const BENCHMARK = (getFlag('benchmark', 'SPY')).toUpperCase();
-const BARS_FILE = getFlag('bars');               // local JSON OHLC array → bypass FMP (Phase 3 / offline)
+const BARS_FILE = getFlag('bars');               // local JSON OHLC array → bypass Alpaca (Phase 3 / offline)
 const BENCH_BARS_FILE = getFlag('benchmark-bars');
 const ORIGINAL_SQ = parseFloat(getFlag('sq', '70'));
 const JSON_OUT = args.includes('--json');
@@ -50,23 +50,27 @@ if (!SYMBOL) {
   process.exit(1);
 }
 
-// ── FMP fetch (the I/O boundary) ─────────────────────────────────────────────
-function fmpKey() {
-  let k = process.env.FMP_API_KEY;
-  if (!k) { try { k = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'pipeline', 'config.json'), 'utf8')).fmpApiKey; } catch { /* ignore */ } }
-  return k;
+// ── Alpaca fetch (the I/O boundary) ──────────────────────────────────────────
+// Universe-wide (key auth, no per-symbol 402s like FMP), and split-adjusted to match
+// pipeline priceHistory + the labeller's outcome bars (one price basis everywhere).
+function alpacaCreds() {
+  const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'pipeline', 'config.json'), 'utf8'));
+  if (!cfg.alpaca || !cfg.alpaca.apiKey) throw new Error('pipeline/config.json alpaca.apiKey not set');
+  return { id: cfg.alpaca.apiKey, secret: cfg.alpaca.secretKey };
 }
 
 async function fetchEod(symbol) {
-  const key = fmpKey();
-  if (!key) throw new Error('FMP_API_KEY (or pipeline/config.json fmpApiKey) not set');
-  const url = `https://financialmodelingprep.com/stable/historical-price-eod/full?symbol=${encodeURIComponent(symbol)}&apikey=${key}`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
-  if (!res.ok) throw new Error(`FMP ${res.status} for ${symbol}`);
+  const { id, secret } = alpacaCreds();
+  const end = new Date().toISOString().split('T')[0];
+  const startD = new Date(); startD.setDate(startD.getDate() - 540); // ~370 trading bars > SLICE
+  const start = startD.toISOString().split('T')[0];
+  const url = `https://data.alpaca.markets/v2/stocks/${encodeURIComponent(symbol)}/bars`
+    + `?timeframe=1Day&start=${start}&end=${end}&limit=500&adjustment=split`;
+  const res = await fetch(url, { headers: { 'APCA-API-KEY-ID': id, 'APCA-API-SECRET-KEY': secret, Accept: 'application/json' }, signal: AbortSignal.timeout(20000) });
+  if (!res.ok) throw new Error(`Alpaca ${res.status} for ${symbol}`);
   const data = await res.json();
-  const rows = Array.isArray(data) ? data : (data.historical || []);
-  const bars = rows
-    .map(r => ({ date: r.date, open: r.open, high: r.high, low: r.low, close: r.close, volume: r.volume }))
+  const bars = (data.bars || [])
+    .map(b => ({ date: (b.t || '').split('T')[0], open: b.o, high: b.h, low: b.l, close: b.c, volume: b.v }))
     .filter(b => b.close != null && b.date);
   bars.sort((a, b) => (a.date < b.date ? -1 : 1)); // ascending
   return bars.slice(-SLICE);
