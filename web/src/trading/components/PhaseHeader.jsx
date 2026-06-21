@@ -14,7 +14,7 @@ const PHASES = [
   { key: 'decide',   label: 'Decide',   route: '/invest/discover', clickable: true },
   { key: 'build',    label: 'Build',    route: '/invest/build',    clickable: true },
   { key: 'execute',  label: 'Execute',  route: null,                clickable: false },
-  { key: 'defend',   label: 'Defend',   route: '/invest/positions', clickable: true },
+  { key: 'defend',   label: 'Defend',   route: '/invest/defend', clickable: true },
 ];
 
 const EYEBROWS = {

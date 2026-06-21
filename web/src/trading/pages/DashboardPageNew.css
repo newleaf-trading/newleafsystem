@@ -1,0 +1,67 @@
+/* DashboardPageNew — Invest home (mock 01) */
+.dh-wrap { max-width:1240px;margin:0 auto;padding:0 28px 48px;font-family:'DM Sans',sans-serif;color:#172033 }
+
+/* Hero */
+.dh-hero { background:linear-gradient(155deg,#fbf6ec,#f3ede0);border:.5px solid #e8e2d8;border-radius:24px;padding:30px 34px;margin-top:18px }
+.dh-greet { font-family:'Fraunces',serif;font-style:italic;font-size:14px;color:#6b7280 }
+.dh-hero-title { font-family:'Fraunces',serif;font-weight:500;font-size:42px;margin:8px 0 8px;letter-spacing:-.01em }
+.dh-hero-title i { color:#c9a96e;font-style:italic }
+.dh-lede { margin:0;color:#6b7280;font-size:15px;max-width:36em }
+
+/* Lifecycle flow */
+.dh-flow { display:flex;align-items:flex-start;justify-content:space-between;margin:34px 0 10px }
+.dh-node { display:flex;flex-direction:column;align-items:center;gap:10px;width:120px;text-align:center }
+.dh-circ { width:64px;height:64px;border-radius:50%;border:1px solid #e8e2d8;background:#fffdf8;display:grid;place-items:center;font-size:22px;color:#0f4a36;position:relative }
+.dh-node-last .dh-circ { background:#062e22;color:#c9a96e;border-color:#062e22 }
+.dh-badge-g,.dh-badge-r { position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;border-radius:10px;display:grid;place-items:center;font-size:11px;font-family:'Space Mono';font-weight:600;padding:0 5px }
+.dh-badge-g { background:#062e22;color:#fff }
+.dh-badge-r { background:#d94f4f;color:#fff }
+.dh-node h4 { font-family:'Fraunces',serif;font-weight:500;font-size:18px;margin:0 }
+.dh-node small { font-size:12px;color:#6b7280 }
+.dh-node-last small { color:#b5392f }
+.dh-fline { flex:1;height:1px;background:#e8e2d8;margin-top:32px }
+
+/* Hero footer */
+.dh-herofoot { display:flex;justify-content:space-between;align-items:center;border-top:.5px solid #e8e2d8;margin-top:24px;padding-top:18px }
+.dh-herofoot-stats { font-family:'Space Mono';font-size:13px;color:#6b7280 }
+.dh-herofoot-btns { display:flex;gap:10px }
+.dh-hbtn { font-size:13px;font-weight:500;border-radius:10px;padding:11px 18px;cursor:pointer;border:.5px solid #e8e2d8;background:#fffdf8 }
+.dh-hbtn-dark { background:#062e22;color:#fff;border-color:#062e22 }
+
+/* Section headers */
+.dh-sech { font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#6b7280;font-weight:500;margin:30px 0 12px }
+
+/* Flagged rows */
+.dh-flag { display:flex;align-items:center;gap:18px;background:linear-gradient(90deg,#fff8f3,#fffdf8);border:.5px solid #e8e2d8;border-left:3px solid #d94f4f;border-radius:0 12px 12px 0;padding:15px 20px;margin-bottom:10px }
+.dh-flag-good { border-left-color:#16835f }
+.dh-flag-time { border-left-color:#bd7c19 }
+.dh-flag-sym { font-family:'Fraunces',serif;font-size:20px;font-weight:500;width:72px;flex-shrink:0 }
+.dh-flag-ctx { flex:1;display:flex;gap:10px 26px;flex-wrap:wrap;align-items:center }
+.dh-flag-f { font-size:13px;color:#6b7280 }
+.dh-flag-f b { font-family:'Space Mono';font-size:15px;font-weight:500;color:#172033 }
+.dh-flag-loss { color:#b5392f;font-weight:500 }
+.dh-flag-amber { color:#bd7c19;font-weight:500 }
+.dh-flag-green { color:#0d6347;font-weight:500 }
+.dh-flag-rv { background:#062e22;color:#fff;border:0;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:500;cursor:pointer;flex-shrink:0;text-decoration:none }
+
+.dh-ontrack { display:flex;justify-content:space-between;align-items:center;background:#f7f3ea;border:.5px solid #e8e2d8;border-radius:12px;padding:13px 18px;font-size:14px;color:#6b7280 }
+
+/* Two-column */
+.dh-twocol { display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:8px }
+
+/* Discover list */
+.dh-disc { border:.5px solid #e8e2d8;border-radius:12px;background:#fffdf8;padding:4px 0 }
+.dh-disc-item { display:flex;justify-content:space-between;align-items:center;padding:15px 18px;border-bottom:.5px solid #f0ebe0;text-decoration:none;color:inherit }
+.dh-disc-item:last-child { border-bottom:0 }
+.dh-disc-name { font-weight:500 }
+.dh-disc-name small { display:block;color:#6b7280;font-weight:400;font-size:12px }
+.dh-disc-roc { font-family:'Space Mono';color:#16835f;font-weight:500 }
+.dh-viewall { display:block;text-align:center;background:#f7f3ea;border:.5px solid #e8e2d8;border-radius:12px;padding:14px;font-weight:500;margin-top:10px;cursor:pointer;text-decoration:none;color:inherit }
+
+/* Performance cards */
+.dh-pc { background:#fffdf8;border:.5px solid #e8e2d8;border-radius:12px;padding:18px 20px;margin-bottom:12px }
+.dh-pc-lbl { font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#6b7280;font-weight:500 }
+.dh-pc-val { font-family:'Space Mono';font-size:28px;font-weight:500;margin-top:5px }
+.dh-pc-sub { font-size:12px;color:#6b7280;margin-top:3px }
+
+@media(max-width:980px){.dh-twocol{grid-template-columns:1fr}.dh-flow{overflow-x:auto}}

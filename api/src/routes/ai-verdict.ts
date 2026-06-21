@@ -21,7 +21,7 @@ export function registerAIVerdictRoutes(fastify: FastifyInstance, llm: LLMRouter
     const validModes = ['premium', 'budget-v3', 'budget-r1', 'budget-qwq'] as const;
     const mode = validModes.includes(body.modelMode as any) ? body.modelMode as typeof validModes[number] : 'budget-qwq';
     const modelMap: Record<string, ModelTier> = {
-      'premium': 'qwq', 'budget-v3': 'deepseek', 'budget-r1': 'deepseek-r1', 'budget-qwq': 'qwq',
+      'premium': 'qwen-max', 'budget-v3': 'deepseek', 'budget-r1': 'deepseek-r1', 'budget-qwq': 'qwen-max',
     };
 
     const system = `You are an options position risk analyst. Given a position's verdict state and market data, explain in 1-2 concise sentences WHY the verdict was reached. Be specific — cite numbers (P&L %, DTE, delta, IV rank). No hedging language. Also provide a confidence score 0-100 for how certain this verdict is correct.
@@ -36,7 +36,7 @@ Market data: ${JSON.stringify(marketData || {}).slice(0, 2000)}
 Position: ${JSON.stringify(position || {}).slice(0, 1000)}`;
 
     llm.resetUsage();
-    const raw = await llm.call(modelMap[mode] ?? 'qwq', { system, user, maxTokens: 300 });
+    const raw = await llm.call(modelMap[mode] ?? 'qwen-max', { system, user, maxTokens: 300 });
 
     try {
       const start = raw.indexOf('{'), end = raw.lastIndexOf('}');

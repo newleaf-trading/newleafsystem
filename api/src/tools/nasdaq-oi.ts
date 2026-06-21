@@ -10,7 +10,12 @@
  * (routes/market.ts, routes/ai.ts, tools/market-data.ts) work without changes.
  */
 
+import type { OptionContract } from './alpaca.js';
+
 const YAHOO_OI_URL = process.env.YAHOO_OI_URL || 'https://yahoo-options-svc-m2cty2vxuq-uc.a.run.app';
+
+/** Option contract enriched with the fields the gamma engine + leg builder need. */
+export type EnrichedContract = OptionContract & { openInterest: number; dte: number; expiry: string };
 
 export interface StrikeOI {
   strike: number;
@@ -19,6 +24,8 @@ export interface StrikeOI {
   putOI: number;
   callVolume: number;
   putVolume: number;
+  callIv?: number | null;
+  putIv?: number | null;
 }
 
 export interface OIChain {
@@ -30,36 +37,109 @@ export interface OIChain {
 
 // ── Primary: Yahoo OI Service (Cloud Run) ───────────────────────────────────
 
-async function fetchFromYahooSvc(ticker: string, expiry: string): Promise<OIChain> {
+async function fetchYahooExpiries(ticker: string): Promise<string[]> {
+  const url = `${YAHOO_OI_URL}/api/options/${ticker.toUpperCase()}`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+  if (!res.ok) throw new Error(`Yahoo OI Service (expiries) ${res.status}`);
+  const data = await res.json() as any;
+  return (data.expirations || []) as string[];
+}
+
+function nearestExpiry(target: string, available: string[]): string | null {
+  if (!available.length) return null;
+  const t = new Date(`${target}T00:00:00Z`).getTime();
+  let best: string | null = null, bestDiff = Infinity;
+  for (const e of available) {
+    const diff = Math.abs(new Date(`${e}T00:00:00Z`).getTime() - t);
+    if (diff < bestDiff) { bestDiff = diff; best = e; }
+  }
+  return best;
+}
+
+async function fetchYahooChain(ticker: string, expiry: string): Promise<any> {
   const url = `${YAHOO_OI_URL}/api/options/${ticker.toUpperCase()}/${expiry}`;
   const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error(`Yahoo OI Service ${res.status}: ${url}`);
   const data = await res.json() as any;
+  if (data.error) throw new Error(`Yahoo OI Service: ${String(data.error).slice(0, 120)}`);
+  return data;
+}
+
+// Alpaca and Yahoo can disagree on the exact expiry date around holidays (e.g. Alpaca lists
+// the nominal Friday 2026-07-03 while Yahoo lists the actual last trading day 2026-07-02).
+// On a "cannot be found" miss, snap to the nearest available Yahoo expiry — strikes still
+// align, so the per-strike merge downstream is unaffected.
+async function fetchYahooChainWithSnap(ticker: string, expiry: string): Promise<any> {
+  try {
+    return await fetchYahooChain(ticker, expiry);
+  } catch (err) {
+    const expiries = await fetchYahooExpiries(ticker);
+    const near = nearestExpiry(expiry, expiries);
+    if (!near || near === expiry) throw err;
+    console.warn(`[OI] Yahoo expiry ${expiry} not found for ${ticker}; snapping to nearest ${near}`);
+    return await fetchYahooChain(ticker, near);
+  }
+}
+
+/**
+ * Build a full option chain from the Yahoo OI service (strikes, bid/ask/mid, IV, OI, volume).
+ * Used when Alpaca's indicative feed returns an empty/sparse chain — Yahoo has the complete
+ * chain including the greeks inputs (IV) and OI that Alpaca's indicative feed lacks.
+ */
+export async function fetchYahooContracts(ticker: string, expiry: string, dte: number): Promise<EnrichedContract[]> {
+  const data = await fetchYahooChainWithSnap(ticker, expiry);
+  const yymmdd = expiry.slice(2).replace(/-/g, '');
+  const map = (c: any, type: 'call' | 'put'): EnrichedContract => {
+    const bid = c.bid ?? 0, ask = c.ask ?? 0;
+    const mid = c.midPrice ?? +(((bid + ask) / 2)).toFixed(2);
+    const strikeCode = String(Math.round((c.strike ?? 0) * 1000)).padStart(8, '0');
+    return {
+      occ: `${ticker.toUpperCase()}${yymmdd}${type === 'call' ? 'C' : 'P'}${strikeCode}`,
+      type,
+      strike: c.strike,
+      iv: (c.impliedVolatility != null && c.impliedVolatility > 0) ? c.impliedVolatility : null,
+      delta: null, gamma: null, theta: null, vega: null,
+      bid, ask, mid,
+      volume: c.volume ?? 0,
+      openInterest: c.openInterest ?? 0,
+      dte, expiry,
+    };
+  };
+  const out: EnrichedContract[] = [];
+  for (const c of (data.calls || [])) out.push(map(c, 'call'));
+  for (const p of (data.puts || [])) out.push(map(p, 'put'));
+  return out.sort((a, b) => a.strike - b.strike || (a.type === 'call' ? -1 : 1));
+}
+
+async function fetchFromYahooSvc(ticker: string, expiry: string): Promise<OIChain> {
+  const data = await fetchYahooChainWithSnap(ticker, expiry);
 
   const calls: any[] = data.calls || [];
   const puts: any[] = data.puts || [];
 
-  // Merge calls + puts into per-strike records
+  // Merge calls + puts into per-strike records (carry IV — Alpaca's indicative feed has none)
   const strikeMap = new Map<number, StrikeOI>();
 
   for (const c of calls) {
     const strike = c.strike;
     if (!strikeMap.has(strike)) {
-      strikeMap.set(strike, { strike, expiry, callOI: 0, putOI: 0, callVolume: 0, putVolume: 0 });
+      strikeMap.set(strike, { strike, expiry, callOI: 0, putOI: 0, callVolume: 0, putVolume: 0, callIv: null, putIv: null });
     }
     const s = strikeMap.get(strike)!;
     s.callOI += c.openInterest || 0;
     s.callVolume += c.volume || 0;
+    if (c.impliedVolatility != null && c.impliedVolatility > 0) s.callIv = c.impliedVolatility;
   }
 
   for (const p of puts) {
     const strike = p.strike;
     if (!strikeMap.has(strike)) {
-      strikeMap.set(strike, { strike, expiry, callOI: 0, putOI: 0, callVolume: 0, putVolume: 0 });
+      strikeMap.set(strike, { strike, expiry, callOI: 0, putOI: 0, callVolume: 0, putVolume: 0, callIv: null, putIv: null });
     }
     const s = strikeMap.get(strike)!;
     s.putOI += p.openInterest || 0;
     s.putVolume += p.volume || 0;
+    if (p.impliedVolatility != null && p.impliedVolatility > 0) s.putIv = p.impliedVolatility;
   }
 
   const strikes = [...strikeMap.values()].sort((a, b) => a.strike - b.strike);

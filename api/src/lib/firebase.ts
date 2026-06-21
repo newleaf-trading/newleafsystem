@@ -1,4 +1,5 @@
 import { initializeApp, getApps, cert, type App } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
 let app: App | undefined;
 
@@ -19,5 +20,10 @@ export function initFirebase(): App {
     // Default credentials (works in Cloud Functions or with GOOGLE_APPLICATION_CREDENTIALS)
     app = initializeApp();
   }
+
+  // Allow undefined values in Firestore writes (agent payloads may have optional fields)
+  getFirestore().settings({ ignoreUndefinedProperties: true });
+  getFirestore('newleafdb').settings({ ignoreUndefinedProperties: true });
+
   return app;
 }

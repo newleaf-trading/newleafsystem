@@ -31,6 +31,7 @@ export function PayoffChart({
   legs = [],
   comparisonLegs = [],
   spotPrice = 0,
+  centerPrice = 0,
   height = 260,
   accentColor = '#0F6E56',
 }) {
@@ -85,8 +86,18 @@ export function PayoffChart({
         value: spotPrice, color: COL_SPOT, width: 1.75, dashStyle: 'Dash', zIndex: 5,
         label: {
           text: '$' + spotPrice.toFixed(0),
-          align: 'center', verticalAlign: 'top', y: -6,
+          align: 'center', verticalAlign: 'top', y: 8,
           style: { color: COL_SPOT, fontWeight: '700', fontSize: '12px', fontFamily: "'Inter', sans-serif" },
+        },
+      });
+    }
+    if (centerPrice > 0 && centerPrice !== spotPrice) {
+      lines.push({
+        value: centerPrice, color: '#16835f', width: 1.5, dashStyle: 'LongDash', zIndex: 4,
+        label: {
+          text: 'Center $' + centerPrice.toFixed(0),
+          align: 'center', verticalAlign: 'bottom', y: -4,
+          style: { color: '#16835f', fontWeight: '600', fontSize: '10px', fontFamily: "'Inter', sans-serif" },
         },
       });
     }
@@ -101,7 +112,7 @@ export function PayoffChart({
       });
     });
     return lines;
-  }, [spotPrice, breakevens]);
+  }, [spotPrice, centerPrice, breakevens]);
 
   // Create / update chart
   useEffect(() => {
@@ -185,7 +196,7 @@ export function PayoffChart({
         chart: {
           backgroundColor: 'transparent',
           style: { fontFamily: "'Inter', sans-serif" },
-          spacing: [8, 16, 8, 8],
+          spacing: [16, 16, 8, 8],
           height: totalHeight,
           animation: { duration: 300 },
         },

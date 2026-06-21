@@ -21,6 +21,16 @@ import { StrategyDetailPage } from './pages/StrategyDetailPage';
 import { BuildPage } from './pages/BuildPage';
 import { PositionsPage } from './pages/PositionsPage';
 
+// Phase 3 — Invest rebuild (status-routed detail views)
+import { StrategyRouter } from './pages/StrategyRouter';
+import { DashboardPageNew } from './pages/DashboardPageNew';
+import { PositionsPageNew } from './pages/PositionsPageNew';
+import { PerformancePageRebuild } from './pages/PerformancePageRebuild';
+import { BuildPageNew } from './pages/BuildPageNew';
+import ProjectionPage from './pages/ProjectionPage';
+import { PlansPage } from './pages/PlansPage';
+import { ActivePlanDetailPage } from './pages/ActivePlanDetailPage';
+
 // Redirect helper for /invest/position/:tileId → /invest/strategy/:tileId
 function PositionRedirect() {
   const { tileId } = useParams();
@@ -115,13 +125,16 @@ export default function TradingLayout() {
         />
 
         <Routes>
-          {/* ═══ Core routes (4-phase IA) ═══ */}
-          <Route path="/" element={<DashboardPage user={user} tiles={tiles} onOpenChat={openChat} />} />
+          {/* ═══ Core routes — Phase 3 rebuild ═══ */}
+          <Route path="/" element={<DashboardPageNew user={user} tiles={tiles} onOpenChat={openChat} />} />
           <Route path="/discover" element={<DiscoverPage tiles={tiles} />} />
-          <Route path="/strategy/:id" element={<StrategyDetailPage tiles={tiles} onOpenChat={openChat} />} />
-          <Route path="/build" element={<BuildPage tiles={tiles} />} />
-          <Route path="/positions" element={<PositionsPage tiles={tiles} onOpenChat={openChat} />} />
-          <Route path="/performance" element={<PerformancePage tiles={tiles} />} />
+          <Route path="/strategy/:id" element={<StrategyRouter tiles={tiles} onOpenChat={openChat} />} />
+          <Route path="/build" element={<BuildPageNew tiles={tiles} />} />
+          <Route path="/defend" element={<PositionsPageNew tiles={tiles} onOpenChat={openChat} />} />
+          <Route path="/performance" element={<PerformancePageRebuild tiles={tiles} />} />
+          <Route path="/projection" element={<ProjectionPage mode="investor" />} />
+          <Route path="/plans" element={<PlansPage />} />
+          <Route path="/plans/active" element={<ActivePlanDetailPage />} />
 
           {/* ═══ Utility routes ═══ */}
           <Route path="/analysis/:ticker" element={<AnalysisPage />} />
@@ -129,7 +142,8 @@ export default function TradingLayout() {
           <Route path="/admin" element={<AdminPage />} />
 
           {/* ═══ Legacy routes — keep working, redirect to new paths ═══ */}
-          <Route path="/portfolio" element={<Navigate to="/invest/positions" replace />} />
+          <Route path="/positions" element={<Navigate to="/invest/defend" replace />} />
+          <Route path="/portfolio" element={<Navigate to="/invest/defend" replace />} />
           <Route path="/position/:tileId" element={<PositionRedirect />} />
 
           {/* Legacy PositionDetail retired in Phase 6c — all traffic goes to /strategy/:id */}

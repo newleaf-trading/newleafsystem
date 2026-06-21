@@ -147,13 +147,32 @@ function analyzeGammaEnhanced(contracts, spot, dteMin, dteMax, oiDeltaData) {
     }
   }
 
-  // Calculate confidence using multi-factor approach
-  const confidence = calculateConfidence(callWall, putWall, sorted, bandWidth);
+  // Calculate GEX-relative confidence (wall concentration)
+  const gexConfidence = calculateConfidence(callWall, putWall, sorted, bandWidth);
+  const confidenceBreakdown = calculateConfidence._lastBreakdown || null;
+  const wallsFound = gexConfidence !== null;
 
   // Enhanced confidence breakdown
   const oiConfidence = calculateOIConfidence(sorted);
   const deltaConfidence = calculateDeltaConfidence(sorted);
   const volumeConfidence = calculateVolumeConfidence(sorted);
+
+  // Blended confidence: combines liquidity (OI) + concentration (GEX) + positioning (delta) + activity (volume)
+  // Weights: intuition-based, NOT outcome-validated — no accuracy claims until tuned against real outcomes
+  const W_OI = 0.40, W_GEX = 0.35, W_DELTA = 0.15, W_VOL = 0.10;
+
+  // DELTA DARK: delta intentionally excluded from gate-driving confidence until discover
+  // has OI-history access (R2/Firestore plumbing). Without this, scanner would see delta
+  // but discover would not, causing the same ticker to get different strategies on each
+  // surface. deltaConfidence is still computed above and exposed in the output for
+  // diagnostic validation — it just doesn't drive strategy selection yet.
+  // Tracked as the (a) plumbing fix: give API OI-history access, then re-enable delta
+  // in the blend on BOTH sides simultaneously.
+  const DELTA_DARK = true; // flip to false once discover has OI-history access
+  const effectiveDelta = DELTA_DARK ? 0 : deltaConfidence;
+  const confidence = wallsFound
+    ? W_OI * oiConfidence + W_GEX * gexConfidence + W_DELTA * effectiveDelta + W_VOL * volumeConfidence
+    : null;
 
   // Condor gate
   const condorAllowed =
@@ -254,6 +273,12 @@ function analyzeGammaEnhanced(contracts, spot, dteMin, dteMax, oiDeltaData) {
       band_width_pct: bandWidth,
       position_in_band_pct: Math.round(posInBand),
       confidence_score: confidence,
+      gex_confidence: gexConfidence,
+      walls_found: wallsFound,
+      data_quality: confidence === null ? 'no_walls'
+        : confidence >= 0.6 ? 'full'
+        : confidence >= 0.3 ? 'partial' : 'weak',
+      confidence_breakdown: confidenceBreakdown,
       oi_confidence: oiConfidence,
       delta_confidence: deltaConfidence,
       volume_confidence: volumeConfidence,
@@ -296,7 +321,7 @@ function calculateMultiFactorScore(oi, oiChange, volume, allStrikes) {
  * Calculate overall confidence using multi-factor data
  */
 function calculateConfidence(callWall, putWall, strikes, bandWidth) {
-  if (!callWall || !putWall) return 0.3;
+  if (!callWall || !putWall) return null;  // no walls found — don't disguise as low confidence
 
   const totalGex = strikes.reduce((s, r) => s + r.callGex + r.putGex, 0);
   const maxCG = callWall.callGex || 0;
@@ -313,7 +338,24 @@ function calculateConfidence(callWall, putWall, strikes, bandWidth) {
   const putScore = putWall.score || 0;
   const multiFactorBonus = (callScore + putScore) / 2;
 
-  return Math.min(1, baseConfidence * 0.6 + multiFactorBonus * 0.4);
+  const final = Math.min(1, baseConfidence * 0.6 + multiFactorBonus * 0.4);
+
+  // Diagnostic: store breakdown for debugging (attached to function result)
+  calculateConfidence._lastBreakdown = {
+    wallStrength: +wallStrength.toFixed(4),
+    bandBonus: +bandBonus.toFixed(4),
+    baseConfidence: +baseConfidence.toFixed(4),
+    callWallScore: +callScore.toFixed(4),
+    putWallScore: +putScore.toFixed(4),
+    multiFactorBonus: +multiFactorBonus.toFixed(4),
+    maxCallGex: Math.round(maxCG),
+    maxPutGex: Math.round(maxPG),
+    totalGex: Math.round(totalGex),
+    bandWidth: +bandWidth.toFixed(2),
+    final: +final.toFixed(4)
+  };
+
+  return final;
 }
 
 /**

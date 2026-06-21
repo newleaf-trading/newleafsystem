@@ -45,6 +45,7 @@ const {
 
 // ── ATM Contracts for Strategy Builder ───────────────────────────────────────
 const { saveATMContracts } = require('./save-atm-contracts');
+const { computeTrendTemplate, DEFAULT_CONFIG: TREND_CFG } = require('../shared/trend/trend-template.cjs');
 
 // ── CLI ───────────────────────────────────────────────────────────────────────
 const args        = process.argv.slice(2);
@@ -289,13 +290,21 @@ function parseNasdaqExpiryGroup(groupStr) {
 
 async function getNasdaqExpiries(symbol) {
   const assetclass = nasdaqAssetClass(symbol);
-  const url = `${NASDAQ_BASE}/${symbol}/option-chain?assetclass=${assetclass}&limit=500`;
+  // Nasdaq defaults to a narrow date window and returns ONLY the nearest expiry's
+  // full chain (~75 rows) — so without fromdate/todate we discover a single expiry.
+  // Pass an explicit ~120-day window (money=all,type=all) to surface every expiry
+  // group; the DTE filter downstream trims to dteMin–dteMax.
+  const fromdate = new Date(); fromdate.setHours(12,0,0,0);
+  const todate   = new Date(fromdate.getTime() + 120 * 86400000);
+  const iso = dt => dt.toISOString().slice(0, 10);
+  const dateRange = `&fromdate=${iso(fromdate)}&todate=${iso(todate)}&money=all&type=all`;
+  const url = `${NASDAQ_BASE}/${symbol}/option-chain?assetclass=${assetclass}&limit=500${dateRange}`;
   let d = await nasdaqGet(url);
 
   // Fallback: try other asset class if empty
   if (!d?.data?.table?.rows?.length) {
     const alt = assetclass === 'stocks' ? 'etf' : 'stocks';
-    d = await nasdaqGet(`${NASDAQ_BASE}/${symbol}/option-chain?assetclass=${alt}&limit=500`);
+    d = await nasdaqGet(`${NASDAQ_BASE}/${symbol}/option-chain?assetclass=${alt}&limit=500${dateRange}`);
   }
 
   if (!d?.data?.table?.rows?.length) throw new Error(`No option data from Nasdaq for ${symbol}`);
@@ -604,6 +613,36 @@ function calcMonthlyPremium(contracts, spot) {
 }
 
 // ── Process one symbol ────────────────────────────────────────────────────────
+// ── Phase 4a: advisory trend verdict — attached to the report, DISPLAY-ONLY.
+// Never affects scoring/strategy/upload decisions; failures degrade to report.trend=null.
+// Benchmark = SPY's last report (≤15min/≤1day stale; fine for a trend signal), read once per run.
+let _benchBars;
+function getBenchBars() {
+  if (_benchBars !== undefined) return _benchBars;
+  try {
+    const spy = JSON.parse(fs.readFileSync(path.join(REPORTS_DIR, 'SPY', 'latest.json'), 'utf8'));
+    _benchBars = (spy.technicalData?.priceHistory || []).map(b => ({ date: (b.t || '').split('T')[0], open: b.o, high: b.h, low: b.l, close: b.c, volume: b.v || 0 }));
+  } catch { _benchBars = []; }
+  return _benchBars;
+}
+function attachTrend(report) {
+  try {
+    const t = report.technicalData || {};
+    const bars = (t.priceHistory || []).map(b => ({ date: (b.t || '').split('T')[0], open: b.o, high: b.h, low: b.l, close: b.c, volume: b.v || 0 }));
+    if (bars.length < TREND_CFG.minBars) { report.trend = null; return; }
+    const atrPct = t.atrPct;
+    const move3 = bars.length >= 4 ? bars[bars.length - 1].close / bars[bars.length - 4].close - 1 : 0;
+    const velocityGuardFired = atrPct > 0 && Math.abs(move3) > 3 * atrPct;
+    const tr = computeTrendTemplate({ bars, benchmarkBars: getBenchBars(), benchmarkSymbol: 'SPY', velocityGuardFired });
+    report.trend = {
+      verdict: tr.verdict, checks: tr.checks, down: tr.down, vcpActive: tr.vcpActive,
+      velocityGuardFired, overlap: tr.overlap, trendScore: tr.trendScore,
+      multipliers: { conflictMultiplier: TREND_CFG.conflictMultiplier, alignBonus: TREND_CFG.alignBonus, vcpNeutralMultiplier: TREND_CFG.vcpNeutralMultiplier },
+      source: 'shared/trend v0', advisory: 'SHADOW · ADVISORY · UNVALIDATED', asOf: report.meta?.date || null,
+    };
+  } catch (_) { report.trend = null; }
+}
+
 async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
   const hdrs   = alpacaHdrs(cfg);
   const log    = msg => console.log(`  ${C.gold('['+symbol+']')} ${msg}`);
@@ -742,8 +781,23 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
   // 3. Score + strategy
   const {total:opportunityScore, pillars, hasOptions} = calcScore(gammaData, technicalData);
   const trendDirection = getDirection(gammaData, technicalData);
-  const strategy  = selectStrategy(gammaData, trendDirection, spot, technicalData);
-  const direction = reconcileDirection(trendDirection, strategy.code);
+  let strategy  = selectStrategy(gammaData, trendDirection, spot, technicalData);
+  let direction = reconcileDirection(trendDirection, strategy.code);
+  // Reaction gate (engine unification): promote a neutral pick to the aligned directional spread.
+  // Skip in intraday — S/R zones don't change within the day, this result isn't uploaded to
+  // latest.json (no OI), and the intraday OI-preservation path below re-applies the gate. Daily
+  // and full runs apply it here. (Optimisation #2 — removes a wasted recompute every 15 min.)
+  if (!intradayMode) {
+    try {
+      const { computeReactionRails, applyReactionGate } = require('./reaction-gate.cjs');
+      const _g = applyReactionGate(strategy.code, computeReactionRails({ snapshot: { price: spot }, technicalData, gammaData }));
+      if (_g) {
+        log(C.dim(`  Reaction gate: ${strategy.code} → ${_g.strategy} (${_g.note})`));
+        strategy = { ...STRATEGIES[_g.strategy], reactionNote: _g.note, gammaCode: strategy.code };
+        direction = _g.direction;
+      }
+    } catch (_) { /* non-fatal: keep the gamma pick */ }
+  }
   log(`Score: ${C.bold(opportunityScore.toFixed(1))} | ${direction} | ${strategy.name}`);
 
   // Calculate ivRank and add to gammaData
@@ -866,8 +920,13 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
           // Recalculate score with OI-enriched gamma data
           const {total:oiScore, pillars:oiPillars, hasOptions:oiHasOpts} = calcScore(report.gammaData, technicalData);
           const oiTrendDir = getDirection(report.gammaData, technicalData);
-          const oiStrat = selectStrategy(report.gammaData, oiTrendDir, spot, technicalData);
-          const oiDir = reconcileDirection(oiTrendDir, oiStrat.code);
+          let oiStrat = selectStrategy(report.gammaData, oiTrendDir, spot, technicalData);
+          let oiDir = reconcileDirection(oiTrendDir, oiStrat.code);
+          try {
+            const { computeReactionRails, applyReactionGate } = require('./reaction-gate.cjs');
+            const _g = applyReactionGate(oiStrat.code, computeReactionRails({ snapshot: { price: spot }, technicalData, gammaData: report.gammaData }));
+            if (_g) { oiStrat = { ...STRATEGIES[_g.strategy], reactionNote: _g.note, gammaCode: oiStrat.code }; oiDir = _g.direction; }
+          } catch (_) { /* keep gamma pick */ }
           report.scoring = {
             opportunityScore: oiStrat.bwbBonus ? oiScore + oiStrat.bwbBonus : oiScore,
             pillars: oiPillars, direction: oiDir, strategy: oiStrat, hasOptions: oiHasOpts,
@@ -878,6 +937,7 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
     }
   }
 
+  attachTrend(report); // advisory trend verdict — added before any write/upload so R2 carries it
   fs.writeFileSync(path.join(symDir, 'latest.json'), JSON.stringify(report));
   fs.writeFileSync(path.join(symDir, tsKey),          JSON.stringify(report));
   // Only daily/full runs write {date}.json — intraday never overwrites it
@@ -890,7 +950,7 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
   // 5.5. Save ATM contracts for strategy builder (both modes now fetch multiple expiries)
   if (allContracts.length > 0) {
     try {
-      await saveATMContracts(symbol, allContracts, spot, date);
+      await saveATMContracts(symbol, allContracts, spot, date, cfg);
     } catch (err) {
       log(C.red(`ATM contracts save failed: ${err.message}`));
     }
@@ -997,7 +1057,9 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
       } else if (!intradayMode) {
         log(C.dim(`Skipping ${date}.json upload (proxy gamma, 0 contracts)`));
       }
-      await uploadToR2(cfg.r2, 'reports/manifest.json', JSON.stringify(manifest));
+      // Watchlist runs rebuild the manifest authoritatively at end of main() (one atomic write),
+      // so skip the racy per-symbol upload there. Single-symbol runs keep incremental upload.
+      if (!useWatchlist) await uploadToR2(cfg.r2, 'reports/manifest.json', JSON.stringify(manifest));
       log(C.green(`✓ Uploaded to R2 (${tsKey})`));
     } catch(err) { log(C.red(`R2 upload failed: ${err.message}`)); }
   }
@@ -1188,6 +1250,22 @@ async function main() {
       await uploadToR2(cfg.r2, 'pipeline-status/latest.json', JSON.stringify(runLog));
       console.log(C.green(`  ✓ Run status logged → R2 (${ok.length}/${mySymbols.length} ok, ${elapsed}s)`));
     } catch(err) { console.log(C.dim(`  Status log failed: ${err.message}`)); }
+  }
+
+  // Authoritative manifest: ONE atomic rebuild from the local reports dir (the source of truth),
+  // replacing the racy per-symbol upserts that silently dropped symbols (the 110-vs-297 bug).
+  // Non-sharded watchlist runs only — a shard only has its own reports locally.
+  if (useWatchlist && !noUpload && cfg.r2 && totalShards <= 1) {
+    try {
+      const { buildFromLocalDir } = require('./manifest-builder.cjs');
+      let meta = {};
+      try { meta = JSON.parse(fs.readFileSync(path.join(__dirname, 'company-metadata.json'), 'utf8')); } catch (_) {}
+      const base = cfg.r2.publicBaseUrl || `https://${cfg.r2.accountId}.r2.dev`;
+      const m = buildFromLocalDir(REPORTS_DIR, meta, base);
+      fs.writeFileSync(MANIFEST_PATH, JSON.stringify(m));
+      await uploadToR2(cfg.r2, 'reports/manifest.json', JSON.stringify(m));
+      console.log(C.green(`  ✓ Manifest rebuilt authoritatively (${m.count} reports)`));
+    } catch (err) { console.log(C.red(`  Manifest rebuild failed: ${err.message}`)); }
   }
 
   if (!noUpload&&cfg.r2) {

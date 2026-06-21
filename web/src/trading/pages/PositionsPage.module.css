@@ -125,6 +125,154 @@
   margin-top: 4px;
 }
 
+/* ─── Header Actions ─── */
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 24px;
+  flex-shrink: 0;
+}
+
+.viewToggle {
+  display: flex;
+  border: 1px solid var(--nl-border, #e5e7eb);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.toggleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 32px;
+  background: #fff;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.toggleBtn:not(:last-child) {
+  border-right: 1px solid var(--nl-border, #e5e7eb);
+}
+.toggleBtn:hover {
+  color: #374151;
+  background: #f9fafb;
+}
+.toggleActive {
+  background: var(--nl-green, #0d3b2e);
+  color: #fff;
+}
+.toggleActive:hover {
+  background: var(--nl-green, #0d3b2e);
+  color: #fff;
+}
+
+/* ─── Summary Bar ─── */
+
+.summaryBar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.summaryItem {
+  background: #fff;
+  border: 1px solid rgba(17, 24, 39, 0.10);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.summaryLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(17, 24, 39, 0.50);
+  margin-bottom: 4px;
+}
+
+.summaryValue {
+  font-family: 'Space Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* ─── Table View ─── */
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--nl-border, #e5e7eb);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.posTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.posTable thead {
+  background: #f9fafb;
+  border-bottom: 1px solid var(--nl-border, #e5e7eb);
+}
+
+.posTable th {
+  padding: 10px 14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(17, 24, 39, 0.50);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.thLeft {
+  text-align: left !important;
+}
+
+.posTable td {
+  padding: 12px 14px;
+  border-top: 1px solid rgba(17, 24, 39, 0.06);
+  vertical-align: middle;
+}
+
+.tableRow {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.tableRow:hover {
+  background: rgba(201, 169, 110, 0.04);
+}
+
+.cellSymbol {
+  text-align: left;
+  min-width: 110px;
+}
+
+.cellMono {
+  text-align: right;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.actionBadge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
 /* ─── Responsive ─── */
 
 @media (max-width: 640px) {

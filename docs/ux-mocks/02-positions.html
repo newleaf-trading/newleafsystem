@@ -1,0 +1,214 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=DM+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green-950:#062e22; --green-900:#073827; --green-850:#0b4330; --green-800:#0f4a36;
+  --green-700:#155b43; --green-100:#e7f1ec; --gold:#c9a96e; --gold-soft:#f4ead4;
+  --cream:#f7f3ea; --paper:#fffdf8; --page:#fbfaf7;
+  --text:#172033; --muted:#6b7280; --line:#e8e2d8; --line-soft:#f0ebe0;
+  --red:#d94f4f; --red-deep:#b5392f; --red-soft:#fff1ef; --red-line:#ffd6d1;
+  --profit:#16835f; --profit-deep:#0d6347; --profit-soft:#edf8f3;
+  --amber:#bd7c19; --amber-soft:#fff7e8;
+  --radius:18px; --radius-sm:12px; --shadow:0 16px 44px rgba(18,32,27,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:'DM Sans',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  background:var(--page);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.5}
+.serif{font-family:'Fraunces',Georgia,serif}
+.mono{font-family:'Space Mono',ui-monospace,SFMono-Regular,monospace}
+a{color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+.eyebrow{text-transform:uppercase;letter-spacing:.16em;font-size:11px;font-weight:500;color:var(--gold);}
+.muted{color:var(--muted)}
+.pos{color:var(--profit)} .neg{color:var(--red)}
+
+.topbar{background:var(--green-950);color:#fff;height:64px;display:flex;align-items:center;padding:0 28px;position:sticky;top:0;z-index:20}
+.topbar .brand{font-family:'Fraunces',serif;font-size:20px;margin-right:30px;letter-spacing:-.01em}
+.topbar .brand b{font-weight:500} .topbar .brand i{color:var(--gold);font-style:italic;font-weight:400}
+.topbar nav{display:flex;gap:2px;flex:1}
+.topbar nav a{color:#b6c7bf;text-decoration:none;text-transform:uppercase;letter-spacing:.13em;font-size:11px;font-weight:500;padding:9px 14px;border-radius:8px;transition:.15s}
+.topbar nav a:hover{color:#fff}
+.topbar nav a.active{color:#fff;background:rgba(255,255,255,.08)}
+.topbar .meta{display:flex;align-items:center;gap:16px;color:#9fb2aa;font-size:12px;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:#7e9488;display:inline-block;margin-right:7px;vertical-align:middle}
+.ask{border:1px solid rgba(201,169,110,.5);color:#f0dcae;background:rgba(201,169,110,.08);
+  padding:8px 15px;border-radius:8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:500}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--gold);color:var(--green-950);
+  display:grid;place-items:center;font-weight:600;margin-left:14px;font-size:14px}
+
+.card{background:var(--paper);border:0.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.breadcrumb{font-size:13px;color:var(--muted);padding:22px 0 6px}
+.breadcrumb a{text-decoration:none}
+.breadcrumb span{margin:0 8px;color:var(--line)}
+
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:500;letter-spacing:.08em;
+  text-transform:uppercase;padding:5px 11px;border-radius:20px}
+.b-action{background:rgba(216,90,48,.16);color:#c2521f}
+.b-strat{background:rgba(201,169,110,.16);color:#9a7b3a}
+.b-neutral{background:rgba(255,255,255,.1);color:#cdbb93}
+.b-review{background:var(--red-soft);color:var(--red-deep)}
+.b-watch{background:var(--amber-soft);color:var(--amber)}
+.b-near{background:var(--profit-soft);color:var(--profit-deep)}
+.b-time{background:var(--amber-soft);color:var(--amber)}
+.b-loss{background:var(--red-soft);color:var(--red-deep)}
+.b-profit{background:var(--profit-soft);color:var(--profit-deep)}
+
+.btn{font-family:inherit;font-size:14px;font-weight:500;border-radius:11px;padding:13px 20px;border:0;cursor:pointer}
+.btn-primary{background:var(--red);color:#fff}
+.btn-ghost{background:rgba(255,255,255,.08);color:#eef3f0;border:0.5px solid rgba(255,255,255,.16)}
+.btn-ai{background:rgba(255,255,255,.05);color:#f0dcae;border:0.5px solid rgba(201,169,110,.4)}
+
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.metric{background:var(--paper);border:0.5px solid var(--line);border-radius:var(--radius-sm);padding:16px 18px}
+.metric .lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.metric .val{font-family:'Space Mono',monospace;font-size:30px;font-weight:500;margin-top:6px;line-height:1}
+.metric .sub{font-size:12px;color:var(--muted);margin-top:6px}
+
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.rise{animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+</style></head><body>
+<style>
+  .stepper{display:flex;align-items:center;gap:0;margin:26px 0 22px}
+  .step{display:flex;flex-direction:column;align-items:center;gap:7px;position:relative}
+  .step .o{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--line);background:var(--paper)}
+  .step.done .o{background:var(--green-950);border-color:var(--green-950);color:#fff;width:22px;height:22px;display:grid;place-items:center;font-size:11px;font-family:'Space Mono'}
+  .step small{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .step.done small{color:var(--green-950)}
+  .seg{flex:1;height:1px;background:var(--line);margin:0 8px;margin-bottom:24px}
+  .ph{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px}
+  .ph h1{font-family:'Fraunces',serif;font-weight:500;font-size:38px;margin:6px 0 4px}
+  .ph p{margin:0;color:var(--muted);font-size:14px}
+  .viewtog{display:flex;gap:6px;align-items:center}
+  .viewtog .vb{width:34px;height:34px;border:0.5px solid var(--line);border-radius:9px;background:var(--paper);display:grid;place-items:center;color:var(--muted)}
+  .viewtog .vb.active{background:var(--green-950);color:#fff;border-color:var(--green-950)}
+  .askbtn{background:var(--green-950);color:#f0dcae;border:0;border-radius:11px;padding:11px 18px;font-family:'Space Mono';font-size:13px}
+
+  .prow{background:var(--paper);border:0.5px solid var(--line);border-radius:16px;padding:18px 22px;margin-bottom:12px;box-shadow:var(--shadow)}
+  .rtop{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+  .rtop .t{font-family:'Fraunces',serif;font-size:23px;font-weight:500;display:flex;align-items:center;gap:10px}
+  .rtop .s{font-size:12px;color:var(--muted);margin-top:2px}
+  .dtechip{font-family:'Space Mono';font-size:12px;padding:3px 9px;border-radius:7px;font-weight:500}
+  .dte-hot{background:var(--red-soft);color:var(--red-deep)} .dte-warm{background:var(--amber-soft);color:var(--amber)} .dte-cool{background:var(--profit-soft);color:var(--profit-deep)}
+  .rpnl{text-align:right;flex-shrink:0}
+  .rpnl .v{font-family:'Space Mono';font-size:25px;font-weight:500;line-height:1}
+  .rpnl small{display:block;font-size:12px;color:var(--muted);font-family:'Space Mono';margin-top:4px}
+  .gwrap{min-width:0;margin:14px 0 4px}
+  .rtrack{position:relative;height:22px;border-radius:7px;overflow:hidden;background:#efece4}
+  .rl{position:absolute;left:0;top:0;bottom:0;background:rgba(217,79,79,.20)}
+  .rp{position:absolute;right:0;top:0;bottom:0;background:rgba(22,131,95,.18)}
+  .rbe{position:absolute;top:0;bottom:0;width:0;border-left:1px dashed rgba(23,32,51,.4)}
+  .rm{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;border:2px solid var(--paper);box-shadow:0 1px 4px rgba(0,0,0,.2)}
+  .gends{display:flex;justify-content:space-between;font-family:'Space Mono';font-size:10px;color:var(--muted);margin-top:4px}
+  .rbot{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:14px;flex-wrap:wrap}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{font-size:12px;color:var(--muted);background:var(--cream);border:0.5px solid var(--line);border-radius:8px;padding:6px 11px;white-space:nowrap}
+  .chip b{color:var(--text);font-family:'Space Mono';font-weight:500;margin-left:3px}
+  .chip.why{background:var(--red-soft);border-color:var(--red-line)} .chip.why b{color:var(--red-deep)}
+  .chip.whyg{background:var(--profit-soft);border-color:#c3e4d6} .chip.whyg b{color:var(--profit-deep)}
+  .rbtn{font-family:inherit;font-size:13px;font-weight:500;border-radius:9px;padding:9px 16px;border:0.5px solid var(--line);background:var(--paper);cursor:pointer}
+  .rbtn.review{background:var(--red);color:#fff;border-color:var(--red)}
+  .rrec{display:flex;align-items:center;gap:8px;margin-top:13px;padding-top:13px;border-top:0.5px solid var(--line-soft);font-size:13.5px;color:var(--text)}
+  .rrec .ar{color:var(--gold);font-weight:700}
+  @media(max-width:980px){.metrics{grid-template-columns:repeat(2,1fr)}}
+</style>
+
+<div class="topbar">
+  <div class="brand"><b>Leaf</b> <i>System</i></div>
+  <nav><a href="#">Home</a><a href="#">Discover</a><a href="#">Build</a><a href="#" class="active">Positions</a><a href="#">Performance</a><a href="#">Admin</a></nav>
+  <div class="meta"><span><span class="dot"></span>Markets Closed</span><span class="ask">⚡ Ask AI</span><span class="avatar">M</span></div>
+</div>
+
+<div class="wrap">
+  <div class="stepper">
+    <div class="step"><span class="o"></span><small>Discover</small></div><div class="seg"></div>
+    <div class="step"><span class="o"></span><small>Decide</small></div><div class="seg"></div>
+    <div class="step"><span class="o"></span><small>Build</small></div><div class="seg"></div>
+    <div class="step"><span class="o"></span><small>Execute</small></div><div class="seg"></div>
+    <div class="step done"><span class="o">3</span><small>Defend</small></div>
+  </div>
+
+  <div class="ph">
+    <div>
+      <div class="eyebrow">Defend · positions flagged</div>
+      <h1 class="serif">Positions</h1>
+      <p>Active positions sorted by urgency. The marker shows where each trade sits between max loss and max profit.</p>
+    </div>
+    <div class="viewtog"><div class="vb active">☰</div><div class="vb">▦</div><button class="askbtn">⚡ Ask AI</button></div>
+  </div>
+
+  <div class="metrics" style="margin:18px 0 22px;grid-template-columns:repeat(5,1fr)">
+    <div class="metric rise"><div class="lbl">Positions</div><div class="val">3</div><div class="sub">61 contracts</div></div>
+    <div class="metric rise" style="animation-delay:.04s"><div class="lbl">Open P&amp;L</div><div class="val neg">−$239</div><div class="sub">unrealised, 3 positions</div></div>
+    <div class="metric rise" style="animation-delay:.08s"><div class="lbl">Today's P&amp;L</div><div class="val neg">−$18</div><div class="sub">across 3 positions</div></div>
+    <div class="metric rise" style="animation-delay:.12s"><div class="lbl">Portfolio max loss</div><div class="val">$16,780</div><div class="sub">total downside if all lose</div></div>
+    <div class="metric rise" style="animation-delay:.16s"><div class="lbl">Max profit available</div><div class="val pos">$5,820</div></div>
+  </div>
+
+  <div class="prow rise" style="animation-delay:.06s">
+    <div class="rtop">
+      <div><div class="t serif">ABNB <span class="badge b-time">Time review</span> <span class="dtechip dte-hot">7 DTE</span></div><div class="s">Iron condor · 44 contracts</div></div>
+      <div class="rpnl"><div class="v pos">+$176</div><small class="pos">+$26 today</small></div>
+    </div>
+    <div class="gwrap">
+      <div class="rtrack"><div class="rl" style="width:64.5%"></div><div class="rp" style="left:64.5%"></div><div class="rbe" style="left:64.5%"></div><div class="rm" style="left:66.5%;background:var(--profit)"></div></div>
+      <div class="gends"><span>−$5,676</span><span>break-even</span><span>+$3,124</span></div>
+    </div>
+    <div class="rbot">
+      <div class="chips">
+        <span class="chip">Per contract<b class="pos">+$4 × 44</b></span>
+        <span class="chip">Captured<b>6%</b></span>
+        <span class="chip">Risk used<b>0%</b></span>
+        <span class="chip why">Why flagged<b>7 DTE + low capture</b></span>
+      </div>
+      <button class="rbtn review">Review</button>
+    </div>
+    <div class="rrec"><span class="ar">→</span> Consider closing or rolling — only 7 DTE remain and just 6% of the credit is captured.</div>
+  </div>
+
+  <div class="prow rise" style="animation-delay:.1s">
+    <div class="rtop">
+      <div><div class="t serif">BIDU <span class="badge b-loss">Loss review</span> <span class="dtechip dte-cool">20 DTE</span></div><div class="s">Iron condor · 13 contracts</div></div>
+      <div class="rpnl"><div class="v neg">−$611</div><small class="neg">−$53 today</small></div>
+    </div>
+    <div class="gwrap">
+      <div class="rtrack"><div class="rl" style="width:71.9%"></div><div class="rp" style="left:71.9%"></div><div class="rbe" style="left:71.9%"></div><div class="rm" style="left:64.0%;background:var(--red)"></div></div>
+      <div class="gends"><span>−$5,610</span><span>break-even</span><span>+$2,190</span></div>
+    </div>
+    <div class="rbot">
+      <div class="chips">
+        <span class="chip">Per contract<b class="neg">−$47 × 13</b></span>
+        <span class="chip">Captured<b class="neg">−28%</b></span>
+        <span class="chip">Risk used<b>11%</b></span>
+        <span class="chip why">Why flagged<b>Loss + low capture · 20 DTE</b></span>
+      </div>
+      <button class="rbtn review">Review</button>
+    </div>
+    <div class="rrec"><span class="ar">→</span> Review an adjustment — the loss is building and capture is weak, but 20 DTE still leaves room to defend.</div>
+  </div>
+
+  <div class="prow rise" style="animation-delay:.14s">
+    <div class="rtop">
+      <div><div class="t serif">AMZN <span class="badge b-profit">Profit review</span> <span class="dtechip dte-warm">14 DTE</span></div><div class="s">Iron condor · 4 contracts</div></div>
+      <div class="rpnl"><div class="v pos">+$196</div><small class="pos">+$9 today</small></div>
+    </div>
+    <div class="gwrap">
+      <div class="rtrack"><div class="rl" style="width:91.6%"></div><div class="rp" style="left:91.6%"></div><div class="rbe" style="left:91.6%"></div><div class="rm" style="left:94.9%;background:var(--profit)"></div></div>
+      <div class="gends"><span>−$5,494</span><span>break-even</span><span>+$506</span></div>
+    </div>
+    <div class="rbot">
+      <div class="chips">
+        <span class="chip">Per contract<b class="pos">+$49 × 4</b></span>
+        <span class="chip">Captured<b class="pos">39%</b></span>
+        <span class="chip">Risk used<b>0%</b></span>
+        <span class="chip whyg">Why flagged<b>39% captured · 14 DTE</b></span>
+      </div>
+      <button class="rbtn">Take profit?</button>
+    </div>
+    <div class="rrec"><span class="ar">→</span> Consider taking profit — 39% captured already; harvest if it reaches your target threshold.</div>
+  </div>
+
+  <div style="font-size:13px;color:var(--muted);margin-top:14px">Every row reads the same way: total P&amp;L, the per-contract math behind it, profit captured vs risk used, and why it's flagged. Dot colour shows direction; its place on the bar shows magnitude against that trade's own risk and reward.</div>
+  <div style="height:48px"></div>
+</div>
+</body></html>

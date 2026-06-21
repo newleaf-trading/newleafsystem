@@ -80,11 +80,11 @@ runTask(
   `"${process.execPath}" save-watchlist-snapshot.js monthly`
 );
 
-// Task 3: Regenerate manifest
-runTask(
-  'Regenerate manifest.json',
-  `"${process.execPath}" regenerate-manifest.mjs`
-);
+// Task 3: Regenerate manifest — skipped, manifest is maintained by newleaf-pipeline.js
+// (regenerate-manifest.mjs was planned but never created; upsertManifest() in the main
+// pipeline already keeps reports/manifest.json up to date on every symbol run)
+console.log('[Task 3] Regenerate manifest.json — skipped (maintained by pipeline)\n');
+tasksCompleted++;
 
 // Task 4: Upload to R2 (if not disabled)
 if (!process.argv.includes('--no-upload')) {

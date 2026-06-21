@@ -52,27 +52,38 @@ export const api = onRequest(
     ],
   },
   async (req, res) => {
-    const app = await getApp();
+    try {
+      const app = await getApp();
 
-    // Cloud Functions pre-parse the body, so we use fastify.inject()
-    // to avoid the body-stream-already-consumed hang.
-    const injectOpts: any = {
-      method: req.method as any,
-      url: req.url,
-      headers: req.headers,
-    };
+      // Cloud Functions pre-parse the body, so we use fastify.inject()
+      // to avoid the body-stream-already-consumed hang.
+      // Clone headers, removing content-length since Cloud Functions pre-parses
+      // the body and re-stringifying may change the size
+      const hdrs = { ...req.headers };
+      delete hdrs['content-length'];
+      delete hdrs['transfer-encoding'];
 
-    // Pass the pre-parsed body for POST/PUT/PATCH
-    if (req.body !== undefined && ['POST', 'PUT', 'PATCH'].includes(req.method)) {
-      injectOpts.payload = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+      const injectOpts: any = {
+        method: req.method as any,
+        url: req.url,
+        headers: hdrs,
+      };
+
+      // Pass the pre-parsed body for POST/PUT/PATCH
+      if (req.body !== undefined && ['POST', 'PUT', 'PATCH'].includes(req.method)) {
+        injectOpts.payload = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+      }
+
+      const response = await app.inject(injectOpts);
+
+      res.status(response.statusCode);
+      for (const [key, value] of Object.entries(response.headers)) {
+        if (value !== undefined) res.setHeader(key, value as string);
+      }
+      res.send(response.body);
+    } catch (err: any) {
+      console.error('[Functions] Request handler error:', err);
+      res.status(500).json({ error: err.message, stack: err.stack?.split('\n').slice(0, 5) });
     }
-
-    const response = await app.inject(injectOpts);
-
-    res.status(response.statusCode);
-    for (const [key, value] of Object.entries(response.headers)) {
-      if (value !== undefined) res.setHeader(key, value as string);
-    }
-    res.send(response.body);
   },
 );

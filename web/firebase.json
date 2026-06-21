@@ -8,6 +8,9 @@
     "target": "newleafsystem",
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "redirects": [
+      { "source": "/workbench/projection.html", "destination": "/workbench/projection", "type": 301 }
+    ],
     "rewrites": [
       { "source": "/how-we-pick", "destination": "/index.html" },
       { "source": "/how-we-manage", "destination": "/index.html" },
@@ -18,6 +21,7 @@
       { "source": "/verification-desk", "destination": "/index.html" },
       { "source": "/workbench/analysis", "destination": "/index.html" },
       { "source": "/workbench/analysis/**", "destination": "/index.html" },
+      { "source": "/workbench/projection", "destination": "/index.html" },
       { "source": "/trading/**", "destination": "/index.html" },
       { "source": "/picks/**", "destination": "/index.html" },
       { "source": "/privacy-policy", "destination": "/privacy-policy.html" },

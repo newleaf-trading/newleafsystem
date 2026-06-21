@@ -1,0 +1,57 @@
+/*
+ * PlansPage — investor's committed plans (active + history). Brand tokens only.
+ */
+.page {
+  --pp-serif: 'Fraunces', Georgia, serif;
+  --pp-sans: 'DM Sans', system-ui, sans-serif;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+  font-family: var(--pp-sans);
+  color: var(--nl-text);
+}
+.header { margin-bottom: 18px; }
+.eyebrow { font-family: var(--nl-font-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--nl-gold); font-weight: 700; }
+.title { font-family: var(--pp-serif); font-size: 28px; font-weight: 600; margin-top: 4px; }
+.sub { font-size: 13px; color: var(--nl-text-muted); margin-top: 4px; }
+
+.list { display: flex; flex-direction: column; gap: 12px; }
+.row {
+  background: var(--nl-card); border: 1px solid var(--nl-border); border-radius: var(--nl-radius);
+  padding: 16px 18px;
+}
+.rowActive { border-color: var(--nl-green); box-shadow: inset 4px 0 0 var(--nl-green); }
+.rowHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.name { font-family: var(--pp-serif); font-size: 19px; font-weight: 600; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.editBtn {
+  font-family: var(--nl-font-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--nl-text); background: var(--nl-bg); border: 1px solid var(--nl-border); border-radius: 999px;
+  padding: 4px 10px; cursor: pointer;
+}
+.editBtn:hover { border-color: var(--nl-gold); }
+.badge { font-family: var(--nl-font-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.stActive { background: rgba(11, 122, 82, 0.12); color: var(--nl-profit); }
+.stPaused { background: var(--nl-bg); color: var(--nl-text-muted); }
+
+.renameRow { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.renameInput { flex: 1; min-width: 200px; height: 36px; border: 1px solid var(--nl-border); border-radius: 8px; background: var(--nl-bg); padding: 0 12px; font-family: var(--pp-sans); font-size: 15px; color: var(--nl-text); }
+.renameInput:focus-visible { outline: none; border-color: var(--nl-green); box-shadow: 0 0 0 3px rgba(11, 45, 35, 0.1); }
+.renameSave { background: var(--nl-green); color: var(--nl-gold); border: none; border-radius: 8px; padding: 0 14px; height: 36px; font-weight: 700; font-size: 12px; cursor: pointer; }
+.renameSave:disabled { opacity: 0.6; cursor: not-allowed; }
+.renameCancel { background: none; border: 1px solid var(--nl-border); color: var(--nl-text); border-radius: 8px; padding: 0 12px; height: 36px; font-size: 12px; cursor: pointer; }
+
+.meta { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 12px; }
+.cell { display: flex; flex-direction: column; gap: 2px; }
+.cell .k { font-family: var(--nl-font-mono); font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--nl-text-muted); }
+.cell .v { font-family: var(--pp-serif); font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.prov { margin-top: 10px; font-family: var(--nl-font-mono); font-size: 10px; color: var(--nl-text-dim); }
+
+.empty {
+  background: var(--nl-card); border: 1px dashed var(--nl-border); border-radius: var(--nl-radius);
+  padding: 28px; text-align: center; display: flex; flex-direction: column; gap: 12px; align-items: center;
+}
+.emptyTitle { font-family: var(--pp-serif); font-size: 18px; font-weight: 600; }
+.emptySub { font-size: 13px; color: var(--nl-text-muted); }
+.cta { background: var(--nl-green); color: var(--nl-gold); text-decoration: none; border-radius: 10px; padding: 11px 18px; font-weight: 700; font-size: 13px; }
+.cta:hover { filter: brightness(1.12); }
+.loading { padding: 40px; text-align: center; color: var(--nl-text-muted); }

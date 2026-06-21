@@ -309,11 +309,19 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ── Legacy redirects (retired static pages → SPA routes) ──────
+  const REDIRECTS = { '/workbench/projection.html': '/workbench/projection' };
+  if (REDIRECTS[url.pathname]) {
+    res.writeHead(301, { Location: REDIRECTS[url.pathname] });
+    res.end();
+    return;
+  }
+
   // ── Static file serving ───────────────────────────────────────
   const DIST = path.join(__dirname, 'dist');
 
   // SPA fallback: /trading/*, /workbench/*, /picks/* → dist/index.html
-  const SPA_PREFIXES = ['/trading/', '/trading', '/picks/', '/picks', '/strategies/', '/learn', '/workbench/analysis', '/verification-desk'];
+  const SPA_PREFIXES = ['/trading/', '/trading', '/picks/', '/picks', '/strategies/', '/learn', '/workbench/analysis', '/workbench/projection', '/verification-desk'];
   if (SPA_PREFIXES.some(p => url.pathname === p || url.pathname.startsWith(p + '/'))) {
     const candidate = path.join(DIST, url.pathname);
     const hasExtension = path.extname(url.pathname) !== '';

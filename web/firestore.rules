@@ -3,6 +3,25 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ─── Operator/admin allowlist (mirrors web/src/shared/lib/admins.js) ───
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ['manish28june@gmail.com', 'manishsaraan@gmail.com'];
+    }
+
+    // ─── Plan templates — operator-owned, versioned. Authed read; admin write only ───
+    match /planTemplates/{templateId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ─── Weekly qualified setups — scanner quality-bar counts. Authed read; ───
+    // ─── written only by the server-side pipeline (admin). ───
+    match /weeklyQualifiedSetups/{weekId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if isAdmin();
+    }
+
     // ─── Strategies (tiles) — scanner output, public read ───
     match /tiles/{tileId} {
       allow read: if true;
@@ -30,6 +49,11 @@ service cloud.firestore {
     match /pick_outcomes/{docId} {
       allow read: if true;
     }
+
+    // ─── Recommendation log — engine decision snapshots for outcome tracking ───
+    match /recommendation_log/{docId} {
+      allow read: if true;
+    }
     match /marketState/{docId} {
       allow read: if true;
     }
@@ -54,6 +78,11 @@ service cloud.firestore {
         match /{sub}/{docId} {
           allow read, write: if request.auth != null && request.auth.uid == userId;
         }
+      }
+
+      // Plan of Record — frozen plan snapshots, owner-only (explicit for clarity)
+      match /planOfRecord/{planId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
       // Shortlist, settings, snapshots, orders, alerts

@@ -15,6 +15,7 @@ const { classifyRegime, computeContainment, UNCLEAR_CONFIDENCE_CAP } = require('
 const { setupQuality, rangeQuality, SCORE_WEIGHTS, VOL_ETP_LIST } = require('./score.cjs');
 const { mapBias, calcPosInRange, validateBiasCategory, STRONG_RAIL_MIN, INCOME_BIASES, DIRECTIONAL_BIASES } = require('./bias.cjs');
 const { parseEventCalendar, stalenessLabel, checkEarningsExclusion, checkExDivExclusion, STALE_DAYS } = require('./events.cjs');
+const { computeReactionGate, applyReactionGate, NEUTRAL_PICKS } = require('./gate.cjs');
 
 module.exports = {
   // zones
@@ -33,4 +34,6 @@ module.exports = {
   mapBias, calcPosInRange, validateBiasCategory, STRONG_RAIL_MIN, INCOME_BIASES, DIRECTIONAL_BIASES,
   // events
   parseEventCalendar, stalenessLabel, checkEarningsExclusion, checkExDivExclusion, STALE_DAYS,
+  // unified gate (Step 2)
+  computeReactionGate, applyReactionGate, NEUTRAL_PICKS,
 };

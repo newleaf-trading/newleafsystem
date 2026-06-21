@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NewLeaf — Trend Algorithm: How the Verdict Is Calculated</title>
+  <style>
+    :root{
+      --forest:#0B2D23;--forest-mid:#1a5c44;--gold:#C9A96E;--cream:#F7F5F0;--cream-dark:#EDE8DC;
+      --ink:#0B0F14;--ink-mid:#3d3d35;--ink-muted:#6b6b60;--ink-faint:#9b9b8e;--white:#fff;--border:rgba(15,61,46,.12);
+      --teal:#0d6e56;--teal-bg:#e0f2ec;--teal-text:#07473a;--green:#1a8c5e;--yellow:#d97706;--red:#c0392b;
+      --blue:#2563eb;--blue-bg:#e0f2fe;--blue-text:#075985;--purple:#7c3aed;--purple-bg:#ede9fe;--purple-text:#5b21b6;
+      --mono:'Space Mono',monospace;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Inter',-apple-system,sans-serif;background:var(--cream);color:var(--ink);line-height:1.7}
+    .container{max-width:1100px;margin:0 auto;padding:48px 32px 80px}
+    h1{font-family:'Playfair Display',Georgia,serif;font-size:32px;font-weight:700;color:var(--forest);margin-bottom:4px}
+    .subtitle{font-size:14px;color:var(--ink-muted);margin-bottom:24px}
+    h2{font-size:20px;font-weight:700;color:var(--forest);margin:48px 0 16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+    h3{font-size:15px;font-weight:700;color:var(--ink);margin:24px 0 10px}
+    p{font-size:14px;color:var(--ink-mid);margin-bottom:12px}
+    ul,ol{padding-left:24px;margin-bottom:12px}
+    li{font-size:14px;color:var(--ink-mid);margin-bottom:6px}
+    strong{color:var(--ink)}
+    code{font-family:var(--mono);font-size:12px;background:var(--cream-dark);padding:2px 6px;border-radius:3px;color:var(--forest)}
+    pre{background:#0b2d23;color:#d8e8e0;border-radius:8px;padding:16px;overflow-x:auto;margin:12px 0;font-size:12px;font-family:var(--mono);line-height:1.6}
+    pre .c{color:#7fa99a}
+    pre .k{color:#c9a96e}
+    a{color:var(--teal)}
+    table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+    th{background:var(--cream-dark);color:var(--ink);padding:8px 12px;text-align:left;font-weight:600;font-size:12px;vertical-align:top}
+    td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--ink-mid);vertical-align:top}
+    tr:hover td{background:rgba(13,110,86,.02)}
+    .mono{font-family:var(--mono)}
+    .tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;white-space:nowrap}
+    .tag-up{background:var(--teal-bg);color:var(--teal-text)}
+    .tag-down{background:#fee2e2;color:#991b1b}
+    .callout{background:rgba(13,110,86,.05);border:1px solid rgba(13,110,86,.15);border-radius:8px;padding:14px 18px;margin:16px 0}
+    .callout-title{font-weight:700;font-size:13px;color:var(--teal);margin-bottom:4px}
+    .callout.warn{background:#fffbeb;border-color:rgba(217,119,6,.3)}
+    .callout.warn .callout-title{color:var(--yellow)}
+    .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 20px}
+    .pill{font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:20px;background:var(--white);border:1px solid var(--border);color:var(--ink-muted)}
+    .verdict-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0}
+    .verdict{border-radius:10px;padding:16px;border:1px solid}
+    .v-aligned{background:#f0fdf4;border-color:#16a34a}.v-neutral{background:var(--cream-dark);border-color:var(--border)}.v-conflicted{background:#fef2f2;border-color:#c0392b}
+    .verdict h4{margin:0 0 6px;font-size:13px;color:var(--ink)}
+    .verdict .vmath{font-family:var(--mono);font-size:12px;margin-top:8px;color:var(--ink)}
+    .step{display:flex;gap:14px;margin:10px 0;align-items:flex-start}
+    .step .n{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:var(--forest);color:#fff;font-family:var(--mono);font-size:12px;display:flex;align-items:center;justify-content:center;font-weight:700}
+    .step .b{font-size:13.5px;color:var(--ink-mid)}
+    .toc{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:18px 22px;margin:24px 0 8px}
+    .toc ol{margin-bottom:0}.toc a{text-decoration:none}.toc a:hover{text-decoration:underline}
+    .formula{font-family:var(--mono);font-size:12.5px;background:#fff;border:1px solid var(--border);border-left:3px solid var(--teal);border-radius:6px;padding:10px 14px;margin:8px 0;color:var(--ink)}
+    @media(max-width:768px){.verdict-grid{grid-template-columns:1fr}}
+    @media print{body{background:#fff}a{color:var(--ink)}pre{background:#f0f0ea;color:#222}}
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+
+<h1>The Trend Algorithm</h1>
+<p class="subtitle">Exactly how the SEPA trend verdict is calculated — every check, threshold, and formula — and how it adjusts the score. Source of truth: <code>shared/trend/trend-template.cjs</code>.</p>
+
+<div class="pill-row">
+  <span class="pill">Engine: shared/trend v0</span>
+  <span class="pill">Deterministic · pure</span>
+  <span class="pill">No LLM in the decision</span>
+  <span class="pill">Date: 2026-06-20</span>
+</div>
+
+<div class="callout">
+  <div class="callout-title">In one paragraph</div>
+  <p style="margin-bottom:0">Given a symbol's daily bars and a benchmark's (SPY), the algorithm computes <strong>six boolean checks</strong> from price (three moving averages, the 200-day slope, relative strength, and 52-week position) plus a <strong>VCP</strong> base flag. It maps those to one of three verdicts — <strong>aligned</strong> (all four "up-core" checks pass), <strong>conflicted</strong> (any three of four inverse "down-core" checks pass), or <strong>neutral</strong> — and uses the verdict to scale the reversion engine's existing Setup Quality (<code>×0.6</code> conflicted, <code>+5</code> aligned, <code>×0.85</code> neutral-with-VCP). It's pure: same inputs → same output, no clock, no network, no mutation.</p>
+</div>
+
+<div class="toc">
+  <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);margin-bottom:6px">Plain-English overview</p>
+  <ol>
+    <li><a href="#why">Why this exists — the problem in plain English</a></li>
+    <li><a href="#alternatives">Why not an alternative approach?</a></li>
+    <li><a href="#improve">How the extra checks improve outcomes</a></li>
+    <li><a href="#lineage">What others do — the technical-analysis lineage</a></li>
+  </ol>
+  <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);margin:14px 0 6px">Technical reference</p>
+  <ol>
+    <li><a href="#io">Inputs &amp; contract</a></li>
+    <li><a href="#pipeline">The pipeline (step by step)</a></li>
+    <li><a href="#checks">The six checks — exact formulas</a></li>
+    <li><a href="#rs">Relative strength (how it's computed)</a></li>
+    <li><a href="#vcp">VCP base detection</a></li>
+    <li><a href="#verdict">Verdict logic</a></li>
+    <li><a href="#adjust">Score adjustment (why the score changes)</a></li>
+    <li><a href="#score">Trend score (0–100)</a></li>
+    <li><a href="#overlap">Overlap with the velocity guard</a></li>
+    <li><a href="#config">DEFAULT_CONFIG — every threshold</a></li>
+    <li><a href="#worked">Worked example: TLT</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="why">Why this exists — the problem in plain English</h2>
+<p>Our scanner is very good at one thing: finding price levels where a stock has <strong>bounced before</strong> — a "support zone" that held 5, 10, 20 times. It then suggests <strong>selling options</strong> (collecting premium) on a bet that the level holds again. The bull-put-spread "at support" is the classic version.</p>
+<p>The catch: it judges the <em>level</em>, but never the <em>direction the stock is travelling into that level</em>. A support that bounced 20 times looks rock-solid — but if the stock has been grinding <strong>down</strong> for months, that level is far more likely to finally give way. Selling puts there is <strong>catching a falling knife</strong>: you pocket a little premium, the floor breaks, and you take a loss many times that premium.</p>
+<div class="callout">
+  <div class="callout-title">The analogy</div>
+  <p style="margin-bottom:0">It's like rating a stair landing by how many people have stopped there — without noticing the building is on fire and everyone's running <em>down</em>. The landing's track record is irrelevant if the whole structure is heading for the basement. The trend overlay is the smoke detector: it asks <strong>"which way is this thing moving?"</strong> before you trust the level.</p>
+</div>
+<p>So the overlay adds the missing question. If the stock is in an <strong>uptrend</strong> into the support, the bounce thesis is backed → <em>endorse</em>. If it's in a <strong>downtrend</strong>, it's a falling knife → <em>demote</em>. If there's no clear trend → <em>stay neutral</em>. That's the entire job: it doesn't pick trades, it sanity-checks the ones the scanner already likes.</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="alternatives">Why not an alternative approach?</h2>
+<p>There are simpler things we could have done. Each has a real drawback that this design avoids:</p>
+<table>
+  <thead><tr><th style="width:24%">Alternative</th><th style="width:34%">What it would do</th><th>Why not (on its own)</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Keep reversion only</strong> (today)</td><td>Rank zones by how reliably they held.</td><td>Trend-blind — it ranks falling knives as <em>top</em> trades. That's the bug we're fixing.</td></tr>
+    <tr><td><strong>Switch to trend-following</strong></td><td>Only trade strong uptrends.</td><td>Throws away the whole income engine — you'd never sell premium at support again.</td></tr>
+    <tr><td><strong>Ask an AI "is this a good trade?"</strong></td><td>Let an LLM judge each setup.</td><td>Non-deterministic (different answer each run), can't be audited, and may invent numbers. Fails our consistency bar.</td></tr>
+    <tr><td><strong>One indicator</strong> (e.g. just the 200-day)</td><td>Demote anything below its 200-day MA.</td><td>Easily whipsawed — a healthy stock dips below its 200-day in normal pullbacks. One line is noisy.</td></tr>
+    <tr><td><strong>This overlay</strong></td><td>Reversion + a deterministic, multi-check trend <em>veto</em>.</td><td>Keeps the proven income engine, adds an auditable filter, and targets the exact failure mode.</td></tr>
+  </tbody>
+</table>
+<h3>What this approach buys us</h3>
+<ul>
+  <li><strong>Deterministic &amp; auditable</strong> — same inputs always give the same verdict, and you can read exactly which checks fired (no AI black box).</li>
+  <li><strong>Additive, not destructive</strong> — the validated reversion score is untouched; we only flag and (later) adjust. Nothing unproven can silently break the scanner.</li>
+  <li><strong>Multi-factor</strong> — several independent checks must agree, which filters out the false alarms any single signal produces.</li>
+  <li><strong>Targeted</strong> — it's tuned to catch the one thing that actually loses money here (selling support in a downtrend), not to be a general market-prediction model.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="improve">How the extra checks improve outcomes</h2>
+<p>Each check closes a different blind spot, and they reinforce each other:</p>
+<table>
+  <thead><tr><th style="width:26%">Check</th><th>What it catches that the others miss</th></tr></thead>
+  <tbody>
+    <tr><td><strong>MA stack</strong> (50/150/200 order)</td><td>The overall <em>structure</em> — stacked up = healthy uptrend; inverted = downtrend.</td></tr>
+    <tr><td><strong>Price vs stack</strong></td><td>Whether price is actually riding above its averages, or has already broken down beneath them.</td></tr>
+    <tr><td><strong>200-day slope</strong></td><td>The slow, reliable trend — and the <em>last</em> thing to turn, so we use it as confirmation, never a trigger.</td></tr>
+    <tr><td><strong>Relative strength vs SPY</strong></td><td>Whether the stock is <em>leading or lagging the market</em> — a stock falling while the market rises is a red flag a single price chart hides.</td></tr>
+    <tr><td><strong>52-week position</strong></td><td>Near highs = leader; sitting near the lows = laggard / likely knife.</td></tr>
+    <tr><td><strong>VCP</strong> (base tightening)</td><td>Whether a big move is coiling — an imminent expansion is the worst moment to sell premium.</td></tr>
+  </tbody>
+</table>
+<p><strong>Why combining beats any single one:</strong> one indicator throws off lots of false alarms (a strong stock can dip below its 200-day in a normal pullback). Requiring <strong>three or four to agree</strong> means we only demote when multiple independent signals point the same way — far fewer false demotions, and we still catch the genuine knives.</p>
+<p><strong>Why the asymmetry</strong> (slow to endorse — all four; quick to demote — any three): it's plain risk management. <em>Skipping</em> a decent trade costs you nothing; <em>taking</em> a falling knife costs real money. So the bar to bless a trade is high, and the bar to flag one is low.</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="lineage">What others do — the technical-analysis lineage</h2>
+<p>None of these checks are invented. They're a synthesis of frameworks that decades of professional technical analysis converged on — we just made them deterministic and pointed them at one job (vetoing premium-selling into a downtrend).</p>
+<table>
+  <thead><tr><th style="width:30%">Framework (who)</th><th>What it contributes here</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Minervini "Trend Template" / SEPA</strong> (Mark Minervini)</td><td>The direct basis: price above the 150/200-day, 50&gt;150&gt;200 stacked, 200-day rising, off the 52-week low, near the 52-week high, strong relative strength. Used by professional momentum traders. <strong>VCP</strong> is also his.</td></tr>
+    <tr><td><strong>CAN SLIM</strong> (William O'Neil / IBD)</td><td>The "L" = market <em>Leader</em>: a relative-strength rating and proximity to 52-week highs. Our RS + near-52w-high checks mirror this.</td></tr>
+    <tr><td><strong>Stage Analysis</strong> (Stan Weinstein)</td><td>Stage 2 (advancing) vs Stage 4 (declining) from a long MA + its slope. Our <code>conflicted</code> verdict is essentially "don't sell support in a Stage-4 decline."</td></tr>
+    <tr><td><strong>Mansfield Relative Strength</strong></td><td>Performance measured <em>against a benchmark index</em> — exactly our RS-vs-SPY line.</td></tr>
+    <tr><td><strong>Everyday classics</strong></td><td>Golden/death cross (50/200), moving-average ribbons, 52-week-high screens — the simpler cousins of the same ideas.</td></tr>
+  </tbody>
+</table>
+<div class="callout">
+  <div class="callout-title">The one-line takeaway</div>
+  <p style="margin-bottom:0">We took the trend signals that professionals already trust, made them <strong>deterministic and auditable</strong>, and applied them as a <strong>veto on the income engine</strong> — instead of reinventing a trend model or outsourcing the judgment to an AI.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="io">1. Inputs &amp; contract</h2>
+<pre><span class="k">computeTrendTemplate</span>({ bars, benchmarkBars, config?, asOf?, benchmarkSymbol?, velocityGuardFired? }) → TrendVerdict</pre>
+<ul>
+  <li><code>bars</code> / <code>benchmarkBars</code> — ascending arrays of <code>{ date, open, high, low, close, volume }</code>. Only <code>close</code> drives the trend checks; <code>high/low/volume</code> drive VCP.</li>
+  <li><code>velocityGuardFired</code> — optional boolean the caller passes in (the reaction engine's approach-velocity guard); used only for the <code>overlap</code> flag. The module never imports the reaction engine.</li>
+  <li>Output: <code>{ verdict, checks, down, rs, vcpActive, trendScore, overlap, adjustedSetupQuality(sq), provenance }</code>.</li>
+</ul>
+<p>If fewer than <code>minBars</code> (200) bars are supplied, the verdict is forced to <strong>neutral</strong> — the moving-average stack can't form.</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="pipeline">2. The pipeline (step by step)</h2>
+<div class="step"><div class="n">1</div><div class="b">Project closes from <code>bars</code> (read-only — the input is never mutated).</div></div>
+<div class="step"><div class="n">2</div><div class="b">Compute moving averages via <code>shared/indicators.sma</code> (reused, never re-implemented): SMA<sub>50</sub>, SMA<sub>150</sub>, SMA<sub>200</sub>, and SMA<sub>200</sub> as of 20 bars ago.</div></div>
+<div class="step"><div class="n">3</div><div class="b">Compute the trailing-252-bar high and low (52-week range).</div></div>
+<div class="step"><div class="n">4</div><div class="b">Compute <strong>relative strength</strong> vs the benchmark (return ratio + RS-line slope).</div></div>
+<div class="step"><div class="n">5</div><div class="b">Evaluate the <strong>six up-core checks</strong> and the <strong>four down-core checks</strong> as booleans.</div></div>
+<div class="step"><div class="n">6</div><div class="b">Detect the <strong>VCP</strong> base flag from the last 60 bars.</div></div>
+<div class="step"><div class="n">7</div><div class="b">Decide the <strong>verdict</strong> (aligned / conflicted / neutral) and roll up the weighted <strong>trendScore</strong>.</div></div>
+<div class="step"><div class="n">8</div><div class="b">Expose <code>adjustedSetupQuality(sq)</code> — a pure closure that scales a passed-in Setup Quality by the verdict.</div></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="checks">3. The six checks — exact formulas</h2>
+<p>Let <code>c</code> = latest close, <code>ma50/150/200</code> = the SMAs, <code>lo52/hi52</code> = trailing-252 low/high.</p>
+<table>
+  <thead><tr><th style="width:20%">Check</th><th style="width:42%">Formula (exactly as coded)</th><th>Reads as</th></tr></thead>
+  <tbody>
+    <tr><td><code>maStack</code></td><td class="mono">ma50 &gt; ma150 &amp;&amp; ma150 &gt; ma200</td><td>Orderly up-stack — short MA above mid above long.</td></tr>
+    <tr><td><code>priceAboveStack</code></td><td class="mono">c &gt; ma50 &amp;&amp; c &gt; ma200</td><td>Price is riding above the stack.</td></tr>
+    <tr><td><code>ma200Rising</code></td><td class="mono">ma200 &gt; sma(closes[0..−20], 200)</td><td>The 200-day is higher than it was ~1 month ago.</td></tr>
+    <tr><td><code>off52wLow</code></td><td class="mono">c ≥ lo52 × (1 + 0.25)</td><td>≥25% above the 1-year low — off the floor.</td></tr>
+    <tr><td><code>near52wHigh</code></td><td class="mono">c ≥ hi52 × (1 − 0.25)</td><td>Within 25% of the 1-year high — leadership.</td></tr>
+    <tr><td><code>rsPositive</code></td><td class="mono">rs.ratio &gt; 0 &amp;&amp; rs.rising</td><td>Outperforming SPY <em>and</em> the RS line is rising (see §4).</td></tr>
+  </tbody>
+</table>
+<p>The inverse <strong>down-core</strong> set (used only for the <code>conflicted</code> verdict):</p>
+<table>
+  <thead><tr><th style="width:20%">Down check</th><th style="width:42%">Formula</th><th>Reads as</th></tr></thead>
+  <tbody>
+    <tr><td><code>maStackDown</code></td><td class="mono">ma50 &lt; ma150 &amp;&amp; ma150 &lt; ma200</td><td>Inverted stack — a downtrend.</td></tr>
+    <tr><td><code>priceBelow200</code></td><td class="mono">c &lt; ma200</td><td>Below the long-term line.</td></tr>
+    <tr><td><code>rsNegative</code></td><td class="mono">rs.ratio &lt; 0 &amp;&amp; rs.falling</td><td>Underperforming SPY <em>and</em> RS line falling.</td></tr>
+    <tr><td><code>ma200Falling</code></td><td class="mono">ma200 &lt; sma(closes[0..−20], 200)</td><td>The 200-day is rolling over (the lagging signal).</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="rs">4. Relative strength (how it's computed)</h2>
+<p>RS compares the symbol to the benchmark two ways — a <strong>return ratio</strong> (did it outperform?) and an <strong>RS-line slope</strong> (is that outperformance improving?). Both must agree.</p>
+<div class="formula">
+line[i] = symClose[i] / benchClose[i]     <span style="color:var(--ink-faint)">// the RS line</span><br>
+symRet  = sym[last] / sym[last − 63] − 1   <span style="color:var(--ink-faint)">// 63-bar ≈ 3-month return</span><br>
+benchRet= bench[last] / bench[last − 63] − 1<br>
+ratio   = (1 + symRet) / (1 + benchRet) − 1<span style="color:var(--ink-faint)">// &gt;0 ⇒ symbol led</span><br>
+rising  = line[last] &gt; line[last − 21]      <span style="color:var(--ink-faint)">// 21-bar ≈ 1-month slope</span><br>
+falling = line[last] &lt; line[last − 21]
+</div>
+<ul>
+  <li><strong>rsPositive</strong> = <code>ratio &gt; 0 &amp;&amp; rising</code> — led the market <em>and</em> the lead is widening.</li>
+  <li><strong>rsNegative</strong> = <code>ratio &lt; 0 &amp;&amp; falling</code> — lagged the market <em>and</em> the gap is widening.</li>
+</ul>
+<p>This two-part test is deliberate: a stock can be down vs SPY (<code>ratio&lt;0</code>) but with an RS line that's <em>rising</em> off a bottom — that's not counted as negative. (It's why TLT below reads RS-negative-but-not-falling.)</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="vcp">5. VCP base detection (volatility contraction)</h2>
+<p>Over the most recent <strong>60 bars</strong>, the algorithm looks for a tightening base — successive pullbacks getting shallower while volume dries up. It's a Boolean flag, not a score.</p>
+<ol>
+  <li><strong>Swing points:</strong> bar <code>i</code> (within ±3 of the edges) is a swing <em>high</em> if its high is the max of the ±3 window; a swing <em>low</em> if its low is the min. (<code>vcpSwingWindow = 3</code>.)</li>
+  <li><strong>Pullback depths:</strong> for each High→Low transition, <code>depth = (peak − trough) / peak</code>.</li>
+  <li><strong>Contracting:</strong> need ≥2 pullbacks, and each must be ≤ <code>0.8 ×</code> the previous (<code>vcpContractionRatio</code>).</li>
+  <li><strong>Volume drying:</strong> average volume of the base's second half ≤ <code>0.9 ×</code> the first half (<code>vcpVolumeDryRatio</code>).</li>
+</ol>
+<p><code>vcpActive</code> is true only if <strong>both</strong> contraction and volume-dry hold. It is <em>not</em> part of the trend score — it acts solely as a neutral-only premium suppressor (§7).</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="verdict">6. Verdict logic</h2>
+<p>The boundary is deliberately <strong>asymmetric</strong> — endorsement is expensive, demotion is eager.</p>
+<div class="verdict-grid">
+  <div class="verdict v-aligned"><h4>aligned</h4><p style="margin:0;font-size:13px">ALL FOUR up-core pass:<br><code>maStack ∧ priceAboveStack ∧ ma200Rising ∧ rsPositive</code></p><div class="vmath">endorse</div></div>
+  <div class="verdict v-conflicted"><h4>conflicted</h4><p style="margin:0;font-size:13px">ANY THREE of four down-core pass:<br><code>maStackDown, priceBelow200, rsNegative, ma200Falling</code></p><div class="vmath">demote (falling knife)</div></div>
+  <div class="verdict v-neutral"><h4>neutral</h4><p style="margin:0;font-size:13px">Everything else — including thin history (&lt;200 bars).</p><div class="vmath">no opinion</div></div>
+</div>
+<pre><span class="c">// the actual decision</span>
+upCore        = maStack && priceAboveStack && ma200Rising && rsPositive
+downCoreCount = [maStackDown, priceBelow200, rsNegative, ma200Falling].filter(Boolean).length
+verdict = upCore            ? <span class="k">'aligned'</span>
+        : downCoreCount &gt;= 3 ? <span class="k">'conflicted'</span>
+        :                     <span class="k">'neutral'</span></pre>
+<p><strong>Why 3-of-4 for conflicted?</strong> <code>ma200Falling</code> is the slowest signal — the 200-day rolls over <em>after</em> the stack inverts and price breaks down. Requiring only 3 of 4 lets the verdict fire <em>before</em> the 200-day confirms, flagging falling knives early rather than late.</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="adjust">7. Score adjustment — why the score changes</h2>
+<p>The trend overlay never invents a score. It <strong>scales the reversion engine's existing Setup Quality</strong> by the verdict. The multipliers are <strong>placeholders</strong> until the forward-test validates them.</p>
+<pre><span class="k">adjustedSetupQuality</span>(sq):
+  conflicted           → sq × <span class="k">0.6</span>     <span class="c">// conflictMultiplier — multiplicative, punishes high-SQ knives hardest</span>
+  aligned              → sq + <span class="k">5</span>       <span class="c">// alignBonus — additive, endorsement can't inflate</span>
+  neutral &amp;&amp; vcpActive  → sq × <span class="k">0.85</span>    <span class="c">// vcpNeutralMultiplier — imminent expansion = bad premium entry</span>
+  neutral              → sq             <span class="c">// unchanged</span>
+  then clamp to [0, 100]</pre>
+<div class="callout">
+  <div class="callout-title">Why multiplicative for conflicted?</div>
+  <p style="margin-bottom:0">A flat penalty under-punishes the most dangerous setups. A multiplier scales with the score — so the <em>highest</em>-Setup-Quality knives (the ones that look most attractive in the list) are discounted hardest. <code>aligned</code> stays additive so a near-100 setup can't be pushed above 100.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="score">8. Trend score (0–100)</h2>
+<p>Independent of the verdict, a weighted roll-up of the six gating checks gives a continuous trend score. VCP is deliberately excluded (it's a suppressor, not strength), so the six weights renormalize to 100:</p>
+<table>
+  <thead><tr><th>Check</th><th>Weight</th><th>Rationale</th></tr></thead>
+  <tbody>
+    <tr><td><code>maStack</code></td><td class="mono">26</td><td>The stack is the single strongest trend signal.</td></tr>
+    <tr><td><code>rsPositive</code></td><td class="mono">21</td><td>Outperformance is the key confirmation.</td></tr>
+    <tr><td><code>priceAboveStack</code></td><td class="mono">16</td><td>Price actually leading the stack.</td></tr>
+    <tr><td><code>ma200Rising</code></td><td class="mono">16</td><td>Long-term slope up.</td></tr>
+    <tr><td><code>near52wHigh</code></td><td class="mono">11</td><td>Leadership / proximity to highs.</td></tr>
+    <tr><td><code>off52wLow</code></td><td class="mono">10</td><td>Clearly off the lows.</td></tr>
+    <tr><td><strong>Total</strong></td><td class="mono"><strong>100</strong></td><td></td></tr>
+  </tbody>
+</table>
+<p><code>trendScore = Σ weight</code> over the passing checks, rounded, clamped to 0–100. (A clean uptrend = 100; a full downtrend = 0.)</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="overlap">9. Overlap with the velocity guard</h2>
+<p>The reaction engine already has an <em>approach-velocity</em> guard (it caps Setup Quality when price reaches a zone faster than 3×ATR). A real falling knife can trip both that and this trend overlay — double-charging the same risk. The module measures this without acting on it:</p>
+<div class="formula">overlap = (verdict === 'conflicted') &amp;&amp; velocityGuardFired</div>
+<p><code>velocityGuardFired</code> is computed by the caller as <code>|3-bar net move| &gt; 3 × ATR</code> and passed in. Phase 2 only <em>measures</em> the co-occurrence; whether to soften one penalty when both fire is a later, data-driven decision.</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="config">10. DEFAULT_CONFIG — every threshold</h2>
+<table>
+  <thead><tr><th>Key</th><th>Value</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">smaFast / smaMid / smaSlow</td><td class="mono">50 / 150 / 200</td><td>The Minervini stack.</td></tr>
+    <tr><td class="mono">ma200RisingLookback</td><td class="mono">20</td><td>Bars back to test the 200-day slope (~1 month).</td></tr>
+    <tr><td class="mono">lookback52w</td><td class="mono">252</td><td>Trailing bars for the 1-year high/low.</td></tr>
+    <tr><td class="mono">off52wLowPct / near52wHighPct</td><td class="mono">0.25 / 0.25</td><td>±25% bands off the low / near the high.</td></tr>
+    <tr><td class="mono">rsWindow</td><td class="mono">63</td><td>~3-month return window for RS.</td></tr>
+    <tr><td class="mono">rsSlopeLookback</td><td class="mono">21</td><td>~1-month window for the RS-line slope.</td></tr>
+    <tr><td class="mono">vcpBaseLookback</td><td class="mono">60</td><td>Bars defining the most recent base.</td></tr>
+    <tr><td class="mono">vcpSwingWindow</td><td class="mono">3</td><td>±bars to qualify a swing high/low.</td></tr>
+    <tr><td class="mono">vcpMinContractions</td><td class="mono">2</td><td>Min successive pullbacks.</td></tr>
+    <tr><td class="mono">vcpContractionRatio</td><td class="mono">0.8</td><td>Each pullback ≤80% of the prior.</td></tr>
+    <tr><td class="mono">vcpVolumeDryRatio</td><td class="mono">0.9</td><td>2nd-half volume ≤90% of 1st-half.</td></tr>
+    <tr><td class="mono">weights</td><td class="mono">26/21/16/16/11/10</td><td>Trend-score weights (sum 100).</td></tr>
+    <tr><td class="mono">conflictMultiplier</td><td class="mono">0.6 <span class="tag tag-down">placeholder</span></td><td>conflicted → SQ × this.</td></tr>
+    <tr><td class="mono">alignBonus</td><td class="mono">5 <span class="tag tag-down">placeholder</span></td><td>aligned → SQ + this.</td></tr>
+    <tr><td class="mono">vcpNeutralMultiplier</td><td class="mono">0.85 <span class="tag tag-down">placeholder</span></td><td>neutral+VCP → SQ × this.</td></tr>
+    <tr><td class="mono">minBars</td><td class="mono">200</td><td>Below this → forced neutral.</td></tr>
+    <tr><td class="mono">benchmarkSymbol</td><td class="mono">'SPY'</td><td>RS benchmark (label; series passed in).</td></tr>
+  </tbody>
+</table>
+<div class="callout warn">
+  <div class="callout-title">The three multipliers are unvalidated</div>
+  <p style="margin-bottom:0">0.6 / +5 / 0.85 are <strong>placeholders</strong>. The forward-test (accruing weekly, labelling outcomes after 21 trading days, with a train/holdout split) sets the real values. Until then the verdict is shown in the workbench as <strong>SHADOW · ADVISORY · UNVALIDATED</strong> and does not move any live score or ranking.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="worked">11. Worked example: TLT</h2>
+<p>From the live workbench (spot $86.75; SMA 50/150/200 = 85.65 / 87.26 / 87.92; RS vs SPY −12.4%, line rising):</p>
+<table>
+  <thead><tr><th>Check</th><th>Eval</th><th>Result</th></tr></thead>
+  <tbody>
+    <tr><td>maStackDown</td><td class="mono">85.65 &lt; 87.26 &lt; 87.92</td><td><span class="tag tag-down">TRUE</span></td></tr>
+    <tr><td>priceBelow200</td><td class="mono">86.75 &lt; 87.92</td><td><span class="tag tag-down">TRUE</span></td></tr>
+    <tr><td>ma200Falling</td><td class="mono">ma200 &lt; ma200(−20)</td><td><span class="tag tag-down">TRUE</span></td></tr>
+    <tr><td>rsNegative</td><td class="mono">ratio −0.124 &lt; 0, but line <em>rising</em> → not falling</td><td><span class="tag tag-up">FALSE</span></td></tr>
+  </tbody>
+</table>
+<p><strong>down-core count = 3</strong> (≥3) → verdict = <strong>conflicted</strong>. up-core fails (0/4) → trendScore ≈ 0. With Setup Quality 79:</p>
+<div class="formula">adjustedSetupQuality(79) = 79 × 0.6 = 47.4 → <b>"would become 47"</b></div>
+<p>This is exactly the falling-knife case: a high-Setup-Quality support ($87 zone, 74% smoothed hold-rate) that the reversion engine ranks near the top — but it sits in a downtrend, so the overlay demotes it. The penalty being multiplicative is why a 79 drops further than a 64 would.</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2 id="props">12. Determinism &amp; properties</h2>
+<ul>
+  <li><strong>Pure:</strong> identical input → byte-identical output; no <code>Date.now()</code>, no network, no global state. <code>asOf</code> defaults to the last bar's own date, never the clock.</li>
+  <li><strong>Non-mutating:</strong> the input <code>bars</code> array is never modified (verified by test).</li>
+  <li><strong>No LLM in the decision:</strong> the verdict is 100% deterministic. An LLM only <em>narrates</em> a fixed verdict downstream, forbidden from emitting any number or contradicting the direction.</li>
+  <li><strong>Reuses, doesn't reinvent:</strong> moving averages come from <code>shared/indicators</code>; the setup quality it scales comes from <code>shared/reaction</code>.</li>
+  <li><strong>43 assertions</strong> cover the verdict boundaries, the multipliers, VCP, overlap, and the purity guarantee.</li>
+</ul>
+
+<p style="margin-top:32px;font-size:12px;color:var(--ink-faint);font-family:var(--mono)">NewLeaf · Trend Algorithm · shared/trend/trend-template.cjs · 2026-06-20</p>
+
+</div>
+</body>
+</html>

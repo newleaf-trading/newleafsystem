@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf — Pipeline Job Status</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<script>window.__CONFIG__={R2:"https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev"};</script>
+<script src="load-nav.js" defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --forest:#0B2D23; --gold:#C9A96E; --cream:#F7F5F0; --cream-dark:#EDE8DC;
+    --ink:#0B0F14; --ink-muted:#6b6b60; --ink-faint:#9b9b8e; --white:#fff;
+    --border:rgba(15,61,46,.12); --teal:#0d6e56; --teal-bg:#e0f2ec; --teal-text:#07473a;
+    --green:#1a8c5e; --yellow:#d97706; --red:#c0392b; --mono:'Space Mono',monospace; --radius:10px;
+  }
+  body { font-family:'Inter',sans-serif; background:var(--cream); color:var(--ink); }
+  .main { max-width:1100px; margin:0 auto; padding:24px 24px 80px; }
+  .page-header { text-align:center; margin-bottom:8px; }
+  .page-header h1 { font-family:'Playfair Display',serif; font-size:26px; font-weight:700; color:var(--forest); margin-bottom:6px; }
+  .page-header p { font-size:14px; color:var(--ink-muted); max-width:680px; margin:0 auto; }
+  .bar { display:flex; justify-content:space-between; align-items:center; margin:18px 0 10px; font-family:var(--mono); font-size:11px; color:var(--ink-muted); }
+  .btn { font-family:var(--mono); font-size:12px; font-weight:700; padding:7px 16px; border:1px solid var(--border); border-radius:6px; background:var(--white); color:var(--forest); cursor:pointer; text-transform:uppercase; letter-spacing:.04em; }
+  .btn:hover { border-color:var(--gold); }
+  .panel { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:8px; box-shadow:0 1px 3px rgba(15,61,46,.04); overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { font-family:var(--mono); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-muted); text-align:left; padding:11px 12px; border-bottom:2px solid var(--border); }
+  td { padding:12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:var(--cream); }
+  .job { font-weight:700; color:var(--forest); }
+  .sub { font-family:var(--mono); font-size:10px; color:var(--ink-faint); }
+  .pill { display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:11px; font-weight:700; padding:4px 10px; border-radius:12px; text-transform:uppercase; letter-spacing:.04em; }
+  .ok { background:var(--teal-bg); color:var(--teal-text); }
+  .fail { background:#fee2e2; color:#991b1b; }
+  .stale { background:#fef3c7; color:#92400e; }
+  .never { background:var(--cream-dark); color:var(--ink-faint); }
+  .dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+  .mono { font-family:var(--mono); font-size:12px; }
+  .err { font-family:var(--mono); font-size:11px; color:var(--red); max-width:280px; word-break:break-word; }
+  .legend { font-family:var(--mono); font-size:11px; color:var(--ink-faint); margin-top:14px; text-align:center; }
+</style>
+</head>
+<body>
+  <div id="nav-slot"></div>
+  <div class="main">
+    <div class="page-header">
+      <h1>Pipeline Job Status</h1>
+      <p>Live success/failure for every scheduled job. Missed daily/weekly jobs are auto-restarted by the scheduler's 5-minute monitor.</p>
+    </div>
+    <div class="bar">
+      <span id="updated">loading…</span>
+      <button class="btn" onclick="load()">↻ Refresh</button>
+    </div>
+    <div class="panel">
+      <table>
+        <thead><tr><th>Job</th><th>Schedule</th><th>Status</th><th>Last run</th><th>Duration</th><th>Detail</th></tr></thead>
+        <tbody id="rows"><tr><td colspan="6" class="sub" style="padding:24px;text-align:center;">loading…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="legend">✓ ok · ✗ failed (auto-retried by the monitor) · ⚠ stale/overdue · — never run · auto-refreshes every 60s</div>
+  </div>
+<script>
+const R2 = window.__CONFIG__.R2;
+// Expected jobs (matches the scheduler registry) — shown even before first run.
+const JOBS = [
+  { name:'fast-pipeline',   label:'Fast pipeline (prices)',        sched:'every 15 min · mkt hours', cadence:'intraday' },
+  { name:'daily-oi',        label:'Daily OI + manifest + sync',    sched:'9:32am ET · Mon–Fri',      cadence:'daily' },
+  { name:'daily-funnel',    label:'Daily funnel (publish picks)',  sched:'10:00am ET · Mon–Fri',     cadence:'daily' },
+  { name:'event-calendar',  label:'Event calendar refresh',        sched:'4:15pm ET · Mon–Fri',      cadence:'daily' },
+  { name:'weekly-snapshot', label:'Weekly premium snapshot',       sched:'Fri 4:30pm ET',            cadence:'weekly' },
+];
+
+function ago(iso) {
+  if (!iso) return '—';
+  const s = Math.floor((Date.now() - new Date(iso).getTime())/1000);
+  if (s < 60) return s+'s ago';
+  if (s < 3600) return Math.floor(s/60)+'m ago';
+  if (s < 86400) return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+function etToday(){ return new Date().toLocaleDateString('en-CA',{timeZone:'America/New_York'}); }
+
+function statusOf(def, j) {
+  if (!j || !j.lastRun) return { cls:'never', txt:'— never' };
+  if (!j.ok) return { cls:'fail', txt:'✗ failed' };
+  // ok — but is it stale (overdue)?
+  if (def.cadence === 'daily' && j.lastOkET !== etToday()) {
+    // only "stale" on a weekday (market-day jobs don't run weekends)
+    const dow = new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'})).getDay();
+    if (dow>=1 && dow<=5) return { cls:'stale', txt:'⚠ overdue' };
+  }
+  return { cls:'ok', txt:'✓ ok' };
+}
+
+async function load() {
+  $('updated') && ($('updated').textContent = 'fetching…');
+  let data = { jobs:{} };
+  try { data = await (await fetch(`${R2}/pipeline-status/jobs.json?cb=${Date.now()}`)).json(); } catch(e){}
+  const jobs = data.jobs || {};
+  document.getElementById('rows').innerHTML = JOBS.map(def => {
+    const j = jobs[def.name];
+    const st = statusOf(def, j);
+    const dur = j && j.durationSec != null ? (j.durationSec>=60?(j.durationSec/60).toFixed(1)+'m':j.durationSec+'s') : '—';
+    const detail = j && !j.ok && j.error ? `<span class="err">${j.error}</span>`
+      : j && j.consecutiveFails>0 ? `<span class="sub">${j.consecutiveFails} fails in a row</span>`
+      : j && j.lastOk ? `<span class="sub">last ok ${ago(j.lastOk)}</span>` : '';
+    return `<tr>
+      <td><div class="job">${def.label}</div><div class="sub">${def.name}</div></td>
+      <td class="sub">${def.sched}</td>
+      <td><span class="pill ${st.cls}">${st.txt}</span></td>
+      <td class="mono">${j?ago(j.lastRun):'—'}</td>
+      <td class="mono">${dur}</td>
+      <td>${detail}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('updated').textContent = data.updatedAt ? `status updated ${ago(data.updatedAt)} · ${Object.keys(jobs).length} jobs reporting` : 'no status yet';
+}
+function $(id){return document.getElementById(id);}
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>

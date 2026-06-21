@@ -303,6 +303,7 @@ footer{margin-top:48px;border-top:1px solid var(--border);padding-top:16px;font-
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       Save Today
     </button>
+    <span class="control-label" id="canonicalLabel" style="margin-left:auto;font-size:9px;color:var(--ink-faint)"></span>
   </div>
 
   <div class="table-wrap" id="tableWrap">
@@ -345,6 +346,8 @@ let EXPIRY_STR = null;
 let expiryType = 'weekly';
 let lastSnapshotTime = null;
 let companyMetadata = {};
+let canonicalSnap = null;   // current week's canonical snapshot
+let prevCanonicalSnap = null; // previous week's canonical snapshot
 
 // Clock
 setInterval(() => {
@@ -367,6 +370,42 @@ function prevTradingDay() {
 
 const TODAY = todayStr();
 const PREV_DAY = prevTradingDay();
+
+// ── ISO week helpers ──────────────────────────────────────────────
+function getISOWeek(date = new Date()) {
+  const d = new Date(date); d.setHours(0,0,0,0);
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+  const jan4 = new Date(d.getFullYear(), 0, 4);
+  const wk = 1 + Math.round(((d - jan4) / 86400000 - 3 + ((jan4.getDay() + 6) % 7)) / 7);
+  return `${d.getFullYear()}-W${String(wk).padStart(2,'0')}`;
+}
+function prevISOWeek(isoWeek) {
+  const m = isoWeek.match(/^(\d{4})-W(\d{2})$/);
+  if (!m) return null;
+  const jan4 = new Date(+m[1], 0, 4);
+  const dow = jan4.getDay() || 7;
+  const mon = new Date(jan4); mon.setDate(jan4.getDate() - dow + 1 + (+m[2] - 1) * 7);
+  mon.setDate(mon.getDate() - 7);
+  return getISOWeek(mon);
+}
+
+// ── Canonical weekly snapshot loader ─────────────────────────────
+async function loadCanonicalSnapshots() {
+  const thisWeek = getISOWeek();
+  const lastWeek = prevISOWeek(thisWeek);
+  const [curRes, prevRes] = await Promise.allSettled([
+    fetch(`${R2}/watchlist/premium-snapshots/${thisWeek}.json`),
+    lastWeek ? fetch(`${R2}/watchlist/premium-snapshots/${lastWeek}.json`) : Promise.resolve(null),
+  ]);
+  if (curRes.status === 'fulfilled' && curRes.value?.ok) {
+    canonicalSnap = await curRes.value.json();
+    console.log('[Canonical] Loaded', thisWeek, '—', canonicalSnap.symbolCount, 'symbols');
+  }
+  if (prevRes.status === 'fulfilled' && prevRes.value?.ok) {
+    prevCanonicalSnap = await prevRes.value.json();
+    console.log('[Canonical] Loaded prev', lastWeek, '—', prevCanonicalSnap.symbolCount, 'symbols');
+  }
+}
 
 // R2 Data Loading
 async function loadAllSymbolsFromR2() {
@@ -622,20 +661,40 @@ function deltaHtml(cur, prev, suffix, dp) {
   return '<span class="delta ' + cls + '">' + arrow + ' ' + sign + Number(diff).toFixed(dp) + suffix + '</span>';
 }
 
+function wowDeltaHtml(cur, prevVal, suffix, dp) {
+  suffix = suffix ?? '%'; dp = dp ?? 2;
+  if (cur == null || prevVal == null) return '';
+  const diff = cur - prevVal, sign = diff > 0 ? '+' : '', cls = diff > 0.005 ? 'up' : diff < -0.005 ? 'dn' : 'flat';
+  return '<span class="delta ' + cls + '" title="Week-over-week">w ' + sign + Number(diff).toFixed(dp) + suffix + '</span>';
+}
+
 function buildRowHtml(sym, d) {
   const prev = prevSnap[sym];
+  // Week-over-week from canonical snapshots
+  const pKey = expiryType === 'weekly' ? 'weekly' : 'monthly';
+  const curCanon = canonicalSnap?.symbols?.[sym];
+  const prevCanon = prevCanonicalSnap?.symbols?.[sym];
+  const curPrem = curCanon?.[pKey];
+  const prevPrem = prevCanon?.[pKey];
+
   if (d.status === 'loading') return '<td>' + symCell(sym) + '</td><td colspan="8" class="loading-cell"><span class="spinner"></span> Fetching…</td>';
   if (d.status === 'error') return '<td>' + symCell(sym) + '</td><td colspan="8" style="color:var(--red);text-align:center">⚠ ' + d.error + '</td>';
   const maxPct = Math.max(1, ...watchlist.map(s => data[s] && data[s].callPct || 0));
   const barW = d.callPct != null ? Math.min(100, d.callPct / maxPct * 100) : 0;
   return '<td>' + symCell(sym) + '</td>' +
-    '<td>' + fmtD(d.stockPrice) + deltaHtml(d.stockPrice, prev && prev.stockPrice, '', 2) + '</td>' +
+    '<td>' + fmtD(d.stockPrice) + deltaHtml(d.stockPrice, prev && prev.stockPrice, '', 2) +
+      wowDeltaHtml(curCanon?.stockPrice, prevCanon?.stockPrice, '', 2) + '</td>' +
     '<td>' + fmtD(d.atmStrike) + '</td>' +
     '<td>' + fmtD(d.callMid) + '</td>' +
-    '<td><span class="prem-badge ' + premClass(d.callPct) + '">' + fmtP(d.callPct) + '</span>' + deltaHtml(d.callPct, prev && prev.callPct) + '</td>' +
+    '<td><span class="prem-badge ' + premClass(d.callPct) + '">' + fmtP(d.callPct) + '</span>' +
+      deltaHtml(d.callPct, prev && prev.callPct) +
+      wowDeltaHtml(curPrem?.callPct, prevPrem?.callPct) + '</td>' +
     '<td>' + fmtD(d.putMid) + '</td>' +
-    '<td><span class="prem-badge ' + premClass(d.putPct) + '">' + fmtP(d.putPct) + '</span>' + deltaHtml(d.putPct, prev && prev.putPct) + '</td>' +
-    '<td>' + fmtIV(d.iv) + deltaHtml(d.iv, prev && prev.iv) + '</td>' +
+    '<td><span class="prem-badge ' + premClass(d.putPct) + '">' + fmtP(d.putPct) + '</span>' +
+      deltaHtml(d.putPct, prev && prev.putPct) +
+      wowDeltaHtml(curPrem?.putPct, prevPrem?.putPct) + '</td>' +
+    '<td>' + fmtIV(d.iv) + deltaHtml(d.iv, prev && prev.iv) +
+      wowDeltaHtml(curCanon?.iv, prevCanon?.iv) + '</td>' +
     '<td><div class="rank-bar-wrap"><div class="rank-bar" style="width:' + barW + '%"></div></div></td>';
 }
 
@@ -758,6 +817,17 @@ async function init() {
   }
 
   G('sortSelect').addEventListener('change', e => { sortCol = e.target.value; sortAsc = false; renderTable(); });
+
+  // Load canonical weekly snapshots for WoW deltas
+  await loadCanonicalSnapshots();
+  const label = G('canonicalLabel');
+  if (canonicalSnap) {
+    label.textContent = 'Canonical: ' + canonicalSnap.isoWeek + (prevCanonicalSnap ? ' · WoW vs ' + prevCanonicalSnap.isoWeek : '');
+    label.style.color = 'var(--green)';
+  } else {
+    label.textContent = 'No canonical snapshot yet';
+  }
+
   loadWatchlist();
   loadAllSnapshots();
 }

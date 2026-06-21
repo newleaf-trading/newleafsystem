@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf — How We Score a Trade</title>
+<style>
+  :root{
+    --forest:#0B2D23;--forest-mid:#1a5c44;--gold:#C9A96E;--cream:#F7F5F0;--cream-dark:#EDE8DC;
+    --ink:#0B0F14;--ink-mid:#3d3d35;--ink-muted:#6b6b60;--ink-faint:#9b9b8e;--white:#fff;--border:rgba(15,61,46,.14);
+    --green:#1a8c5e;--gold-d:#b8800f;--red:#c0392b;--purple:#7c3aed;--mono:'Space Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{font-family:'Inter',-apple-system,sans-serif;background:#0a0a0a;color:var(--ink);overflow:hidden}
+  .deck{height:100vh;width:100vw;position:relative}
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;padding:6vh 7vw;background:var(--cream)}
+  .slide.active{display:flex;animation:fade .35s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .kicker{font-family:var(--mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-d);margin-bottom:14px;font-weight:700}
+  .step-no{font-family:var(--mono);font-size:13px;color:var(--gold-d);font-weight:700}
+  h1{font-family:'Playfair Display',Georgia,serif;font-weight:700;color:var(--forest);line-height:1.1}
+  .slide h1{font-size:clamp(28px,4.6vw,56px)}
+  h2{font-family:'Playfair Display',Georgia,serif;font-size:clamp(24px,3.4vw,42px);font-weight:700;color:var(--forest);margin-bottom:16px;line-height:1.12}
+  p{font-size:clamp(15px,1.55vw,21px);color:var(--ink-mid);line-height:1.55;max-width:62ch}
+  strong{color:var(--ink)}
+  .mono{font-family:var(--mono)}
+  ul{list-style:none;margin-top:16px}
+  li{font-size:clamp(15px,1.5vw,20px);color:var(--ink-mid);margin:11px 0;padding-left:30px;position:relative;line-height:1.5}
+  li::before{content:'';position:absolute;left:0;top:.55em;width:11px;height:11px;border-radius:3px;background:var(--gold)}
+  .title{background:radial-gradient(120% 120% at 80% 10%,#13402f 0%,var(--forest) 55%,#071c15 100%);color:var(--cream);justify-content:space-between}
+  .title h1{color:var(--cream);font-size:clamp(34px,6vw,74px);max-width:17ch}
+  .title .kicker{color:var(--gold)}
+  .title .foot{font-family:var(--mono);font-size:13px;color:#9DB8AB;display:flex;justify-content:space-between;align-items:flex-end}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand .mark{width:46px;height:46px;border-radius:11px;background:var(--gold);color:var(--forest);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;font-size:24px}
+  .brand b{font-family:'Playfair Display',serif;font-size:22px;color:var(--cream)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:42px;align-items:center}
+  .card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:24px 26px}
+  .card.dim{background:var(--cream-dark);border-style:dashed}
+  .card h3{font-family:'Playfair Display',serif;font-size:21px;color:var(--forest);margin-bottom:10px}
+  .card.dim h3{color:var(--ink-muted)}
+  .pillrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .ind{font-family:var(--mono);font-size:14px;padding:7px 14px;border-radius:8px;background:var(--white);border:1px solid var(--border);color:var(--forest);font-weight:700}
+  .ind.hot{background:var(--forest);color:var(--cream);border-color:var(--forest)}
+  .ind.gamma{background:#f3eefe;border-color:var(--purple);color:#5b21b6}
+  /* stage rail */
+  .rail{display:flex;gap:10px;align-items:stretch;margin-top:8px;flex-wrap:wrap}
+  .rcard{flex:1;min-width:150px;background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+  .rcard.on{border-color:var(--gold);box-shadow:0 4px 16px rgba(201,169,110,.25)}
+  .rcard .rn{font-family:var(--mono);font-size:11px;color:var(--gold-d);font-weight:700}
+  .rcard .rt{font-weight:700;font-size:14px;color:var(--ink);margin-top:3px}
+  .rcard .rs{font-size:11.5px;color:var(--ink-muted);margin-top:4px;line-height:1.35}
+  /* component bars */
+  .comp{margin-top:18px;max-width:760px}
+  .crow{display:grid;grid-template-columns:240px 1fr 64px;align-items:center;gap:16px;margin:10px 0}
+  .cname{font-size:clamp(13px,1.35vw,18px);color:var(--ink)}
+  .ctrack{height:20px;background:var(--cream-dark);border-radius:6px;overflow:hidden}
+  .cfill{height:100%;background:linear-gradient(90deg,var(--forest-mid),var(--green));border-radius:6px}
+  .cw{font-family:var(--mono);font-size:14px;color:var(--gold-d);font-weight:700;text-align:right}
+  /* verdict */
+  .vcards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:22px;max-width:1000px}
+  .vcard{border-radius:14px;padding:20px;border:2px solid}
+  .va{background:#f0fdf4;border-color:#16a34a}.vn{background:#fbf6ec;border-color:var(--gold)}.vc{background:#fef2f2;border-color:var(--red)}
+  .vcard .vt{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;margin-bottom:5px}
+  .va .vt{color:#15803d}.vn .vt{color:var(--gold-d)}.vc .vt{color:var(--red)}
+  .vcard .vd{font-size:14.5px;color:var(--ink-mid);line-height:1.4}
+  .vcard .vm{font-family:var(--mono);font-size:15px;font-weight:700;margin-top:10px;color:var(--ink)}
+  /* zone touches viz */
+  .zoneviz{display:flex;align-items:flex-end;gap:6px;height:130px;margin-top:18px}
+  .tk{width:30px;border-radius:5px 5px 0 0}
+  .hold{background:var(--green)}.brk{background:var(--red)}
+  .flow{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:24px}
+  .chip{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px 22px;text-align:center;min-width:160px}
+  .chip .ct{font-family:var(--mono);font-size:12px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.06em}
+  .chip .cv{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:var(--forest);margin-top:4px}
+  .arrow{font-size:32px;color:var(--gold);font-weight:300}
+  .callout{background:rgba(13,110,86,.06);border:1px solid rgba(13,110,86,.18);border-left:4px solid var(--green);border-radius:10px;padding:16px 20px;margin-top:20px;max-width:780px}
+  .callout b{color:var(--forest)}
+  .callout.purple{background:#f6f2fe;border-color:rgba(124,58,237,.25);border-left-color:var(--purple)}
+  .callout.purple b{color:#5b21b6}
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.05em;padding:4px 10px;border-radius:5px;background:#fff3e0;color:#92400e;border:1px solid #d9770655}
+  .nav{position:fixed;bottom:22px;right:28px;display:flex;align-items:center;gap:14px;z-index:50;font-family:var(--mono);font-size:13px;color:var(--ink-muted)}
+  .nbtn{width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:rgba(255,255,255,.7);color:var(--forest);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .nbtn:hover{background:#fff}
+  .pgline{position:fixed;top:0;left:0;height:4px;background:var(--gold);z-index:50;transition:width .3s}
+  .hint{position:fixed;bottom:24px;left:28px;font-family:var(--mono);font-size:12px;color:#9b9b8e;z-index:50}
+  @media print{.slide{display:flex!important;position:relative;height:100vh;page-break-after:always;break-after:page}.nav,.hint,.pgline{display:none}body{overflow:visible}}
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="pgline" id="pgline"></div>
+<div class="deck" id="deck">
+
+  <!-- 1 — TITLE -->
+  <section class="slide title active">
+    <div class="brand"><div class="mark">N</div><b>NewLeaf</b></div>
+    <div>
+      <div class="kicker">Movement &amp; Range · Discover</div>
+      <h1>How we score a trade</h1>
+      <p style="color:#cfe0d8;margin-top:18px;max-width:46ch">Five layers of analysis stacked into one score — indicators, gamma walls, hold-rate, Setup Quality, and a deterministic trend verdict.</p>
+    </div>
+    <div class="foot"><span>Deterministic · auditable · not one indicator</span><span>2026</span></div>
+  </section>
+
+  <!-- 2 — CONTRAST -->
+  <section class="slide">
+    <div class="kicker">The difference</div>
+    <h2>Most traders decide on one signal. We stack five.</h2>
+    <div class="two">
+      <div class="card dim">
+        <h3>The usual approach</h3>
+        <p style="font-size:16px">A single trigger — "RSI is oversold," or the <strong>50/200 golden cross</strong>. One line, one decision. Easy to read, but easy to be wrong: any one signal fires false alarms constantly.</p>
+        <div class="pillrow"><span class="ind">RSI</span><span class="ind">Golden cross</span></div>
+      </div>
+      <div class="card">
+        <h3>NewLeaf scoring</h3>
+        <p style="font-size:16px">Five independent layers that must <strong>agree</strong> — momentum, dealer positioning, a track record, a composite score, and a trend veto.</p>
+        <div class="pillrow"><span class="ind hot">RSI</span><span class="ind hot">MACD</span><span class="ind hot">Bollinger</span><span class="ind gamma">Gamma walls</span><span class="ind hot">Hold-rate</span><span class="ind hot">SEPA trend</span></div>
+      </div>
+    </div>
+    <div class="callout"><b>Why it matters:</b> more independent confirmation = far fewer false signals. No single indicator can veto a trade on its own.</div>
+  </section>
+
+  <!-- 3 — STAGE 1: INDICATORS -->
+  <section class="slide">
+    <div class="step-no">Stage 1 of 5</div>
+    <h2>Read the chart — momentum &amp; volatility</h2>
+    <p>Every symbol starts with the classic technicals — the same ones most people use, but for us they're <strong>inputs, not the answer</strong>.</p>
+    <ul>
+      <li><strong>RSI</strong> — is it overbought or oversold? Momentum exhaustion.</li>
+      <li><strong>MACD</strong> — is momentum shifting (crossovers, histogram)?</li>
+      <li><strong>Bollinger Bands</strong> — where is price inside its volatility envelope?</li>
+      <li><strong>Moving averages (50 / 150 / 200) &amp; ADX</strong> — the trend backbone and how strong it is.</li>
+    </ul>
+    <div class="callout"><b>Most retail analysis ends here</b> — one of these signals fires and they trade. We've only just started.</div>
+  </section>
+
+  <!-- 4 — STAGE 2: GAMMA WALLS + LEVELS -->
+  <section class="slide">
+    <div class="step-no">Stage 2 of 5</div>
+    <h2>Find where price will actually react</h2>
+    <div class="two">
+      <div>
+        <p>We collect every candidate floor &amp; ceiling — moving averages, Bollinger bands, recent swing highs/lows — and the layer almost no one has:</p>
+        <ul>
+          <li><strong>Gamma walls</strong> — strikes where options dealers are forced to hedge. The <strong>put wall</strong> acts as a magnet/floor, the <strong>call wall</strong> as a ceiling.</li>
+        </ul>
+        <p style="margin-top:12px">Nearby levels are <strong>clustered into zones</strong> (within 0.6×ATR) so a floor backed by an SMA <em>and</em> a put wall counts as one strong zone.</p>
+      </div>
+      <div>
+        <div class="callout purple">
+          <b>The edge most people don't have</b>
+          <p style="margin-top:6px;font-size:16px">Gamma walls come from <strong>live options open interest</strong> — actual dealer positioning, not just past price. They tell you where big money is <em>obligated</em> to defend a level.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 — STAGE 3: HOLD-RATE -->
+  <section class="slide">
+    <div class="step-no">Stage 3 of 5</div>
+    <h2>Test the floor &amp; ceiling — does it hold?</h2>
+    <p>For each zone we count how many times price <strong>touched</strong> it and how often it <strong>held vs broke</strong>. A floor that holds 9 of 10 times is real; one tested twice is noise.</p>
+    <div class="two" style="align-items:center">
+      <div>
+        <div class="zoneviz">
+          <div class="tk hold" style="height:80%"></div><div class="tk hold" style="height:92%"></div><div class="tk brk" style="height:40%"></div><div class="tk hold" style="height:88%"></div><div class="tk hold" style="height:95%"></div><div class="tk hold" style="height:78%"></div><div class="tk brk" style="height:35%"></div><div class="tk hold" style="height:90%"></div><div class="tk hold" style="height:85%"></div><div class="tk hold" style="height:93%"></div>
+        </div>
+        <p class="mono" style="font-size:13px;margin-top:8px;color:var(--ink-muted)"><span style="color:var(--green)">■</span> held &nbsp; <span style="color:var(--red)">■</span> broke</p>
+      </div>
+      <div>
+        <ul>
+          <li><strong>Touch count &amp; hold-rate</strong> — e.g. TLT $87 zone: <strong>19 touches · 15 holds → 74%</strong>.</li>
+          <li><strong>Wilson-smoothed</strong> — a small sample (3/3) can't masquerade as 100%.</li>
+          <li><strong>Untested zones (&lt; 3 touches) are dropped</strong> — no track record, no trust.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 — STAGE 4: SETUP QUALITY -->
+  <section class="slide">
+    <div class="step-no">Stage 4 of 5</div>
+    <h2>Roll it into one score — Setup Quality (0–100)</h2>
+    <p>The hold-rate plus five more ingredients, each weighted by how much it matters:</p>
+    <div class="comp">
+      <div class="crow"><span class="cname">Zone hold-rate</span><div class="ctrack"><div class="cfill" style="width:100%"></div></div><span class="cw">.30</span></div>
+      <div class="crow"><span class="cname">Premium richness <span style="color:var(--ink-muted);font-size:12px">(IV / RV)</span></span><div class="ctrack"><div class="cfill" style="width:66%"></div></div><span class="cw">.20</span></div>
+      <div class="crow"><span class="cname">Regime confidence</span><div class="ctrack"><div class="cfill" style="width:50%"></div></div><span class="cw">.15</span></div>
+      <div class="crow"><span class="cname">Distance / approach</span><div class="ctrack"><div class="cfill" style="width:50%"></div></div><span class="cw">.15</span></div>
+      <div class="crow"><span class="cname">Option liquidity</span><div class="ctrack"><div class="cfill" style="width:33%"></div></div><span class="cw">.10</span></div>
+      <div class="crow"><span class="cname">Forward-return edge</span><div class="ctrack"><div class="cfill" style="width:33%"></div></div><span class="cw">.10</span></div>
+    </div>
+    <div class="callout" style="border-left-color:var(--red)"><b>− Event-risk penalty</b> for earnings/ex-div inside the window. The result is the Setup Quality you see in the list.</div>
+  </section>
+
+  <!-- 7 — STAGE 5: WHAT SEPA IS (USP) -->
+  <section class="slide">
+    <div class="step-no">Stage 5 of 5 · our USP</div>
+    <h2>Is the trend friendly? — the SEPA verdict</h2>
+    <p>Every options scanner can find a support level. Almost none ask the next question: <strong>is the stock actually trending up into it, or falling toward it?</strong> That's the difference between a good <em>level</em> and a good <em>trade</em> — and it's the layer we add that others don't.</p>
+    <div class="two" style="margin-top:6px">
+      <div class="callout purple" style="margin-top:0">
+        <b>What is SEPA?</b>
+        <p style="margin-top:6px;font-size:16px"><strong>S</strong>pecific <strong>E</strong>ntry <strong>P</strong>oint <strong>A</strong>nalysis — the trend template made famous by <strong>Mark Minervini</strong>, a US Investing Champion. A deterministic checklist that defines a <em>confirmed</em> trend — no opinion, no AI.</p>
+      </div>
+      <div>
+        <p style="font-weight:700;color:var(--ink);margin-bottom:2px">Six checks — price &amp; relative strength:</p>
+        <ul style="margin-top:6px">
+          <li>Moving averages stacked <span class="mono">50 &gt; 150 &gt; 200</span>, price above them</li>
+          <li>The 200-day is <strong>rising</strong> (slow, reliable confirmation)</li>
+          <li>Relative strength vs SPY is <strong>positive &amp; rising</strong> — leading the market</li>
+          <li>Within 25% of the 52-week high · clearly off the low</li>
+        </ul>
+      </div>
+    </div>
+    <div class="vcards" style="margin-top:18px">
+      <div class="vcard va"><div class="vt">Aligned</div><div class="vd">All four "up" checks pass — endorse.</div><div class="vm">+5</div></div>
+      <div class="vcard vn"><div class="vt">Neutral</div><div class="vd">No clear trend — leave it alone.</div><div class="vm">unchanged · ×0.85 VCP</div></div>
+      <div class="vcard vc"><div class="vt">Conflicted</div><div class="vd">3 of 4 "down" checks — falling knife.</div><div class="vm">× 0.6</div></div>
+    </div>
+  </section>
+
+  <!-- 8 — SEPA IN ACTION: TWO STOCKS -->
+  <section class="slide">
+    <div class="kicker">SEPA in action · same scanner, opposite verdicts</div>
+    <h2>Two stocks, two verdicts</h2>
+    <div class="two" style="align-items:stretch">
+      <div class="card" style="border:2px solid var(--green);background:#f0fdf4">
+        <h3 style="color:#15803d">CSCO &nbsp;·&nbsp; ALIGNED &#9650;</h3>
+        <div style="margin-top:6px">
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:#15803d;font-weight:700">&#10003;</span><span>MA stack <span class="mono">105 &gt; 87 &gt; 83</span> — stacked up</span></div>
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:#15803d;font-weight:700">&#10003;</span><span>Price <span class="mono">$120</span> above the stack</span></div>
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:#15803d;font-weight:700">&#10003;</span><span>200-day rising</span></div>
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:#15803d;font-weight:700">&#10003;</span><span>RS vs SPY <span class="mono">+34.5%</span>, rising — leader</span></div>
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:#15803d;font-weight:700">&#10003;</span><span>Only 8% below the 52-week high</span></div>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-family:var(--mono);font-size:16px;color:var(--ink)"><b>4 / 4 up-checks → ALIGNED</b><br>Setup Quality 61 <span style="color:#15803d">+ 5 = 66</span></div>
+      </div>
+      <div class="card" style="border:2px solid var(--red);background:#fef2f2">
+        <h3 style="color:var(--red)">TLT &nbsp;·&nbsp; CONFLICTED &#9660;</h3>
+        <div style="margin-top:6px">
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:var(--red);font-weight:700">&#10007;</span><span>MA stack <span class="mono">85.6 &lt; 87.3 &lt; 87.9</span> — inverted</span></div>
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:var(--red);font-weight:700">&#10007;</span><span>Price <span class="mono">$86.75</span> below the 200-day</span></div>
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:var(--red);font-weight:700">&#10007;</span><span>200-day rolling over</span></div>
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:var(--red);font-weight:700">&#10007;</span><span>RS vs SPY <span class="mono">−12.4%</span> — lagging</span></div>
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:var(--gold-d);font-weight:700">!</span><span>Sitting near its 52-week low</span></div>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-family:var(--mono);font-size:16px;color:var(--ink)"><b>3 / 4 down-checks → CONFLICTED</b><br>Setup Quality 79 <span style="color:var(--red)">× 0.6 = 47</span></div>
+      </div>
+    </div>
+    <p style="margin-top:16px;font-size:16px;color:var(--ink-mid)"><strong>Same support-scanner score, opposite trades.</strong> The first four layers can't tell CSCO from TLT — both show a "good level." SEPA is what separates them.</p>
+  </section>
+
+  <!-- 8 — WORKED EXAMPLE -->
+  <section class="slide">
+    <div class="kicker">All five layers, one symbol</div>
+    <h2>TLT — the stack loves it, the trend vetoes it</h2>
+    <div class="flow">
+      <div class="chip"><div class="ct">Zone</div><div class="cv" style="font-size:18px">$87 · MA + put wall</div></div>
+      <span class="arrow">→</span>
+      <div class="chip"><div class="ct">Hold-rate</div><div class="cv" style="font-size:18px">19t · 15h · 74%</div></div>
+      <span class="arrow">→</span>
+      <div class="chip"><div class="ct">Setup Quality</div><div class="cv">79</div></div>
+      <span class="arrow">×</span>
+      <div class="chip" style="border-color:var(--red)"><div class="ct">SEPA</div><div class="cv" style="color:var(--red);font-size:20px">Conflicted</div></div>
+      <span class="arrow">=</span>
+      <div class="chip" style="background:#fef2f2;border-color:var(--red)"><div class="ct">Adjusted</div><div class="cv" style="color:var(--red)">47</div></div>
+    </div>
+    <div class="callout" style="background:#fef2f2;border-color:#c0392b;border-left-color:#c0392b;margin-top:26px">
+      <b style="color:var(--red)">Why this is the whole point.</b>
+      <p style="margin-top:6px">RSI, MACD, the $87 gamma/MA zone and its 74% hold-rate all said "great support." But the MA stack is inverted and the 200-day is rolling over — a downtrend. The SEPA verdict catches the falling knife the first four layers miss.</p>
+    </div>
+  </section>
+
+  <!-- 9 — SUMMARY -->
+  <section class="slide title">
+    <div class="brand"><div class="mark">N</div><b>NewLeaf</b></div>
+    <div>
+      <div class="kicker" style="color:var(--gold)">In short</div>
+      <h1 style="font-size:clamp(26px,4vw,48px);max-width:26ch">Five layers, not one signal — and a deterministic answer every time.</h1>
+      <ul style="margin-top:22px">
+        <li style="color:#dfeae4"><strong style="color:#fff">1 · Indicators</strong> — RSI, MACD, Bollinger, SMAs.</li>
+        <li style="color:#dfeae4"><strong style="color:#fff">2 · Gamma walls</strong> — dealer positioning marks the real floors &amp; ceilings.</li>
+        <li style="color:#dfeae4"><strong style="color:#fff">3 · Hold-rate</strong> — how reliably each zone has held.</li>
+        <li style="color:#dfeae4"><strong style="color:#fff">4 · Setup Quality</strong> — six ingredients into one 0–100 score.</li>
+        <li style="color:#dfeae4"><strong style="color:#fff">5 · SEPA trend verdict</strong> — endorse, neutral, or veto the falling knife.</li>
+      </ul>
+    </div>
+    <div class="foot"><span>Detail: /docs/trend-algorithm-design.html</span><span>NewLeaf · 2026</span></div>
+  </section>
+
+</div>
+
+<div class="nav"><button class="nbtn" id="prev">‹</button><span id="counter">1 / 9</span><button class="nbtn" id="next">›</button></div>
+<div class="hint">← → or click to navigate · F = fullscreen · P = print/PDF</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  let i=0;
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+    document.getElementById('counter').textContent=(i+1)+' / '+slides.length;
+    document.getElementById('pgline').style.width=((i+1)/slides.length*100)+'%';
+    document.body.style.background=slides[i].classList.contains('title')?'#071c15':'#0a0a0a';
+  }
+  document.getElementById('next').onclick=()=>show(i+1);
+  document.getElementById('prev').onclick=()=>show(i-1);
+  document.getElementById('deck').onclick=e=>{if(e.target.closest('a,button'))return;const x=e.clientX/window.innerWidth;show(x>0.4?i+1:i-1);};
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown')show(i+1);
+    else if(e.key==='ArrowLeft'||e.key==='PageUp')show(i-1);
+    else if(e.key==='Home')show(0); else if(e.key==='End')show(slides.length-1);
+    else if(e.key.toLowerCase()==='f'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();}
+    else if(e.key.toLowerCase()==='p'){window.print();}
+  });
+  show(0);
+</script>
+</body>
+</html>

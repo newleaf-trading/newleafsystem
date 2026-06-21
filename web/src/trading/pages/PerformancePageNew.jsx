@@ -52,11 +52,15 @@ export function PerformancePageNew({ tiles }) {
         active.push(item);
       }
     });
-    closed.sort((a, b) => {
-      const dateA = a.closedAt?.toDate?.() || new Date(a.closedAt || 0);
-      const dateB = b.closedAt?.toDate?.() || new Date(b.closedAt || 0);
-      return dateB - dateA;
-    });
+    const parseDate = (val) => {
+      if (!val) return new Date(0);
+      if (typeof val.toDate === 'function') return val.toDate();
+      if (val.seconds) return new Date(val.seconds * 1000);
+      if (typeof val === 'string') return new Date(val);
+      if (val instanceof Date) return val;
+      return new Date(0);
+    };
+    closed.sort((a, b) => parseDate(b.closedAt) - parseDate(a.closedAt));
     return { activePositions: active, closedPositions: closed };
   }, [portfolioItems]);
 
@@ -75,19 +79,20 @@ export function PerformancePageNew({ tiles }) {
     }, 0);
 
     const totalRealizedPnl = closedPositions.reduce((sum, p) => {
-      return sum + ((p.unrealizedPnl || p.realizedPnl || 0) * (p.quantity || 1));
+      return sum + (p.realizedPnl ?? ((p.unrealizedPnl || 0) * (p.quantity || 1)));
     }, 0);
 
     const totalPnl = totalUnrealizedPnl + totalRealizedPnl;
     const totalReturnPct = totalCapital > 0 ? (totalPnl / totalCapital) * 100 : 0;
 
-    const closedWithPnl = closedPositions.filter(p => (p.unrealizedPnl || p.realizedPnl || 0) !== 0);
-    const winners = closedWithPnl.filter(p => (p.unrealizedPnl || p.realizedPnl || 0) > 0);
-    const winRate = closedWithPnl.length > 0
-      ? Math.round((winners.length / closedWithPnl.length) * 100)
+    // Win rate: count ALL closed trades (not just non-zero P&L)
+    const getPnl = (p) => p.realizedPnl ?? ((p.unrealizedPnl || 0) * (p.quantity || 1));
+    const winners = closedPositions.filter(p => getPnl(p) > 0);
+    const winRate = closedPositions.length > 0
+      ? Math.round((winners.length / closedPositions.length) * 100)
       : null;
     const winCount = winners.length;
-    const totalTrades = closedWithPnl.length;
+    const totalTrades = closedPositions.length;
 
     let capitalDeployed = 0;
     joined.forEach(item => {
@@ -245,9 +250,15 @@ export function PerformancePageNew({ tiles }) {
   const handleClosePosition = async (pos) => {
     setClosingId(pos.id);
     try {
+      // Use LIVE P&L (from current prices), not the stale stored value
+      const live = livePortfolio.find(lp => lp.id === pos.id);
+      const livePnl = live?.livePnl ?? live?.unrealizedPnl ?? pos.unrealizedPnl ?? 0;
+      const realizedPnl = livePnl * (pos.quantity || 1);
+
       await updatePortfolioItem(pos.tileId || pos.id, {
         status: 'closed',
-        realizedPnl: pos.unrealizedPnl || 0,
+        realizedPnl,
+        unrealizedPnl: livePnl,  // preserve per-contract value too
         closedAt: new Date(),
         closedReason: 'manual',
       });
@@ -264,29 +275,70 @@ export function PerformancePageNew({ tiles }) {
 
   // Columns for Active Positions Table
   const activeColumns = [
-    { header: 'Ticker', key: 'symbol', render: (row) => <strong>{row.symbol}</strong> },
-    { header: 'Strategy', key: 'strategy', render: (row) => <span style={{ fontFamily: 'var(--mono)', color: 'var(--nl-primary-green)' }}>{formatStrategy(row.strategy || '')}</span> },
-    { header: 'Entry Credit', key: 'entryNetCredit', render: (row) => {
+    { header: 'Ticker', key: 'symbol', render: (row) => {
+      const tile = tiles?.find(t => t.id === row.tileId);
+      const expiry = row.expiry || tile?.expiry;
+      const dte = expiry ? Math.max(0, Math.round((new Date(expiry).getTime() - Date.now()) / 86400000)) : null;
+      return (
+        <div>
+          <strong>{row.symbol}</strong>
+          {dte !== null && <div style={{ fontSize: '10px', color: 'var(--nl-muted-text)', fontFamily: 'var(--mono)' }}>{dte}d to expiry</div>}
+        </div>
+      );
+    }},
+    { header: 'Strategy', key: 'strategy', render: (row) => {
+      const tile = tiles?.find(t => t.id === row.tileId);
+      const strat = row.strategy || row.strategyType || tile?.strategy || tile?.strategyCode || '';
+      return <span style={{ fontFamily: 'var(--mono)', fontSize: '11px', color: 'var(--nl-primary-green)' }}>{formatStrategy(strat)}</span>;
+    }},
+    { header: 'Qty', key: 'qty', align: 'center', render: (row) => (
+      <span style={{ fontFamily: 'var(--mono)', fontWeight: 600 }}>{row.quantity || 1}</span>
+    )},
+    { header: 'Entry/Contract', key: 'entryNetCredit', render: (row) => {
       const entry = Math.abs(row.entryNetCredit || 0);
-      return <span style={{ fontFamily: 'var(--mono)' }}>{entry > 0 ? '$' + entry.toFixed(0) : '—'}</span>;
+      const total = entry * (row.quantity || 1);
+      return (
+        <div style={{ fontFamily: 'var(--mono)' }}>
+          <div>${entry > 0 ? entry.toFixed(0) : '—'}</div>
+          {entry > 0 && (row.quantity || 1) > 1 && <div style={{ fontSize: '10px', color: 'var(--nl-muted-text)' }}>Total: ${total.toFixed(0)}</div>}
+        </div>
+      );
+    }},
+    { header: 'Max Risk', key: 'maxRisk', render: (row) => {
+      const tile = tiles?.find(t => t.id === row.tileId);
+      const riskPer = row.maxLoss || tile?.maxLoss || 0;
+      const qty = row.quantity || 1;
+      const total = riskPer * qty;
+      return (
+        <div style={{ fontFamily: 'var(--mono)' }}>
+          <div>${riskPer > 0 ? Math.round(riskPer).toLocaleString() : '—'}</div>
+          {riskPer > 0 && qty > 1 && <div style={{ fontSize: '10px', color: 'var(--nl-muted-text)' }}>Total: ${Math.round(total).toLocaleString()}</div>}
+        </div>
+      );
     }},
     { header: 'P&L', key: 'pnl', render: (row) => {
       const live = getLive(row);
-      const pnl = (live.livePnl || live.unrealizedPnl || 0) * (row.quantity || 1);
+      const pnlPer = live.livePnl || live.unrealizedPnl || 0;
+      const pnl = pnlPer * (row.quantity || 1);
+      const tile = tiles?.find(t => t.id === row.tileId);
+      const maxProfit = row.maxProfit || tile?.maxProfit || 0;
+      const profitCapture = maxProfit > 0 ? Math.round((pnl / maxProfit) * 100) : null;
       return (
-        <span style={{
-          fontFamily: 'var(--mono)',
-          fontWeight: '600',
-          color: pnl > 0 ? 'var(--nl-success)' : pnl < 0 ? 'var(--nl-danger)' : 'var(--nl-muted-text)',
-        }}>
-          {pnl !== 0 ? formatPnl(pnl) : '$0'}
-        </span>
+        <div>
+          <span style={{
+            fontFamily: 'var(--mono)', fontWeight: '600',
+            color: pnl > 0 ? 'var(--nl-success)' : pnl < 0 ? 'var(--nl-danger)' : 'var(--nl-muted-text)',
+          }}>
+            {pnl !== 0 ? formatPnl(pnl) : '$0'}
+          </span>
+          {profitCapture !== null && <div style={{ fontSize: '10px', color: 'var(--nl-muted-text)', fontFamily: 'var(--mono)' }}>{profitCapture}% of max</div>}
+        </div>
       );
     }},
     { header: 'Return', key: 'return', render: (row) => {
       const live = getLive(row);
       const pnl = (live.livePnl || live.unrealizedPnl || 0) * (row.quantity || 1);
-      const entry = Math.abs(row.entryNetCredit || 0);
+      const entry = Math.abs(row.entryNetCredit || 0) * (row.quantity || 1);
       const returnPct = entry > 0 ? (pnl / entry) * 100 : 0;
       return (
         <span style={{
@@ -306,19 +358,7 @@ export function PerformancePageNew({ tiles }) {
       }
       return <StatusPill status="healthy" label="Healthy" />;
     }},
-    { header: 'Action', key: 'suggestion', render: (row) => {
-      const live = getLive(row);
-      const ss = live.strategyStatus;
-      if (ss?.suggestion) {
-        return (
-          <span style={{ fontSize: '10px', color: 'var(--nl-muted-text)', lineHeight: 1.4, display: 'block', maxWidth: 200 }}>
-            {ss.suggestion.length > 80 ? ss.suggestion.slice(0, 80) + '...' : ss.suggestion}
-          </span>
-        );
-      }
-      return <span style={{ fontSize: '10px', color: 'var(--nl-muted-text)' }}>No action needed</span>;
-    }},
-    { header: 'Action', key: 'action', align: 'center', render: (row) => (
+    { header: '', key: 'action', align: 'center', render: (row) => (
       <Button variant="ghost" size="sm" onClick={() => setConfirmClose(row)} disabled={closingId === row.id}>
         {closingId === row.id ? 'Closing...' : 'Close'}
       </Button>
@@ -328,13 +368,20 @@ export function PerformancePageNew({ tiles }) {
   // Columns for Closed Positions Table
   const closedColumns = [
     { header: 'Ticker', key: 'symbol', render: (row) => <strong>{row.symbol}</strong> },
-    { header: 'Strategy', key: 'strategy', render: (row) => <span style={{ fontFamily: 'var(--mono)', color: 'var(--nl-primary-green)' }}>{formatStrategy(row.strategy || '')}</span> },
+    { header: 'Strategy', key: 'strategy', render: (row) => {
+      const tile = tiles?.find(t => t.id === row.tileId);
+      const strat = row.strategy || row.strategyType || tile?.strategy || tile?.strategyCode || '';
+      return <span style={{ fontFamily: 'var(--mono)', fontSize: '11px', color: 'var(--nl-primary-green)' }}>{formatStrategy(strat)}</span>;
+    }},
+    { header: 'Qty', key: 'qty', align: 'center', render: (row) => (
+      <span style={{ fontFamily: 'var(--mono)' }}>{row.quantity || 1}</span>
+    )},
     { header: 'Entry Credit', key: 'entryNetCredit', render: (row) => {
       const entry = Math.abs(row.entryNetCredit || 0);
       return <span style={{ fontFamily: 'var(--mono)' }}>{entry > 0 ? '$' + entry.toFixed(0) : '—'}</span>;
     }},
     { header: 'P&L', key: 'pnl', render: (row) => {
-      const pnl = (row.unrealizedPnl || row.realizedPnl || 0) * (row.quantity || 1);
+      const pnl = row.realizedPnl ?? ((row.unrealizedPnl || 0) * (row.quantity || 1));
       return (
         <span style={{
           fontFamily: 'var(--mono)',
@@ -346,8 +393,8 @@ export function PerformancePageNew({ tiles }) {
       );
     }},
     { header: 'Return', key: 'return', render: (row) => {
-      const pnl = (row.unrealizedPnl || row.realizedPnl || 0) * (row.quantity || 1);
-      const entry = Math.abs(row.entryNetCredit || 0);
+      const pnl = row.realizedPnl ?? ((row.unrealizedPnl || 0) * (row.quantity || 1));
+      const entry = Math.abs(row.entryNetCredit || 0) * (row.quantity || 1);
       const returnPct = entry > 0 ? (pnl / entry) * 100 : 0;
       return (
         <span style={{

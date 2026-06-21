@@ -23,6 +23,7 @@ const path = require('path');
 const fs = require('fs');
 
 const jobLock = require('./lib/jobLock.cjs');
+const jobStatus = require('./lib/jobStatus.cjs');
 
 const ONCE = process.argv.includes('--once');
 const NEWLEAF_DIR = path.resolve(__dirname, '..');
@@ -89,23 +90,13 @@ async function ensureServer() {
 // Source code kept in yahoo-svc/ for redeployment: firebase deploy --only functions
 
 // ── Market hours check (ET) ───────────────────────────────────────────────────
-function isDST(date) {
-  const jan = new Date(date.getFullYear(), 0, 1).getTimezoneOffset();
-  const jul = new Date(date.getFullYear(), 6, 1).getTimezoneOffset();
-  return Math.min(jan, jul) === date.getTimezoneOffset();
-}
-
+// Market hours via true ET wall-clock — no manual DST math, robust to the machine's timezone.
+const ET_TZ = 'America/New_York';
 function isMarketHours() {
-  const now = new Date();
-  const day = now.getDay();
-  if (day === 0 || day === 6) return false;
-
-  const etOffset = isDST(now) ? -4 : -5;
-  const etHour = now.getUTCHours() + etOffset;
-  const etMin = now.getUTCMinutes();
-  const etTotal = etHour * 60 + etMin;
-
-  return etTotal >= 9 * 60 + 30 && etTotal < 16 * 60; // 9:30am-4:00pm ET
+  const et = new Date(new Date().toLocaleString('en-US', { timeZone: ET_TZ }));
+  if (et.getDay() === 0 || et.getDay() === 6) return false;
+  const total = et.getHours() * 60 + et.getMinutes();
+  return total >= 9 * 60 + 30 && total < 16 * 60; // 9:30am–4:00pm ET
 }
 
 function nowET() {
@@ -153,13 +144,32 @@ function markWeeklySnapDone() {
 async function runWeeklySnapshot() {
   console.log(`[${nowET()}] === Canonical Weekly Premium Snapshot ===`);
   const snapshotScript = path.join(NEWLEAF_DIR, 'generaterecommendations', 'weekly-premium-snapshot.js');
-  if (fs.existsSync(snapshotScript)) {
-    await runJob('../generaterecommendations/weekly-premium-snapshot.js').catch(console.error);
-    markWeeklySnapDone();
-  } else {
-    console.error(`[${nowET()}] weekly-premium-snapshot.js not found at ${snapshotScript}`);
-  }
+  if (!fs.existsSync(snapshotScript)) throw new Error(`weekly-premium-snapshot.js not found at ${snapshotScript}`);
+  await runJob('../generaterecommendations/weekly-premium-snapshot.js');
+  markWeeklySnapDone();
 }
+
+// Weekly trend candidate snapshot (forward-test accrual). Additive job — runs AFTER the
+// premium snapshot so the per-symbol reports it reads are fresh. Idempotent: the script
+// overwrites the ISO-week file, and the ranOkThisWeek/monitor guards prevent duplicate runs.
+async function runTrendCandidateSnapshot() {
+  console.log(`[${nowET()}] === Weekly Trend Candidate Snapshot (forward-test accrual) ===`);
+  const script = path.join(NEWLEAF_DIR, 'generaterecommendations', 'trend-candidate-snapshot.cjs');
+  if (!fs.existsSync(script)) throw new Error(`trend-candidate-snapshot.cjs not found at ${script}`);
+  await runJob('../generaterecommendations/trend-candidate-snapshot.cjs');
+}
+
+// Daily-OI sub-steps, tracked INDIVIDUALLY. Previously these were `.catch(console.error)`
+// (swallowed) inside one 'daily-oi' job, so a failed sync hid behind a green status and the
+// monitor never retried it. Now each step records its own status; the sequence skips any step
+// that already succeeded today, so a monitor retry re-runs ONLY the failed step (not the whole
+// ~20-min sequence) — and never re-hammers a step that already worked.
+const DAILY_OI_STEPS = [
+  { name: 'daily-oi-enrich', script: 'pipeline-oi-enrichment.js',     args: ['--watchlist'] },
+  { name: 'daily-watchlist', script: 'pipeline-watchlist.js',         args: [] },
+  { name: 'daily-sync',      script: 'sync-r2-to-firestore-fixed.mjs', args: [] },
+];
+const dailyOIAllDone = () => DAILY_OI_STEPS.every(s => jobStatus.ranOkToday(s.name));
 
 async function runDailyOISequence() {
   if (!jobLock.acquire('daily-oi')) {
@@ -168,11 +178,15 @@ async function runDailyOISequence() {
   }
   try {
     console.log(`[${nowET()}] === Daily OI Enrichment Sequence ===`);
-    await runJob('pipeline-oi-enrichment.js', ['--watchlist']).catch(console.error);
-    await runJob('pipeline-watchlist.js').catch(console.error);
-    await runJob('sync-r2-to-firestore-fixed.mjs').catch(console.error);
-    markDailyOIDone();
-    console.log(`[${nowET()}] === Daily sequence complete ===`);
+    for (const step of DAILY_OI_STEPS) {
+      if (jobStatus.ranOkToday(step.name)) {
+        console.log(`[${nowET()}] ${step.name} already ok today — skipping`);
+        continue;
+      }
+      await track(step.name, () => runJob(step.script, step.args));
+    }
+    if (dailyOIAllDone()) markDailyOIDone();
+    console.log(`[${nowET()}] === Daily sequence complete (${DAILY_OI_STEPS.filter(s => jobStatus.ranOkToday(s.name)).length}/${DAILY_OI_STEPS.length} ok) ===`);
   } finally {
     jobLock.release('daily-oi');
   }
@@ -206,6 +220,71 @@ function runJob(script, args = []) {
   });
 }
 
+// ── Job status tracking + missed-job monitor ──────────────────────────────────
+// Wrap any job so its success/failure/duration is recorded to pipeline-status/jobs.json.
+async function track(name, fn) {
+  const start = Date.now();
+  try {
+    await fn();
+    await jobStatus.record(name, { ok: true, durationSec: +((Date.now() - start) / 1000).toFixed(1) });
+  } catch (err) {
+    await jobStatus.record(name, { ok: false, durationSec: +((Date.now() - start) / 1000).toFixed(1), error: err.message });
+    console.error(`[${nowET()}] ${name} FAILED: ${err.message}`);
+  }
+}
+
+async function runDailyFunnel() {
+  console.log(`[${nowET()}] === Daily Funnel: Rank → Price → Publish ===`);
+  const funnelScript = path.join(NEWLEAF_DIR, 'generaterecommendations', 'funnel-price.cjs');
+  if (!fs.existsSync(funnelScript)) throw new Error(`funnel-price.cjs not found at ${funnelScript}`);
+  await runJob('../generaterecommendations/funnel-price.cjs');
+  fs.writeFileSync(DAILY_FUNNEL_STAMP, todayET());
+}
+
+async function runEventCalendar() {
+  console.log(`[${nowET()}] === Event Calendar Refresh (Yahoo + FMP ex-div) ===`);
+  const script = path.join(NEWLEAF_DIR, 'scripts', 'refresh-event-calendar.js');
+  if (!fs.existsSync(script)) throw new Error(`refresh-event-calendar.js not found at ${script}`);
+  await runJob('../scripts/refresh-event-calendar.js');
+}
+
+// Registry the scheduled cron handlers AND the monitor both drive. etMin = minutes past ET midnight.
+const SCHEDULED_JOBS = [
+  { name: 'daily-oi',        label: 'Daily OI + manifest + sync', cadence: 'daily',  etMin: 9 * 60 + 32,  marketDay: true, run: runDailyOISequence, done: dailyOIAllDone },
+  { name: 'daily-funnel',    label: 'Daily funnel (publish picks)', cadence: 'daily', etMin: 10 * 60,      marketDay: true, run: runDailyFunnel },
+  { name: 'event-calendar',  label: 'Event calendar refresh',     cadence: 'daily',  etMin: 16 * 60 + 15, marketDay: true, run: runEventCalendar },
+  { name: 'weekly-snapshot', label: 'Weekly premium snapshot',    cadence: 'weekly', dow: 5, etMin: 16 * 60 + 30,            run: runWeeklySnapshot },
+  { name: 'weekly-trend-candidates', label: 'Weekly trend candidate snapshot', cadence: 'weekly', dow: 5, etMin: 16 * 60 + 35, run: runTrendCandidateSnapshot },
+];
+
+// Monitor: re-run any daily/weekly job that is past its scheduled time and hasn't succeeded
+// (today / this week). Runs from the 5-min health check, so a job missed because the machine
+// was asleep gets started automatically.
+async function catchUpMissed() {
+  const et = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const dow = et.getDay(); // 0=Sun … 6=Sat
+  const mins = et.getHours() * 60 + et.getMinutes();
+  const isWeekday = dow >= 1 && dow <= 5;
+  for (const j of SCHEDULED_JOBS) {
+    if (j.cadence === 'daily') {
+      if (j.marketDay && !isWeekday) continue;
+      if (mins < j.etMin) continue;
+      // `done` (composite jobs like daily-oi) lets the monitor retry when ANY sub-step
+      // failed, even if the wrapper "ran"; the sequence then re-runs only the failed step.
+      const isDone = j.done ? j.done() : jobStatus.ranOkToday(j.name);
+      if (isDone) continue;
+      console.log(`[${nowET()}] Monitor: ${j.name} incomplete today — starting catch-up`);
+      await track(j.name, j.run);
+    } else if (j.cadence === 'weekly') {
+      const dueNow = dow > j.dow || (dow === j.dow && mins >= j.etMin) || dow === 0; // Fri-eve → Sun
+      if (!dueNow) continue;
+      if (jobStatus.ranOkThisWeek(j.name)) continue;
+      console.log(`[${nowET()}] Monitor: ${j.name} missed this week — starting catch-up`);
+      await track(j.name, j.run);
+    }
+  }
+}
+
 // ── One-shot mode ─────────────────────────────────────────────────────────────
 if (ONCE) {
   (async () => {
@@ -226,93 +305,69 @@ if (ONCE) {
   // Start services on scheduler boot
   ensureServer().catch(console.error);
 
+  // All schedules run in true ET via node-cron's timezone option — no UK-local / DST hacks.
+  const TZ = { timezone: ET_TZ };
+
   // Fast pipeline: every 15 min, Mon-Fri, market hours only
   cron.schedule('*/15 * * * 1-5', async () => {
     if (!isMarketHours()) return;
     if (fastPipelineRunning) { console.log(`[${nowET()}] Fast pipeline still running, skipping`); return; }
     fastPipelineRunning = true;
-    try { await runJob('pipeline-fast.js', ['--watchlist']); }
-    catch (err) { console.error(`[${nowET()}] Fast pipeline error:`, err.message); }
+    try { await track('fast-pipeline', () => runJob('pipeline-fast.js', ['--watchlist'])); }
     finally { fastPipelineRunning = false; }
-  });
+  }, TZ);
 
   // Daily OI enrichment + watchlist + Firestore sync: 9:32am ET
-  // Using 13:32 UTC (summer) / 14:32 UTC (winter) — node-cron runs in local TZ
-  // Since machine is in UK (BST/GMT), use 14:32 for BST (= 9:32 ET in summer)
-  cron.schedule('32 14 * * 1-5', async () => {
-    if (dailyOIRanToday()) return;
-    await runDailyOISequence();
-  });
+  cron.schedule('32 9 * * 1-5', async () => {
+    if (dailyOIAllDone()) return;
+    await track('daily-oi', runDailyOISequence);
+  }, TZ);
 
   // Pre-market service check: 9:25am ET — ensure services are up before daily jobs
-  cron.schedule('25 14 * * 1-5', async () => {
+  cron.schedule('25 9 * * 1-5', async () => {
     console.log(`[${nowET()}] === Pre-market service check ===`);
     await ensureServer().catch(console.error);
-  });
+  }, TZ);
 
-  // Daily funnel: rank scanner signals → price top N → publish to tiles
-  // 10:00am ET = 15:00 BST (summer) / 15:00 GMT (winter) — after market open, chains populated
-  cron.schedule('0 15 * * 1-5', async () => {
-    const stamp = (() => { try { return fs.readFileSync(DAILY_FUNNEL_STAMP, 'utf8').trim(); } catch { return ''; } })();
-    if (stamp === todayET()) return; // already ran today
-    console.log(`[${nowET()}] === Daily Funnel: Rank → Price → Publish ===`);
-    const funnelScript = path.join(NEWLEAF_DIR, 'generaterecommendations', 'funnel-price.cjs');
-    if (fs.existsSync(funnelScript)) {
-      await runJob('../generaterecommendations/funnel-price.cjs').catch(console.error);
-      fs.writeFileSync(DAILY_FUNNEL_STAMP, todayET());
-    } else {
-      console.error(`[${nowET()}] funnel-price.cjs not found at ${funnelScript}`);
-    }
-  });
+  // Daily funnel: rank scanner signals → price top N → publish to tiles. 10:00am ET.
+  cron.schedule('0 10 * * 1-5', async () => {
+    if (jobStatus.ranOkToday('daily-funnel')) return;
+    await track('daily-funnel', runDailyFunnel);
+  }, TZ);
 
-  // Event calendar refresh (FMP): daily after market close, 4:15pm ET
-  // 4:15pm ET = 21:15 BST (summer) — DST shift cancels
-  cron.schedule('15 21 * * 1-5', async () => {
-    console.log(`[${nowET()}] === Event Calendar Refresh (Yahoo + FMP ex-div) ===`);
-    const script = path.join(NEWLEAF_DIR, 'scripts', 'refresh-event-calendar.js');
-    if (fs.existsSync(script)) {
-      await runJob('../scripts/refresh-event-calendar.js').catch(console.error);
-    } else {
-      console.error(`[${nowET()}] refresh-event-calendar.js not found at ${script}`);
-    }
-  });
+  // Event calendar refresh (Yahoo earnings + FMP ex-div): daily after market close, 4:15pm ET.
+  cron.schedule('15 16 * * 1-5', async () => {
+    if (jobStatus.ranOkToday('event-calendar')) return;
+    await track('event-calendar', runEventCalendar);
+  }, TZ);
 
-  // Canonical weekly premium snapshot: Fridays at 4:30pm ET
-  // 4:30pm ET = 21:30 BST (summer) / 21:30 GMT (winter) — both are cron '30 21'
-  // because US and UK DST shifts cancel out (EDT→BST = EST→GMT = +5h)
-  cron.schedule('30 21 * * 5', async () => {
-    if (weeklySnapRanThisWeek()) return;
-    await runWeeklySnapshot();
-  });
+  // Canonical weekly premium snapshot: Fridays at 4:30pm ET.
+  cron.schedule('30 16 * * 5', async () => {
+    if (jobStatus.ranOkThisWeek('weekly-snapshot')) return;
+    await track('weekly-snapshot', runWeeklySnapshot);
+  }, TZ);
 
-  // Health check: every 5 min — auto-restart any down services
-  // Also catches up daily OI if it was missed (e.g. machine was asleep at cron time)
+  // Weekly trend candidate snapshot (forward-test accrual): Fridays 4:35pm ET, after the premium snapshot.
+  cron.schedule('35 16 * * 5', async () => {
+    if (jobStatus.ranOkThisWeek('weekly-trend-candidates')) return;
+    await track('weekly-trend-candidates', runTrendCandidateSnapshot);
+  }, TZ);
+
+  // Health check: every 5 min — restart down services + monitor (re-run any missed daily/weekly job).
   cron.schedule('*/5 * * * *', async () => {
-    // Check and restart server.cjs if down
     if (!(await isServerRunning())) {
       console.log(`[${nowET()}] server.cjs down, restarting...`);
       await ensureServer().catch(console.error);
     }
-
-    // Catch-up: if daily OI hasn't run today and market is open, run it now
-    if (isMarketHours() && !dailyOIRanToday()) {
-      console.log(`[${nowET()}] Daily OI missed (machine was likely asleep) — running catch-up`);
-      await runDailyOISequence();
-    }
-
-    // Catch-up: weekly premium snapshot — if Friday or later and not yet captured this week
-    const dayET = new Date().toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/New_York' });
-    if (['Fri', 'Sat', 'Sun'].includes(dayET) && !weeklySnapRanThisWeek()) {
-      console.log(`[${nowET()}] Weekly premium snapshot missed — running catch-up for ${getISOWeekStr()}`);
-      await runWeeklySnapshot();
-    }
+    // Monitor: start any daily/weekly job that's past its scheduled time and hasn't succeeded.
+    await catchUpMissed().catch(e => console.error(`[${nowET()}] monitor error:`, e.message));
 
     // Run health check script (pipeline freshness, R2 status)
     const healthScript = path.join(__dirname, 'check-scheduler-health.sh');
     if (fs.existsSync(healthScript)) {
       spawn('bash', [healthScript], { cwd: __dirname, stdio: 'inherit' });
     }
-  });
+  }, TZ);
 
   // Cleanup child processes on scheduler exit
   function cleanup() {

@@ -261,7 +261,7 @@ export function StrategyDetailPage({ tiles, onOpenChat }) {
       <PhaseHeader currentPhase="defend" title={`${symbol} ${formatStrategy(strategy)}`} subtitle={verdict.reason} compact />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-        <button onClick={() => navigate('/invest/positions')} style={btnBack}>&larr; Positions</button>
+        <button onClick={() => navigate('/invest/defend')} style={btnBack}>&larr; Defend</button>
         <span style={{ color: '#d1d5db' }}>/</span>
         <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, color: '#6b7280' }}>{symbol}</span>
         <span style={{ color: '#d1d5db' }}>/</span>

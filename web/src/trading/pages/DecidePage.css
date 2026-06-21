@@ -1,0 +1,83 @@
+/* DecidePage — candidate detail (mock 05) */
+.dc-wrap { max-width:1240px;margin:0 auto;padding:0 28px 48px;font-family:'DM Sans',sans-serif;color:#172033 }
+.dc-title { font-family:'Fraunces',serif;font-weight:500;font-size:38px;margin:6px 0 4px }
+.dc-sub { margin:0;color:#6b7280;font-size:14px }
+.dc-breadcrumb { font-size:13px;color:#6b7280;padding:8px 0 6px }
+.dc-breadcrumb a { text-decoration:none;color:inherit }
+.dc-sep { margin:0 8px;color:#e8e2d8 }
+
+/* Stepper */
+.dc-stepper { display:flex;align-items:center;gap:0;margin:26px 0 18px }
+.dc-step { display:flex;flex-direction:column;align-items:center;gap:7px }
+.dc-step .dc-step-o { width:13px;height:13px;border-radius:50%;border:1.5px solid #e8e2d8;background:#fffdf8 }
+.dc-step.dc-done .dc-step-o { background:#062e22;border-color:#062e22;color:#fff;width:22px;height:22px;display:grid;place-items:center;font-size:11px;font-family:'Space Mono' }
+.dc-step.dc-cur .dc-step-o { border-color:#c9a96e;background:#c9a96e;width:18px;height:18px }
+.dc-step small { font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#6b7280;font-weight:500 }
+.dc-step.dc-done small,.dc-step.dc-cur small { color:#062e22 }
+.dc-seg { flex:1;height:1px;background:#e8e2d8;margin:0 8px 24px }
+
+/* Hero grid */
+.dc-hero-grid { display:grid;grid-template-columns:1.35fr 1fr;gap:18px;margin-top:8px }
+.dc-hero-dark { background:linear-gradient(160deg,#073827,#062e22);color:#eef3f0;border-radius:18px;padding:26px 28px }
+.dc-hero-row { display:flex;justify-content:space-between;align-items:flex-start;gap:20px }
+.dc-badges { display:flex;gap:8px;flex-wrap:wrap }
+.dc-hero-title { font-family:'Fraunces',serif;font-weight:500;font-size:38px;margin:16px 0 8px }
+.dc-spot { display:flex;align-items:center;gap:10px;font-family:'Space Mono',monospace;font-size:20px;margin-top:6px }
+.dc-spot-dot { width:9px;height:9px;border-radius:50%;background:#e0b34a;box-shadow:0 0 0 4px rgba(224,179,74,.18) }
+.dc-spot-delay { font-size:12px;color:#7f968c }
+.dc-ideal-entry { font-family:'Space Mono',monospace;font-size:13px;color:#9fb6ac;margin-top:6px }
+.dc-ideal-entry b { color:#eef3f0 }
+.dc-ie-ok { color:#8fc79e }
+.dc-ie-drift { color:#e0b34a }
+
+/* R:R block */
+.dc-rr-block { text-align:right }
+.dc-rr-cap { font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#9fb6ac }
+.dc-rr-big { font-family:'Space Mono',monospace;font-size:44px;font-weight:500;line-height:1.05;color:#eef3f0 }
+.dc-rr-math { margin-top:12px;background:rgba(255,255,255,.05);border:.5px solid rgba(255,255,255,.1);border-radius:12px;padding:11px 14px;font-family:'Space Mono',monospace;font-size:13px;text-align:right;line-height:1.8 }
+
+/* Verdict / sizer / actions */
+.dc-verdict { font-family:'Fraunces',serif;font-style:italic;font-size:18px;line-height:1.5;color:#d6e2db;margin:16px 0 18px;max-width:34em }
+.dc-sizer { display:flex;align-items:center;gap:12px;margin:4px 0 18px }
+.dc-sizer label { font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#9fb6ac }
+.dc-stepbtn { width:32px;height:32px;border-radius:8px;border:.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;font-size:18px;cursor:pointer }
+.dc-qtyval { font-family:'Space Mono',monospace;font-size:18px;min-width:34px;text-align:center }
+.dc-actions { display:flex;gap:10px;flex-wrap:wrap }
+.dc-btn { font-family:inherit;font-size:14px;font-weight:500;border-radius:11px;padding:13px 22px;border:0;cursor:pointer }
+.dc-btn-take { background:#1f9d6f;color:#fff }
+.dc-btn-ghost { background:rgba(255,255,255,.08);color:#eef3f0;border:.5px solid rgba(255,255,255,.16) }
+
+/* Summary card */
+.dc-summary { background:#fffdf8;border:.5px solid #e8e2d8;border-radius:18px;padding:24px 26px;box-shadow:0 16px 44px rgba(18,32,27,.06) }
+.dc-summary-top { display:flex;justify-content:space-between;align-items:flex-start }
+.dc-summary-title { font-family:'Fraunces',serif;font-weight:500;font-size:23px;margin:4px 0 0 }
+.dc-summary-lede { font-size:17px;font-weight:500;line-height:1.45;margin:16px 0 0 }
+.dc-callout { background:#edf8f3;border-left:3px solid #16835f;border-radius:0 10px 10px 0;padding:13px 16px;margin:16px 0;font-size:14px;color:#244e41 }
+.dc-srow { display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-top:.5px solid #f0ebe0;font-size:14px }
+.dc-srow-k { color:#6b7280 }
+.dc-srow-v { font-family:'Space Mono',monospace;font-weight:500 }
+
+/* Cards, metrics, lower */
+.dc-metrics { display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:18px }
+.dc-card { background:#fffdf8;border:.5px solid #e8e2d8;border-radius:18px;box-shadow:0 16px 44px rgba(18,32,27,.06) }
+.dc-gauge-card { margin-top:18px;padding:24px 26px }
+.dc-section-title { font-family:'Fraunces',serif;font-weight:500;font-size:21px;margin:2px 0 0 }
+.dc-lower { display:grid;grid-template-columns:1.55fr 1fr;gap:18px;margin-top:18px }
+.dc-rail-card { padding:20px 22px;margin-bottom:18px }
+
+/* Staleness banners */
+.dc-stale-banner { border-radius:10px;padding:12px 16px;margin:14px 0;font-size:14px;line-height:1.5;font-style:italic;font-family:'Fraunces',serif }
+.dc-stale-amber { background:#fff7e8;border:.5px solid #f0e0b8;color:#7a4a07 }
+.dc-stale-red { background:#fff1ef;border:.5px solid #ffd6d1;color:#7a2520 }
+.dc-stale-grey { background:#f0ebe0;border:.5px solid #e8e2d8;color:#6b7280 }
+.dc-btn-regen { background:#bd7c19;color:#fff;border:0;border-radius:11px;padding:13px 22px;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;display:inline-block;transition:opacity .15s }
+.dc-btn-regen:hover { opacity:.85 }
+.dc-callout-stale { background:#fff7e8;border-left-color:#bd7c19;color:#7a4a07 }
+
+/* Breakeven summary cards */
+.dc-be-card { background:#f7f3ea;border:.5px solid #e8e2d8;border-radius:8px;padding:10px 16px;min-width:120px }
+.dc-be-label { font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#6b7280;font-weight:500 }
+.dc-be-val { font-family:'Space Mono',monospace;font-size:16px;font-weight:700;margin-top:2px;color:#172033 }
+.dc-be-spot { margin-left:auto }
+
+@media(max-width:980px){.dc-hero-grid,.dc-lower{grid-template-columns:1fr}.dc-metrics{grid-template-columns:repeat(2,1fr)}.dc-hero-row{flex-direction:column}}

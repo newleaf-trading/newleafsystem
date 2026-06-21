@@ -143,208 +143,98 @@ async function getOptionChain(symbol, expiry) {
   return contracts;
 }
 
-// ── Gamma context from R2 ──────────────────────────────────────────────────
-async function getGammaContext(symbol) {
+// ── Gamma context + engine snapshot from R2 ──────────────────────────────────
+async function getR2Report(symbol) {
   try {
     const res = await fetch(`${R2_BASE}/reports/${symbol}/latest.json`, { signal: AbortSignal.timeout(10000) });
     if (!res.ok) return null;
-    const report = await res.json();
-    return report.gammaData?.analysis || null;
+    return await res.json();
   } catch { return null; }
 }
 
-// ── Strategy builders ────────────────────────────────────────────────────────
-function findClosest(contracts, target) {
-  if (!contracts.length) return null;
-  return contracts.reduce((best, c) => Math.abs(c.strike - target) < Math.abs(best.strike - target) ? c : best);
+function getGammaContext(report) {
+  return report?.gammaData?.analysis || null;
 }
 
-function erf(x) {
-  const sign = x >= 0 ? 1 : -1; x = Math.abs(x);
-  const t = 1.0 / (1.0 + 0.3275911 * x);
-  const y = 1.0 - (((((1.061405429 * t + -1.453152027) * t) + 1.421413741) * t + -0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
-  return sign * y;
-}
-
-function calcPoP(lower, upper, spot, iv, dte) {
-  if (!iv || !dte) return 0.5;
-  const sigma = spot * iv * Math.sqrt(dte / 365);
-  const zL = (lower - spot) / sigma, zU = (upper - spot) / sigma;
-  return 0.5 * (1 + erf(zU / Math.sqrt(2))) - 0.5 * (1 + erf(zL / Math.sqrt(2)));
-}
-
-function buildIronCondor(spot, calls, puts, expiry) {
-  const dte = Math.round((new Date(expiry) - new Date()) / 86400000);
-  const wing = Math.max(5, Math.round(spot * 0.05));
-
-  const shortPut  = findClosest(puts, spot * 0.90);
-  const shortCall = findClosest(calls, spot * 1.10);
-  const longPut   = findClosest(puts, shortPut.strike - wing);
-  const longCall  = findClosest(calls, shortCall.strike + wing);
-
-  if (!shortPut || !shortCall || !longPut || !longCall) throw new Error('Could not find all 4 legs');
-  if (longPut.strike >= shortPut.strike || longCall.strike <= shortCall.strike) throw new Error('Invalid strike structure');
-
-  const credit = (shortPut.mid - longPut.mid) + (shortCall.mid - longCall.mid);
-  if (credit <= 0) throw new Error(`Negative credit: ${credit.toFixed(2)}`);
-
-  const maxProfit = credit * 100;
-  const maxLoss = (Math.max(shortPut.strike - longPut.strike, longCall.strike - shortCall.strike) - credit) * 100;
-  const lowerBE = shortPut.strike - credit, upperBE = shortCall.strike + credit;
-  const iv = shortPut.iv || shortCall.iv || 0.3;
-  const pop = calcPoP(lowerBE, upperBE, spot, iv, dte);
-
+function buildEngineSnapshot(report) {
+  if (!report?.scoring || !report?.gammaData) return null;
+  const s = report.scoring;
+  const a = report.gammaData.analysis;
+  const t = report.technicalData;
   return {
-    strategy: 'Iron Condor', direction: 'neutral', expiry, dte,
-    legs: [
-      { action: 'BUY',  type: 'PUT',  strike: longPut.strike,   premium: longPut.mid,   delta: longPut.delta,   theta: longPut.theta,   vega: longPut.vega,   iv: longPut.iv },
-      { action: 'SELL', type: 'PUT',  strike: shortPut.strike,  premium: shortPut.mid,  delta: shortPut.delta,  theta: shortPut.theta,  vega: shortPut.vega,  iv: shortPut.iv },
-      { action: 'SELL', type: 'CALL', strike: shortCall.strike, premium: shortCall.mid, delta: shortCall.delta, theta: shortCall.theta, vega: shortCall.vega, iv: shortCall.iv },
-      { action: 'BUY',  type: 'CALL', strike: longCall.strike,  premium: longCall.mid,  delta: longCall.delta,  theta: longCall.theta,  vega: longCall.vega,  iv: longCall.iv },
-    ],
-    netCredit: credit, maxProfit, maxLoss,
-    rewardRisk: maxProfit / maxLoss,
-    oddsOfProfit: Math.round(pop * 100),
-    breakevens: { lower: lowerBE, upper: upperBE },
-    greeks: {
-      netDelta: (shortPut.delta||0) + (shortCall.delta||0) - (longPut.delta||0) - (longCall.delta||0),
-      netTheta: ((shortPut.theta||0) + (shortCall.theta||0) - (longPut.theta||0) - (longCall.theta||0)),
-      netVega:  ((shortPut.vega||0) + (shortCall.vega||0) - (longPut.vega||0) - (longCall.vega||0)),
-      netGamma: ((shortPut.gamma||0) + (shortCall.gamma||0) - (longPut.gamma||0) - (longCall.gamma||0)),
+    // What the engine decided
+    strategy: s.strategy?.code || null,
+    direction: s.direction || null,
+    score: s.opportunityScore || null,
+    pillars: s.pillars || null,
+
+    // Gate values that produced the decision
+    gates: {
+      condorGate: report.gammaData.condorGate?.condorAllowed || false,
+      bwbEligible: s.strategy?.code === 'broken_wing_butterfly',
+      directionalBlocked: (t?.trendEngine?.strength === 'weak' &&
+        t?.trendEngine?.direction !== 'neutral'),
+      calendarEligible: s.strategy?.code === 'calendar_spread',
     },
+
+    // Confidence components
+    confidence: {
+      blended: a?.confidence_score ?? null,
+      oi: a?.oi_confidence ?? null,
+      gex: a?.gex_confidence ?? null,
+      delta: a?.delta_confidence ?? null,
+      volume: a?.volume_confidence ?? null,
+    },
+
+    // Trend state
+    trend: {
+      direction: t?.trendEngine?.direction || null,
+      strength: t?.trendEngine?.strength || null,
+      adx: t?.adx14 ?? null,
+      rsi: t?.rsi ?? null,
+      trendScore: t?.trendEngine?.score ?? null,
+    },
+
+    // Vol state
+    vol: {
+      atmIv: report.gammaData.ivData?.atmIv ?? null,
+      realizedVol30d: t?.realizedVol30d ?? null,
+      ivRvRatio: (report.gammaData.ivData?.atmIv && t?.realizedVol30d)
+        ? +(report.gammaData.ivData.atmIv / (t.realizedVol30d * 100)).toFixed(2)
+        : null,
+      regime: t?.volatilityEngine?.regime || null,
+    },
+
+    // Walls
+    walls: {
+      putWall: a?.put_wall ?? null,
+      callWall: a?.call_wall ?? null,
+      bandWidth: a?.band_width_pct ?? null,
+    },
+
+    // Metadata
+    snapshotDate: report.meta?.date || null,
+    pipelineVersion: report.meta?.generatedBy || null,
   };
 }
 
-function buildIronButterfly(spot, calls, puts, expiry) {
-  const dte = Math.round((new Date(expiry) - new Date()) / 86400000);
-  const wing = Math.max(5, Math.round(spot * 0.05));
+// ── Shared pricing + validation (one set of builders for all writers) ────────
+const {
+  buildStrategy, buildIronCondor, buildIronButterfly,
+  buildBullPutSpread, buildBearCallSpread,
+  calcPoP, erf, findClosest,
+  validateTileForWrite, normalizeBuildResult, SUPPORTED_STRATEGIES,
+  applyPublishGate,
+} = require('./pricing-engine.cjs');
 
-  const shortPut  = findClosest(puts, spot);
-  const shortCall = findClosest(calls, spot);
-  const longPut   = findClosest(puts, spot - wing);
-  const longCall  = findClosest(calls, spot + wing);
+// NOTE: All builder functions (buildIronCondor, buildIronButterfly, etc.),
+// calcPoP, erf, findClosest, and buildStrategy are now imported from
+// pricing-engine.cjs — the single source of truth for pricing logic.
+// The inline copies have been removed to prevent drift.
 
-  if (!shortPut || !shortCall || !longPut || !longCall) throw new Error('Could not find all 4 legs');
-
-  const credit = (shortPut.mid - longPut.mid) + (shortCall.mid - longCall.mid);
-  if (credit <= 0) throw new Error(`Negative credit: ${credit.toFixed(2)}`);
-
-  const maxProfit = credit * 100;
-  const maxLoss = (wing - credit) * 100;
-  const lowerBE = shortPut.strike - credit, upperBE = shortCall.strike + credit;
-  const iv = shortPut.iv || shortCall.iv || 0.3;
-  const pop = calcPoP(lowerBE, upperBE, spot, iv, dte);
-
-  return {
-    strategy: 'Iron Butterfly', direction: 'neutral', expiry, dte,
-    legs: [
-      { action: 'BUY',  type: 'PUT',  strike: longPut.strike,   premium: longPut.mid,   delta: longPut.delta,   theta: longPut.theta,   vega: longPut.vega,   iv: longPut.iv },
-      { action: 'SELL', type: 'PUT',  strike: shortPut.strike,  premium: shortPut.mid,  delta: shortPut.delta,  theta: shortPut.theta,  vega: shortPut.vega,  iv: shortPut.iv },
-      { action: 'SELL', type: 'CALL', strike: shortCall.strike, premium: shortCall.mid, delta: shortCall.delta, theta: shortCall.theta, vega: shortCall.vega, iv: shortCall.iv },
-      { action: 'BUY',  type: 'CALL', strike: longCall.strike,  premium: longCall.mid,  delta: longCall.delta,  theta: longCall.theta,  vega: longCall.vega,  iv: longCall.iv },
-    ],
-    netCredit: credit, maxProfit, maxLoss,
-    rewardRisk: maxProfit / maxLoss,
-    oddsOfProfit: Math.round(pop * 100),
-    breakevens: { lower: lowerBE, upper: upperBE },
-    greeks: {
-      netDelta: (shortPut.delta||0) + (shortCall.delta||0) - (longPut.delta||0) - (longCall.delta||0),
-      netTheta: ((shortPut.theta||0) + (shortCall.theta||0) - (longPut.theta||0) - (longCall.theta||0)),
-      netVega:  ((shortPut.vega||0) + (shortCall.vega||0) - (longPut.vega||0) - (longCall.vega||0)),
-      netGamma: ((shortPut.gamma||0) + (shortCall.gamma||0) - (longPut.gamma||0) - (longCall.gamma||0)),
-    },
-  };
-}
-
-function buildBullPutSpread(spot, puts, expiry) {
-  const dte = Math.round((new Date(expiry) - new Date()) / 86400000);
-  const wing = Math.max(5, Math.round(spot * 0.05));
-
-  const shortPut = findClosest(puts, spot * 0.95);
-  const longPut  = findClosest(puts, shortPut.strike - wing);
-
-  if (!shortPut || !longPut) throw new Error('Could not find spread legs');
-  if (longPut.strike >= shortPut.strike) throw new Error('Invalid strike structure');
-
-  const credit = shortPut.mid - longPut.mid;
-  if (credit <= 0) throw new Error(`Negative credit: ${credit.toFixed(2)}`);
-
-  const width = shortPut.strike - longPut.strike;
-  const maxProfit = credit * 100;
-  const maxLoss = (width - credit) * 100;
-  const breakeven = shortPut.strike - credit;
-  const iv = shortPut.iv || 0.3;
-  const pop = 0.5 * (1 + erf((spot - breakeven) / (spot * iv * Math.sqrt(dte / 365)) / Math.sqrt(2)));
-
-  return {
-    strategy: 'Bull Put Spread', direction: 'bullish', expiry, dte,
-    legs: [
-      { action: 'BUY',  type: 'PUT', strike: longPut.strike,  premium: longPut.mid,  delta: longPut.delta,  theta: longPut.theta,  vega: longPut.vega,  iv: longPut.iv },
-      { action: 'SELL', type: 'PUT', strike: shortPut.strike, premium: shortPut.mid, delta: shortPut.delta, theta: shortPut.theta, vega: shortPut.vega, iv: shortPut.iv },
-    ],
-    netCredit: credit, maxProfit, maxLoss,
-    rewardRisk: maxProfit / maxLoss,
-    oddsOfProfit: Math.round(pop * 100),
-    breakevens: { lower: breakeven, upper: null },
-    greeks: {
-      netDelta: (shortPut.delta||0) - (longPut.delta||0),
-      netTheta: (shortPut.theta||0) - (longPut.theta||0),
-      netVega:  (shortPut.vega||0) - (longPut.vega||0),
-      netGamma: (shortPut.gamma||0) - (longPut.gamma||0),
-    },
-  };
-}
-
-function buildBearCallSpread(spot, calls, expiry) {
-  const dte = Math.round((new Date(expiry) - new Date()) / 86400000);
-  const wing = Math.max(5, Math.round(spot * 0.05));
-
-  const shortCall = findClosest(calls, spot * 1.05);
-  const longCall  = findClosest(calls, shortCall.strike + wing);
-
-  if (!shortCall || !longCall) throw new Error('Could not find spread legs');
-  if (longCall.strike <= shortCall.strike) throw new Error('Invalid strike structure');
-
-  const credit = shortCall.mid - longCall.mid;
-  if (credit <= 0) throw new Error(`Negative credit: ${credit.toFixed(2)}`);
-
-  const width = longCall.strike - shortCall.strike;
-  const maxProfit = credit * 100;
-  const maxLoss = (width - credit) * 100;
-  const breakeven = shortCall.strike + credit;
-  const iv = shortCall.iv || 0.3;
-  const pop = 0.5 * (1 + erf((breakeven - spot) / (spot * iv * Math.sqrt(dte / 365)) / Math.sqrt(2)));
-
-  return {
-    strategy: 'Bear Call Spread', direction: 'bearish', expiry, dte,
-    legs: [
-      { action: 'SELL', type: 'CALL', strike: shortCall.strike, premium: shortCall.mid, delta: shortCall.delta, theta: shortCall.theta, vega: shortCall.vega, iv: shortCall.iv },
-      { action: 'BUY',  type: 'CALL', strike: longCall.strike,  premium: longCall.mid,  delta: longCall.delta,  theta: longCall.theta,  vega: longCall.vega,  iv: longCall.iv },
-    ],
-    netCredit: credit, maxProfit, maxLoss,
-    rewardRisk: maxProfit / maxLoss,
-    oddsOfProfit: Math.round(pop * 100),
-    breakevens: { lower: null, upper: breakeven },
-    greeks: {
-      netDelta: (shortCall.delta||0) - (longCall.delta||0),
-      netTheta: (shortCall.theta||0) - (longCall.theta||0),
-      netVega:  (shortCall.vega||0) - (longCall.vega||0),
-      netGamma: (shortCall.gamma||0) - (longCall.gamma||0),
-    },
-  };
-}
-
-// Strategy router
-function buildStrategy(strategyName, spot, calls, puts, expiry) {
-  const name = strategyName.toLowerCase().replace(/[^a-z ]/g, '').trim();
-  if (name.includes('iron condor'))      return buildIronCondor(spot, calls, puts, expiry);
-  if (name.includes('iron butterfly'))   return buildIronButterfly(spot, calls, puts, expiry);
-  if (name.includes('bull put'))         return buildBullPutSpread(spot, puts, expiry);
-  if (name.includes('bear call'))        return buildBearCallSpread(spot, calls, expiry);
-  // Default: iron condor
-  log(`  ⚠ Unknown strategy "${strategyName}", defaulting to Iron Condor`);
-  return buildIronCondor(spot, calls, puts, expiry);
-}
+// All builder functions, calcPoP, erf, findClosest, buildStrategy, and
+// SUPPORTED_STRATEGIES are imported from pricing-engine.cjs above.
+// The inline copies have been deleted to prevent drift.
 
 // ── Claude CLI ──────────────────────────────────────────────────────────────
 // Reuses the prompt + call logic from analyse-tiles.cjs
@@ -451,13 +341,23 @@ async function main() {
     process.exit(1);
   }
 
-  // ── Step 3: Fetch gamma walls from R2 ──────────────────────────────────
-  log('  📡 Fetching gamma walls from R2...');
-  const gammaData = await getGammaContext(SYMBOL);
+  // ── Step 3: Fetch gamma walls + engine snapshot from R2 ──────────────────
+  log('  📡 Fetching report from R2...');
+  const r2Report = await getR2Report(SYMBOL);
+  const gammaData = getGammaContext(r2Report);
+  const engineSnapshot = buildEngineSnapshot(r2Report);
   if (gammaData) {
     log(`     Put wall: ${fmtP(gammaData.put_wall)}  Call wall: ${fmtP(gammaData.call_wall)}`);
   } else {
     log('     ⚠ No gamma data available (will proceed without)');
+  }
+  if (engineSnapshot) {
+    log(`     Engine: ${engineSnapshot.strategy} | ${engineSnapshot.direction} | score ${engineSnapshot.score}`);
+    if (engineSnapshot.strategy !== STRATEGY.toLowerCase().replace(/[^a-z_]/g, '_').replace(/ /g, '_')) {
+      log(`     ⚠ NOTE: Publishing "${STRATEGY}" but engine recommended "${engineSnapshot.strategy}" — override logged.`);
+    }
+  } else {
+    log('     ⚠ No engine snapshot (R2 report missing or stale)');
   }
 
   // ── Step 4: Build strategy ─────────────────────────────────────────────
@@ -467,36 +367,97 @@ async function main() {
   log(`     Credit: ${fmtP(result.netCredit)}/share  Max Profit: ${fmtP(result.maxProfit)}  Max Loss: ${fmtP(result.maxLoss)}`);
   log(`     R:R: ${result.rewardRisk.toFixed(2)}x  PoP: ${result.oddsOfProfit}%`);
 
-  // ── Step 5: Build tile ─────────────────────────────────────────────────
+  // ── Step 4b: Validate tile (canonical schema enforcement) ──────────────
   const tileId = randomUUID().replace(/-/g, '').slice(0, 20);
+
+  // PoP: null when not computable, never a fabricated fallback
+  const computedPoP = result.oddsOfProfit;
+  const oddsOfProfit = (typeof computedPoP === 'number' && computedPoP > 0) ? computedPoP : null;
+
+  // Breakevens: valid [lower, upper] or undefined — never []
+  const rawBE = result.breakevens;
+  const breakevens = (Array.isArray(rawBE) && rawBE.length === 2) ? rawBE
+    : (rawBE?.lower && rawBE?.upper) ? [rawBE.lower, rawBE.upper]
+    : undefined;
+
   const tile = {
     id: tileId,
     symbol: SYMBOL,
     strategy: result.strategy,
     direction: result.direction,
+
+    // Spot
     publishedSpotPrice: snapshot.price,
     underlyingPrice: snapshot.price,
-    currentPrice: snapshot.price,
-    price: snapshot.price,
-    priceChange: snapshot.change,
+
+    // Structure
     expiry: result.expiry,
-    dte: result.dte,
+    daysToExpiry: result.dte,
     legs: result.legs,
     greeks: result.greeks,
-    gammaData: gammaData || {},
+
+    // P&L (per-contract $)
     maxProfit: result.maxProfit,
     maxLoss: result.maxLoss,
     netCredit: result.netCredit,
     rewardRisk: result.rewardRisk,
-    oddsOfProfit: result.oddsOfProfit,
-    breakevens: result.breakevens,
+    oddsOfProfit,
+    breakevens,
+
+    // Context
+    gammaData: gammaData || {},
+    // Named confidence fields only — no generic 'confidence'
+    verdictConfidence: null,  // publish-pick has no adversarial verdict
+    wallConfidence: null,     // set from gamma data if available
+    aiInsight: null, // populated by LLM analysis step
+    engineSnapshot: engineSnapshot || null,
+
+    // Provenance (nested)
+    provenance: {
+      source: 'publish-pick',
+      generatedAt: new Date().toISOString(),
+      model: null,
+      commitSha: null,
+    },
+
+    // Lifecycle
     source: 'publish-pick',
     isActive: true,
     sortOrder: Date.now(),
-    confidence: result.oddsOfProfit || 50,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
   };
+
+  // Validate — refuse non-conforming tiles (mirrors validateTile rules)
+  if (!Array.isArray(result.legs) || result.legs.length < 2) {
+    log(`  ❌ Legs must have ≥ 2 entries, got ${result.legs?.length ?? 0}. Aborting.`);
+    process.exit(1);
+  }
+  const hasPricing = result.legs.some(l => (l.premium || 0) !== 0);
+  if (!hasPricing) {
+    log('  ❌ All leg premiums are $0 — option chain returned no prices. Aborting.');
+    process.exit(1);
+  }
+  if (!(tile.maxProfit > 0) || !(tile.maxLoss > 0)) {
+    log(`  ❌ Invalid P&L: maxProfit=${tile.maxProfit}, maxLoss=${tile.maxLoss}. Aborting.`);
+    process.exit(1);
+  }
+  if (!tile.expiry) {
+    log('  ❌ Missing expiry. Aborting.');
+    process.exit(1);
+  }
+  if (!(tile.underlyingPrice > 0)) {
+    log(`  ❌ Missing underlyingPrice. Aborting.`);
+    process.exit(1);
+  }
+
+  // Publish gate — reject if PoP below floor (publish-pick has no verdict)
+  const gate = applyPublishGate(tile);
+  if (!gate.pass) {
+    log(`  ❌ Publish gate rejected: ${gate.reason}. Aborting.`);
+    process.exit(1);
+  }
+  log(`  ✓ Publish gate: ${gate.tier}`);
 
   if (DRY_RUN) {
     log('');
@@ -507,9 +468,14 @@ async function main() {
     process.exit(0);
   }
 
-  // ── Step 6: Fetch sentiment ─────────────────────────────────────────────
+  // ── Step 6: Fetch sentiment (optional — non-fatal on failure) ───────────
   log('  🧠 Fetching sentiment via Claude web search...');
-  const sentiment = await fetchSentiment(SYMBOL);
+  let sentiment = null;
+  try {
+    sentiment = await fetchSentiment(SYMBOL);
+  } catch (sentErr) {
+    log(`  ⚠ Sentiment fetch failed: ${sentErr.message} — continuing without sentiment`);
+  }
   const sentMod = sentiment ? computeModifier(sentiment, tile.direction || 'neutral') : { action: 'none', points: 0, flags: [] };
   if (sentiment) {
     tile.sentiment = {
@@ -531,6 +497,39 @@ async function main() {
   const tileProvenanceOpts = { modelUsed: 'n/a', promptVersion: 'n/a', analysisSource: 'publish-pick' };
   await provenance.writeTileWithProvenance(db, tileId, tile, tileProvenanceOpts);
   log(`     tiles/${tileId} ✅`);
+
+  // ── Step 7b: Write recommendation_log (Layer 1 outcome tracking) ────────
+  // Separate collection for analytics — survives tile deletion.
+  // Captures the engine's decision state at publish time.
+  const recLog = {
+    tileId,
+    symbol: SYMBOL,
+    publishedStrategy: result.strategy,
+    publishedDirection: result.direction,
+    engineSnapshot: engineSnapshot || null,
+    override: engineSnapshot && engineSnapshot.strategy !== result.strategy.toLowerCase().replace(/\s+/g, '_'),
+    entry: {
+      spotAtEntry: snapshot.price,
+      expiry: result.expiry,
+      dte: result.dte,
+      netCredit: result.netCredit,
+      maxProfit: result.maxProfit,
+      maxLoss: result.maxLoss,
+      rewardRisk: result.rewardRisk,
+      oddsOfProfit: result.oddsOfProfit,
+      breakevens: result.breakevens,
+      legs: result.legs.map(l => ({ action: l.action, type: l.type, strike: l.strike, mid: l.premium, iv: l.iv })),
+    },
+    weekId,
+    publishedAt: admin.firestore.FieldValue.serverTimestamp(),
+    // Outcome fields — populated by update-pick-outcomes.js after expiry
+    outcome: null,           // WIN | LOSS | PARTIAL
+    actualPnl: null,
+    spotAtExpiry: null,
+    thesisScore: null,       // Layer 2: strategy-specific scoring (future)
+  };
+  await db.collection('recommendation_log').doc(tileId).set(recLog);
+  log(`     recommendation_log/${tileId} ✅`);
 
   // ── Step 8: Fetch computed indicators ────────────────────────────────────
   log('  📊 Fetching computed indicators from API...');

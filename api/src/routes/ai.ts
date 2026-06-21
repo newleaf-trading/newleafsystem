@@ -1,17 +1,18 @@
+// deploy marker: unify-v11 (Step 2 + debit verticals — bull_call_spread/bear_put_spread now buildable)
 import type { FastifyInstance } from 'fastify';
 import { requireTier } from '../middleware/rbac.js';
 import { LLMRouter, type ModelTier } from '../llm/router.js';
-import { StrategyAdvisor } from '../agents/advisor.js';
 import { getStockSnapshot, getOptionsSnapshot, getHistoricalBars } from '../tools/alpaca.js';
 import { computeIndicators } from '../tools/indicators.js';
 import { analyzeTechnicals, calcScore, getDirection, selectStrategy, reconcileDirection, analyzeGammaEnhanced } from '../tools/strategy-engine.js';
-import { fetchNasdaqOI, findGammaWalls } from '../tools/nasdaq-oi.js';
+import { fetchNasdaqOI, fetchYahooContracts, findGammaWalls } from '../tools/nasdaq-oi.js';
+import { buildDecision } from '../tools/decision-engine.js';
+import { computeReactionGate, applyReactionGate, type ReactionGate } from '../tools/reaction-features.js';
 import { buildLegs } from '../tools/leg-builder.js';
 import { aiReadCache, recommendCache } from '../lib/cache.js';
 import { createHash } from 'crypto';
 
 export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
-  const advisor = new StrategyAdvisor(llm);
 
   // POST /api/ai-read — premium tier (cached 5 min by ticker — same market state)
   fastify.post('/api/ai-read', { preHandler: [requireTier('premium')] }, async (req) => {
@@ -70,16 +71,34 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
 
     // Prepare contracts for gamma analysis (merge OI from Nasdaq)
     const dte = Math.max(0, Math.round((new Date(expiry).getTime() - Date.now()) / 86400000));
-    const enrichedContracts = contracts.map(c => ({
+    let enrichedContracts = contracts.map(c => ({
       ...c, dte, expiry, openInterest: (c as any).openInterest ?? 0,
     }));
 
-    // Merge Nasdaq OI into contracts
+    // Alpaca's indicative feed can return an empty/sparse chain (e.g. holiday-boundary expiries),
+    // and carries no OI/IV regardless. When that happens, source the full chain from Yahoo, which
+    // has strikes, bid/ask/mid, IV, and OI — everything the gamma engine + leg builder need.
+    if (enrichedContracts.length < 10) {
+      const yahooContracts = await fetchYahooContracts(tk, expiry, dte).catch((e: any) => {
+        console.warn(`[Recommend] Yahoo chain fallback failed for ${tk}/${expiry}: ${e.message}`);
+        return [] as typeof enrichedContracts;
+      });
+      if (yahooContracts.length) {
+        console.log(`[Recommend] Alpaca returned ${enrichedContracts.length} contracts for ${tk}; using ${yahooContracts.length} from Yahoo chain.`);
+        enrichedContracts = yahooContracts;
+      }
+    }
+
+    // Merge OI + IV into contracts. Alpaca's indicative feed returns no OI/greeks/IV, so
+    // openInterest and iv come from the Yahoo OI service — without this, gamma walls (OI/GEX)
+    // and atmIv are structurally 0 for every ticker.
     if (oiChain?.strikes) {
       for (const c of enrichedContracts) {
         const oiStrike = oiChain.strikes.find((s: any) => Math.abs(s.strike - c.strike) < 0.01);
         if (oiStrike) {
           c.openInterest = c.type === 'call' ? oiStrike.callOI : oiStrike.putOI;
+          const iv = c.type === 'call' ? oiStrike.callIv : oiStrike.putIv;
+          if ((c.iv == null || c.iv === 0) && iv != null && iv > 0) c.iv = iv;
         }
       }
     }
@@ -90,16 +109,55 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
     const strategy = selectStrategy(gammaData, trendDirection, snapshot.price, technicalData);
     const direction = reconcileDirection(trendDirection, strategy.code);
 
+    // ── Step 2 (engine unification): the SHARED reaction gate (same as movement-range + pipeline).
+    //    Runs the full S/R pipeline + mapBias with the falling-knife veto, then either vetoes
+    //    (trend into a zone), promotes a NEUTRAL gamma pick to the aligned directional spread, or
+    //    keeps the gamma pick. Distance (testing vs approaching) drives the decision tier.
+    let effStrategy = strategy.code;
+    let effDirection: 'bullish' | 'bearish' | 'neutral' = direction as any;
+    let reactionGate: ReactionGate | null = null;
+    let reactionNote: string | null = null;
+    let reactionChanged = false;
+    let reactionVeto = false;
+    let reactionApproaching = false;
+    try {
+      const atmIvR = gammaData.ivData?.atmIv || 0;
+      const rvR = technicalData.realizedVol30d ? technicalData.realizedVol30d * 100 : null;
+      reactionGate = computeReactionGate({
+        spot: snapshot.price, bars,
+        putWall: gammaData.analysis.put_wall ?? null, callWall: gammaData.analysis.call_wall ?? null,
+        sma50: technicalData.sma50 ?? null, sma100: technicalData.sma100 ?? null, sma200: technicalData.sma200 ?? null,
+        bbLower: (technicalData as any).bb?.lower ?? null, bbUpper: (technicalData as any).bb?.upper ?? null,
+        atrPct: (technicalData as any).atrPct ?? null, adx: technicalData.adx14 ?? null,
+        ivRv: (rvR && rvR > 0 && atmIvR > 0) ? atmIvR / rvR : null,
+        gammaConfidence: gammaData.analysis.confidence_score ?? 0,
+      });
+      const act = applyReactionGate(strategy.code, reactionGate);
+      if (act) {
+        reactionNote = act.note;
+        if (act.veto) {
+          reactionVeto = true;
+          console.log(`[Recommend] Reaction VETO (${tk}): ${act.note}`);
+        } else if (act.strategy) {
+          reactionChanged = true;
+          effStrategy = act.strategy;
+          effDirection = act.direction as 'bullish' | 'bearish';
+          reactionApproaching = !act.testing;
+          console.log(`[Recommend] Reaction gate (${tk}): ${strategy.code} → ${effStrategy} — ${act.note}`);
+        }
+      }
+    } catch (e: any) { console.warn(`[Recommend] reaction gate failed for ${tk}: ${e.message}`); }
+
     // Deterministic leg construction — replaces LLM strike picking
     const builtLegsResult = buildLegs({
-      strategy: strategy.code,
+      strategy: effStrategy,
       contracts: enrichedContracts,
       spot: snapshot.price,
       gammaWalls: {
         putWall: gammaData.analysis.put_wall ?? null,
         callWall: gammaData.analysis.call_wall ?? null,
       },
-      direction: direction as 'bullish' | 'bearish' | 'neutral',
+      direction: effDirection,
       dte,
       bwbStrikes: strategy.strikes,
     });
@@ -111,9 +169,9 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
       strategy: string; direction: string; score: number;
       pillars: typeof pillars; reasoningOverride?: any;
     } = {
-      strategy: strategy.code,
-      direction,
-      score: strategy.bwbBonus ? score + strategy.bwbBonus : score,
+      strategy: effStrategy,
+      direction: effDirection,
+      score: (!reactionChanged && strategy.bwbBonus) ? score + strategy.bwbBonus : score,
       pillars,
     };
 
@@ -136,268 +194,107 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
         reason: 'fallback — no earlier gate fired' },
     ];
 
-    // 2b. Reasoning LLM strategy selection
-    //     Triggers when: (a) engine hit fallback, OR (b) user toggled "AI Strategy Selection"
-    const { useLLMStrategy, strategyModel } = req.body as { useLLMStrategy?: boolean; strategyModel?: string; ticker: string; expiry: string; modelMode?: string };
-    const isFallback = strategy.code === 'iron_butterfly' && !gammaData.condorGate.condorAllowed;
-    const useReasoning = isFallback || useLLMStrategy;
+    // 2b. Deterministic decision (replaces the LLM strategy-selection step).
+    //     The engine already SELECTED + SCORED the strategy; here we classify the regime,
+    //     decide go/no-go from score + gates + data sufficiency, and build a risk plan — all
+    //     deterministically. An LLM is used only to NARRATE (eval page), never to decide.
+    const useReasoning = true; // a decision is always produced now
     let strategyPrompt = '';
-    if (useReasoning) {
-      const { getModel: gm } = await import('../llm/model-assignments.js');
-      const validModels = ['qwen-plus','qwen-max','qwen3-max','claude-sonnet','claude-haiku','gpt-4','gpt-5.5','grok','deepseek','deepseek-r1','gemini-pro','gemini-flash'] as const;
-      const requestedModel = strategyModel && validModels.includes(strategyModel as any) ? strategyModel as any : null;
-      const reasoningModel = requestedModel || gm('reasoning-thesis');
-      console.log(`[Recommend] ${useLLMStrategy ? 'AI Strategy Selection' : 'Engine fallback'} for ${tk}. Model: ${reasoningModel}`);
-      try {
-        // Compute indicators for LLM context (strategy selection only, no strike picking)
-        const ind = computeIndicators(bars, snapshot.price);
-        const sma20 = technicalData.sma20 ?? ind.sma20 ?? null;
-        const sma50 = technicalData.sma50 ?? ind.sma50 ?? null;
-        const ivRvRatio = (rvPct && rvPct > 0 && atmIvGate > 0) ? (atmIvGate / rvPct).toFixed(2) : 'N/A';
-        const expectedMove = technicalData.atr14 ? (technicalData.atr14 * Math.sqrt(dte)).toFixed(2) : 'N/A';
 
-        // Count how many deterministic gates passed
-        const passedGates = gateTrace.filter(g => g.gate !== 'iron_butterfly (fallback)' && g.passed).length;
+    const ind0 = computeIndicators(bars, snapshot.price);
+    const sma20d = technicalData.sma20 ?? ind0.sma20 ?? null;
+    const sma50d = technicalData.sma50 ?? ind0.sma50 ?? null;
+    const atrDollar = (technicalData as any).atr14 ?? ind0.atr14 ?? null;
+    const ivRvRatioNum = (rvPct && rvPct > 0 && atmIvGate > 0) ? +(atmIvGate / rvPct).toFixed(2) : null;
+    const noVolData = ivRvRatioNum === null && atrDollar === null;
+    const gammaReliable = conf >= 0.30;
+    const passedGates = gateTrace.filter(g => g.gate !== 'iron_butterfly (fallback)' && g.passed).length;
+    const hasOI = enrichedContracts.some(c => ((c as any).openInterest ?? 0) > 0);
+    const missingInputs = [ivRvRatioNum === null, !gammaReliable, !hasOI].filter(Boolean).length;
+    const pwall = gammaData.analysis.put_wall ?? null;
+    const cwall = gammaData.analysis.call_wall ?? null;
+    const spotInBand = pwall != null && cwall != null && snapshot.price > pwall && snapshot.price < cwall;
 
-        // Build OI summary for prompt
-        const strikeRange = snapshot.price * 0.10;
-        const oiStrikes = new Map<number, { strike: number; callOI: number; putOI: number }>();
-        for (const c of enrichedContracts) {
-          if (c.strike < snapshot.price - strikeRange || c.strike > snapshot.price + strikeRange) continue;
-          if (!oiStrikes.has(c.strike)) oiStrikes.set(c.strike, { strike: c.strike, callOI: 0, putOI: 0 });
-          const e = oiStrikes.get(c.strike)!;
-          if (c.type === 'call') e.callOI = (c as any).openInterest ?? 0;
-          else e.putOI = (c as any).openInterest ?? 0;
-        }
-        const sortedOI = [...oiStrikes.values()].sort((a, b) => a.strike - b.strike);
-        const oiSummary = sortedOI.slice(0, 10).map(s =>
-          `$${s.strike}: C-OI=${s.callOI} P-OI=${s.putOI}`
-        ).join(', ') || 'N/A';
+    // Legs are built from the engine's chosen strategy by the fail-closed builder above.
+    const detLegs = builtLegsResult.legs.map(l => ({
+      side: l.side, type: l.type, strike: l.strike, action: l.side === 'short' ? 'SELL' : 'BUY', qty: l.qty,
+    }));
 
-        // Engine candidate string
-        const engineCandidate = `${strategy.code} (${direction}), score ${score}/100. Gates: ${gateTrace.filter(g => g.gate !== 'iron_butterfly (fallback)').map(g => `${g.gate}=${g.passed ? 'PASS' : 'FAIL'}`).join(', ')}`;
+    const det = buildDecision({
+      spot: snapshot.price, dte,
+      strategy: effStrategy, direction: effDirection,
+      score: enginePick.score, passedGates,
+      adx: technicalData.adx14 ?? null, rsi: technicalData.rsi ?? null,
+      sma20: sma20d, sma50: sma50d, gammaReliable, spotInBand,
+      ivRvRatio: ivRvRatioNum, noVolData, missingInputs,
+      legsBuilt: detLegs.length >= 2,
+      putWall: pwall, callWall: cwall,
+      gammaConfidencePct: Math.round(conf * 100), bandWidthPct: bw,
+      reactionVeto, reactionApproaching, reactionNote,
+    });
+    const detNoTrade = det.decision === 'NO_TRADE' || det.decision === 'DATA_ERROR';
+    if (reactionChanged && !detNoTrade) det.dataFlags.push('reaction_promoted');
 
-        strategyPrompt = `You are a senior options strategist evaluating whether a defined-risk options trade is warranted. You choose the strategy type — legs are constructed deterministically downstream. Do NOT output strikes or legs.
+    // Fully deterministic — the rationale is the engine's template. No LLM is called anywhere
+    // in the recommendation path. (sm is accepted only to vary the cache key on the eval page.)
+    void sm;
+    const rationale = det.rationale + (reactionNote && !detNoTrade ? ` ${reactionNote}.` : '');
 
-MARKET DATA (authoritative — use exactly as given):
-- Ticker: ${tk}
-- Spot: ${snapshot.price.toFixed(2)}
-- DTE: ${dte} ${dte <= 3 ? '(very short — gamma risk extreme)' : dte <= 7 ? '(short — gamma risk high)' : dte <= 21 ? '(medium)' : '(longer)'}
-- Regime indicators: ADX ${technicalData.adx14?.toFixed(1) ?? 'N/A'}, RSI ${technicalData.rsi?.toFixed(1) ?? 'N/A'}, IV/RV ${ivRvRatio}, SMA20 ${sma20 ? sma20.toFixed(2) : 'N/A'}, SMA50 ${sma50 ? sma50.toFixed(2) : 'N/A'}
-- Key levels: put wall ${gammaData.analysis.put_wall ?? 'N/A'}, call wall ${gammaData.analysis.call_wall ?? 'N/A'}, gamma band ${gammaData.analysis.put_wall ?? '?'}–${gammaData.analysis.call_wall ?? '?'}, expected move ±${expectedMove}
-- Gamma confidence: ${(conf * 100).toFixed(0)}%, band width: ${bw.toFixed(1)}%
-- Liquidity / open interest: ${oiSummary}
-- Engine candidate: ${engineCandidate}
+    strategyPrompt = `DETERMINISTIC DECISION\n${det.decision} - ${effStrategy} (${det.direction})\nRegime: ${det.regime}\nScore: ${enginePick.score}/100 | gates passed: ${passedGates}${reactionNote ? `\nReaction: ${reactionNote}` : ''}\nFlags: ${det.dataFlags.join(', ') || 'none'}`;
 
-DECISION (return exactly one):
-- APPROVED_TRADE — strong setup, risk acceptable. Requires confidence >= 65.
-- WATCHLIST_TRADE — valid candidate but elevated risk. Confidence 40–64, or >=65 with one major risk flag.
-- NO_TRADE — no valid candidate (confidence < 40, or no coherent thesis).
-- DATA_ERROR — inputs missing/inconsistent.
+    const override: Record<string, any> = {
+      model: 'deterministic-engine',
+      decision: det.decision,
+      strategy: detNoTrade ? 'NO_TRADE' : effStrategy,
+      direction: enginePick.direction,
+      regime: det.regime,
+      reasoning: rationale,
+      confidence: detNoTrade ? 0 : Math.round(enginePick.score / 10),
+      suggestedLegs: detNoTrade ? [] : detLegs,
+      noTrade: detNoTrade || undefined,
+      noTradeReason: detNoTrade ? rationale : undefined,
+      rejectedAlternatives: det.rejectedAlternatives.length ? det.rejectedAlternatives : null,
+      killSwitch: det.riskPlan.kill || null,
+      profitTarget: det.riskPlan.target || null,
+      stopLoss: det.riskPlan.stop || null,
+      timeExit: det.riskPlan.time || null,
+      dataFlags: det.dataFlags.length ? det.dataFlags : undefined,
+    };
+    enginePick.reasoningOverride = override;
+    gateTrace.push({
+      gate: 'deterministic_decision',
+      passed: !detNoTrade,
+      reason: `${det.decision}: ${detNoTrade ? 'NO_TRADE' : effStrategy} (${det.direction}) score ${enginePick.score}/100 - ${det.regime}${reactionChanged ? ' [reaction→' + effStrategy + ']' : ''}${det.dataFlags.length ? ' [' + det.dataFlags.join(',') + ']' : ''}`,
+    });
 
-Do NOT default to NO_TRADE merely because deterministic gates failed. If a reasonable trade exists with elevated risk, return WATCHLIST_TRADE.
-${passedGates === 0 ? 'All deterministic gates FAILED. APPROVED_TRADE requires explicit gate override justification.' : `${passedGates} gate(s) passed.`}
-${dte <= 3 && passedGates === 0 ? 'DTE <= 3 with all gates failed: APPROVED_TRADE is NOT allowed.' : ''}
-
-STEP 1 — Regime (choose exactly one):
-Range-bound premium selling | Overbought mean-reversion | Oversold mean-reversion | Bullish trend continuation | Bearish trend continuation | No-trade / wait
-If regime = "No-trade / wait", decision MUST be NO_TRADE.
-
-STEP 2 — Strategy (choose one, do NOT specify strikes):
-iron_condor | iron_butterfly | broken_wing_butterfly | bull_put_spread | bear_call_spread | long_straddle | long_strangle
-
-STEP 3 — Risk plan:
-Provide target, stop, kill, and time-exit rules. Express as % of credit or price levels — NO dollar P&L figures.
-
-OUTPUT — return ONLY this JSON object (no markdown fences, no prose before or after):
-{"decision":"APPROVED_TRADE|WATCHLIST_TRADE|NO_TRADE|DATA_ERROR","regime":"<Step 1 label>","strategy":"iron_condor|iron_butterfly|broken_wing_butterfly|bull_put_spread|bear_call_spread|long_straddle|long_strangle|null","direction":"bullish|bearish|neutral","confidence":0,"rationale":"<= 80 words","risk_plan":{"target":"","stop":"","kill":"","time":""},"rejected_alternatives":[{"strategy":"","reason":""}],"data_flags":[]}
-
-HARD CONSTRAINTS:
-1. Do NOT include legs, strikes, anchors, max_profit, max_loss, breakevens, or net_credit.
-2. Use DTE = ${dte} exactly. If you cannot reconcile inputs, return DATA_ERROR.
-3. confidence is integer 0–100 (>=65 = approved gate).
-4. For NO_TRADE or DATA_ERROR, set strategy to null.`;
-
-        const raw = await llm.call(reasoningModel, {
-          system: 'You are a senior options strategist and risk manager. Provide independent judgment on whether a defined-risk options trade is warranted. Return JSON only — no prose, no markdown fences.',
-          user: strategyPrompt,
-          maxTokens: 1000,
-        });
-
-        // Parse JSON response
-        let cleaned = raw.trim();
-        const fm = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
-        if (fm) cleaned = fm[1].trim();
-        if (!cleaned.startsWith('{')) {
-          const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
-          if (s !== -1 && e !== -1) cleaned = cleaned.slice(s, e + 1);
-        }
-        const llmPick = JSON.parse(cleaned);
-
-        // Normalize v2 response to internal format
-        const decision = llmPick.decision || 'NO_TRADE';
-        const confRaw = llmPick.confidence ?? 0;
-        // Convert 0-100 confidence to 0-10 for internal use (v2 uses 0-100)
-        const conf10 = confRaw > 10 ? Math.round(confRaw / 10) : confRaw;
-        const rp = llmPick.risk_plan || {};
-
-        // Build legs deterministically from the LLM's strategy choice
-        let v2Legs: any[] = [];
-        let validationErrors: string[] = [];
-        if (llmPick.strategy && llmPick.strategy !== 'null' && llmPick.strategy !== null) {
-          const reasoningLegs = buildLegs({
-            strategy: llmPick.strategy,
-            contracts: enrichedContracts,
-            spot: snapshot.price,
-            gammaWalls: {
-              putWall: gammaData.analysis.put_wall ?? null,
-              callWall: gammaData.analysis.call_wall ?? null,
-            },
-            direction: (llmPick.direction || 'neutral') as 'bullish' | 'bearish' | 'neutral',
-            dte,
-            bwbStrikes: strategy.strikes,
-          });
-          if (reasoningLegs.meta.warnings.length) {
-            console.log(`[Recommend] Reasoning leg builder warnings: ${reasoningLegs.meta.warnings.join('; ')}`);
-          }
-          v2Legs = reasoningLegs.legs.map(l => ({
-            side: l.side,
-            type: l.type,
-            strike: l.strike,
-            action: l.side === 'short' ? 'SELL' : 'BUY',
-            qty: l.qty,
-          }));
-
-          // Self-validate deterministic legs
-          if (v2Legs.length > 0) {
-            try {
-              const { validateStrategy } = await import('../shared/validate.js');
-              const v = validateStrategy(llmPick.strategy, v2Legs.map(l => ({
-                action: l.action, type: l.type.toUpperCase(), strike: l.strike, qty: l.qty,
-              })));
-              if (!v.valid) {
-                validationErrors = v.errors;
-                console.warn(`[Recommend] Deterministic leg validation failed for ${llmPick.strategy}: ${v.errors.join('; ')}`);
-              }
-            } catch (ve) { console.warn('[Recommend] Validate import failed:', ve); }
-          }
-        }
-
-        // Server-side enforcement: regime consistency
-        if (llmPick.regime === 'No-trade / wait' && decision !== 'NO_TRADE') {
-          console.log(`[Recommend] Forcing NO_TRADE: regime "No-trade / wait" but decision was ${decision}`);
-          llmPick.decision = 'NO_TRADE';
-        }
-
-        // Server-side enforcement: confidence cap when all gates failed (65 -> 64 max in 0-100 scale)
-        if (passedGates === 0 && decision !== 'NO_TRADE' && confRaw >= 65) {
-          console.log(`[Recommend] Capping confidence from ${confRaw} to 64 (all gates failed)`);
-          llmPick.confidence = 64;
-        }
-
-        // Server-side enforcement: block APPROVED_TRADE when all gates failed
-        if (passedGates === 0 && decision === 'APPROVED_TRADE') {
-          console.log(`[Recommend] Downgrading APPROVED_TRADE to WATCHLIST_TRADE (all gates failed)`);
-          llmPick.decision = 'WATCHLIST_TRADE';
-        }
-
-        const finalDecision = llmPick.decision || decision;
-        const isNoTrade = finalDecision === 'NO_TRADE' || finalDecision === 'DATA_ERROR';
-
-        // Build unified reasoningOverride
-        const override: Record<string, any> = {
-          model: reasoningModel,
-          decision: finalDecision,
-          strategy: isNoTrade ? 'NO_TRADE' : (llmPick.strategy || null),
-          regime: llmPick.regime || null,
-          reasoning: llmPick.rationale || '',
-          confidence: isNoTrade ? 0 : conf10,
-          suggestedLegs: isNoTrade ? [] : v2Legs,
-          noTrade: isNoTrade || undefined,
-          noTradeReason: isNoTrade ? (llmPick.rationale || null) : undefined,
-          rejectedAlternatives: llmPick.rejected_alternatives || null,
-          validationErrors: validationErrors.length ? validationErrors : undefined,
-          killSwitch: rp.kill || null,
-          profitTarget: rp.target || null,
-          stopLoss: rp.stop || null,
-          timeExit: rp.time || null,
-          dataFlags: llmPick.data_flags?.length ? llmPick.data_flags : undefined,
-        };
-
-        if (!isNoTrade && override.strategy) {
-          console.log(`[Recommend] ${finalDecision}: ${override.strategy} (${llmPick.direction}) conf ${confRaw}/100 via ${reasoningModel}${validationErrors.length ? ' [VALIDATION FAILED: ' + validationErrors.join('; ') + ']' : ''}`);
-          enginePick = {
-            strategy: override.strategy,
-            direction: llmPick.direction || 'neutral',
-            score: Math.max(enginePick.score, conf10 * 10),
-            pillars,
-            reasoningOverride: override,
-          };
-          gateTrace.push({
-            gate: 'reasoning_override',
-            passed: !validationErrors.length,
-            reason: `[${reasoningModel}] ${finalDecision}: ${override.strategy} (${llmPick.direction}) conf ${confRaw}/100${validationErrors.length ? ' INVALID: ' + validationErrors[0] : ''}: ${(llmPick.rationale || '').slice(0, 200)}`,
-          });
-        } else {
-          console.log(`[Recommend] ${finalDecision}: ${llmPick.rationale || 'no reason'}`);
-          enginePick.reasoningOverride = override;
-          gateTrace.push({
-            gate: 'reasoning_override',
-            passed: false,
-            reason: `${finalDecision}: ${(llmPick.rationale || 'conditions unsuitable').slice(0, 200)}`,
-          });
-        }
-      } catch (err: any) {
-        console.warn('[Recommend] Reasoning strategy selection failed:', err.message);
-        gateTrace.push({ gate: 'reasoning_override', passed: false, reason: `LLM error: ${err.message}` });
-      }
-    }
-
-    // 3. Build summaries for LLM
+    // 3. Build the recommendation deterministically — NO LLM. Rationale is the engine template;
+    //    legs come from the fail-closed leg builder. The whole path is now model-free.
     const indicators = computeIndicators(bars, snapshot.price);
-    const technicalSummary = `RSI(14): ${indicators.rsi14} | ADX(14): ${indicators.adx14}\nSMA trend: ${indicators.smaTrend} | Price vs SMAs: ${indicators.priceVsSma}\nBollinger width: ${indicators.bollingerWidth}% | ATR(14): $${indicators.atr14}\nTrend strength: ${technicalData.trendEngine?.strength} | Vol regime: ${technicalData.volatilityEngine?.regime}`;
-
     const range = snapshot.price * 0.15;
+    llm.resetUsage();  // no model calls — cost reports as $0
 
-    let gammaSummary = '';
-    if (gammaData.analysis.walls_found !== false) {
-      gammaSummary = `\n## GAMMA WALLS\nPut wall: $${gammaData.analysis.put_wall} | Call wall: $${gammaData.analysis.call_wall}\nBand width: ${gammaData.analysis.band_width_pct?.toFixed(1)}% | Confidence: ${(gammaData.analysis.confidence_score * 100).toFixed(0)}%`;
-    }
-
-    // 4. LLM explains the engine's pick — legs are already built deterministically
-    llm.resetUsage();
-    const validModes = ['premium', 'budget-v3', 'budget-r1', 'budget-qwq'] as const;
-    const modelMode = validModes.includes(rm as any) ? rm as typeof validModes[number] : 'budget-qwq';
-
-    // Resolve which legs to use: reasoning override may have rebuilt for a different strategy
     const finalLegs = enginePick.reasoningOverride?.suggestedLegs?.length >= 2
       ? enginePick.reasoningOverride.suggestedLegs
       : builtLegsResult.legs;
 
-    let recommendation;
+    const ratioText = enginePick.reasoningOverride?.reasoning || '';
     const isNoTrade = enginePick.reasoningOverride?.noTrade === true;
-    if (isNoTrade) {
-      // NO_TRADE — skip advisor entirely
-      console.log(`[Recommend] NO_TRADE — skipping advisor`);
+    let recommendation: { strategies: any[]; marketRead: string };
+    if (isNoTrade || finalLegs.length < 2) {
       recommendation = {
         strategies: [],
-        marketRead: enginePick.reasoningOverride?.reasoning || 'No trade recommended.',
+        marketRead: ratioText || (isNoTrade ? 'No trade recommended.' : 'Could not construct legs for this setup.'),
       };
-    } else if (finalLegs.length >= 2) {
-      // Deterministic legs available — advisor only writes rationale
-      recommendation = await advisor.recommend({
-        ticker: tk, expiry, snapshot,
-        enginePick,
-        preBuiltLegs: finalLegs,
-        technicalSummary, gammaSummary,
-        modelMode,
-      });
     } else {
-      // Edge case: leg builder returned empty — use reasoning override text if available
-      console.warn(`[Recommend] No deterministic legs for ${tk} — returning reasoning text only`);
       recommendation = {
-        strategies: [],
-        marketRead: enginePick.reasoningOverride?.reasoning || 'Could not construct legs for this setup.',
+        strategies: [{
+          strategy: enginePick.strategy,
+          direction: enginePick.direction,
+          legs: finalLegs.map((l: any) => ({ type: l.type, side: l.side, strike: l.strike, qty: l.qty ?? 1 })),
+          rationale: ratioText,
+          score: enginePick.score,
+        }],
+        marketRead: ratioText,
       };
     }
 
@@ -463,10 +360,42 @@ HARD CONSTRAINTS:
       }
     }
 
+    // Step 5 (outcome tracking, Layer 1): persist a deterministic recommendation snapshot so the
+    // engine score can later be correlated to realized P&L. Fire-and-forget, non-blocking, and
+    // skipped for the eval page's per-model fanout (which passes strategyModel) to avoid dupes.
+    // Awaited (not fire-and-forget): Cloud Run can freeze the instance after the response
+    // returns, which would silently drop a backgrounded write. A Firestore add is ~50ms.
+    if (!sm) {
+      const ro = enginePick.reasoningOverride || {};
+      try {
+        const { getFirestore, FieldValue } = await import('firebase-admin/firestore');
+        await getFirestore('newleafdb').collection('recommendation_snapshots').add({
+          ticker: tk, expiry, dte,
+          spot: snapshot.price,
+          decision: ro.decision ?? null,
+          strategy: ro.noTrade ? null : enginePick.strategy,
+          direction: enginePick.direction,
+          regime: ro.regime ?? null,
+          score: enginePick.score,
+          confidence: ro.confidence ?? null,
+          pillars,
+          gateValues: engineSnapshot.gateValues,
+          legs: ro.suggestedLegs ?? [],
+          dataFlags: ro.dataFlags ?? [],
+          riskPlan: { target: ro.profitTarget ?? null, stop: ro.stopLoss ?? null, kill: ro.killSwitch ?? null, time: ro.timeExit ?? null },
+          createdAt: FieldValue.serverTimestamp(),
+        });
+        console.log(`[Recommend] snapshot persisted: ${tk} ${ro.decision} ${ro.noTrade ? '' : enginePick.strategy}`);
+      } catch (e: any) {
+        console.warn(`[Recommend] Snapshot persist failed for ${tk}: ${e.message}`);
+      }
+    }
+
     const response = {
       recommendation,
       enginePick,  // expose deterministic pick for transparency
       engineSnapshot,  // full gate values for Invest position logging
+      reactionFeatures: reactionGate,  // Step 2: shared S/R reaction gate result (advisory)
       snapshot,
       indicators,
       gammaAnalysis,

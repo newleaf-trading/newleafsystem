@@ -104,9 +104,26 @@ export function registerMarketRoutes(fastify: FastifyInstance, llm: LLMRouter) {
     const cached = gammaCache.get(cacheKey);
     if (cached) return { ...cached, cached: true };
     const snapshot = await getStockSnapshot(tk);
-    const analysis = await fetchFullGammaAnalysis(tk, expiry, snapshot.price);
-    const response = { analysis, spot: snapshot.price };
-    gammaCache.set(cacheKey, response);
+    let analysis;
+    let error: string | undefined;
+    try {
+      analysis = await fetchFullGammaAnalysis(tk, expiry, snapshot.price);
+    } catch (err: any) {
+      // Return degraded response instead of 500 — frontend can still show spot + partial data
+      console.error(`[gamma-analysis] Failed for ${tk}/${expiry}:`, err.message);
+      error = `OI service unavailable: ${err.message}`;
+      analysis = {
+        oiWalls: { putStrike: null, callStrike: null },
+        gexWalls: { putStrike: null, callStrike: null },
+        bandWidthPct: 0, positionInBandPct: 50,
+        confidenceScore: 0, oiConfidence: 0, volumeConfidence: 0, deltaConfidence: 0,
+        contractsAnalyzed: 0, atmIv: null, ivLevel: 'unknown' as const,
+        topStrikes: [], spotInsideBand: false,
+      };
+    }
+    const response = { analysis, spot: snapshot.price, ...(error ? { error } : {}) };
+    // Only cache successful responses — don't cache errors for 60 min
+    if (!error) gammaCache.set(cacheKey, response);
     return response;
   });
 

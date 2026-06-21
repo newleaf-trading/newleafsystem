@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NewLeaf — SEPA Trend Filter: Design Doc</title>
+  <style>
+    :root {
+      --forest: #0B2D23; --forest-mid: #1a5c44; --gold: #C9A96E;
+      --cream: #F7F5F0; --cream-dark: #EDE8DC; --ink: #0B0F14;
+      --ink-mid: #3d3d35; --ink-muted: #6b6b60; --ink-faint: #9b9b8e;
+      --white: #fff; --border: rgba(15,61,46,.12);
+      --teal: #0d6e56; --teal-bg: #e0f2ec; --teal-text: #07473a;
+      --green: #1a8c5e; --yellow: #d97706; --red: #c0392b;
+      --blue: #2563eb; --blue-bg: #e0f2fe; --blue-text: #075985;
+      --purple: #7c3aed; --purple-bg: #ede9fe; --purple-text: #5b21b6;
+      --mono: 'Space Mono', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--cream); color: var(--ink); line-height: 1.7; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 48px 32px 80px; }
+    h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 32px; font-weight: 700; color: var(--forest); margin-bottom: 4px; }
+    .subtitle { font-size: 14px; color: var(--ink-muted); margin-bottom: 24px; }
+    h2 { font-size: 20px; font-weight: 700; color: var(--forest); margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    h3 { font-size: 15px; font-weight: 700; color: var(--ink); margin: 24px 0 10px; }
+    h4 { font-size: 13px; font-weight: 700; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 20px 0 8px; }
+    p { font-size: 14px; color: var(--ink-mid); margin-bottom: 12px; }
+    ul, ol { padding-left: 24px; margin-bottom: 12px; }
+    li { font-size: 14px; color: var(--ink-mid); margin-bottom: 6px; }
+    strong { color: var(--ink); }
+    code { font-family: var(--mono); font-size: 12px; background: var(--cream-dark); padding: 2px 6px; border-radius: 3px; color: var(--forest); }
+    pre { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; margin: 12px 0; font-size: 12px; font-family: var(--mono); line-height: 1.6; color: var(--ink-mid); }
+    a { color: var(--teal); }
+
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+    th { background: var(--cream-dark); color: var(--ink); padding: 8px 12px; text-align: left; font-weight: 600; font-size: 12px; vertical-align: top; }
+    td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--ink-mid); vertical-align: top; }
+    tr:hover td { background: rgba(13,110,86,0.02); }
+
+    .tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-right: 4px; white-space: nowrap; }
+    .tag-new { background: var(--teal-bg); color: var(--teal-text); }
+    .tag-old { background: var(--cream-dark); color: var(--ink-muted); }
+    .tag-done { background: #dcfce7; color: #166534; }
+    .tag-wip { background: #fef3c7; color: #92400e; }
+    .tag-block { background: #fee2e2; color: #991b1b; }
+
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin: 16px 0; }
+    .card-title { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--teal); margin-bottom: 10px; }
+
+    .callout { background: rgba(13,110,86,0.05); border: 1px solid rgba(13,110,86,0.15); border-radius: 8px; padding: 14px 18px; margin: 16px 0; }
+    .callout-title { font-weight: 700; font-size: 13px; color: var(--teal); margin-bottom: 4px; }
+    .callout.warn { background: #fffbeb; border-color: rgba(217,119,6,.3); }
+    .callout.warn .callout-title { color: var(--yellow); }
+    .callout.danger { background: #fef2f2; border-color: rgba(192,57,43,.3); }
+    .callout.danger .callout-title { color: var(--red); }
+
+    .pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 20px; }
+    .pill { font-family: var(--mono); font-size: 11px; padding: 4px 10px; border-radius: 20px; background: var(--white); border: 1px solid var(--border); color: var(--ink-muted); }
+
+    .arch { margin: 24px 0; }
+    .arch-title { font-family: var(--mono); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); margin-bottom: 12px; }
+    .arch-row { display: flex; align-items: stretch; min-height: 56px; }
+    .arch-label { width: 130px; flex-shrink: 0; display: flex; align-items: center; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted); padding-right: 12px; }
+    .arch-boxes { flex: 1; display: flex; gap: 6px; padding: 4px 0; flex-wrap: wrap; align-items: center; }
+    .arch-box { padding: 10px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; border: 1px solid; display: flex; flex-direction: column; gap: 2px; min-width: 140px; }
+    .arch-box .ab-name { font-weight: 700; font-size: 12px; }
+    .arch-box .ab-detail { font-size: 10px; opacity: 0.75; }
+    .box-pure { background: #f0fdf4; border-color: #16a34a; color: #166534; }
+    .box-io { background: var(--blue-bg); border-color: var(--blue); color: var(--blue-text); }
+    .box-data { background: var(--purple-bg); border-color: var(--purple); color: var(--purple-text); }
+    .box-old { background: var(--white); border-color: var(--border); color: var(--ink-mid); }
+    .arch-arrow { display: flex; align-items: center; justify-content: center; padding: 4px 0; }
+    .arch-arrow-line { width: 2px; height: 18px; background: var(--border); position: relative; }
+    .arch-arrow-line::after { content: ''; position: absolute; bottom: -4px; left: -4px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid var(--border); }
+    .arch-arrow-label { font-size: 10px; color: var(--ink-faint); margin-left: 12px; font-family: var(--mono); }
+
+    .verdict-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 16px 0; }
+    .verdict { border-radius: 10px; padding: 16px; border: 1px solid; }
+    .v-aligned { background: #f0fdf4; border-color: #16a34a; }
+    .v-neutral { background: var(--cream-dark); border-color: var(--border); }
+    .v-conflicted { background: #fef2f2; border-color: #c0392b; }
+    .verdict h4 { margin-top: 0; color: var(--ink); }
+    .verdict .vmath { font-family: var(--mono); font-size: 12px; margin-top: 6px; color: var(--ink); }
+
+    .toc { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 18px 22px; margin: 24px 0 8px; }
+    .toc ol { margin-bottom: 0; } .toc a { text-decoration: none; } .toc a:hover { text-decoration: underline; }
+
+    @media (max-width: 768px) { .verdict-grid { grid-template-columns: 1fr; } .arch-row { flex-direction: column; } .arch-label { width: auto; padding-bottom: 4px; } }
+    @media print { body { background: white; } a { color: var(--ink); } }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+
+<h1>SEPA Trend Filter</h1>
+<p class="subtitle">A deterministic Minervini-style trend overlay that judges reversion-engine candidates — what we built, and how it differs from the reversion-only scanner.</p>
+
+<div class="pill-row">
+  <span class="pill">Status: Forward-test accruing</span>
+  <span class="pill">Branch: sepa-trend-filter</span>
+  <span class="pill">Deployed: no (local only)</span>
+  <span class="pill">Date: 2026-06-20</span>
+</div>
+
+<div class="callout">
+  <div class="callout-title">TL;DR</div>
+  <p style="margin-bottom:0">The Movement &amp; Range scanner is a <strong>reversion</strong> engine — it scores support/resistance zones by how reliably they've held and suggests selling premium against them. Its blind spot: it has <em>no opinion on the trend carrying price into the zone</em>, so it ranks a support sitting in a multi-year downtrend (TLT, NVO) as a top bull-put-spread candidate — a falling knife. We added a <strong>deterministic SEPA trend template</strong> that <em>judges</em> existing candidates (it does not generate new ones): each gets a verdict — <strong>aligned</strong> (endorse), <strong>neutral</strong> (unchanged), or <strong>conflicted</strong> (demote the knife). It's pure, LLM-free in its decision, and its penalty multipliers are <strong>unvalidated placeholders</strong> being tuned by a forward-test, not yet wired into any live surface.</p>
+</div>
+
+<div class="toc">
+  <ol>
+    <li><a href="#problem">The problem: a reversion engine blind to trend</a></li>
+    <li><a href="#built">What we built: the trend overlay</a></li>
+    <li><a href="#diff">How it differs from the previous approach</a></li>
+    <li><a href="#arch">Architecture</a></li>
+    <li><a href="#decisions">Key design decisions</a></li>
+    <li><a href="#validation">Validation: why forward-test, not backtest</a></li>
+    <li><a href="#phases">Build phases</a></li>
+    <li><a href="#status">Current status &amp; what's deployed</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="problem">1. The problem: a reversion engine blind to trend</h2>
+<p>The existing engine (<code>shared/reaction/</code> v2, surfaced in <code>workbench/movement-range.html</code>) is deterministic and good at what it does:</p>
+<ul>
+  <li>Clusters support/resistance levels (gamma walls, moving averages, swings) into <strong>zones</strong>.</li>
+  <li>Scores each zone by touch-count and <strong>Wilson-smoothed hold-rate</strong> — "how reliably has this level held?"</li>
+  <li>Produces a composite <code>setupQuality</code> (0–100) and suggests a premium-selling structure (bull-put-spread at support, etc.).</li>
+</ul>
+<div class="callout danger">
+  <div class="callout-title">The blind spot</div>
+  <p style="margin-bottom:0">It judges the <em>zone</em>, never the <em>trend carrying price into the zone</em>. A support with a great historical hold-rate that now sits in a sustained downtrend gets ranked as a top "Tradeable" bull-put candidate — exactly the falling-knife trade a premium seller must avoid. There was already an <em>approach-velocity</em> guard (caps score when price reaches a zone faster than 3×ATR), but that catches a fast <em>arrival</em>, not a slow multi-month <em>trend</em>.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="built">2. What we built: the trend overlay</h2>
+<p>A pure, deterministic <strong>SEPA-style trend template</strong> (Minervini) in <code>shared/trend/trend-template.cjs</code>. It is an <strong>overlay</strong>: <code>computeTrendTemplate({ bars, benchmarkBars, … })</code> consumes a candidate's price history plus a benchmark and emits a verdict. It generates nothing.</p>
+
+<h4>Six gating checks (all from price; SMAs reused from <code>shared/indicators</code>, never re-implemented)</h4>
+<table>
+  <thead><tr><th>Check</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>maStack</code></td><td>SMA50 &gt; SMA150 &gt; SMA200 (orderly stack)</td></tr>
+    <tr><td><code>priceAboveStack</code></td><td>close &gt; SMA50 and &gt; SMA200</td></tr>
+    <tr><td><code>ma200Rising</code></td><td>SMA200 today &gt; SMA200 ~20 bars ago</td></tr>
+    <tr><td><code>rsPositive</code></td><td>relative strength vs benchmark positive <em>and rising</em></td></tr>
+    <tr><td><code>near52wHigh</code> / <code>off52wLow</code></td><td>within 25% of the 1y high / ≥25% above the 1y low</td></tr>
+    <tr><td><code>vcpActive</code></td><td>volatility-contraction base: pullbacks tightening + volume drying</td></tr>
+  </tbody>
+</table>
+
+<h4>The verdict</h4>
+<div class="verdict-grid">
+  <div class="verdict v-aligned">
+    <h4>aligned — endorse</h4>
+    <p style="margin:0">All four up-core checks hold (stack, price above, SMA200 rising, RS positive).</p>
+    <div class="vmath">SQ + alignBonus (+5)</div>
+  </div>
+  <div class="verdict v-neutral">
+    <h4>neutral — unchanged</h4>
+    <p style="margin:0">No trend opinion. If a VCP base is tightening, premium is discounted (imminent expansion).</p>
+    <div class="vmath">SQ × vcpNeutralMult (0.85)<br>else unchanged</div>
+  </div>
+  <div class="verdict v-conflicted">
+    <h4>conflicted — demote</h4>
+    <p style="margin:0">Any 3 of 4 down-core (inverted stack, below SMA200, RS negative, SMA200 falling) — the falling knife.</p>
+    <div class="vmath">SQ × conflictMult (0.6)</div>
+  </div>
+</div>
+<p>The verdict scales the engine's existing <code>setupQuality</code> via <code>adjustedSetupQuality(originalSQ)</code> — it never invents a score, it only re-weights the one the reversion engine already produced.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="diff">3. How it differs from the previous approach</h2>
+<table>
+  <thead><tr><th style="width:20%">Dimension</th><th style="width:40%"><span class="tag tag-old">PREVIOUS</span> Reversion engine</th><th style="width:40%"><span class="tag tag-new">NEW</span> Trend overlay</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Role</strong></td><td>Generates candidates (zones → strategy)</td><td>Judges existing candidates — adds no new ones</td></tr>
+    <tr><td><strong>Question asked</strong></td><td>"Has this zone held historically?"</td><td>"Is the trend carrying price into the zone friendly to the short side?"</td></tr>
+    <tr><td><strong>Trend awareness</strong></td><td>None — the blind spot</td><td>Core: MA stack, SMA200 slope, relative strength, 52w position</td></tr>
+    <tr><td><strong>Falling knife (TLT/NVO)</strong></td><td>Ranked as a top bull-put candidate</td><td>Flagged <code>conflicted</code> → demoted (multiplicatively)</td></tr>
+    <tr><td><strong>Penalty shape</strong></td><td>Flat caps (e.g. cap at 64)</td><td>Multiplicative — punishes the highest-SQ knives hardest, where the danger concentrates</td></tr>
+    <tr><td><strong>Decision maker</strong></td><td>Deterministic zones (and an LLM in Discover Pro)</td><td>Deterministic verdict; the LLM only <em>narrates</em> it</td></tr>
+    <tr><td><strong>Output</strong></td><td><code>setupQuality</code></td><td><code>adjustedSetupQuality</code> (verdict-scaled) + verdict + checks + overlap</td></tr>
+    <tr><td><strong>Validation</strong></td><td>Discriminates, but not outcome-validated</td><td>Forward-test with train/holdout, mandatory leakage guard, null-result allowed</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <div class="callout-title">Reuses the Discover Pro discipline, fixes its failure mode</div>
+  <p style="margin-bottom:0">It keeps the patterns that worked — <strong>deterministic decides, LLM narrates</strong>, and <strong>inject the verdict as authoritative ground truth</strong> (the MACD-fix pattern) — and explicitly guards against the <strong>regime double-counting</strong> class from Discover Pro: when both the new trend penalty and the existing approach-velocity guard fire on the same knife, the module emits an <code>overlap</code> flag so the redundancy can be measured rather than silently charging the same risk twice.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="arch">4. Architecture</h2>
+<p>Three layers. The math is pure and side-effect-free; all I/O lives at the edges.</p>
+
+<div class="arch">
+  <div class="arch-title">Trend filter — layers</div>
+  <div class="arch-row">
+    <div class="arch-label">Pure core</div>
+    <div class="arch-boxes">
+      <div class="arch-box box-pure"><div class="ab-name">trend-template.cjs</div><div class="ab-detail">verdict · checks · overlap · adjustedSQ</div></div>
+      <div class="arch-box box-old"><div class="ab-name">shared/indicators</div><div class="ab-detail">SMA (reused)</div></div>
+      <div class="arch-box box-old"><div class="ab-name">shared/reaction</div><div class="ab-detail">setupQuality (canonical)</div></div>
+    </div>
+  </div>
+  <div class="arch-arrow"><div class="arch-arrow-line"></div><div class="arch-arrow-label">bars in, verdict out — no fetch/clock</div></div>
+  <div class="arch-row">
+    <div class="arch-label">I/O edge</div>
+    <div class="arch-boxes">
+      <div class="arch-box box-io"><div class="ab-name">trend.cjs (CLI)</div><div class="ab-detail">Alpaca fetch · --json · --narrate</div></div>
+      <div class="arch-box box-io"><div class="ab-name">candidate-snapshot</div><div class="ab-detail">reads pipeline reports → dated store</div></div>
+      <div class="arch-box box-io"><div class="ab-name">trend-backtest (labeller)</div><div class="ab-detail">Alpaca bars → breach/MAE</div></div>
+    </div>
+  </div>
+  <div class="arch-arrow"><div class="arch-arrow-line"></div><div class="arch-arrow-label">accrue weekly · label after maturity</div></div>
+  <div class="arch-row">
+    <div class="arch-label">Forward store</div>
+    <div class="arch-boxes">
+      <div class="arch-box box-data"><div class="ab-name">trend-candidates/{ISO-week}.json</div><div class="ab-detail">local · version-stamped · outcomes filled forward</div></div>
+    </div>
+  </div>
+</div>
+
+<ul>
+  <li><strong>CLI</strong> — <code>newleaf trend &lt;SYMBOL&gt;</code>: fetches split-adjusted daily OHLC from <strong>Alpaca</strong> (universe-wide; one price basis with the pipeline + labeller), prints the deterministic block, <code>--json</code>, and <code>--narrate</code> (routed to <strong>qwen-flash</strong>, validated to forbid digits/contradictions, with a templated fallback).</li>
+  <li><strong>Instrumentation</strong> — <code>trend-candidate-snapshot.cjs</code>: mirrors the production reaction orchestration (<code>movement-range.html</code>) call-for-call so the persisted <code>setupQuality</code> can't drift from the scanner; writes a dated, version-stamped candidate store.</li>
+  <li><strong>Labeller</strong> — <code>trend-backtest.cjs</code>: once a candidate matures (≥21 trading days), labels the underlying-path outcome (<em>breached</em> / MAE in ATR / <em>held</em>) from Alpaca bars, pinned to the same split-adjusted price basis.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="decisions">5. Key design decisions</h2>
+<div class="card">
+  <div class="card-title">Asymmetric verdict</div>
+  <p style="margin-bottom:0">Endorsement is expensive (<strong>all four</strong> up-core checks), demotion is eager (<strong>3 of 4</strong> down-core). The 3-of-4 lets <code>conflicted</code> fire <em>before</em> SMA200 rolls over (the lagging member), so falling knives are flagged early rather than late.</p>
+</div>
+<div class="card">
+  <div class="card-title">Multiplicative penalty, not flat</div>
+  <p style="margin-bottom:0">A flat penalty under-punishes the highest-scoring knives — the most dangerous ones. A multiplier scales with the candidate's own score. <code>conflictMultiplier</code> and <code>vcpNeutralMultiplier</code> are <strong>placeholders</strong> (0.6 / 0.85) until the forward-test sets them; <code>alignBonus</code> stays additive so endorsement can't inflate a score.</p>
+</div>
+<div class="card">
+  <div class="card-title">VCP suppresses neutral premium only</div>
+  <p style="margin-bottom:0">A tightening base under a <em>neutral</em> verdict signals imminent expansion — the worst entry for a premium seller — so it discounts the score. Under <em>aligned</em>, an upside breakout helps a bull-put, so VCP is deliberately not penalized there.</p>
+</div>
+<div class="card">
+  <div class="card-title">Overlap instrumentation (measure, don't guess)</div>
+  <p style="margin-bottom:0">The module never imports <code>score.cjs</code>; the caller passes <code>velocityGuardFired</code>, and the module emits <code>overlap = conflicted &amp;&amp; velocityGuardFired</code>. Whether to suppress one penalty when both fire is a Phase-3 decision driven by data — Phase 2 only measures.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="validation">6. Validation: why forward-test, not backtest</h2>
+<div class="callout danger">
+  <div class="callout-title">The retrospective backtest is impossible</div>
+  <p style="margin-bottom:0">The reaction engine's <code>setupQuality</code> is computed live (scanner UI / tests) but <strong>never persisted</strong> to any dated store. Reconstructing it from EOD can't reproduce the zone/IV/OI inputs and would breach the consistency bar. So there is no historical candidate stream to backtest against — the study must run <strong>forward</strong>.</p>
+</div>
+<p>The forward-test therefore:</p>
+<ul>
+  <li><strong>Accrues</strong> a faithful candidate snapshot every Friday (version-stamped, so weeks where scoring drifts can be segmented out).</li>
+  <li><strong>Labels</strong> each candidate only after its 21-trading-day window matures — outcomes are <code>null</code> until then.</li>
+  <li><strong>No lookahead:</strong> template inputs strictly pre-signal, outcome inputs strictly post-signal — enforced by a <strong>mandatory leakage test</strong> (green now, before any real data) that includes an adversarial control proving the window filter is load-bearing.</li>
+  <li><strong>Train/holdout, not fit-to-noise:</strong> the multiplier sweep (deferred until n≥100) sets values on an earlier half and validates on a later half; a multiplier that only works in-sample is noise.</li>
+  <li><strong>Can return null:</strong> if <code>conflicted</code> doesn't breach more than <code>aligned</code> <em>within a fixed setupQuality band</em>, the filter is redundant there and we say so — no tuning until signal appears.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="phases">7. Build phases</h2>
+<table>
+  <thead><tr><th style="width:14%">Phase</th><th>What</th><th style="width:14%">State</th></tr></thead>
+  <tbody>
+    <tr><td><strong>1</strong></td><td>Pure module + tests — verdict logic, no wiring</td><td><span class="tag tag-done">DONE</span></td></tr>
+    <tr><td><strong>2</strong></td><td>Approved revisions (asymmetric verdict, multiplicative penalty, VCP rewire, overlap) + read-only CLI + qwen-flash narration. 43 assertions.</td><td><span class="tag tag-done">DONE</span></td></tr>
+    <tr><td><strong>3</strong></td><td>Validation backtest — hit the "no persisted setupQuality" blocker; pivoted to forward-test by decision</td><td><span class="tag tag-block">BLOCKED → pivot</span></td></tr>
+    <tr><td><strong>3b</strong></td><td>Accrual schedule (additive Friday job, version-stamped) + outcome labeller + leakage test (13 assertions, green) + overlap co-occurrence</td><td><span class="tag tag-done">DONE</span></td></tr>
+    <tr><td><strong>Deferred</strong></td><td>Cohort comparison, setupQuality bands, train/holdout sweep, <code>vcpNeutralMultiplier</code> study, overlap dedup — stubbed "n too low — accruing"</td><td><span class="tag tag-wip">ACCRUING</span></td></tr>
+    <tr><td><strong>Parked</strong></td><td>Advisory/shadow display of the verdict in the selector/UI — crosses the UI gate, separate decision</td><td><span class="tag tag-wip">PARKED</span></td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="status">8. Current status &amp; what's deployed</h2>
+<div class="callout warn">
+  <div class="callout-title">Nothing is deployed to Firebase</div>
+  <p style="margin-bottom:0">All of it is local on the <code>sepa-trend-filter</code> branch. Phase 2+3 are committed locally (<code>a7633b9</code>); Phase 3b is uncommitted pending review. The accrual job runs on the <strong>local</strong> launchd pipeline daemon (not Firebase) and writes a local, gitignored candidate store. Nothing touches Firestore, Cloud Functions, Hosting, or any UI — by design, the placeholders are unvalidated.</p>
+</div>
+<h4>First snapshot (2026-W25), for scale</h4>
+<ul>
+  <li>296 symbols scored · verdicts: aligned 63 · neutral 142 · conflicted 91</li>
+  <li>Primary cohort (bull-put-at-support): <strong>18</strong>, of which 6 conflicted — far below the ~100 needed; <strong>power is the binding constraint</strong>, ~months of accrual required.</li>
+  <li>Overlap (conflicted + velocity guard): 15 — co-occurrence is being tracked, not yet analyzed.</li>
+</ul>
+<h4>How to exercise it</h4>
+<pre>node shared/trend/trend-template.test.cjs            # 43 assertions (pure)
+node generaterecommendations/trend-backtest.test.cjs # 13 assertions (leakage guard)
+node generaterecommendations/trend.cjs NFLX          # live CLI
+node generaterecommendations/trend-candidate-snapshot.cjs --dry-run  # cohort sizes</pre>
+
+<p style="margin-top:32px; font-size:12px; color:var(--ink-faint); font-family:var(--mono)">NewLeaf · SEPA Trend Filter · design doc · 2026-06-20</p>
+
+</div>
+</body>
+</html>

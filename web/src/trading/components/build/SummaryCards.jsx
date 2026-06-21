@@ -38,7 +38,7 @@ export function SummaryCards({ stats, totalCapital, riskBudget }) {
     },
     {
       label: 'Risk Budget',
-      value: `$${(totalCapital || 0).toLocaleString()}`,
+      value: `$${(riskBudget || 0).toLocaleString()}`,
       subtitle: `max ${((riskBudget / (totalCapital || 1)) * 100).toFixed(0)}% drawdown`,
     },
   ];

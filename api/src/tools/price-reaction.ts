@@ -12,7 +12,11 @@ import path from 'path';
 
 const require = createRequire(import.meta.url);
 const thisDir = path.dirname(fileURLToPath(import.meta.url));
-const reactionPath = path.resolve(thisDir, '../../../shared/reaction/index.cjs');
+// Dev runs from api/src/tools (repo-root /shared); Cloud Functions runs from dist/tools, where
+// the build copies shared/reaction into the bundle at api/shared (→ /workspace/shared deployed).
+const localReaction = path.resolve(thisDir, '../../../shared/reaction/index.cjs');
+const deployedReaction = path.resolve(thisDir, '../../shared/reaction/index.cjs');
+const reactionPath = require('fs').existsSync(localReaction) ? localReaction : deployedReaction;
 const reaction = require(reactionPath);
 
 const {

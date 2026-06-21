@@ -11,6 +11,7 @@ import { calculatePositionPnl, getStrategyStatus, recalculateGreeks, pnlAtPrice 
 export function usePositionLiveData(tile, portfolioItem) {
   const [r2Data, setR2Data] = useState(null);
   const [liveChain, setLiveChain] = useState(null);
+  const [liveSpot, setLiveSpot] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const symbol = tile?.symbol;
@@ -20,16 +21,45 @@ export function usePositionLiveData(tile, portfolioItem) {
   const maxLoss = tile?.maxLoss || 0;
   const legs = portfolioItem?.legs || tile?.legs || [];
 
-  // Fetch live chain from newleaf-api + R2 data (for spot price fallback)
+  // Fetch live data: API first (latest), R2 fallback (pipeline snapshot)
   const fetchData = useCallback(async () => {
     if (!symbol) return;
     try {
-      const [report, chain] = await Promise.allSettled([
-        fetchR2Report(symbol),
+      const NL_API = 'https://us-central1-newleaf-trading.cloudfunctions.net/api';
+      const NL_KEY = 'nl_31ee32be43bd4f07a3520ae15c4b3162';
+
+      // 1. API snapshot + live chain (primary — always attempted)
+      const [snapshot, chain] = await Promise.allSettled([
+        fetch(`${NL_API}/api/snapshot/${symbol.toUpperCase()}`, {
+          headers: { 'x-api-key': NL_KEY },
+          signal: AbortSignal.timeout(8000),
+        }).then(r => r.ok ? r.json() : null),
         expiry ? fetchLiveChain(symbol, expiry) : Promise.resolve(null),
       ]);
-      if (report.status === 'fulfilled') setR2Data(report.value);
-      if (chain.status === 'fulfilled' && chain.value) setLiveChain(chain.value);
+
+      if (snapshot.status === 'fulfilled' && snapshot.value?.snapshot?.price) {
+        setLiveSpot(snapshot.value.snapshot.price);
+      }
+      if (chain.status === 'fulfilled' && chain.value) {
+        setLiveChain(chain.value);
+      }
+
+      // 2. R2 fallback — only if API snapshot didn't provide a price
+      const gotApiSpot = snapshot.status === 'fulfilled' && snapshot.value?.snapshot?.price;
+      if (!gotApiSpot) {
+        try {
+          const report = await fetchR2Report(symbol);
+          setR2Data(report);
+        } catch (r2Err) {
+          // Both API and R2 failed — no spot price available
+          console.warn(`[usePositionLiveData] No data for ${symbol}: API and R2 both unavailable`);
+        }
+      } else {
+        // Still fetch R2 for option chain data if we don't have a live chain
+        if (!chain.value) {
+          fetchR2Report(symbol).then(report => setR2Data(report)).catch(() => {});
+        }
+      }
     } catch (err) {
       console.warn('[usePositionLiveData] Fetch failed:', err.message);
     } finally {
@@ -43,10 +73,10 @@ export function usePositionLiveData(tile, portfolioItem) {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // Current spot price
+  // Current spot price — prefer live API snapshot over R2
   const currentSpot = useMemo(() =>
-    r2Data?.snapshot?.price || r2Data?.price || tile?.underlyingPrice || 0,
-    [r2Data, tile]
+    liveSpot || r2Data?.snapshot?.price || r2Data?.price || tile?.underlyingPrice || 0,
+    [liveSpot, r2Data, tile]
   );
 
   // Entry price

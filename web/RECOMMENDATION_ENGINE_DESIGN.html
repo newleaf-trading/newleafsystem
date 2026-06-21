@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf — Deterministic Recommendation Engine · Design Doc</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --forest: #0B2D23; --gold: #C9A96E;
+    --cream: #F7F5F0; --cream-dark: #EDE8DC;
+    --ink: #0B0F14; --ink-muted: #6b6b60; --ink-faint: #9b9b8e;
+    --white: #fff; --border: rgba(15,61,46,.12);
+    --teal: #0d6e56; --teal-bg: #e0f2ec; --teal-text: #07473a;
+    --green: #1a8c5e; --yellow: #d97706; --red: #c0392b;
+    --mono: 'Space Mono', monospace; --radius: 10px;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--ink); line-height: 1.65; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; display: grid; grid-template-columns: 220px 1fr; gap: 40px; }
+
+  /* Header */
+  header { background: var(--forest); color: var(--cream); padding: 48px 0 40px; }
+  header .wrap { display: block; }
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+  header h1 { font-family: 'Playfair Display', serif; font-size: 40px; font-weight: 800; line-height: 1.15; margin-bottom: 14px; }
+  header p { font-size: 16px; color: rgba(247,245,240,.82); max-width: 720px; }
+  .meta-row { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 22px; font-family: var(--mono); font-size: 11px; color: rgba(247,245,240,.6); }
+  .meta-row b { color: var(--gold); font-weight: 700; }
+
+  /* Layout */
+  main { padding: 44px 0 100px; }
+  nav.toc { position: sticky; top: 24px; align-self: start; font-size: 13px; padding-top: 4px; }
+  nav.toc .toc-title { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 12px; }
+  nav.toc a { display: block; color: var(--ink-muted); text-decoration: none; padding: 5px 0; border-left: 2px solid transparent; padding-left: 12px; transition: all .15s; }
+  nav.toc a:hover { color: var(--forest); border-left-color: var(--gold); }
+
+  section { margin-bottom: 52px; scroll-margin-top: 24px; }
+  h2 { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: var(--forest); margin-bottom: 6px; }
+  h2 .num { font-family: var(--mono); font-size: 14px; color: var(--gold); font-weight: 700; margin-right: 10px; }
+  h3 { font-size: 15px; font-weight: 700; color: var(--forest); margin: 22px 0 8px; }
+  .lead { color: var(--ink-muted); font-size: 15px; margin-bottom: 18px; max-width: 760px; }
+  p { margin-bottom: 12px; max-width: 800px; }
+  .section-rule { height: 2px; width: 44px; background: var(--gold); margin: 10px 0 20px; }
+
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; margin: 18px 0; box-shadow: 0 1px 3px rgba(15,61,46,.04); }
+  .card.tinted { background: var(--teal-bg); border-color: rgba(13,110,86,.22); }
+  .card.warn { background: #fff8ec; border-color: #f1d9a8; }
+
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13.5px; }
+  th { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-muted); text-align: left; padding: 9px 12px; border-bottom: 2px solid var(--border); }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:hover td { background: var(--cream); }
+  td code, p code, li code { font-family: var(--mono); font-size: 12px; background: var(--cream-dark); padding: 1px 6px; border-radius: 4px; color: var(--teal-text); }
+
+  pre { font-family: var(--mono); font-size: 12.5px; line-height: 1.7; background: var(--forest); color: #d9e8e0; padding: 18px 20px; border-radius: var(--radius); overflow-x: auto; margin: 14px 0; }
+  pre .k { color: var(--gold); }       /* keyword */
+  pre .c { color: #7fa593; }           /* comment */
+  pre .s { color: #e3c08a; }           /* string/number */
+  pre .g { color: #6fd0a6; }           /* good */
+
+  .badge { display: inline-block; font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: 10px; text-transform: uppercase; letter-spacing: .05em; }
+  .b-approved { background: var(--teal-bg); color: var(--teal-text); }
+  .b-watch { background: #fef3c7; color: #92400e; }
+  .b-no { background: #fee2e2; color: #991b1b; }
+  .b-code { background: var(--forest); color: var(--gold); }
+  .b-llm { background: #ede9fe; color: #5b21b6; }
+
+  ul, ol { margin: 8px 0 14px 22px; }
+  li { margin-bottom: 6px; max-width: 780px; }
+
+  /* Pipeline strip */
+  .pipe { display: flex; align-items: stretch; gap: 0; flex-wrap: wrap; margin: 18px 0 8px; }
+  .pipe .step { flex: 1; min-width: 130px; background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 14px 12px; text-align: center; position: relative; }
+  .pipe .step + .step { margin-left: 26px; }
+  .pipe .step + .step::before { content: '▶'; position: absolute; left: -20px; top: 50%; transform: translateY(-50%); color: var(--gold); font-size: 12px; }
+  .pipe .step .t { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--forest); }
+  .pipe .step .d { font-size: 11px; color: var(--ink-muted); margin-top: 4px; }
+  .pipe .step .who { display: inline-block; margin-top: 8px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) {
+    .wrap { grid-template-columns: 1fr; }
+    nav.toc { display: none; }
+    .two-col { grid-template-columns: 1fr; }
+    header h1 { font-size: 30px; }
+  }
+  .foot { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); border-top: 1px solid var(--border); padding-top: 18px; margin-top: 40px; }
+  .kicker { font-family: var(--mono); font-size: 11px; color: var(--gold); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">NewLeaf System · Engineering Design Doc</div>
+    <h1>The Deterministic Recommendation Engine</h1>
+    <p>How NewLeaf turns market data into a defined-risk options trade — selecting the strategy, deciding go/no-go, building the legs, and explaining it — with <b style="color:var(--gold)">no LLM anywhere in the decision path</b>.</p>
+    <div class="meta-row">
+      <span>STATUS · <b>Shipped (deterministic-v7)</b></span>
+      <span>SCOPE · <b>POST /api/recommend</b></span>
+      <span>OWNER · <b>NewLeaf</b></span>
+      <span>UPDATED · <b>2026-06-12</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <a href="#why">1 · Why deterministic</a>
+    <a href="#arch">2 · Architecture</a>
+    <a href="#data">3 · Data pipeline</a>
+    <a href="#regime">4 · Regime rules</a>
+    <a href="#decision">5 · Decision tiers</a>
+    <a href="#legs">6 · Leg construction</a>
+    <a href="#examples">7 · Worked examples</a>
+    <a href="#llm">8 · The LLM's role</a>
+    <a href="#outcomes">9 · Outcome tracking</a>
+    <a href="#testing">10 · Testing</a>
+  </nav>
+
+  <main>
+
+    <!-- OVERVIEW PIPELINE -->
+    <section id="overview">
+      <div class="kicker">At a glance</div>
+      <h2>One pass, five stages, zero model calls to decide</h2>
+      <div class="section-rule"></div>
+      <p class="lead">Each stage is a pure function with fixed thresholds. The same market inputs always produce the same trade — auditable, testable, and free to run. An LLM is invoked once at the end, only to write the English explanation.</p>
+      <div class="pipe">
+        <div class="step"><div class="t">ENGINE</div><div class="d">select + score the strategy</div><div class="who badge b-code">code</div></div>
+        <div class="step"><div class="t">REGIME</div><div class="d">classify by numeric rules</div><div class="who badge b-code">code</div></div>
+        <div class="step"><div class="t">DECISION</div><div class="d">go/no-go + guardrails</div><div class="who badge b-code">code</div></div>
+        <div class="step"><div class="t">LEGS</div><div class="d">build + validate (or NO_TRADE)</div><div class="who badge b-code">code</div></div>
+        <div class="step"><div class="t">NARRATE</div><div class="d">explain in plain English</div><div class="who badge b-llm">LLM</div></div>
+      </div>
+      <p style="font-size:13px;color:var(--ink-muted);margin-top:12px;">Files: <code>strategy-engine.js</code> · <code>decision-engine.ts</code> · <code>leg-builder.ts</code> · orchestrated in <code>routes/ai.ts</code>.</p>
+    </section>
+
+    <!-- 1 WHY -->
+    <section id="why">
+      <h2><span class="num">01</span>Why deterministic</h2>
+      <div class="section-rule"></div>
+      <p class="lead">The system used to ask an LLM to choose the strategy, the decision, the confidence, and the risk plan. The evidence said that step earned nothing.</p>
+      <div class="card">
+        <ul style="margin-bottom:0;">
+          <li><b>12 models, one answer.</b> Fanned across qwen/claude/gemini/gpt/grok/deepseek, every model just echoed the engine's candidate. When 12 stochastic systems agree, the input determined the output — the LLM was a paid identity function.</li>
+          <li><b>The rules were already deterministic.</b> The prompt had become a decision tree of numeric thresholds (ADX ≥ 25, RSI &lt; 30, …). Running a decision tree through a transformer pays for nondeterminism on logic code does perfectly.</li>
+          <li><b>LLM confidence was theater.</b> Self-reported 0–100, clustered 60–85, incomparable across models, and impossible to calibrate. The engine's score is deterministic, so it <i>can</i> be calibrated against real outcomes.</li>
+          <li><b>The LLM missed the one real bug.</b> Several models <i>approved</i> a structurally invalid butterfly. The correctness risk lived in deterministic leg code, not in strategy choice.</li>
+        </ul>
+      </div>
+      <p><b>Conclusion:</b> selection, regime, decision, confidence and risk plan move to code. The LLM keeps exactly one job it does better than code — writing the explanation.</p>
+    </section>
+
+    <!-- 2 ARCHITECTURE -->
+    <section id="arch">
+      <h2><span class="num">02</span>Architecture — who owns what</h2>
+      <div class="section-rule"></div>
+      <table>
+        <thead><tr><th>Component</th><th>Owner</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>Regime classification</td><td><span class="badge b-code">code</span></td><td>Thresholds on ADX / RSI / SMAs / gamma band</td></tr>
+          <tr><td>Strategy selection + direction</td><td><span class="badge b-code">code</span></td><td>Engine gates fire in priority order</td></tr>
+          <tr><td>Go/no-go + confidence</td><td><span class="badge b-code">code</span></td><td>Engine 0–100 score → decision tiers, gated on leg-build success</td></tr>
+          <tr><td>Leg construction</td><td><span class="badge b-code">code</span></td><td>Liquidity-aware, per-strategy invariants, valid-or-NO_TRADE</td></tr>
+          <tr><td>Validation</td><td><span class="badge b-code">code</span></td><td>Blocking — failure = NO_TRADE, never render-with-warning</td></tr>
+          <tr><td>Risk plan</td><td><span class="badge b-code">code</span></td><td>Per-strategy arithmetic templates</td></tr>
+          <tr><td>Rationale / market read</td><td><span class="badge b-llm">LLM</span></td><td>Narrates engine facts; deterministic template fallback</td></tr>
+          <tr><td>Confidence calibration</td><td><span class="badge b-code">data</span></td><td>Outcome tracking correlates score → realized P&amp;L</td></tr>
+        </tbody>
+      </table>
+      <div class="card tinted">
+        <b>The guiding principle:</b> use the LLM at <i>build time</i> to write deterministic code (these modules were authored + property-tested by a frontier model), not at <i>run time</i> to make decisions. The model's judgment is frozen into tested code that then runs identically forever.
+      </div>
+    </section>
+
+    <!-- 3 DATA -->
+    <section id="data">
+      <h2><span class="num">03</span>Data pipeline</h2>
+      <div class="section-rule"></div>
+      <p class="lead">A decision is only as good as its inputs. Three upstream defects were starving the engine — fixed before the logic could be trusted.</p>
+      <table>
+        <thead><tr><th>Input</th><th>Was</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td>Implied vol &amp; gamma walls</td><td>0% — Alpaca's <code>indicative</code> feed returns no greeks and often an empty chain</td><td>Source the full chain (strikes, bid/ask/mid, IV, OI) from the Yahoo options service when Alpaca is sparse</td></tr>
+          <tr><td>Open interest</td><td>N/A — holiday-boundary expiry mismatch (Alpaca <code>07-03</code> vs Yahoo <code>07-02</code>)</td><td>Snap the OI fetch to the nearest real expiry; strikes still align</td></tr>
+          <tr><td>Expected move</td><td>Always N/A — read <code>atr14</code> from an object that exposes <code>atrPct</code></td><td>Field-name fix (the "silently null" bug class)</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:13px;color:var(--ink-muted);">Effect: once IV/OI/walls flowed, the engine's own pick improved materially (e.g. META: <code>iron_butterfly · 58</code> → <code>broken_wing_butterfly · 88</code>).</p>
+    </section>
+
+    <!-- 4 REGIME -->
+    <section id="regime">
+      <h2><span class="num">04</span>Regime — classify by numeric rules</h2>
+      <div class="section-rule"></div>
+      <p class="lead"><code>decision-engine.ts → classifyRegime()</code>. Pure thresholds, evaluated top to bottom. First match wins.</p>
+<pre><span class="k">aboveBoth</span> = spot &gt; SMA20 <span class="k">AND</span> spot &gt; SMA50
+<span class="k">belowBoth</span> = spot &lt; SMA20 <span class="k">AND</span> spot &lt; SMA50
+
+<span class="k">if</span> ADX ≥ 25 <span class="k">and</span> aboveBoth  → <span class="s">Bullish trend continuation</span>
+<span class="k">if</span> ADX ≥ 25 <span class="k">and</span> belowBoth  → <span class="s">Bearish trend continuation</span>
+   <span class="c">└ tiebreak: a counter RSI extreme overrides to mean-reversion</span>
+   <span class="c">  ONLY when ADX &lt; 35 (a strong trend dominates RSI)</span>
+
+<span class="k">else if</span> RSI &lt; 30 <span class="k">and</span> ADX &lt; 25 → <span class="s">Oversold mean-reversion</span>
+<span class="k">else if</span> RSI &gt; 70 <span class="k">and</span> ADX &lt; 25 → <span class="s">Overbought mean-reversion</span>
+
+<span class="k">else if</span> ADX 20–25 <span class="k">and</span> aboveBoth → <span class="s">Developing bullish trend</span>   <span class="c">← closed gap</span>
+<span class="k">else if</span> ADX 20–25 <span class="k">and</span> belowBoth → <span class="s">Developing bearish trend</span>
+
+<span class="k">else if</span> ADX &lt; 20 <span class="k">and</span> reliableBand <span class="k">and</span> spotInsideBand
+                              → <span class="s">Range-bound premium selling</span>
+
+<span class="k">else</span>                          → <span class="s">No-trade / wait</span></pre>
+      <p style="font-size:13px;color:var(--ink-muted);">The <b>Developing trend</b> bucket (ADX 20–25 with a clean MA stack) was added to close a coverage gap that used to force otherwise-tradeable directional setups into No-trade.</p>
+    </section>
+
+    <!-- 5 DECISION -->
+    <section id="decision">
+      <h2><span class="num">05</span>Decision — tiers &amp; guardrails</h2>
+      <div class="section-rule"></div>
+      <p class="lead"><code>decision-engine.ts → buildDecision()</code>. The engine's 0–100 score sets the tier; guardrails can only <i>downgrade</i>, never promote.</p>
+<pre><span class="c">// hard fails — checked first</span>
+no valid legs               → <span class="s">NO_TRADE</span>
+≥2 inputs missing &amp; no thesis → <span class="s">DATA_ERROR</span>
+regime = No-trade / wait     → <span class="s">NO_TRADE</span>
+
+<span class="c">// score tiers</span>
+score ≥ 65 → <span class="g">APPROVED_TRADE</span>
+score 40–64 → <span class="s">WATCHLIST_TRADE</span>
+score &lt; 40 → <span class="s">NO_TRADE</span>
+
+<span class="c">// guardrails — downgrade APPROVED → WATCHLIST only</span>
+all gates failed (passedGates == 0)   → cap + flag <span class="s">no_gates_passed</span>
+premium-selling with no IV / vol data → cap + flag <span class="s">missing_vol_data</span>
+regime = Developing trend             → cap + flag <span class="s">moderate_adx</span>
+
+confidence = engine score      direction = engine's reconciled direction
+risk plan  = per-strategy template (50% credit target · 2× stop · band-breach kill)</pre>
+      <div class="two-col">
+        <div class="card"><h3 style="margin-top:0;">Decision meanings</h3>
+          <p style="margin-bottom:6px;"><span class="badge b-approved">approved</span> strong setup, risk acceptable (score ≥ 65, no caps).</p>
+          <p style="margin-bottom:6px;"><span class="badge b-watch">watchlist</span> valid but elevated risk (40–64, or capped from approved).</p>
+          <p style="margin-bottom:0;"><span class="badge b-no">no trade</span> no valid candidate, or no constructible legs.</p>
+        </div>
+        <div class="card"><h3 style="margin-top:0;">Why guardrails only downgrade</h3>
+          <p style="margin-bottom:0;font-size:13.5px;color:var(--ink-muted);">Each guardrail encodes a known risk the raw score doesn't fully price (thin conviction, missing vol, moderate trend). They tighten the bar — they never loosen it. A trade can lose its approval to a flag, but a flag can never manufacture one.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 LEGS -->
+    <section id="legs">
+      <h2><span class="num">06</span>Leg construction — valid or nothing</h2>
+      <div class="section-rule"></div>
+      <p class="lead"><code>leg-builder.ts</code>. The real money-losing surface. The contract is now: a builder returns structurally-valid legs <b>or none at all</b> — never a structure that contradicts its label.</p>
+      <ul>
+        <li><b>Direction is a hard constraint.</b> <code>snapToChain</code> snaps to real strikes, but a "down" wing can never be pulled <i>up</i> to a nearer liquid strike (the bug that silently turned a broken-wing butterfly into a symmetric one).</li>
+        <li><b>Broken wing guaranteed asymmetric.</b> <code>pickBrokenWing</code> places the broken wing strictly wider than the near wing, or returns null.</li>
+        <li><b>Self-validating &amp; fail-closed.</b> <code>buildLegs</code> runs <code>validateStrategy</code> on its own output; invalid topology ⇒ no legs ⇒ the decision becomes <span class="badge b-no">no trade</span>.</li>
+      </ul>
+      <div class="card warn">
+        <b>Why fail-closed beats best-effort:</b> a mislabelled structure has a different risk profile than its label promises (a symmetric debit fly vs a credit broken-wing with no risk on one side). Showing a user <i>“no valid structure at acceptable liquidity”</i> is strictly safer than shipping the wrong trade under the right name.
+      </div>
+    </section>
+
+    <!-- 7 EXAMPLES -->
+    <section id="examples">
+      <h2><span class="num">07</span>Worked examples</h2>
+      <div class="section-rule"></div>
+      <p class="lead">Same engine, same thresholds — the regime rule is what splits the outcome.</p>
+
+      <div class="card">
+        <div class="kicker">ABNB · spot 131.97 · ADX 7.1 · RSI 50 · IV/RV 1.49 · inside band 115–133 · score 97</div>
+<pre>regime   ADX 7.1 &lt; 20, reliable band, spot inside  → <span class="s">Range-bound premium selling</span>
+decision score 97 ≥ 65 → APPROVED. No guardrail fires.
+legs     BUY put 125 / SELL 2× put 119 / BUY put 105   <span class="c">(wings 6 vs 14 → asymmetric ✓)</span>
+result   <span class="g">APPROVED_TRADE · broken_wing_butterfly</span></pre>
+      </div>
+
+      <div class="card">
+        <div class="kicker">META · spot 566 · ADX 23.4 · below both SMAs · score 98 · 2 gates passed</div>
+<pre>regime   ADX 23.4 ∈ 20–25 + belowBoth → <span class="s">Developing bearish trend</span>
+decision score 98 ≥ 65 → APPROVED… <span class="k">but</span> Developing-trend guardrail caps it
+result   <span class="s">WATCHLIST_TRADE</span>  (flag: moderate_adx)</pre>
+      </div>
+      <p>Near-identical scores (97 vs 98), <b>different decisions</b> — purely because a regime rule fired a cap. Every branch is inspectable and changeable in one line.</p>
+    </section>
+
+    <!-- 8 LLM -->
+    <section id="llm">
+      <h2><span class="num">08</span>The LLM's role — narration only</h2>
+      <div class="section-rule"></div>
+      <p class="lead">The decision is finished before any model is called. The LLM only renders the engine's facts into prose, and it can fail without breaking the product.</p>
+      <ul>
+        <li><b>Inputs are facts, not questions.</b> Decision, regime, strategy, score, walls, risk plan — the model rewrites them into ≤80 words and may not introduce a number, strike, strategy, or direction not present.</li>
+        <li><b>Template fallback.</b> If the narration call fails, a deterministic template rationale is used. The recommendation is always complete and correct.</li>
+        <li><b>Internal consistency for free.</b> Because the narration is generated <i>from</i> the panels, it cannot contradict them.</li>
+        <li><b>The multi-model page is now an eval tool.</b> Since selection is deterministic, all models agree on the decision and differ only in prose — useful for comparing narration quality and the adapter layer, not for picking trades.</li>
+      </ul>
+    </section>
+
+    <!-- 9 OUTCOMES -->
+    <section id="outcomes">
+      <h2><span class="num">09</span>Outcome tracking — the payoff of going deterministic</h2>
+      <div class="section-rule"></div>
+      <p class="lead">Every production recommendation is persisted to Firestore <code>recommendation_snapshots</code> (awaited, so Cloud Run can't drop the write).</p>
+      <p>Each snapshot captures: <code>ticker · expiry · spot · decision · strategy · direction · regime · score · pillars · gateValues · legs · dataFlags · riskPlan · timestamp</code>.</p>
+      <div class="card tinted">
+        A deterministic score is the <b>only</b> confidence that can be calibrated: the same inputs always produce the same score, so it can be correlated to realized P&amp;L. An LLM's per-call vibe cannot. This snapshot stream is what lets the engine's weights eventually be tuned against outcomes instead of intuition.
+      </div>
+    </section>
+
+    <!-- 10 TESTING -->
+    <section id="testing">
+      <h2><span class="num">10</span>Testing &amp; guarantees</h2>
+      <div class="section-rule"></div>
+      <table>
+        <thead><tr><th>Suite</th><th>Covers</th><th>Key guarantee</th></tr></thead>
+        <tbody>
+          <tr><td><code>leg-builder.test.ts</code></td><td>24 assertions</td><td>Property test over ~1,500 random chains (varied increments, liquidity holes): <b>0 invalid structures ever emitted</b> — valid legs or none</td></tr>
+          <tr><td><code>decision-engine.test.ts</code></td><td>16 assertions</td><td>Regime classification + tiers + every guardrail, against the real ABNB / META / AMZN cases</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:13px;color:var(--ink-muted);">Run: <code>npx tsx src/tools/leg-builder.test.ts</code> · <code>npx tsx src/tools/decision-engine.test.ts</code>. The logic is pure functions, so tests are fast, deterministic, and exhaustive by construction.</p>
+
+      <div class="foot">
+        NewLeaf System · Deterministic Recommendation Engine · design doc · generated 2026-06-12 ·
+        modules: strategy-engine.js · decision-engine.ts · leg-builder.ts · nasdaq-oi.ts · routes/ai.ts
+      </div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

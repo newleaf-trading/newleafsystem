@@ -51,6 +51,16 @@ export const WORKBENCH_STRATEGIES = [
   { label: '\u2699 Strategy Builder \u2192', href: '/workbench/strategy-builder.html', accent: true },
 ];
 
+// Structure engine (03) \u2014 build the structure & verify it. Surfaced as a
+// dropdown in the workbench nav; the engine number is shown as the heading.
+export const WORKBENCH_STRUCTURE = [
+  { heading: '03 \u00b7 Structure' },
+  { label: 'Strategy Builder', href: '/workbench/strategy-builder.html' },
+  { label: 'Verification Desk', href: '/workbench/discover.html' },
+  { label: 'Strategy Compare', href: '/workbench/strategy-compare.html' },
+  { label: 'Watchlist', href: '/workbench/watchlist.html' },
+];
+
 // ─── Surface configuration ───────────────────────────────────
 
 export const surfaceConfig = {
@@ -75,14 +85,22 @@ export const surfaceConfig = {
     showSwitcher: true,
   },
 
+  // Grouped by the four engines (Conviction · Evidence · Structure · Discipline).
+  // The horizontal bar can't show group headers, so grouping is expressed by
+  // order, with the Structure engine's tools collected under one dropdown.
   workbench: {
     sections: [
       { kind: 'link', label: 'Hub', href: '/workbench/' },
       { kind: 'link', label: 'Scanner', href: '/workbench/all-stocks.html' },
-      { kind: 'dropdown', label: 'Strategies', items: WORKBENCH_STRATEGIES, dark: true },
-      { kind: 'link', label: 'Watchlist', href: '/workbench/watchlist.html' },
+      // 01 · Conviction
+      { kind: 'link', label: 'Plan', href: '/workbench/projection' },
+      // 02 · Evidence
+      { kind: 'link', label: 'Movement & Range', href: '/workbench/movement-range.html' },
+      // 03 · Structure
+      { kind: 'dropdown', label: 'Structure', items: WORKBENCH_STRUCTURE, dark: true },
       { kind: 'link', label: 'Analysis', href: '/workbench/analysis' },
-      { kind: 'link', label: 'Projection', href: '/workbench/projection.html' },
+      // 04 · Discipline
+      { kind: 'link', label: 'Risk Monitor', href: '/workbench/condor-scanner.html' },
     ],
     showSwitcher: true,
     statusType: 'live',
@@ -91,9 +109,10 @@ export const surfaceConfig = {
   invest: {
     sections: [
       { kind: 'link', label: 'Home', href: '/invest' },
+      { kind: 'link', label: 'Plans', href: '/invest/plans' },
       { kind: 'link', label: 'Discover', href: '/invest/discover' },
       { kind: 'link', label: 'Build', href: '/invest/build' },
-      { kind: 'link', label: 'Positions', href: '/invest/positions' },
+      { kind: 'link', label: 'Defend', href: '/invest/defend' },
       { kind: 'link', label: 'Performance', href: '/invest/performance' },
     ],
     // Logged-out: cross-product links until marketing routes (Overview / Pricing) exist

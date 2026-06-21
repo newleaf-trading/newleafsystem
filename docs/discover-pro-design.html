@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Discover Pro — Design Document</title>
+  <style>
+    :root {
+      --forest: #0B2D23; --forest-mid: #1a5c44; --gold: #C9A96E;
+      --cream: #F7F5F0; --cream-dark: #EDE8DC; --ink: #0B0F14;
+      --ink-mid: #3d3d35; --ink-muted: #6b6b60; --ink-faint: #9b9b8e;
+      --white: #fff; --border: rgba(15,61,46,.12);
+      --teal: #0d6e56; --teal-bg: #e0f2ec; --teal-text: #07473a;
+      --green: #1a8c5e; --yellow: #d97706; --red: #c0392b;
+      --mono: 'Space Mono', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--cream); color: var(--ink); line-height: 1.7; }
+    .container { max-width: 900px; margin: 0 auto; padding: 48px 32px 80px; }
+    h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 32px; font-weight: 700; color: var(--forest); margin-bottom: 4px; }
+    .subtitle { font-size: 14px; color: var(--ink-muted); margin-bottom: 40px; }
+    h2 { font-size: 20px; font-weight: 700; color: var(--forest); margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    h3 { font-size: 15px; font-weight: 700; color: var(--ink); margin: 24px 0 10px; }
+    p { font-size: 14px; color: var(--ink-mid); margin-bottom: 12px; }
+    ul, ol { padding-left: 24px; margin-bottom: 12px; }
+    li { font-size: 14px; color: var(--ink-mid); margin-bottom: 6px; }
+    strong { color: var(--ink); }
+    code { font-family: var(--mono); font-size: 12px; background: var(--cream-dark); padding: 2px 6px; border-radius: 3px; color: var(--forest); }
+    pre { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; margin: 12px 0; font-size: 12px; font-family: var(--mono); line-height: 1.6; color: var(--ink-mid); }
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin: 16px 0; }
+    .card-title { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--teal); margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+    th { background: var(--cream-dark); color: var(--ink); padding: 8px 12px; text-align: left; font-weight: 600; font-size: 12px; }
+    td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--ink-mid); }
+    tr:hover td { background: rgba(13,110,86,0.02); }
+    .tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-right: 4px; }
+    .tag-green { background: var(--teal-bg); color: var(--teal-text); }
+    .tag-yellow { background: #fef3c7; color: #92400e; }
+    .tag-red { background: #fee2e2; color: #991b1b; }
+    .tag-blue { background: #e0f2fe; color: #075985; }
+    .flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 12px 0; }
+    .flow-step { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; font-size: 12px; }
+    .flow-step.highlight { border-color: var(--teal); background: var(--teal-bg); color: var(--teal-text); font-weight: 600; }
+    .flow-step.new { border-color: var(--red); background: #fef2f2; color: #991b1b; font-weight: 600; }
+    .flow-arrow { color: var(--ink-faint); font-weight: bold; }
+    .callout { background: rgba(13,110,86,0.05); border: 1px solid rgba(13,110,86,0.15); border-radius: 8px; padding: 14px 18px; margin: 16px 0; }
+    .callout-title { font-weight: 700; font-size: 13px; color: var(--teal); margin-bottom: 4px; }
+    .callout-warn { background: #fef3c7; border-color: #d97706; }
+    .callout-warn .callout-title { color: #92400e; }
+    .decision { border-left: 3px solid var(--teal); padding: 12px 16px; margin: 16px 0; background: var(--white); border-radius: 0 8px 8px 0; }
+    .decision-q { font-weight: 700; font-size: 13px; color: var(--ink); margin-bottom: 4px; }
+    .decision-a { font-size: 13px; color: var(--ink-mid); }
+    .toc { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; margin: 24px 0; }
+    .toc-title { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); margin-bottom: 10px; }
+    .toc a { display: block; font-size: 13px; color: var(--teal); text-decoration: none; padding: 3px 0; }
+    .toc a:hover { text-decoration: underline; }
+    @media print { body { background: white; } .container { padding: 24px; } }
+    @media (max-width: 600px) { .container { padding: 24px 16px; } h1 { font-size: 24px; } }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+
+<h1>Discover Pro — Design Document</h1>
+<p class="subtitle">Why we built it, how it works, and what we learned. Last updated: May 31, 2026.</p>
+
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <a href="#problem">1. The Problem</a>
+  <a href="#approach">2. Our Approach</a>
+  <a href="#architecture">3. Architecture</a>
+  <a href="#model-selection">4. Model Selection</a>
+  <a href="#reasoning-engine">5. The Reasoning Engine</a>
+  <a href="#computed-vs-llm">6. Computed vs LLM — The Hard Lesson</a>
+  <a href="#data-flow">7. Data Flow</a>
+  <a href="#consistency">8. Consistency Rules</a>
+  <a href="#pricing">9. The Pricing Problem</a>
+  <a href="#review">10. Post-Build Review & Fixes</a>
+  <a href="#files">11. Files Changed</a>
+  <a href="#what-worked">12. What Worked</a>
+  <a href="#what-didnt">13. What Didn't Work</a>
+  <a href="#next">14. What's Next</a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2>User Journey</h2>
+<p>How a trader uses Discover Pro — from idea to sized position, in one scrollable page.</p>
+
+<style>
+  .uj-flow { display: flex; flex-direction: column; align-items: center; max-width: 560px; margin: 24px auto; }
+  .uj-step { width: 100%; border-radius: 14px; padding: 18px 22px; text-align: center; position: relative; }
+  .uj-step .uj-num { position: absolute; top: -10px; left: -10px; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; font-family: var(--mono); }
+  .uj-step .uj-title { font-size: 16px; font-weight: 700; }
+  .uj-step .uj-desc { font-size: 12px; margin-top: 4px; line-height: 1.5; }
+  .uj-step .uj-who { font-size: 10px; font-family: var(--mono); margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(0,0,0,0.08); }
+
+  .uj-user { background: var(--white); border: 2px solid var(--border); }
+  .uj-user .uj-num { background: var(--ink); color: var(--white); }
+  .uj-user .uj-title { color: var(--ink); }
+  .uj-user .uj-desc { color: var(--ink-muted); }
+
+  .uj-system { background: var(--teal-bg); border: 2px solid var(--teal); }
+  .uj-system .uj-num { background: var(--teal); color: var(--white); }
+  .uj-system .uj-title { color: var(--teal-text); }
+  .uj-system .uj-desc { color: var(--teal-text); opacity: 0.8; }
+  .uj-system .uj-who { color: var(--teal-text); opacity: 0.6; border-top-color: rgba(13,110,86,0.15); }
+
+  .uj-decide { background: #fef9ee; border: 2px solid var(--gold); }
+  .uj-decide .uj-num { background: var(--gold); color: var(--white); }
+  .uj-decide .uj-title { color: #78570a; }
+  .uj-decide .uj-desc { color: #92400e; }
+
+  .uj-compute { background: #e0f2fe; border: 2px solid #2563eb; }
+  .uj-compute .uj-num { background: #2563eb; color: var(--white); }
+  .uj-compute .uj-title { color: #1e40af; }
+  .uj-compute .uj-desc { color: #075985; }
+  .uj-compute .uj-who { color: #075985; opacity: 0.6; border-top-color: rgba(37,99,235,0.15); }
+
+  .uj-arrow { height: 28px; display: flex; align-items: center; justify-content: center; }
+  .uj-arrow svg { width: 16px; height: 22px; }
+  .uj-arrow-label { font-size: 10px; color: var(--ink-faint); font-family: var(--mono); margin-left: 8px; }
+
+  .uj-branch { width: 100%; display: flex; gap: 10px; }
+  .uj-branch .uj-step { flex: 1; }
+
+  .uj-legend { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-top: 20px; font-size: 11px; color: var(--ink-muted); }
+  .uj-legend-item { display: flex; align-items: center; gap: 6px; }
+  .uj-legend-dot { width: 16px; height: 16px; border-radius: 4px; border: 2px solid; }
+</style>
+
+<div class="uj-flow">
+
+  <!-- Step 1: User enters ticker -->
+  <div class="uj-step uj-user">
+    <div class="uj-num">1</div>
+    <div class="uj-title">Enter ticker + DTE</div>
+    <div class="uj-desc">Trader types a symbol (e.g. AAPL) and selects days to expiry. Clicks "Analyze."</div>
+  </div>
+
+  <div class="uj-arrow"><svg viewBox="0 0 16 22"><path d="M8 0 L8 16 M3 12 L8 18 L13 12" stroke="var(--ink-faint)" fill="none" stroke-width="2"/></svg><span class="uj-arrow-label">~1s</span></div>
+
+  <!-- Step 2: Market snapshot -->
+  <div class="uj-step uj-system">
+    <div class="uj-num">2</div>
+    <div class="uj-title">Market Snapshot</div>
+    <div class="uj-desc">Spot price, RSI, ADX, ATR, IV rank, gamma walls appear instantly.</div>
+    <div class="uj-who">GET /api/snapshot + /api/indicators + /api/gamma</div>
+  </div>
+
+  <div class="uj-arrow"><svg viewBox="0 0 16 22"><path d="M8 0 L8 16 M3 12 L8 18 L13 12" stroke="var(--teal)" fill="none" stroke-width="2"/></svg><span class="uj-arrow-label">~2s</span></div>
+
+  <!-- Step 3: Engine + Recommend -->
+  <div class="uj-step uj-system">
+    <div class="uj-num">3</div>
+    <div class="uj-title">Engine Pick + Strategy</div>
+    <div class="uj-desc">Deterministic engine scores the setup, selects strategy (iron condor / BWB / spread), picks strikes from the live chain. Legs come back with real bid/ask/mid prices.</div>
+    <div class="uj-who">POST /api/recommend &rarr; strategy-engine.js + StrategyAdvisor (qwen-plus)</div>
+  </div>
+
+  <div class="uj-arrow"><svg viewBox="0 0 16 22"><path d="M8 0 L8 16 M3 12 L8 18 L13 12" stroke="var(--teal)" fill="none" stroke-width="2"/></svg><span class="uj-arrow-label">~1s</span></div>
+
+  <!-- Step 4: User sees chart -->
+  <div class="uj-step uj-compute">
+    <div class="uj-num">4</div>
+    <div class="uj-title">P&L Chart + Metrics</div>
+    <div class="uj-desc">Payoff chart (Highcharts), max profit, max loss, breakevens, credit — all computed from real leg mids by legMath.js. User sees the trade shape instantly.</div>
+    <div class="uj-who">Client-side: pnlAt() + computeBreakevens() + Highcharts</div>
+  </div>
+
+  <div class="uj-arrow"><svg viewBox="0 0 16 22"><path d="M8 0 L8 16 M3 12 L8 18 L13 12" stroke="var(--teal)" fill="none" stroke-width="2"/></svg><span class="uj-arrow-label">~3s (parallel)</span></div>
+
+  <!-- Step 5: Reasoning -->
+  <div class="uj-step uj-system" style="border-width:3px;">
+    <div class="uj-num">5</div>
+    <div class="uj-title">Deep Reasoning Analysis</div>
+    <div class="uj-desc">6 parallel LLM calls return: thesis (with conviction score), risk scenarios, exit strategy, regime context, and position sizing guidance.</div>
+    <div class="uj-who">POST /api/reasoning/analyze &rarr; 6&times; qwen3-max in parallel</div>
+  </div>
+
+  <div class="uj-arrow"><svg viewBox="0 0 16 22"><path d="M8 0 L8 16 M3 12 L8 18 L13 12" stroke="var(--teal)" fill="none" stroke-width="2"/></svg></div>
+
+  <!-- Step 6: User reads 6 cards -->
+  <div class="uj-branch">
+    <div class="uj-step uj-system" style="padding:10px 8px;">
+      <div class="uj-title" style="font-size:12px;">Thesis</div>
+      <div class="uj-desc" style="font-size:10px;">Conviction 7/10</div>
+    </div>
+    <div class="uj-step uj-system" style="padding:10px 8px;">
+      <div class="uj-title" style="font-size:12px;">Risk</div>
+      <div class="uj-desc" style="font-size:10px;">3 scenarios</div>
+    </div>
+    <div class="uj-step uj-compute" style="padding:10px 8px;">
+      <div class="uj-title" style="font-size:12px;">Scenarios</div>
+      <div class="uj-desc" style="font-size:10px;">P&L grid (computed)</div>
+    </div>
+    <div class="uj-step uj-system" style="padding:10px 8px;">
+      <div class="uj-title" style="font-size:12px;">Exit</div>
+      <div class="uj-desc" style="font-size:10px;">Target + stop</div>
+    </div>
+    <div class="uj-step uj-system" style="padding:10px 8px;">
+      <div class="uj-title" style="font-size:12px;">Regime</div>
+      <div class="uj-desc" style="font-size:10px;">Macro alignment</div>
+    </div>
+    <div class="uj-step uj-compute" style="padding:10px 8px;">
+      <div class="uj-title" style="font-size:12px;">Sizing</div>
+      <div class="uj-desc" style="font-size:10px;">Contracts (computed)</div>
+    </div>
+  </div>
+
+  <div class="uj-arrow"><svg viewBox="0 0 16 22"><path d="M8 0 L8 16 M3 12 L8 18 L13 12" stroke="var(--teal)" fill="none" stroke-width="2"/></svg></div>
+
+  <!-- Step 7: P&L Heatmap -->
+  <div class="uj-step uj-compute">
+    <div class="uj-num">6</div>
+    <div class="uj-title">P&L Heatmap</div>
+    <div class="uj-desc">Computed P&L at -5% / -2.5% / 0% / +2.5% / +5% spot moves, across ~7d / ~14d / expiry. Same legMath.js source as chart. No LLM math.</div>
+  </div>
+
+  <div class="uj-arrow"><svg viewBox="0 0 16 22"><path d="M8 0 L8 16 M3 12 L8 18 L13 12" stroke="var(--teal)" fill="none" stroke-width="2"/></svg></div>
+
+  <!-- Step 8: Grade -->
+  <div class="uj-step uj-system" style="border-width:3px;">
+    <div class="uj-num">7</div>
+    <div class="uj-title">Overall Grade: A-</div>
+    <div class="uj-desc">Conviction 7.1/10 &middot; composite of thesis (70%) + regime alignment (30%) &minus; risk penalty. Publish gate: B+ or above.</div>
+  </div>
+
+  <div class="uj-arrow"><svg viewBox="0 0 16 22"><path d="M8 0 L8 16 M3 12 L8 18 L13 12" stroke="var(--gold)" fill="none" stroke-width="2.5"/></svg></div>
+
+  <!-- Step 9: User decides -->
+  <div class="uj-step uj-decide">
+    <div class="uj-num">8</div>
+    <div class="uj-title">Trader Decides</div>
+    <div class="uj-desc">
+      With thesis, risk, exit plan, sizing, and grade in hand, the trader either:<br>
+      <strong>Takes the trade</strong> (uses the exit rules + sizing table) &mdash; or<br>
+      <strong>Passes</strong> (conviction too low, risk too high, regime misaligned) &mdash; or<br>
+      <strong>Adjusts</strong> (tries different ticker / DTE / goes to Strategy Builder for manual tuning)
+    </div>
+  </div>
+
+</div>
+
+<div class="uj-legend">
+  <div class="uj-legend-item"><div class="uj-legend-dot" style="background:var(--white);border-color:var(--border)"></div> User action</div>
+  <div class="uj-legend-item"><div class="uj-legend-dot" style="background:var(--teal-bg);border-color:var(--teal)"></div> System (API / LLM)</div>
+  <div class="uj-legend-item"><div class="uj-legend-dot" style="background:#e0f2fe;border-color:#2563eb"></div> Computed (code, not LLM)</div>
+  <div class="uj-legend-item"><div class="uj-legend-dot" style="background:#fef9ee;border-color:var(--gold)"></div> Decision point</div>
+</div>
+
+<div class="callout" style="margin-top:24px;">
+  <div class="callout-title">Total time: ~7 seconds</div>
+  <p>Steps 2-7 happen in sequence but with overlap (reasoning fires while chart renders). The trader goes from ticker to fully-sized, risk-assessed position in under 10 seconds. Without Discover Pro, this analysis would take a human analyst 20-30 minutes.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="problem">1. The Problem</h2>
+
+<p>The existing Discover page (<code>/workbench/discover.html</code>) has a solid multi-stage workflow: snapshot, strategy selection, drill-in, verification, verdict. But the analysis it provides is shallow:</p>
+
+<ul>
+  <li>A 40-word rationale that rubber-stamps the engine's decision</li>
+  <li>No thesis — "why will this trade make money?" goes unanswered</li>
+  <li>No risk scenarios — "what could go wrong?" is never asked</li>
+  <li>No exit plan — the user has no idea when to close</li>
+  <li>No position sizing — "how many contracts?" is left to guesswork</li>
+  <li>No macro context — trades are analyzed in isolation from SPY/VIX/sector</li>
+</ul>
+
+<p>A hedge fund analyst produces all of these before risking capital. Our users get a score and a sentence. The gap between "strategy builder" and "investment research" was the opportunity.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="approach">2. Our Approach</h2>
+
+<h3>Keep the engine, add reasoning on top</h3>
+
+<p>The deterministic strategy engine (<code>pipeline/strategy-engine.js</code>) is the single source of truth. It selects strategies through a gate hierarchy (iron condor → BWB → directional → calendar → fallback). This works well — the engine discriminates correctly between 6 strategy types based on gamma, IV, and trend.</p>
+
+<p>What the engine can't do is <strong>explain why</strong>, <strong>assess risk</strong>, or <strong>plan the trade lifecycle</strong>. Those require reasoning. So we added a reasoning layer on top:</p>
+
+<div class="flow">
+  <div class="flow-step">Market Data</div>
+  <span class="flow-arrow">&rarr;</span>
+  <div class="flow-step">Deterministic Engine</div>
+  <span class="flow-arrow">&rarr;</span>
+  <div class="flow-step new">Reasoning Layer (6 calls)</div>
+  <span class="flow-arrow">&rarr;</span>
+  <div class="flow-step highlight">Discover Pro UI</div>
+</div>
+
+<div class="decision">
+  <div class="decision-q">Why not replace the engine with a reasoning model?</div>
+  <div class="decision-a">Because the engine is deterministic, auditable, and fast (30ms). A reasoning model would hallucinate strategy selections, be non-reproducible, and cost 100x more per call. The engine decides; the LLM reasons about that decision.</div>
+</div>
+
+<div class="decision">
+  <div class="decision-q">Why a new page instead of enhancing Discover?</div>
+  <div class="decision-a">Discover is a 3,070-line multi-stage wizard used by all users. Adding 6 reasoning panels would make it unwieldy and slow for users who just want a quick strategy scan. Discover Pro is a separate, deeper experience — single-page, scroll-based, aimed at users who want hedge fund-level analysis before placing a trade.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2>Before vs After — Visual Flow</h2>
+
+<style>
+  .vflow-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin: 24px 0; }
+  @media (max-width: 700px) { .vflow-grid { grid-template-columns: 1fr; } }
+  .vflow { display: flex; flex-direction: column; align-items: center; }
+  .vflow-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: var(--forest); margin-bottom: 20px; text-align: center; }
+  .vflow-node { width: 100%; max-width: 340px; border-radius: 12px; padding: 16px 20px; text-align: center; border: 1.5px solid; margin-bottom: 0; }
+  .vflow-node .vn-name { font-size: 18px; font-weight: 700; color: var(--forest); }
+  .vflow-node .vn-detail { font-size: 13px; color: var(--teal); margin-top: 2px; }
+  .vflow-node .vn-model { font-size: 10px; font-family: var(--mono); color: var(--ink-faint); margin-top: 4px; }
+  .vflow-node.unchanged { background: #f9f8f5; border-color: #d4d0c8; }
+  .vflow-node.unchanged .vn-name { color: var(--ink-mid); }
+  .vflow-node.unchanged .vn-detail { color: var(--ink-muted); }
+  .vflow-node.changed { background: #fef9ee; border-color: #d97706; }
+  .vflow-node.changed .vn-detail { color: #92400e; }
+  .vflow-node.new { background: var(--teal-bg); border-color: var(--teal); }
+  .vflow-node.engine { background: #f0fdf4; border-color: #16a34a; }
+  .vflow-node.compute { background: #e0f2fe; border-color: #2563eb; }
+  .vflow-node.compute .vn-name { color: #1e40af; }
+  .vflow-node.compute .vn-detail { color: #075985; }
+  .vflow-arrow { display: flex; flex-direction: column; align-items: center; height: 32px; justify-content: center; }
+  .vflow-arrow svg { width: 16px; height: 24px; }
+  .vflow-legend { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin-top: 16px; font-size: 11px; color: var(--ink-muted); }
+  .vflow-legend-item { display: flex; align-items: center; gap: 5px; }
+  .vflow-legend-dot { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid; }
+</style>
+
+<div class="vflow-grid">
+  <!-- BEFORE -->
+  <div class="vflow">
+    <div class="vflow-title">Before — Discover</div>
+
+    <div class="vflow-node unchanged">
+      <div class="vn-name">Engine</div>
+      <div class="vn-detail">selects strategy</div>
+      <div class="vn-model">strategy-engine.js &middot; 30ms</div>
+    </div>
+    <div class="vflow-arrow"><svg viewBox="0 0 16 24"><path d="M8 0 L8 18 M3 14 L8 20 L13 14" stroke="#9b9b8e" fill="none" stroke-width="2"/></svg></div>
+
+    <div class="vflow-node unchanged">
+      <div class="vn-name">ai-read</div>
+      <div class="vn-detail">independent market read</div>
+      <div class="vn-model">qwen-max &middot; 1.7s</div>
+    </div>
+    <div class="vflow-arrow"><svg viewBox="0 0 16 24"><path d="M8 0 L8 18 M3 14 L8 20 L13 14" stroke="#9b9b8e" fill="none" stroke-width="2"/></svg></div>
+
+    <div class="vflow-node unchanged">
+      <div class="vn-name">recommend</div>
+      <div class="vn-detail">40-word rationale, no mids</div>
+      <div class="vn-model">claude-sonnet &middot; 3s &middot; $0.01</div>
+    </div>
+    <div class="vflow-arrow"><svg viewBox="0 0 16 24"><path d="M8 0 L8 18 M3 14 L8 20 L13 14" stroke="#9b9b8e" fill="none" stroke-width="2"/></svg></div>
+
+    <div class="vflow-node unchanged" style="opacity:0.5">
+      <div class="vn-name" style="font-size:14px;color:var(--ink-faint)">No thesis</div>
+      <div class="vn-detail" style="color:var(--ink-faint)">No risk &middot; No exit &middot; No sizing</div>
+    </div>
+    <div class="vflow-arrow"><svg viewBox="0 0 16 24"><path d="M8 0 L8 18 M3 14 L8 20 L13 14" stroke="#9b9b8e" fill="none" stroke-width="2"/></svg></div>
+
+    <div class="vflow-node unchanged">
+      <div class="vn-name">Canvas chart</div>
+      <div class="vn-detail">payoff only, DPI issues</div>
+      <div class="vn-model">payoffChart.js</div>
+    </div>
+  </div>
+
+  <!-- AFTER -->
+  <div class="vflow">
+    <div class="vflow-title">New — Discover Pro</div>
+
+    <div class="vflow-node engine">
+      <div class="vn-name">Engine</div>
+      <div class="vn-detail">selects strategy</div>
+      <div class="vn-model">strategy-engine.js &middot; 30ms &middot; unchanged</div>
+    </div>
+    <div class="vflow-arrow"><svg viewBox="0 0 16 24"><path d="M8 0 L8 18 M3 14 L8 20 L13 14" stroke="var(--teal)" fill="none" stroke-width="2"/></svg></div>
+
+    <div class="vflow-node changed">
+      <div class="vn-name">recommend</div>
+      <div class="vn-detail">real Alpaca mids</div>
+      <div class="vn-model">qwen-plus &middot; 1.1s &middot; $0.001</div>
+    </div>
+    <div class="vflow-arrow"><svg viewBox="0 0 16 24"><path d="M8 0 L8 18 M3 14 L8 20 L13 14" stroke="var(--teal)" fill="none" stroke-width="2"/></svg></div>
+
+    <div class="vflow-node changed">
+      <div class="vn-name">ai-read</div>
+      <div class="vn-detail">direction-aware</div>
+      <div class="vn-model">qwen-plus &middot; 1.1s &middot; receives engineDirection</div>
+    </div>
+    <div class="vflow-arrow"><svg viewBox="0 0 16 24"><path d="M8 0 L8 18 M3 14 L8 20 L13 14" stroke="var(--teal)" fill="none" stroke-width="2"/></svg></div>
+
+    <div class="vflow-node new">
+      <div class="vn-name">Reasoning &times;6</div>
+      <div class="vn-detail">parallel qwen3-max</div>
+      <div class="vn-model">thesis &middot; risk &middot; scenarios &middot; exit &middot; regime &middot; sizing</div>
+    </div>
+    <div class="vflow-arrow"><svg viewBox="0 0 16 24"><path d="M8 0 L8 18 M3 14 L8 20 L13 14" stroke="var(--teal)" fill="none" stroke-width="2"/></svg></div>
+
+    <div class="vflow-node compute">
+      <div class="vn-name">legMath.js</div>
+      <div class="vn-detail">computes all P&L</div>
+      <div class="vn-model">chart &middot; heatmap &middot; metrics &middot; sizing &middot; breakevens</div>
+    </div>
+  </div>
+</div>
+
+<div class="vflow-legend">
+  <div class="vflow-legend-item"><div class="vflow-legend-dot" style="background:#f9f8f5;border-color:#d4d0c8"></div> Unchanged</div>
+  <div class="vflow-legend-item"><div class="vflow-legend-dot" style="background:#fef9ee;border-color:#d97706"></div> Changed</div>
+  <div class="vflow-legend-item"><div class="vflow-legend-dot" style="background:var(--teal-bg);border-color:var(--teal)"></div> New</div>
+  <div class="vflow-legend-item"><div class="vflow-legend-dot" style="background:#f0fdf4;border-color:#16a34a"></div> Engine (same code)</div>
+  <div class="vflow-legend-item"><div class="vflow-legend-dot" style="background:#e0f2fe;border-color:#2563eb"></div> Client-side compute</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="architecture">3. Architecture</h2>
+
+<div class="card">
+  <div class="card-title">System Layers</div>
+  <table>
+    <thead><tr><th>Layer</th><th>What It Does</th><th>Technology</th><th>Latency</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Layer 0: Engine</strong></td><td>Technical analysis, gamma walls, scoring, strategy selection</td><td>Pure JS functions, no I/O</td><td>30ms</td></tr>
+      <tr><td><strong>Layer 1: Fast Explanation</strong></td><td>Market read, strategy rationale, strike selection</td><td>qwen-plus (1.1s)</td><td>1-2s</td></tr>
+      <tr><td><strong>Layer 2: Reasoning</strong></td><td>Thesis, risk, scenarios, exit, regime, sizing</td><td>qwen3-max (2.4s), 6 parallel calls</td><td>3-5s</td></tr>
+      <tr><td><strong>Layer 3: Computed P&L</strong></td><td>Payoff chart, metrics, heatmap, position sizing</td><td>legMath.js (client-side)</td><td>< 1ms</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout">
+  <div class="callout-title">Key architectural principle</div>
+  <p>Numbers are COMPUTED. Narratives are REASONED. Never ask an LLM to do math. The P&L grid, max profit, max loss, breakevens, and position sizing are all calculated deterministically by <code>legMath.js</code>. The LLM provides qualitative analysis only: thesis conviction, risk scenario descriptions, exit reasoning, regime assessment.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="model-selection">4. Model Selection</h2>
+
+<p>We benchmarked 5 Qwen models on DashScope with a fixed prompt ("produce one sentence market read"). Results measure <strong>wall-clock latency</strong>, not tokens/sec. The large latency gap for 3.5/3.7 models is partly due to higher output verbosity (30x more tokens), not just slower inference.</p>
+
+<table>
+  <thead><tr><th>Model</th><th>Wall-clock</th><th>Tokens Out</th><th>~tok/s</th><th>Use Case</th></tr></thead>
+  <tbody>
+    <tr><td><strong>qwen-plus</strong></td><td>1.1s</td><td>31</td><td>~28</td><td><span class="tag tag-green">Fast tasks</span> market read, explanation, narrative</td></tr>
+    <tr><td>qwen-max</td><td>1.7s</td><td>34</td><td>~20</td><td>Previous default, replaced by qwen-plus</td></tr>
+    <tr><td><strong>qwen3-max</strong></td><td>2.4s</td><td>28</td><td>~12</td><td><span class="tag tag-blue">Reasoning tasks</span> thesis, risk, exit, regime, sizing</td></tr>
+    <tr><td>qwen3.5-plus</td><td>17s</td><td>938</td><td>~55</td><td><span class="tag tag-red">Too verbose</span> ignores "one sentence" instruction</td></tr>
+    <tr><td>qwen3.7-max</td><td>29s</td><td>1427</td><td>~49</td><td><span class="tag tag-yellow">Batch only</span> high tok/s but reasoning overhead</td></tr>
+  </tbody>
+</table>
+
+<p style="font-size:12px;color:var(--ink-faint);font-style:italic;">Caveat: qwen3.5 and qwen3.7 have higher tok/s but produce 30x more tokens because they reason internally before responding. Wall-clock latency is what the user experiences, so we optimized for that. A future test should measure time-to-first-token to separate queue time from generation speed. Model IDs are DashScope international identifiers (verified via API).</p>
+
+<div class="decision">
+  <div class="decision-q">Why qwen-plus for fast tasks instead of qwen-max?</div>
+  <div class="decision-a">qwen-plus is 35% faster (1.1s vs 1.7s) and cheaper ($0.80/M vs $1.60/M input) with equivalent quality for synthesis tasks. We switched ai-read, recommend explanation, picks-narrative, and ai-strikes from qwen-max/claude-sonnet to qwen-plus. Blended cost savings (input + output) are ~73-95% depending on the route.</div>
+</div>
+
+<div class="decision">
+  <div class="decision-q">Why qwen3-max for reasoning instead of claude-sonnet?</div>
+  <div class="decision-a">qwen3-max is the newest non-thinking reasoning model at 2.4s — fast enough for real-time use. Claude Sonnet ($3/M + $15/M) costs 3x more. The 6 reasoning calls run in parallel via <code>Promise.all()</code>, so wall-clock time equals the slowest single call (~3s), not the sum.</div>
+</div>
+
+<h3>Model assignments after the swap</h3>
+<table>
+  <thead><tr><th>Service</th><th>Before</th><th>After</th><th>Savings (blended in+out)</th></tr></thead>
+  <tbody>
+    <tr><td>ai-read</td><td>qwen-max</td><td><strong>qwen-plus</strong></td><td>~50% cost, -35% latency</td></tr>
+    <tr><td>recommend</td><td>claude-sonnet</td><td><strong>qwen-plus</strong></td><td>~73% cost, -63% latency</td></tr>
+    <tr><td>picks-narrative</td><td>claude-sonnet</td><td><strong>qwen-plus</strong></td><td>~73% cost</td></tr>
+    <tr><td>ai-strikes</td><td>claude-haiku</td><td><strong>qwen-plus</strong></td><td>~20% cost, -45% latency</td></tr>
+    <tr><td>reasoning-* (6 new)</td><td>N/A</td><td><strong>qwen3-max</strong></td><td>New capability</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="reasoning-engine">5. The Reasoning Engine</h2>
+
+<p>The reasoning engine (<code>api/src/agents/reasoner.ts</code>) runs 6 parallel LLM calls against qwen3-max. Each call has a specialized system prompt and receives the full market context + actual trade legs.</p>
+
+<div class="card">
+  <div class="card-title">6 Reasoning Tasks</div>
+  <table>
+    <thead><tr><th>#</th><th>Task</th><th>Question Answered</th><th>Output Type</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><strong>Thesis</strong></td><td>Why will this trade profit?</td><td>Conviction 1-10, primary driver, structural edge, catalyst, bear case</td></tr>
+      <tr><td>2</td><td><strong>Risk</strong></td><td>What could go wrong?</td><td>3-5 scenarios with probabilities, risk grade, kill switch</td></tr>
+      <tr><td>3</td><td><strong>Scenarios</strong></td><td>P&L at different spots/times?</td><td>Grid + best/base/worst cases (probabilities only — P&L computed)</td></tr>
+      <tr><td>4</td><td><strong>Exit</strong></td><td>When to close?</td><td>Profit target %, stop loss, time exit, adjustment triggers</td></tr>
+      <tr><td>5</td><td><strong>Regime</strong></td><td>Does macro support this?</td><td>Market regime, sector momentum, VIX, correlation, alignment 0-1</td></tr>
+      <tr><td>6</td><td><strong>Sizing</strong></td><td>How much to risk?</td><td>Allocation %, contracts by account size (overridden by computed max loss)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>How conviction and grade are computed</h3>
+<pre>totalConviction = thesis.conviction * 0.7 + regime.alignmentScore * 10 * 0.3
+
+riskPenalty = risk.overallRiskGrade === 'EXTREME' ? 2
+            : risk.overallRiskGrade === 'HIGH' ? 1 : 0
+
+adjusted = totalConviction - riskPenalty
+
+Grade: A (≥8), A- (≥7), B+ (≥6), B (≥5), C (≥3), D (< 3)
+
+shouldPublish = totalConviction > 6  // i.e. B+ or above</pre>
+
+<p><strong>Note on regime alignment:</strong> Regime flows into conviction at 30% weight. It is NOT applied as a separate gate on <code>shouldPublish</code> — that would penalize macro misalignment twice (once in conviction, once in the gate). A single conviction threshold of 6 (B+ or above) captures regime through the weighted formula.</p>
+
+<p><strong>Note on conviction calibration:</strong> <code>thesis.conviction</code> and scenario probabilities are LLM-produced numbers that gate <code>shouldPublish</code>. They're uncalibrated until the outcome feedback loop exists. Outcome tracking (correlating conviction with actual P&L) is a near-term priority — see section 13.</p>
+
+<h3>Caching</h3>
+<p>Results are cached for 15 minutes keyed on <code>ticker + expiry + structure_hash</code>. The structure hash is a SHA-1 of the normalized legs (type, side, strike, mid). This ensures a cache hit only occurs when the displayed legs are byte-identical to the reasoned ones. If the advisor picks different strikes within the TTL window, reasoning re-runs with the new structure.</p>
+
+<pre>// Cache key includes structure hash to prevent stale narrative
+const cacheKey = `${ticker}:${expiry}:${structureHash(legs)}`;</pre>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="computed-vs-llm">6. Computed vs LLM — The Hard Lesson</h2>
+
+<p>This was the most important design lesson of the entire build. Early versions asked the LLM to generate P&L numbers for the scenarios grid and heatmap. The results were:</p>
+
+<div class="card" style="border-left: 3px solid var(--red);">
+  <div class="card-title" style="color: var(--red);">What the LLM generated (wrong)</div>
+  <table>
+    <thead><tr><th>Spot Move</th><th>LLM P&L</th><th>Correct P&L</th><th>Error</th></tr></thead>
+    <tbody>
+      <tr><td>-5% ($118)</td><td>-$1.24</td><td>+$3.76</td><td style="color:var(--red);font-weight:600">WRONG sign + magnitude</td></tr>
+      <tr><td>0% ($124)</td><td>+$1.76</td><td>+$5.51</td><td style="color:var(--red);font-weight:600">Missed ITM long put</td></tr>
+      <tr><td>+5% ($130)</td><td>+$1.76</td><td>+$1.76</td><td style="color:var(--green)">Correct (all OTM)</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:8px;font-size:12px;">The LLM only got the trivial case right (all puts OTM). It failed to compute intrinsic value for ITM legs — a basic options math operation.</p>
+</div>
+
+<p>Other LLM math failures we found:</p>
+<ul>
+  <li><strong>"Unlimited loss"</strong> for a 4-leg put spread with long protection — a defined-risk structure can never have unlimited loss</li>
+  <li><strong>Invented credit/loss numbers</strong> that contradicted the actual legs shown on the same page</li>
+  <li><strong>Call-side language for put-side trades</strong> — describing "short call wing" when all legs were puts</li>
+  <li><strong>Position sizing based on wrong max loss</strong> — recommending 40 contracts on a $100k account because it used an LLM-estimated max loss of $88 instead of the actual $194</li>
+</ul>
+
+<div class="callout">
+  <div class="callout-title">The rule we derived</div>
+  <p><strong>Never ask an LLM to do arithmetic.</strong> If the answer can be computed from a formula, compute it. Use the LLM for judgment calls (is this risk high or low?), pattern recognition (what scenario is most likely?), and natural language (explain why this trade fits). Use code for everything that has a right answer.</p>
+</div>
+
+<h3>What's computed vs what's LLM-generated</h3>
+<table>
+  <thead><tr><th>Component</th><th>Source</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>Net credit</td><td><span class="tag tag-green">Computed</span> from leg mids</td><td>Arithmetic — must be exact</td></tr>
+    <tr><td>Max profit</td><td><span class="tag tag-green">Computed</span> by sampling 500 points</td><td>Must match chart peak</td></tr>
+    <tr><td>Max loss</td><td><span class="tag tag-green">Computed</span> by sampling 500 points</td><td>Must match chart trough</td></tr>
+    <tr><td>Breakevens</td><td><span class="tag tag-green">Computed</span> by zero-crossing scan</td><td>Must match chart x-intercepts</td></tr>
+    <tr><td>P&L chart</td><td><span class="tag tag-green">Computed</span> Highcharts + pnlAt()</td><td>Visual must match numbers</td></tr>
+    <tr><td>P&L heatmap grid</td><td><span class="tag tag-green">Computed</span> pnlAt() at 5 spots</td><td>Must match chart</td></tr>
+    <tr><td>Position sizing table</td><td><span class="tag tag-green">Computed</span> from max loss, 2% risk</td><td>Must use correct max loss</td></tr>
+    <tr><td>Thesis conviction</td><td><span class="tag tag-blue">LLM</span> qwen3-max</td><td>Judgment call, no formula</td></tr>
+    <tr><td>Risk scenarios</td><td><span class="tag tag-blue">LLM</span> qwen3-max</td><td>Pattern recognition + domain knowledge</td></tr>
+    <tr><td>Exit strategy</td><td><span class="tag tag-blue">LLM</span> qwen3-max</td><td>Trade management reasoning</td></tr>
+    <tr><td>Regime context</td><td><span class="tag tag-blue">LLM</span> qwen3-max</td><td>Cross-asset judgment</td></tr>
+    <tr><td>Scenario probabilities</td><td><span class="tag tag-blue">LLM</span> qwen3-max</td><td>Probabilistic assessment</td></tr>
+    <tr><td>Best/base/worst case descriptions</td><td><span class="tag tag-blue">LLM</span> qwen3-max</td><td>Natural language</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="data-flow">7. Data Flow</h2>
+
+<p>The Discover Pro page calls 4 API endpoints in sequence, then computes the rest client-side:</p>
+
+<div class="flow">
+  <div class="flow-step">GET /api/snapshot/{ticker}</div>
+  <span class="flow-arrow">&rarr;</span>
+  <div class="flow-step highlight">POST /api/recommend</div>
+  <span class="flow-arrow">&rarr;</span>
+  <div class="flow-step">POST /api/ai-read (direction-aware)</div>
+  <span class="flow-arrow">&rarr;</span>
+  <div class="flow-step new">POST /api/reasoning/analyze</div>
+</div>
+
+<h3>Why recommend runs before ai-read</h3>
+<p>In the original Discover page, ai-read runs first. But ai-read didn't know the engine's direction, so it would say "bullish, buy calls" while the engine picked a bearish BWB. We reordered the calls: recommend runs first, then ai-read receives <code>engineDirection</code> and <code>engineStrategy</code> so its market read is consistent.</p>
+
+<h3>Recommend is the sole pricing authority</h3>
+<p><code>/api/recommend</code> is the only place where legs get priced. It fetches the option chain via Alpaca, the advisor selects strikes, then the route enriches each leg with real <code>bid</code>, <code>ask</code>, <code>mid</code>, and <code>iv</code> by matching against the chain. Mid is only computed when <strong>both</strong> bid and ask exist; otherwise the leg is marked <code>estimated: true</code>.</p>
+
+<pre>// routes/ai.ts — after advisor picks legs
+for (const leg of strat.legs) {
+  const match = contracts.find(c => c.strike === leg.strike && c.type === leg.type);
+  if (match) {
+    const hasBoth = typeof match.bid === 'number' && typeof match.ask === 'number'
+      && match.bid > 0 && match.ask > 0;
+    leg.mid = hasBoth ? (match.bid + match.ask) / 2 : (match.mid ?? null);
+    leg.bid = match.bid ?? null;
+    leg.ask = match.ask ?? null;
+    leg.iv = match.iv ?? null;
+    leg.estimated = !hasBoth;
+  }
+}</pre>
+
+<h3>Reasoning requires enriched legs</h3>
+<p><code>/api/reasoning/analyze</code> validates that all legs have real mids before proceeding. If any leg is missing a mid, the endpoint returns <code>400 LEGS_NOT_PRICED</code> instead of silently estimating. This enforces one source of truth: recommend prices the legs, reasoning consumes them, the client computes P&L from them.</p>
+
+<pre>// routes/ai-reasoning.ts — validate before reasoning
+const missingMid = legs.find(l => typeof l.mid !== 'number' || l.mid <= 0);
+if (missingMid) {
+  return reply.code(400).send({
+    error: 'LEGS_NOT_PRICED',
+    detail: `Leg ${missingMid.type}@${missingMid.strike} has no mid. `
+      + `Call /api/recommend first; reasoning does not estimate prices.`,
+  });
+}</pre>
+
+<p>The client treats <code>LEGS_NOT_PRICED</code> as a signal to fall back to mock data with a visible warning — never as something to render around.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="consistency">8. Consistency Rules</h2>
+
+<p>After testing, we identified 7 consistency rules that all reasoning output must follow. These are enforced through prompt engineering and post-processing:</p>
+
+<div class="card">
+  <div class="card-title">Consistency rules enforced in prompts</div>
+  <ol>
+    <li><strong>Direction match:</strong> If engine picks bearish BWB, thesis must explain bearish — never write a bullish thesis</li>
+    <li><strong>Actual legs:</strong> Reference the real leg types (put vs call). Never describe put legs as call legs</li>
+    <li><strong>IV data honesty:</strong> When IV Rank is unavailable, say so. Never claim "elevated IV" when IV Rank = 0</li>
+    <li><strong>Defined risk:</strong> A 4-leg spread with long protection = defined risk. Never say "unlimited loss"</li>
+    <li><strong>Single P&L source:</strong> All sections must use the same credit, max loss, and max profit numbers</li>
+    <li><strong>Exit references legs:</strong> Stop loss and adjustments must reference actual strikes and leg types</li>
+    <li><strong>BWB asymmetry:</strong> Broken wing butterfly must have unequal wing widths — validated post-parse</li>
+  </ol>
+</div>
+
+<p>The prompts include a <code>CRITICAL RULES</code> section that explicitly states these constraints. The <code>buildLegsContext()</code> method adds:</p>
+<pre>CRITICAL RULES:
+- This is a put-side broken wing butterfly | 4 legs | DEFINED RISK
+- If all legs have long protection, loss is DEFINED — never say "unlimited loss"
+- Reference the ACTUAL leg types — do not describe put legs as call legs
+- Use the EXACT P&L numbers above — do not invent different credit/loss numbers</pre>
+
+<p>Additionally, a <strong>computed reference bar</strong> is displayed above the reasoning cards showing the real numbers. This lets the user instantly cross-reference whether the LLM text matches the math.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="pricing">9. The Pricing Problem</h2>
+
+<p>The most persistent issue was leg pricing. Initially, <code>/api/recommend</code> returned legs as <code>{ type, side, strike }</code> — no mid prices. The advisor LLM picks strikes from the chain summary, but the chain mids weren't carried through to the response. This is now fixed: recommend enriches every leg with real <code>bid/ask/mid/iv</code> from the chain (see §7).</p>
+
+<h3>What we tried</h3>
+<table>
+  <thead><tr><th>Approach</th><th>Result</th></tr></thead>
+  <tbody>
+    <tr><td>Estimate mids from distance-to-spot formula</td><td><span class="tag tag-red">Failed</span> Created arbitrage payoffs (no loss zone)</td></tr>
+    <tr><td>Scale estimated mids to match API netCredit</td><td><span class="tag tag-yellow">Partial</span> Ratios correct but absolute values wrong</td></tr>
+    <tr><td>Enrich legs with real chain data in recommend route</td><td><span class="tag tag-green">Fixed</span> Legs now include real bid/ask/mid/iv</td></tr>
+  </tbody>
+</table>
+
+<h3>The arbitrage detection</h3>
+<p>When estimated mids produce a structure with no loss zone (all P&L positive at every spot price), the system now flags it:</p>
+<ul>
+  <li>Sets <code>midsAreEstimated = true</code></li>
+  <li>Shows a yellow warning banner: "Pricing notice: Mid prices are estimated. Structure shows no loss zone — this indicates stale or estimated pricing, not a real arbitrage opportunity."</li>
+  <li>Labels all computed values with "(estimated)" annotations</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="review">10. Post-Build Review & Fixes</h2>
+
+<p>After the initial build, a structured code review identified 11 issues across 3 severity tiers. All were resolved before the production test.</p>
+
+<div class="card">
+  <div class="card-title">P0 — Correctness (could reintroduce bugs)</div>
+  <table>
+    <thead><tr><th>#</th><th>Issue</th><th>Root Cause</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><strong>Cache key ignores structure</strong></td>
+        <td>Cached reasoning keyed on <code>ticker:expiry</code>. If recommend returns different legs within 15 min (spot moved, chain shifted), the page renders fresh legs with cached narrative referencing old strikes.</td>
+        <td>Cache key now includes <code>structureHash(legs)</code> — SHA-1 of normalized (type, side, strike, mid). Different legs = different cache entry.</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><strong>Reasoning gets unpriced legs</strong></td>
+        <td>§7 said recommend enriches legs. §13 said reasoning still needs to fetch chain independently. Both can't be true. If reasoning runs on raw legs, chart (correct mids) and narrative (estimated) disagree.</td>
+        <td>Recommend is the sole pricing authority. Reasoning <strong>rejects</strong> calls without mids (<code>400 LEGS_NOT_PRICED</code>). No silent estimation. One source of truth end-to-end.</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><strong>Mid fallback <code>?? 0</code> corrupts prices</strong></td>
+        <td><code>(match.bid ?? 0 + match.ask ?? 0) / 2</code> returns <code>bid/2</code> when only bid exists. Produces a half-price that's worse than no price.</td>
+        <td>Mid computed only when <strong>both</strong> bid and ask are positive. Otherwise <code>leg.estimated = true</code> and the arbitrage detector handles it.</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><strong>Outcome tracking too late</strong></td>
+        <td><code>thesis.conviction</code> gates <code>shouldPublish</code> and Top Picks. It's an uncalibrated LLM number — same class as the P&L numbers we already proved unreliable. Without outcome data, the publish gate is running blind.</td>
+        <td>Promoted from mid-term to immediate. Record model ID + prompt version alongside conviction in <code>recommendation_log</code> for attribution when prompts change.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-title">P1 — Quality (silent drift)</div>
+  <table>
+    <thead><tr><th>#</th><th>Issue</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>5</td>
+        <td><strong>Benchmark measures wall-clock, not tok/s</strong> — qwen3.5-plus "slow at 17s" may just mean 30x more verbose</td>
+        <td>Added tok/s column to benchmark table. Added caveat: "Wall-clock latency is what users experience; a future test should measure TTFT to separate queue time from generation speed."</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td><strong>Leg matching ignores expiry</strong> — <code>contracts.find(c => c.strike === leg.strike && c.type === leg.type)</code> could match wrong expiry</td>
+        <td>Confirmed <code>getOptionsSnapshot(tk, expiry)</code> already pre-filters contracts to one expiry. Added code comment documenting this contract.</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td><strong>No provenance on conviction</strong> — can't attribute drift when prompts change</td>
+        <td>Added to outcome tracking: record model + prompt version per conviction score in recommendation_log schema.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-title">P2 — Clarity (confirm intent)</div>
+  <table>
+    <thead><tr><th>#</th><th>Issue</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>8</td>
+        <td><strong>Regime alignment double-counted</strong> — 30% of conviction AND a separate <code>> 0.5</code> gate on shouldPublish</td>
+        <td>Removed the separate gate. Regime flows only through conviction (30% weight). One threshold: <code>conviction > 6</code>.</td>
+      </tr>
+      <tr>
+        <td>9</td>
+        <td><strong>Grade B never publishes</strong> — B is ≥5 but shouldPublish needs >6, making "B" sound positive but unpublishable</td>
+        <td>Removed C+ grade. Documented: B+ (≥6) = publishable, B (≥5) = below threshold. The letter grade and gate now align.</td>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td><strong>Cost savings labeled as "-90%"</strong> — only holds as blended in+out, misleading if read as input-only</td>
+        <td>Changed all savings figures to "~73% blended (in+out)" format.</td>
+      </tr>
+      <tr>
+        <td>11</td>
+        <td><strong>Model IDs unverified</strong> — <code>qwen3.5-plus-2026-02-15</code> is an unusual version string</td>
+        <td>Verified against DashScope international API. Added note to design doc.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="callout">
+  <div class="callout-title">Review takeaway</div>
+  <p>The most dangerous bug (#1) wasn't in the prompt or the model — it was in the cache. A 15-minute TTL keyed on <code>ticker:expiry</code> could serve stale reasoning that references legs the user never sees. The fix was structural: include a hash of the actual legs in the cache key, so a hit only occurs when the displayed structure matches the reasoned one. <strong>Caches that outlive the data they summarize are a class of bug, not an edge case.</strong></p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="files">11. Files Changed</h2>
+
+<table>
+  <thead><tr><th>File</th><th>Change</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>api/src/llm/router.ts</code></td><td>Added qwen-plus, qwen3-max to ModelTier + pricing</td><td>Model swap (Phase 1)</td></tr>
+    <tr><td><code>api/src/llm/model-assignments.ts</code></td><td>Swapped fast tasks to qwen-plus, added 6 reasoning assignments</td><td>Model swap + reasoning config</td></tr>
+    <tr><td><code>api/src/agents/reasoner.ts</code></td><td><span class="tag tag-green">NEW</span> ReasoningEngine class, 6 parallel methods</td><td>Core reasoning engine</td></tr>
+    <tr><td><code>api/src/routes/ai-reasoning.ts</code></td><td><span class="tag tag-green">NEW</span> POST /api/reasoning/analyze + 15-min cache</td><td>Reasoning API endpoint</td></tr>
+    <tr><td><code>api/src/routes/ai.ts</code></td><td>Enriched recommend legs with chain mids; ai-read direction-aware</td><td>Real pricing + consistency fix</td></tr>
+    <tr><td><code>api/src/agents/advisor.ts</code></td><td>BWB asymmetric wing rules + validation; model via assignment</td><td>Strike selection quality</td></tr>
+    <tr><td><code>api/src/app.ts</code></td><td>Registered reasoning routes</td><td>Wiring</td></tr>
+    <tr><td><code>web/workbench/discover-pro.html</code></td><td><span class="tag tag-green">NEW</span> Full Discover Pro page (single-page scroll)</td><td>Frontend</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="what-worked">12. What Worked</h2>
+
+<ul>
+  <li><strong>Parallel reasoning calls:</strong> 6 calls in ~3s wall-clock. This was the key performance insight — <code>Promise.all()</code> makes depth free in latency terms.</li>
+  <li><strong>Computed P&L overriding LLM:</strong> Once we moved all math to <code>legMath.js</code>, the chart, heatmap, metrics strip, and position sizing table all agreed. One source of truth.</li>
+  <li><strong>Computed reference bar:</strong> Showing the real numbers above the reasoning cards lets users instantly spot when LLM text contradicts math. Trust through transparency.</li>
+  <li><strong>Model tiering:</strong> Using qwen-plus for narration and qwen3-max for reasoning gave us fast + deep in the same page load.</li>
+  <li><strong>BWB post-parse validation:</strong> Automatically widening symmetric wings when the LLM picks equal widths. The prompt + validation belt-and-suspenders approach works better than prompt-only.</li>
+  <li><strong>Direction-aware ai-read:</strong> Reordering the API calls (recommend first, then ai-read) eliminated the "bullish market read + bearish strategy" contradiction.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="what-didnt">13. What Didn't Work</h2>
+
+<ul>
+  <li><strong>LLM-generated P&L numbers:</strong> The LLM cannot reliably compute multi-leg options payoffs. It gets simple cases right (all OTM) but fails on ITM legs, butterfly structures, and any trade with asymmetric wings. This cost us 2+ iterations.</li>
+  <li><strong>Mid price estimation:</strong> The formula <code>mid = spot * 0.02 * exp(-dist * 10)</code> produces unrealistic prices. A BWB with estimated mids showed a risk-free payoff — $176-$676 profit everywhere with zero loss. This was caught by the user's mathematical audit.</li>
+  <li><strong>Stale reasoning text:</strong> When the reasoning API is called with incomplete data (no legs, no mids), the LLM invents details. It would reference "$123 short call spread" when the actual trade had no calls. The fix was providing complete, labeled data with explicit "do not invent" instructions, but some hallucination persists.</li>
+  <li><strong>Position sizing from LLM:</strong> The LLM recommended 40 contracts on $100k with computed max loss of $3,520 — but the real max loss was $7,760. We replaced this entirely with computed sizing based on 2% account risk.</li>
+  <li><strong>Canvas payoff chart:</strong> The initial Canvas-based chart had DPI/retina scaling issues. Switching to Highcharts fixed it immediately and gave us tooltips, breakeven labels, and spot line for free.</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<h2 id="next">14. What's Next</h2>
+
+<h3>Immediate (this week)</h3>
+<ul>
+  <li><strong>Verify real mids from production:</strong> Test with live market data to confirm the recommend route now returns actual bid/ask/mid from the chain. This should eliminate all pricing warning banners.</li>
+  <li><strong>Validate breakevens:</strong> With real mids, breakevens should compute correctly. Verify they match the chart's zero-crossings.</li>
+  <li><strong>Test reasoning text consistency:</strong> With real legs + real mids + real P&L passed to the prompts, verify the thesis/risk/exit text references the correct strikes, direction, and numbers.</li>
+  <li><strong>Outcome tracking (promoted from mid-term):</strong> Store model ID, prompt version, thesis conviction, and scenario probabilities alongside <code>recommendation_log</code>. These LLM-produced numbers gate <code>shouldPublish</code> and published Top Picks — they're as un-auditable as the P&L numbers we pulled out of the LLM, just without a chart to contradict them. The publish gate runs on uncalibrated conviction until this loop exists. Record provenance so we can attribute drift when prompts are tuned later.</li>
+</ul>
+
+<h3>Short-term (next 2 weeks)</h3>
+<ul>
+  <li><strong>Black-Scholes interim P&L:</strong> The ~7d and ~14d columns in the heatmap currently use linear interpolation (30%/65% of expiry P&L). Replace with a BS model that accounts for theta decay, vega, and gamma properly.</li>
+  <li><strong>Scenario detection:</strong> Classify each ticker into one of 15 market scenarios (high IV, pre-earnings, breakout, etc.) and select only the relevant reasoning prompts. This reduces cost and improves prompt relevance.</li>
+  <li><strong>Conviction calibration:</strong> With outcome data flowing, correlate conviction scores with actual P&L. Tune prompt instructions based on systematic biases (e.g., if conviction 7 trades win at the same rate as conviction 5, the scale is miscalibrated).</li>
+</ul>
+
+<h3>Mid-term (next month)</h3>
+<ul>
+  <li><strong>Conviction gate:</strong> Auto-suppress picks below conviction threshold from "Top Picks" in the Discover page. Only publish trades where both engine score AND reasoning conviction pass.</li>
+  <li><strong>Portfolio-level reasoning:</strong> Before publishing a new pick, check existing positions for correlation, sector concentration, and total portfolio Greeks. The regime context already assesses macro — extend it to portfolio.</li>
+</ul>
+
+<div class="callout">
+  <div class="callout-title">Design philosophy</div>
+  <p>Discover Pro is not a chatbot. It's a structured, opinionated analysis that takes a position: here's the trade, here's why, here's the risk, here's how to manage it, here's how much to risk. Every section either answers a specific question or provides a specific number. If a section can't be computed accurately, we label it as estimated rather than presenting it as fact.</p>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "name": "@newleaf/strategies",
+  "version": "1.0.0",
+  "description": "Pure options strategy comparison engine — buildLegs, payoff, analyse, bandWidth",
+  "main": "index.js",
+  "types": "index.d.ts"
+}

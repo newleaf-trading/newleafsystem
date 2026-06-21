@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan adherence · NewLeaf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEEADD;--panel:#FCFAF2;--panel-2:#F4F0E4;--ink:#16271C;--ink-soft:#3A4A40;
+    --muted:#7C887E;--line:#E3DDCB;--gold:#B68F3E;--gold-soft:#E7D9AE;
+    --green:#2F6B4F;--green-deep:#16271C;--warn:#BD6A4C;
+    --serif:'Fraunces',Georgia,serif;--sans:'DM Sans',system-ui,sans-serif;--mono:'Space Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;
+    min-height:100vh;display:flex;justify-content:center;padding:36px 20px}
+  .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:700}
+  .num{font-variant-numeric:tabular-nums}
+
+  .panel{width:100%;max-width:780px;background:var(--panel);border:1px solid var(--line);border-radius:20px;
+    padding:26px 28px 24px;box-shadow:0 18px 50px rgba(22,39,28,.07)}
+
+  /* header + verdict */
+  .head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+  .head h1{font-family:var(--serif);font-size:27px;font-weight:600;line-height:1.05;margin-top:3px}
+  .week{text-align:right;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.08em;line-height:1.6}
+  .week b{display:block;font-size:13px;color:var(--ink)}
+
+  .verdict{display:flex;align-items:center;gap:12px;background:linear-gradient(100deg,#1d3326,#16271C);
+    color:#EDE7D6;border-radius:13px;padding:13px 16px;margin-bottom:20px}
+  .verdict .dot{flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 4px rgba(182,143,62,.18)}
+  .verdict p{font-size:13.5px;line-height:1.4}
+  .verdict b{color:var(--gold-soft);font-weight:700}
+
+  /* 3 kpis */
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:22px}
+  .kpi{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:12px 13px}
+  .kpi .k{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .kpi .v{font-family:var(--serif);font-size:22px;font-weight:600;line-height:1.1;margin:3px 0}
+  .kpi .tag{display:inline-block;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;padding:2px 7px;border-radius:6px}
+  .tag.behind{background:#F0DED4;color:#9c4f33}
+  .tag.ahead{background:#DCEBE1;color:#225239}
+  .tag.clear{background:var(--gold-soft);color:#7c6526}
+  .kpi .sub{font-size:10.5px;color:var(--muted);margin-top:5px}
+
+  /* signature : drift attribution */
+  .attr{border:1px solid var(--line);border-radius:14px;padding:16px 18px 18px;margin-bottom:20px;background:var(--panel)}
+  .attr .top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+  .attr h2{font-family:var(--serif);font-size:16px;font-weight:600}
+  .attr .net{font-family:var(--mono);font-size:12px;color:var(--ink-soft)}
+  .attr .net b{color:var(--warn);font-weight:700}
+  .bars{display:flex;flex-direction:column;gap:11px;position:relative}
+  .center-line{position:absolute;left:50%;top:-2px;bottom:18px;width:1px;background:var(--ink);opacity:.18}
+  .center-cap{position:absolute;left:50%;top:-14px;transform:translateX(-50%);font-family:var(--mono);
+    font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .brow{display:grid;grid-template-columns:128px 1fr;align-items:center;gap:12px}
+  .brow .lbl{font-size:11.5px;color:var(--ink-soft)}
+  .brow .lbl b{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:1px}
+  .track{position:relative;height:26px}
+  .bar{position:absolute;top:0;height:26px;display:flex;align-items:center;border-radius:6px;padding:0 8px;
+    font-family:var(--mono);font-size:11px;font-weight:700}
+  .bar.neg{right:50%;justify-content:flex-start;background:rgba(189,106,76,.18);color:#9c4f33;
+    border:1px solid rgba(189,106,76,.35);border-right:none;border-radius:6px 0 0 6px;flex-direction:row-reverse}
+  .bar.pos{left:50%;justify-content:flex-start;background:rgba(47,107,79,.16);color:#225239;
+    border:1px solid rgba(47,107,79,.34);border-left:none;border-radius:0 6px 6px 0}
+  .scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8.5px;color:var(--muted);
+    letter-spacing:.05em;margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}
+  .scale span:nth-child(2){opacity:.6}
+
+  /* two columns : metronome + band */
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+  .mini{border:1px solid var(--line);border-radius:13px;padding:14px 15px}
+  .mini h3{font-family:var(--serif);font-size:14px;font-weight:600;margin-bottom:2px}
+  .mini .cap{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:11px}
+  .metro{display:flex;gap:9px;margin-bottom:11px}
+  .slot{flex:1;aspect-ratio:1;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;
+    font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .slot.on{background:var(--green);border-color:var(--green);color:#EDE7D6}
+  .mini p{font-size:10.5px;color:var(--muted);line-height:1.4}
+
+  .band{position:relative;height:34px;margin:14px 0 8px}
+  .band .strip{position:absolute;top:13px;height:8px;border-radius:5px;background:var(--line)}
+  .band .fill{position:absolute;top:13px;height:8px;border-radius:5px;background:var(--gold-soft)}
+  .band .median{position:absolute;top:7px;width:2px;height:20px;background:var(--ink-soft);opacity:.5}
+  .band .you{position:absolute;top:4px;width:11px;height:11px;border-radius:50%;background:var(--green);
+    border:2px solid var(--panel);box-shadow:0 0 0 1px var(--green);transform:translateX(-50%)}
+  .band .youlab{position:absolute;top:-2px;font-family:var(--mono);font-size:9px;font-weight:700;color:var(--green);transform:translateX(-50%)}
+  .bandscale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8.5px;color:var(--muted)}
+
+  /* rule footer */
+  .rule{display:flex;gap:11px;align-items:flex-start;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:12px;padding:13px 15px;margin-bottom:10px}
+  .rule .ic{flex:0 0 auto;width:26px;height:26px;border-radius:8px;background:var(--green-deep);color:var(--gold-soft);
+    display:grid;place-items:center;font-size:14px}
+  .rule p{font-size:12px;line-height:1.45;color:var(--ink-soft)}
+  .rule b{color:var(--ink)}
+  .disclaim{font-family:var(--mono);font-size:9.5px;color:var(--muted);text-align:center;letter-spacing:.04em}
+
+  @media(max-width:560px){
+    .kpis{grid-template-columns:1fr}.duo{grid-template-columns:1fr}
+    .brow{grid-template-columns:96px 1fr}
+  }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <div class="head">
+      <div>
+        <span class="eyebrow">Plan adherence</span>
+        <h1>Are you on track?</h1>
+      </div>
+      <div class="week">Week<b>8 of 52</b>since plan set</div>
+    </div>
+
+    <div class="verdict">
+      <span class="dot"></span>
+      <p>Your edge is running <b>ahead</b> of plan — the only thing holding you back is <b>cadence</b>. The fix is pace, not risk. Keep taking qualified setups as they appear.</p>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <span class="k">Cadence</span>
+        <div class="v num">17 / 40</div>
+        <span class="tag behind">43% · behind</span>
+        <div class="sub">Trades placed vs plan pace of 5/week.</div>
+      </div>
+      <div class="kpi">
+        <span class="k">Realised edge</span>
+        <div class="v num">0.59%</div>
+        <span class="tag ahead">vs 0.28% plan</span>
+        <div class="sub">Per-trade growth over 17 closed trades.</div>
+      </div>
+      <div class="kpi">
+        <span class="k">Risk deployed</span>
+        <div class="v num">$0 / $21k</div>
+        <span class="tag clear">clear · ~10 ideas</span>
+        <div class="sub">Room before portfolio max loss.</div>
+      </div>
+    </div>
+
+    <!-- signature: drift attribution -->
+    <div class="attr">
+      <div class="top">
+        <h2>Why you're $2,910 behind plan</h2>
+        <span class="net">net <b>−$2,910</b> vs expected</span>
+      </div>
+      <div class="bars">
+        <div class="center-line"></div>
+        <div class="center-cap">plan / expected</div>
+        <div class="brow">
+          <div class="lbl"><b>Cadence drag</b>17 trades, not 40</div>
+          <div class="track"><div class="bar neg" style="width:50%">−$14,610</div></div>
+        </div>
+        <div class="brow">
+          <div class="lbl"><b>Edge surplus</b>0.59% vs 0.28%</div>
+          <div class="track"><div class="bar pos" style="width:40%">+$11,700</div></div>
+        </div>
+        <div class="scale"><span>behind plan</span><span>plan</span><span>ahead of plan</span></div>
+      </div>
+    </div>
+
+    <div class="duo">
+      <div class="mini">
+        <div class="cap">This week</div>
+        <h3>Qualified setups</h3>
+        <div class="metro">
+          <div class="slot on">✓</div><div class="slot on">✓</div>
+          <div class="slot">3</div><div class="slot">4</div><div class="slot">5</div>
+        </div>
+        <p><b style="color:var(--ink)">2 of 5</b> cleared quality. Markets were quiet — don't force the other three. A short week isn't a miss.</p>
+      </div>
+      <div class="mini">
+        <div class="cap">Equity vs band</div>
+        <h3>Where you sit today</h3>
+        <div class="band">
+          <div class="strip" style="left:0;right:0"></div>
+          <div class="fill" style="left:12%;right:8%"></div>
+          <div class="median" style="left:55%"></div>
+          <div class="you" style="left:48%"></div>
+          <div class="youlab" style="left:48%">you</div>
+        </div>
+        <div class="bandscale"><span>$222k</span><span>median $235k</span><span>$249k</span></div>
+        <p style="margin-top:8px">Inside the 10th–90th band, just below the expected line — consistent with being on edge but under pace.</p>
+      </div>
+    </div>
+
+    <div class="rule">
+      <span class="ic">◷</span>
+      <p><b>Cadence is a metronome, not a debt.</b> You don't repay a slow week by doubling up next week — that's how the risk cap gets breached. Resume pace and let the edge compound.</p>
+    </div>
+    <p class="disclaim">Educational only · Not financial advice · Gaps are computed from your plan of record and closed trades.</p>
+  </div>
+</body>
+</html>

@@ -8,6 +8,7 @@ declare module 'fastify' {
   interface FastifyRequest {
     userRole: UserRole;
     userId: string;
+    _apiKeyDocRef?: FirebaseFirestore.DocumentReference;
   }
 }
 
@@ -41,7 +42,7 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
   // Production: look up key in Firestore
   try {
     initFirebase();
-    const db = getFirestore();
+    const db = getFirestore('newleafdb');
     const snap = await db.collection('apiKeys')
       .where('key', '==', apiKey)
       .where('active', '==', true)
@@ -56,8 +57,9 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
     const data = doc.data();
     request.userRole = data.role as UserRole;
     request.userId = data.ownerId ?? doc.id;
+    request._apiKeyDocRef = doc.ref;
 
-    // Fire-and-forget usage update
+    // Fire-and-forget: increment request count (HTTP-level)
     doc.ref.update({
       lastUsedAt: new Date(),
       requestCount: (data.requestCount ?? 0) + 1,

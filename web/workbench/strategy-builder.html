@@ -159,10 +159,14 @@ canvas#ruler{display:block;width:100%;height:90px}
 .si-type{font-size:.66rem;color:var(--ink-faint);font-weight:500;letter-spacing:.04em;text-transform:uppercase}
 .si-slider{width:100%;accent-color:var(--forest);cursor:pointer;height:3px}
 .si-slider.call{accent-color:var(--red)}
-.si-val{font-size:.86rem;font-weight:700;color:var(--ink);background:var(--cream);border:1px solid var(--border-strong);border-radius:4px;padding:5px 10px;text-align:right}
+.si-val{font-size:.86rem;font-weight:700;color:var(--ink);background:var(--cream);border:1px solid var(--border-strong);border-radius:4px;padding:5px 10px;text-align:right;font-family:var(--fb);cursor:text}
+.si-val:focus{outline:none;border-color:var(--forest);background:#fff;box-shadow:0 0 0 2px rgba(11,45,35,.1)}
+/* Hide number input spinner */
+.si-val::-webkit-inner-spin-button,.si-val::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.si-val{-moz-appearance:textfield}
 
 /* ── P&L STRIP ── */
-.pnl-strip{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border)}
+.pnl-strip{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border)}
 .pnl-cell{padding:1rem 1.25rem;display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--border);background:#fff}
 .pnl-cell:last-child{border-right:none}
 .pnl-lbl{font-size:.66rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ink-muted);font-weight:600}
@@ -340,6 +344,7 @@ canvas#payoff{display:block;width:100%;height:260px}
     </div>
 
     <div class="lbottom">
+      <button class="btn-p" id="saveToCompare" type="button" style="background:#1a7070;color:#fff" onclick="saveToCompare()">📊 Save to Compare</button>
       <button class="btn-p btn-publish" id="publishToFirebase" type="button" disabled>🚀 Publish to Firebase</button>
       <div class="fb-status" id="fbStatus" style="display:none"></div>
       <div class="fb-auth" id="fbAuth">Not signed in · <a id="fbSignInLink">Sign in with Google</a></div>
@@ -430,6 +435,11 @@ canvas#payoff{display:block;width:100%;height:260px}
         <div class="pnl-val" id="pm-loss">—</div>
         <div class="pnl-sub">defined risk</div>
       </div>
+      <div class="pnl-cell">
+        <div class="pnl-lbl">Reward : risk</div>
+        <div class="pnl-val" id="pm-rr">—</div>
+        <div class="pnl-sub">max profit ÷ max loss</div>
+      </div>
       <div class="pnl-cell be">
         <div class="pnl-lbl">Breakeven low</div>
         <div class="pnl-val" id="pm-belo">—</div>
@@ -444,6 +454,11 @@ canvas#payoff{display:block;width:100%;height:260px}
         <div class="pnl-lbl">Total credit</div>
         <div class="pnl-val" id="pm-credit">—</div>
         <div class="pnl-sub">collected upfront</div>
+      </div>
+      <div class="pnl-cell">
+        <div class="pnl-lbl">Days to expiry</div>
+        <div class="pnl-val" id="pm-dte">—</div>
+        <div class="pnl-sub" id="pm-dte-date">—</div>
       </div>
     </div>
 
@@ -1213,13 +1228,16 @@ async function loadSymbol(symbol) {
   if (!symbol) return;
   showLoading(true);
   try {
+    // Try dedicated atm-latest.json first, fall back to latest.json optionChain
     const atmRes = await fetch(`${R2_BASE}/reports/${symbol}/contracts/atm-latest.json?_=${Date.now()}`);
-    if (!atmRes.ok) throw new Error(`No atm data for ${symbol}`);
-    atmData = await atmRes.json();
+    if (atmRes.ok) {
+      atmData = await atmRes.json();
+    }
 
-    // Per-symbol report (gammaData / scoring) — non-fatal if missing
+    // Per-symbol report (gammaData / scoring)
+    let repRes;
     try {
-      const repRes = await fetch(`${R2_BASE}/reports/${symbol}/latest.json?_=${Date.now()}`);
+      repRes = await fetch(`${R2_BASE}/reports/${symbol}/latest.json?_=${Date.now()}`);
       reportData = repRes.ok ? await repRes.json() : null;
       if (reportData) {
         try {
@@ -1236,6 +1254,80 @@ async function loadSymbol(symbol) {
       }
     } catch (e) {
       reportData = null;
+    }
+
+    // Fallback: if atm-latest.json was missing, build atmData from latest.json optionChain
+    if (!atmData && reportData?.optionChain?.length) {
+      const oc = reportData.optionChain;
+      const spot = reportData.snapshot?.price || 0;
+      const expiryMap = {};
+      for (const c of oc) {
+        if (!expiryMap[c.expiry]) expiryMap[c.expiry] = { expiry: c.expiry, dte: c.dte, contracts: [] };
+        expiryMap[c.expiry].contracts.push({
+          strike: c.strike, type: c.type, bid: c.bid || 0, ask: c.ask || 0,
+          mid: c.mid || ((c.bid || 0) + (c.ask || 0)) / 2,
+          iv: c.iv || 0, delta: c.delta || null, gamma: c.gamma || null,
+          oi: c.openInterest || 0, volume: c.volume || 0, last: c.last || 0
+        });
+      }
+      atmData = { spot, expiries: Object.values(expiryMap).sort((a, b) => a.dte - b.dte) };
+      console.log(`[strategy-builder] Built atmData from latest.json optionChain (${oc.length} contracts, ${atmData.expiries.length} expiries)`);
+    }
+
+    if (!atmData) throw new Error(`No atm data for ${symbol}`);
+
+    // Live API fallback: if R2 has no gamma data (or 0 contracts), fetch from gamma-analysis API
+    const hasGamma = reportData?.gammaData?.analysis?.contracts_analyzed > 0;
+    if (!hasGamma && atmData?.expiries?.length) {
+      try {
+        const API_URL = window.__CONFIG__?.API_URL || 'https://us-central1-newleaf-trading.cloudfunctions.net/api';
+        const API_KEY = 'nl_31ee32be43bd4f07a3520ae15c4b3162';
+        // Pick an expiry with 14-45 DTE for best OI data; fall back to first available
+        const idealExpiry = atmData.expiries.find(e => e.dte >= 14 && e.dte <= 45)
+          || atmData.expiries.find(e => e.dte >= 7)
+          || atmData.expiries[0];
+        const firstExpiry = idealExpiry.expiry;
+        const gaRes = await fetch(`${API_URL}/api/gamma-analysis/${symbol}/${firstExpiry}`, {
+          headers: { 'X-API-Key': API_KEY }
+        });
+        if (gaRes.ok) {
+          const gaData = await gaRes.json();
+          const a = gaData.analysis || {};
+          if (a.contractsAnalyzed > 0) {
+            if (!reportData) reportData = {};
+            reportData.gammaData = {
+              analysis: {
+                put_wall: a.gexWalls?.putStrike ?? a.oiWalls?.putStrike,
+                call_wall: a.gexWalls?.callStrike ?? a.oiWalls?.callStrike,
+                band_width_pct: a.bandWidthPct,
+                position_in_band_pct: a.positionInBandPct,
+                confidence_score: a.confidenceScore,
+                oi_confidence: a.oiConfidence,
+                delta_confidence: a.deltaConfidence,
+                volume_confidence: a.volumeConfidence,
+                contracts_analyzed: a.contractsAnalyzed,
+                condor_allowed: a.confidenceScore >= 0.6 && a.bandWidthPct >= 3 && a.bandWidthPct <= 15,
+                topStrikes: (a.topStrikes || []).map(s => ({
+                  strike: s.strike,
+                  gamma_exposure: s.gammaExposure,
+                  callGex: s.callGex || 0,
+                  putGex: s.putGex || 0,
+                  netGex: s.netGex || 0,
+                  call_oi: s.callOI,
+                  put_oi: s.putOI,
+                  call_volume: s.callVolume,
+                  put_volume: s.putVolume,
+                })),
+              },
+              ivData: { atmIv: a.atmIv, ivLevel: a.ivLevel },
+            };
+            reportData.gammaData._source = 'live-api';
+            console.log(`[strategy-builder] Gamma walls loaded via live API for ${symbol}/${firstExpiry}`);
+          }
+        }
+      } catch (err) {
+        console.warn('[strategy-builder] Live gamma API fallback failed:', err.message);
+      }
     }
 
     document.getElementById('spotPrice').textContent = '$' + atmData.spot.toFixed(2);
@@ -1450,8 +1542,16 @@ function buildStrikeSliders() {
   const minK = allStrikes[0], maxK = allStrikes[allStrikes.length - 1];
   const step = allStrikes.length > 1 ? Math.min(...allStrikes.slice(1).map((s, i) => s - allStrikes[i])) : 0.5;
 
+  // Build a datalist of actual available strikes for smooth snapping
+  const putStrikes = [...new Set(selectedExpiry.contracts.filter(c => c.type === 'put').map(c => c.strike))].sort((a, b) => a - b);
+  const callStrikes = [...new Set(selectedExpiry.contracts.filter(c => c.type === 'call').map(c => c.strike))].sort((a, b) => a - b);
+
   legsMeta.forEach((leg, i) => {
     const isCall = leg.type === 'CALL';
+    const typeStrikes = isCall ? callStrikes : putStrikes;
+    const typeStep = typeStrikes.length > 1 ? Math.min(...typeStrikes.slice(1).map((s, j) => s - typeStrikes[j])) : step;
+    const typeMin = typeStrikes.length ? typeStrikes[0] : minK;
+    const typeMax = typeStrikes.length ? typeStrikes[typeStrikes.length - 1] : maxK;
     const row = document.createElement('div');
     row.className = 'si-row';
     row.innerHTML = `
@@ -1460,15 +1560,42 @@ function buildStrikeSliders() {
         <div class="si-type">${leg.dir === 'long' ? 'Buy' : 'Sell'} · ${leg.type}</div>
       </div>
       <input type="range" class="si-slider${isCall ? ' call' : ''}"
-             min="${minK}" max="${maxK}" step="${step}" value="${strikes[i]}"
-             data-leg="${i}" id="slider-${i}">
-      <div class="si-val" id="siv-${i}">$${(strikes[i] || 0).toFixed(1)}</div>
+             min="${typeMin}" max="${typeMax}" step="${typeStep}" value="${strikes[i]}"
+             data-leg="${i}" id="slider-${i}"
+             list="strikes-${isCall ? 'call' : 'put'}">
+      <input type="number" class="si-val" id="siv-${i}" value="${(strikes[i] || 0).toFixed(1)}"
+             step="${typeStep}" min="${typeMin}" max="${typeMax}"
+             data-leg="${i}"
+             style="width:80px">
     `;
     container.appendChild(row);
   });
 
+  // Add datalists for strike snapping
+  if (!document.getElementById('strikes-put')) {
+    const dlPut = document.createElement('datalist'); dlPut.id = 'strikes-put';
+    putStrikes.forEach(s => { const o = document.createElement('option'); o.value = s; dlPut.appendChild(o); });
+    container.appendChild(dlPut);
+    const dlCall = document.createElement('datalist'); dlCall.id = 'strikes-call';
+    callStrikes.forEach(s => { const o = document.createElement('option'); o.value = s; dlCall.appendChild(o); });
+    container.appendChild(dlCall);
+  }
+
+  // Slider events
   container.querySelectorAll('input[type="range"]').forEach(slider => {
     slider.addEventListener('input', e => onSlide(parseInt(e.target.dataset.leg, 10), parseFloat(e.target.value)));
+  });
+
+  // Input box events (editable strike values)
+  container.querySelectorAll('input[type="number"].si-val').forEach(input => {
+    input.addEventListener('change', e => {
+      const legIdx = parseInt(e.target.dataset.leg, 10);
+      const val = parseFloat(e.target.value);
+      if (!isNaN(val) && val > 0) onSlide(legIdx, val);
+    });
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.target.blur(); }
+    });
   });
 }
 
@@ -1506,7 +1633,9 @@ function onSlide(legIdx, newStrike) {
     if (d < bestDiff) { snapped = s; bestDiff = d; }
   }
   strikes[legIdx] = snapped;
-  document.getElementById(`siv-${legIdx}`).textContent = '$' + snapped.toFixed(1);
+  const sivEl = document.getElementById(`siv-${legIdx}`);
+  if (sivEl.tagName === 'INPUT') sivEl.value = snapped.toFixed(1);
+  else sivEl.textContent = '$' + snapped.toFixed(1);
   document.getElementById(`slider-${legIdx}`).value = snapped;
   // Manual edit clears the active pill so the user knows they've gone off-preset
   document.querySelectorAll('.spill:not(.sbar-info-btn)').forEach(p => p.classList.remove('on'));
@@ -1572,8 +1701,11 @@ function recalc() {
 // ════════════════════════════════════════════════════════════════════════════
 function renderPnlStrip(legs, validation) {
   const $ = id => document.getElementById(id);
+  // Days to expiry is independent of a valid setup — always show it if an expiry is loaded.
+  $('pm-dte').textContent      = selectedExpiry ? selectedExpiry.dte + 'd' : '—';
+  $('pm-dte-date').textContent = selectedExpiry ? selectedExpiry.expiry : 'to expiration';
   if (!legs || !validation) {
-    ['pm-profit','pm-loss','pm-belo','pm-behi','pm-credit'].forEach(k => $(k).textContent = '—');
+    ['pm-profit','pm-loss','pm-rr','pm-belo','pm-behi','pm-credit'].forEach(k => $(k).textContent = '—');
     ['pm-belo-pct','pm-behi-pct'].forEach(k => $(k).textContent = '—');
     return;
   }
@@ -1594,6 +1726,8 @@ function renderPnlStrip(legs, validation) {
   $('pm-profit').textContent = '$' + Math.round(profit);
   $('pm-loss').textContent   = (loss < 0 ? '-$' : '$') + Math.round(Math.abs(loss));
   $('pm-credit').textContent = '$' + (credit / 100).toFixed(2);
+  const lossAbs = Math.abs(loss);
+  $('pm-rr').textContent     = lossAbs > 0 ? (profit / lossAbs).toFixed(2) + ' : 1' : '—';
 
   const fmtPct = v => ((v - atmData.spot) / atmData.spot * 100).toFixed(1) + '% from spot';
   $('pm-belo').textContent = beL != null ? '$' + beL.toFixed(2) : '—';
@@ -2099,12 +2233,16 @@ function showGammaPopup() {
   const iv = g?.ivData;
   if (!a || a.contracts_analyzed === 0) { el.innerHTML = '<p style="color:#999">No gamma data available for this symbol. Run the daily OI pipeline first.</p>'; }
   else {
+    const isLive = g._source === 'live-api';
+    const sourceBadge = isLive
+      ? '<span style="font-size:9px;color:#d97706;background:#fef3c7;border-radius:3px;padding:1px 6px;font-weight:600;margin-left:8px">LIVE API</span>'
+      : '<span style="font-size:9px;color:#059669;background:#d1fae5;border-radius:3px;padding:1px 6px;font-weight:600;margin-left:8px">R2 PIPELINE</span>';
     const conf = (v, lbl) => `<div class="ip-cell"><span class="ip-cell-lbl">${lbl}</span><span class="ip-cell-val">${Math.round((v||0)*100)}%</span><div class="ip-bar"><div class="ip-bar-fill" style="width:${Math.round((v||0)*100)}%;background:${v>=0.6?'#2d7d4f':v>=0.3?'#a0620c':'#c0392b'}"></div></div></div>`;
     const topStrikes = (a.topStrikes || []).slice(0, 6);
     const maxGex = Math.max(...topStrikes.map(s => Math.abs(s.gamma_exposure || 0)), 1);
     el.innerHTML = `
       <div class="ip-section">
-        <div class="ip-section-title">Gamma Walls</div>
+        <div class="ip-section-title">Gamma Walls ${sourceBadge}</div>
         <div class="ip-section-desc">Where market makers hold their largest hedging positions. The stock tends to stay between these walls — they act as magnetic support and resistance levels driven by options dealer positioning.</div>
         <div class="ip-grid cols-4">
           <div class="ip-cell"><span class="ip-cell-lbl">Put Wall</span><span class="ip-cell-val green">$${a.put_wall != null ? Number(a.put_wall).toFixed(2) : '—'}</span></div>
@@ -2824,6 +2962,47 @@ function showFbStatus(kind, msg) {
   }
 }
 
+// ── Save to Compare ─────────────────────────────────────────────────────────
+function saveToCompare() {
+  const payload = buildTilePayload();
+  if (!payload || payload.error) {
+    alert(payload?.error || 'Build a valid strategy first');
+    return;
+  }
+
+  // Build the compare-ready structure
+  const entry = {
+    id: Date.now().toString(36),
+    name: (payload.strategy || currentStrategy || 'Strategy').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+    symbol: payload.ticker,
+    spot: payload.spot,
+    expiry: payload.expiry,
+    legs: payload.legs.map(l => ({
+      kind: l.type,
+      dir: l.action === 'sell' ? 'short' : 'long',
+      strike: l.strike,
+      qty: 1,
+      premium: l.mid || 0,
+    })),
+    maxProfit: payload.maxProfit,
+    maxLoss: payload.maxLoss,
+    netCredit: payload.netCredit,
+    rewardRisk: payload.rewardRisk,
+    savedAt: new Date().toISOString(),
+  };
+
+  // Load existing saved strategies
+  const saved = JSON.parse(localStorage.getItem('nl_compare_strategies') || '[]');
+  saved.push(entry);
+  localStorage.setItem('nl_compare_strategies', JSON.stringify(saved));
+
+  const btn = document.getElementById('saveToCompare');
+  const orig = btn.textContent;
+  btn.textContent = '✓ Saved (' + saved.length + ' total)';
+  btn.style.background = '#2d7d4f';
+  setTimeout(() => { btn.textContent = orig; btn.style.background = '#1a7070'; }, 2000);
+}
+
 async function onPublishClick() {
   const payload = buildTilePayload();
   if (!payload) {
@@ -3108,9 +3287,9 @@ window.publishTile = async function(payload) {
       greeks:           netGreeks,
       netTheta:         netGreeks.netTheta,
 
-      // Confidence (from gamma analysis)
-      confidenceScore:  Math.round((payload.gammaData?.confidence_score || 0.7) * 100),
-      confidence:       Math.round((payload.gammaData?.confidence_score || 0.7) * 100),
+      // Named confidence fields — no generic 'confidence'
+      verdictConfidence: null,  // strategy-builder has no adversarial verdict
+      wallConfidence:    payload.gammaData?.confidence_score ?? null,  // 0-1 scale, native gamma
 
       // Snapshots
       gammaData:        payload.gammaData || null,
