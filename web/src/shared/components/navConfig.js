@@ -70,6 +70,7 @@ export const surfaceConfig = {
       { kind: 'link', label: 'Workbench', href: '/workbench/' },
       { kind: 'link', label: 'Invest', href: '/invest' },
       { kind: 'link', label: 'Blog', href: '/blog' },
+      { kind: 'link', label: 'About', href: '/about' },
       { kind: 'dropdown', label: 'How it works', items: HOW_IT_WORKS_ITEMS, dark: true },
     ],
     showSwitcher: true,

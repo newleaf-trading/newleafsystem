@@ -36,6 +36,7 @@ const HowWePickPage = lazy(() => import('./marketing/how-we-pick/HowWePickPage')
 const HowWeManagePage = lazy(() => import('./marketing/how-we-manage/HowWeManagePage').then(m => ({ default: m.HowWeManagePage })));
 const HowWeRecommendPage = lazy(() => import('./marketing/how-we-recommend/HowWeRecommendPage').then(m => ({ default: m.HowWeRecommendPage })));
 const TrackRecordPage = lazy(() => import('./marketing/track-record/TrackRecordPage').then(m => ({ default: m.TrackRecordPage })));
+const AboutPage = lazy(() => import('./marketing/about/AboutPage').then(m => ({ default: m.AboutPage })));
 
 // Documentation pages — lazy
 const ScoringAlgorithmPage = lazy(() => import('./marketing/scoring-algorithm/ScoringAlgorithmPage').then(m => ({ default: m.ScoringAlgorithmPage })));
@@ -118,6 +119,7 @@ export default function App() {
           <Route path="/ai-sentiment" element={<AISentimentPage />} />
           <Route path="/ai-portfolio" element={<AIPortfolioPage />} />
           <Route path="/verification-desk" element={<VerificationDeskPage />} />
+          <Route path="/about" element={<AboutPage />} />
         </Route>
 
         {/* Product pages */}
