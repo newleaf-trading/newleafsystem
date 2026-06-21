@@ -30,6 +30,48 @@ export default function AutomatingTechnicalAnalysis() {
         <li><strong>ATR % (14-period)</strong> — the expected daily move as a percentage.</li>
         <li><strong>Gamma walls</strong> — where dealer positioning concentrates support and resistance.</li>
       </ul>
+
+      <figure style={{ margin: '26px 0 28px', padding: '20px 18px 12px', background: '#fff', border: '1px solid rgba(17,24,39,0.08)', borderRadius: 14 }}>
+        <svg viewBox="0 0 640 300" width="100%" role="img" aria-label="The six signals map into three weighted pillars — Gamma, IV, and Trend — which sum to one 0 to 100 score">
+          <text x="96" y="14" textAnchor="middle" fontSize="10" letterSpacing="1.5" fill="#9b9b8e" fontFamily="'Space Mono', monospace">SIGNALS</text>
+          <text x="343" y="14" textAnchor="middle" fontSize="10" letterSpacing="1.5" fill="#9b9b8e" fontFamily="'Space Mono', monospace">PILLARS</text>
+          <text x="564" y="14" textAnchor="middle" fontSize="10" letterSpacing="1.5" fill="#9b9b8e" fontFamily="'Space Mono', monospace">SCORE</text>
+          {[
+            { t: 'Gamma walls', y: 28, c: 43, ty: 62, col: '#0B2D23' },
+            { t: 'Bollinger Bands', y: 66, c: 81, ty: 62, col: '#0B2D23' },
+            { t: 'Realized vol', y: 104, c: 119, ty: 138, col: '#B5843A' },
+            { t: 'ATR %', y: 142, c: 157, ty: 138, col: '#B5843A' },
+            { t: 'SMA 50 / 100 / 200', y: 180, c: 195, ty: 214, col: '#2E7D5B' },
+            { t: 'RSI', y: 218, c: 233, ty: 214, col: '#2E7D5B' },
+          ].map((s, i) => (
+            <g key={i}>
+              <line x1="180" y1={s.c} x2="268" y2={s.ty} stroke={s.col} strokeWidth="1.5" opacity="0.45" />
+              <rect x="12" y={s.y} width="168" height="30" rx="6" fill="#F3EFE4" stroke="#E4DED2" />
+              <rect x="12" y={s.y} width="4" height="30" rx="2" fill={s.col} />
+              <text x="26" y={s.y + 19} fontSize="11.5" fill="#3d3d35" fontFamily="'Inter', sans-serif">{s.t}</text>
+            </g>
+          ))}
+          <line x1="418" y1="62" x2="498" y2="138" stroke="#C9B89A" strokeWidth="1.5" opacity="0.6" />
+          <line x1="418" y1="138" x2="498" y2="138" stroke="#C9B89A" strokeWidth="1.5" opacity="0.6" />
+          <line x1="418" y1="214" x2="498" y2="138" stroke="#C9B89A" strokeWidth="1.5" opacity="0.6" />
+          <rect x="268" y="40" width="150" height="44" rx="7" fill="#0B2D23" />
+          <text x="343" y="60" textAnchor="middle" fontSize="13" fontWeight="700" fill="#fff" fontFamily="'Inter', sans-serif">Gamma</text>
+          <text x="343" y="76" textAnchor="middle" fontSize="10.5" fill="rgba(255,255,255,.8)" fontFamily="'Space Mono', monospace">40 pts</text>
+          <rect x="268" y="116" width="150" height="44" rx="7" fill="#C9A96E" />
+          <text x="343" y="136" textAnchor="middle" fontSize="13" fontWeight="700" fill="#0B2D23" fontFamily="'Inter', sans-serif">IV</text>
+          <text x="343" y="152" textAnchor="middle" fontSize="10.5" fill="#3d3d35" fontFamily="'Space Mono', monospace">35 pts</text>
+          <rect x="268" y="192" width="150" height="44" rx="7" fill="#6FA287" />
+          <text x="343" y="212" textAnchor="middle" fontSize="13" fontWeight="700" fill="#0B2D23" fontFamily="'Inter', sans-serif">Trend</text>
+          <text x="343" y="228" textAnchor="middle" fontSize="10.5" fill="#1f3a2e" fontFamily="'Space Mono', monospace">25 pts</text>
+          <rect x="498" y="103" width="132" height="70" rx="9" fill="#0B2D23" />
+          <text x="564" y="138" textAnchor="middle" fontSize="22" fontWeight="700" fill="#C9A96E" fontFamily="'Inter', sans-serif">0–100</text>
+          <text x="564" y="157" textAnchor="middle" fontSize="10.5" fill="rgba(255,255,255,.7)" fontFamily="'Space Mono', monospace">opportunity score</text>
+        </svg>
+        <figcaption style={{ fontFamily: "'Inter', sans-serif", fontSize: 12.5, color: '#6b6b60', textAlign: 'center', marginTop: 8 }}>
+          The six signals feed three weighted pillars, which sum to one 0–100 score.
+        </figcaption>
+      </figure>
+
       <p>
         The value of automation here is not any single calculation — it is that the calculation never
         changes. No symbol gets the benefit of the doubt; none gets unfairly punished. Consistency is
