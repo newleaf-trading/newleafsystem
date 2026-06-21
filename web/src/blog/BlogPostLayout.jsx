@@ -45,8 +45,8 @@ export default function BlogPostLayout() {
         }}
       />
 
-      {/* Breadcrumb */}
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '20px 2rem 0' }}>
+      {/* Breadcrumb — shares the 1100 container so it aligns with the article column */}
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '20px 2rem 0' }}>
         <nav style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#6b6b60' }}>
           <Link to="/" style={{ color: '#6b6b60', textDecoration: 'none' }}>Home</Link>
           {' / '}
@@ -56,24 +56,26 @@ export default function BlogPostLayout() {
         </nav>
       </div>
 
-      {/* Article header */}
-      <header style={{ maxWidth: 720, margin: '0 auto', padding: '32px 2rem 40px' }}>
-        <span style={{
-          display: 'inline-block', fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 700,
-          letterSpacing: '.1em', textTransform: 'uppercase', color: '#C9A96E', marginBottom: 12,
-        }}>
-          {post.category}
-        </span>
-        <h1 style={{
-          fontFamily: "'Playfair Display', Georgia, serif", fontSize: 'clamp(28px, 4vw, 42px)',
-          fontWeight: 700, color: '#0B2D23', lineHeight: 1.2, marginBottom: 16,
-        }}>
-          {post.title}
-        </h1>
-        <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: '#6b6b60', display: 'flex', gap: 16 }}>
-          <span>NewLeaf System Team</span>
-          <span>{post.date}</span>
-          <span>{post.readTime} read</span>
+      {/* Article header — 1100 container, inner block left-aligned to the 720 article column */}
+      <header style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 2rem 40px' }}>
+        <div style={{ maxWidth: 720 }}>
+          <span style={{
+            display: 'inline-block', fontFamily: "'Inter', sans-serif", fontSize: 11, fontWeight: 700,
+            letterSpacing: '.1em', textTransform: 'uppercase', color: '#C9A96E', marginBottom: 12,
+          }}>
+            {post.category}
+          </span>
+          <h1 style={{
+            fontFamily: "'Playfair Display', Georgia, serif", fontSize: 'clamp(28px, 4vw, 42px)',
+            fontWeight: 700, color: '#0B2D23', lineHeight: 1.2, marginBottom: 16,
+          }}>
+            {post.title}
+          </h1>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 13, color: '#6b6b60', display: 'flex', gap: 16 }}>
+            <span>NewLeaf System Team</span>
+            <span>{post.date}</span>
+            <span>{post.readTime} read</span>
+          </div>
         </div>
       </header>
 
