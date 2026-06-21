@@ -32,7 +32,17 @@ const ROUTES = [
   '/blog/covered-call-vs-cash-secured-put',
   '/blog/common-options-trading-mistakes',
   '/blog/weekly-options-income-plan',
+  '/blog/compounding-small-edge-3x-five-years',
+  '/blog/automating-technical-analysis-into-a-score',
+  '/blog/choosing-an-options-strategy-by-iv-and-regime',
+  '/blog/ideal-portfolio-allocation-options-overlay',
+  '/blog/improving-win-rate-technicals-sentiment-earnings',
 ];
+
+// Routes we (re)render this run must come from the live SPA shell, never a
+// stale prerendered file left in dist/ from a previous build — otherwise the
+// snapshot re-captures its own old content (e.g. an outdated blog index).
+const ROUTE_SET = new Set(ROUTES);
 
 // Simple static file server with SPA fallback
 function startServer() {
@@ -46,6 +56,16 @@ function startServer() {
 
   const server = createServer((req, res) => {
     const urlPath = req.url.split('?')[0];
+
+    // Registered routes always render fresh from the SPA shell — ignore any
+    // stale prerendered HTML so the snapshot reflects the current bundle.
+    const normalized = urlPath.length > 1 ? urlPath.replace(/\/$/, '') : urlPath;
+    if (ROUTE_SET.has(normalized)) {
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(fallback);
+      return;
+    }
+
     let filePath = join(DIST, urlPath);
 
     // If path is a directory, try index.html inside it

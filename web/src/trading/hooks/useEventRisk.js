@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 
 const API_URL = 'https://us-central1-newleaf-trading.cloudfunctions.net/api';
-const API_KEY = 'nl_31ee32be43bd4f07a3520ae15c4b3162';
+const API_KEY = import.meta.env.VITE_NL_API_KEY;
 
 /**
  * Hook to fetch earnings/dividend/event risk alerts for a position.

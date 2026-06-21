@@ -26,7 +26,7 @@ export function usePositionLiveData(tile, portfolioItem) {
     if (!symbol) return;
     try {
       const NL_API = 'https://us-central1-newleaf-trading.cloudfunctions.net/api';
-      const NL_KEY = 'nl_31ee32be43bd4f07a3520ae15c4b3162';
+      const NL_KEY = import.meta.env.VITE_NL_API_KEY;
 
       // 1. API snapshot + live chain (primary — always attempted)
       const [snapshot, chain] = await Promise.allSettled([

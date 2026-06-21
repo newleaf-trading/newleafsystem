@@ -298,7 +298,7 @@ export async function fetchR2Prices(symbols) {
 // ── Live option chain from newleaf-api (Alpaca) ─────────────────────────────
 
 const NL_API = 'https://us-central1-newleaf-trading.cloudfunctions.net/api';
-const NL_KEY = 'nl_31ee32be43bd4f07a3520ae15c4b3162';
+const NL_KEY = import.meta.env.VITE_NL_API_KEY;
 
 const chainCache = new Map();
 const CHAIN_TTL = 60_000; // 60s
