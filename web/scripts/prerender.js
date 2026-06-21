@@ -35,6 +35,7 @@ const ROUTES = [
   '/blog/compounding-small-edge-3x-five-years',
   '/blog/automating-technical-analysis-into-a-score',
   '/blog/choosing-an-options-strategy-by-iv-and-regime',
+  '/blog/ideal-portfolio-allocation-options-overlay',
 ];
 
 // Routes we (re)render this run must come from the live SPA shell, never a

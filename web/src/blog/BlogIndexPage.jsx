@@ -5,7 +5,9 @@ import { blogPosts, blogCategories } from './blogPosts';
 
 export default function BlogIndexPage() {
   const [filter, setFilter] = useState('all');
-  const filtered = filter === 'all' ? blogPosts : blogPosts.filter(p => p.category === filter);
+  const filtered = (filter === 'all' ? blogPosts : blogPosts.filter(p => p.category === filter))
+    .slice()
+    .sort((a, b) => b.date.localeCompare(a.date)); // latest first
 
   return (
     <div style={{ background: '#F7F4EE', minHeight: '60vh' }}>

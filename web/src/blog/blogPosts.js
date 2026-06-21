@@ -109,6 +109,16 @@ export const blogPosts = [
     tags: ['options strategies', 'strategy selection', 'implied volatility', 'iron condor', 'spreads'],
     component: () => import('./posts/ChoosingStrategyByIV'),
   },
+  {
+    slug: 'ideal-portfolio-allocation-options-overlay',
+    title: 'A Model Portfolio: 40% SPY / 30% TLT / 20% GLD / 10% SLV, Plus a Small Options Overlay',
+    description: 'An illustrative all-weather core — equities, long Treasuries, gold, and silver — with a small defined-risk options income sleeve and a simple rebalancing rule.',
+    date: '2026-06-21',
+    readTime: '11 min',
+    category: 'Risk Management',
+    tags: ['portfolio allocation', 'diversification', 'rebalancing', 'all-weather', 'options overlay'],
+    component: () => import('./posts/ModelPortfolioOptionsOverlay'),
+  },
 ];
 
 export const blogCategories = [
