@@ -109,6 +109,49 @@ export default function ChoosingStrategyByIV() {
           </tr>
         </tbody>
       </table>
+
+      <figure style={{ margin: '26px 0 28px', padding: '20px 18px 14px', background: '#fff', border: '1px solid rgba(17,24,39,0.08)', borderRadius: 14 }}>
+        {(() => {
+          const palette = {
+            green: { bg: 'rgba(46,125,91,0.14)', bd: 'rgba(46,125,91,0.40)', fg: '#1f5c43' },
+            amber: { bg: 'rgba(176,141,62,0.14)', bd: 'rgba(176,141,62,0.40)', fg: '#7a5e22' },
+            red: { bg: 'rgba(181,72,58,0.12)', bd: 'rgba(181,72,58,0.35)', fg: '#8f3b30' },
+          };
+          const cell = (text, k, strong) => (
+            <div style={{ background: palette[k].bg, border: `1px solid ${palette[k].bd}`, borderRadius: 8, padding: '12px 8px', color: palette[k].fg, fontSize: 12.5, fontWeight: strong ? 700 : 500, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 54, fontFamily: "'Inter', sans-serif" }}>{text}</div>
+          );
+          const hdr = (a, b) => (
+            <div style={{ textAlign: 'center', fontFamily: "'Space Mono', monospace", fontSize: 11, fontWeight: 700, color: '#0B2D23', padding: '2px 0' }}>{a}<br /><span style={{ color: '#9b9b8e', fontWeight: 400 }}>{b}</span></div>
+          );
+          const rowLabel = (t) => (
+            <div style={{ display: 'flex', alignItems: 'center', fontWeight: 700, fontSize: 12.5, color: '#0B2D23', fontFamily: "'Inter', sans-serif" }}>{t}</div>
+          );
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: '0.7fr 1fr 1fr 1fr', gap: 6 }}>
+              <div />
+              {hdr('Low IV', '< 25%')}
+              {hdr('Sweet spot', '20–50%')}
+              {hdr('High IV', '> 50%')}
+              {rowLabel('Bullish')}
+              {cell('Wait / debit', 'amber')}
+              {cell('Bull put spread', 'green', true)}
+              {cell('Caution / pass', 'red')}
+              {rowLabel('Neutral')}
+              {cell('Calendar spread', 'amber', true)}
+              {cell('Iron condor / butterfly', 'green', true)}
+              {cell('Caution / pass', 'red')}
+              {rowLabel('Bearish')}
+              {cell('Wait / debit', 'amber')}
+              {cell('Bear call spread', 'green', true)}
+              {cell('Caution / pass', 'red')}
+            </div>
+          );
+        })()}
+        <figcaption style={{ fontFamily: "'Inter', sans-serif", fontSize: 12.5, color: '#6b6b60', textAlign: 'center', marginTop: 12 }}>
+          IV regime (columns) × trend (rows) → the structure that fits. Green is the premium-selling sweet spot.
+        </figcaption>
+      </figure>
+
       <div className="blog-callout tip">
         <strong>Notice what decides the directional trades.</strong>
         Bull put and bear call spreads are not guesses about direction — they fire when the trend
