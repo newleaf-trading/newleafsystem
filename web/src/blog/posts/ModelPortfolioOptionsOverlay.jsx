@@ -33,6 +33,29 @@ export default function ModelPortfolioOptionsOverlay() {
           <tr><td><strong>10%</strong></td><td>SLV</td><td>Silver — inflation plus industrial demand; a smaller, more volatile satellite.</td></tr>
         </tbody>
       </table>
+
+      <figure style={{ margin: '24px 0 28px', padding: '20px', background: '#fff', border: '1px solid rgba(17,24,39,0.08)', borderRadius: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 36, flexWrap: 'wrap' }}>
+          <svg viewBox="0 0 240 240" width="190" height="190" role="img" aria-label="Core allocation: 40 percent SPY, 30 percent TLT, 20 percent GLD, 10 percent SLV">
+            <circle cx="120" cy="120" r="70" fill="none" stroke="#0B2D23" strokeWidth="34" strokeDasharray="175.93 263.89" strokeDashoffset="0" transform="rotate(-90 120 120)" />
+            <circle cx="120" cy="120" r="70" fill="none" stroke="#C9A96E" strokeWidth="34" strokeDasharray="131.95 307.87" strokeDashoffset="-175.93" transform="rotate(-90 120 120)" />
+            <circle cx="120" cy="120" r="70" fill="none" stroke="#B5843A" strokeWidth="34" strokeDasharray="87.96 351.86" strokeDashoffset="-307.88" transform="rotate(-90 120 120)" />
+            <circle cx="120" cy="120" r="70" fill="none" stroke="#9AA0A6" strokeWidth="34" strokeDasharray="43.98 395.84" strokeDashoffset="-395.84" transform="rotate(-90 120 120)" />
+            <text x="120" y="116" textAnchor="middle" fontSize="14" fontWeight="700" fill="#0B2D23" fontFamily="'Inter', sans-serif">Core</text>
+            <text x="120" y="134" textAnchor="middle" fontSize="11" fill="#6b6b60" fontFamily="'Space Mono', monospace">mix</text>
+          </svg>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 14, color: '#3d3d35', lineHeight: 2 }}>
+            <div><span style={{ display: 'inline-block', width: 11, height: 11, borderRadius: 3, background: '#0B2D23', marginRight: 8 }} />40% SPY · equities</div>
+            <div><span style={{ display: 'inline-block', width: 11, height: 11, borderRadius: 3, background: '#C9A96E', marginRight: 8 }} />30% TLT · long Treasuries</div>
+            <div><span style={{ display: 'inline-block', width: 11, height: 11, borderRadius: 3, background: '#B5843A', marginRight: 8 }} />20% GLD · gold</div>
+            <div><span style={{ display: 'inline-block', width: 11, height: 11, borderRadius: 3, background: '#9AA0A6', marginRight: 8 }} />10% SLV · silver</div>
+          </div>
+        </div>
+        <figcaption style={{ fontFamily: "'Inter', sans-serif", fontSize: 12.5, color: '#6b6b60', textAlign: 'center', marginTop: 12 }}>
+          One illustrative core: 40% growth, 60% in assets that tend to zig when stocks zag.
+        </figcaption>
+      </figure>
+
       <p>
         That is 40% growth and 60% in assets that historically zig when stocks zag. The mix will not win
         every year — by design, something is usually lagging. What it aims for is fewer catastrophic

@@ -44,6 +44,28 @@ export default function ChoosingStrategyByIV() {
         <li><strong>IV below 25% with vol mean-reverting:</strong> premium is cheap — a debit/calendar structure that benefits from vol expanding becomes attractive.</li>
         <li><strong>IV above 50%:</strong> the market is stressed — treat as a danger flag and demand a wider margin, or pass.</li>
       </ul>
+
+      <figure style={{ margin: '24px 0 28px', padding: '18px 18px 12px', background: '#fff', border: '1px solid rgba(17,24,39,0.08)', borderRadius: 14 }}>
+        <svg viewBox="0 0 600 112" width="100%" role="img" aria-label="Implied volatility posture: below 20% buy or wait, 20 to 50% sell premium, above 50% caution">
+          <text x="300" y="18" textAnchor="middle" fontSize="11" fontWeight="700" fill="#0B2D23" fontFamily="'Inter', sans-serif">Implied volatility sets the posture</text>
+          <rect x="30" y="30" width="154" height="32" fill="#D9D5C8" />
+          <rect x="184" y="30" width="232" height="32" fill="#2E7D5B" />
+          <rect x="416" y="30" width="154" height="32" fill="#B5483A" />
+          <text x="107" y="50" textAnchor="middle" fontSize="10.5" fontWeight="700" fill="#5a564a" fontFamily="'Inter', sans-serif">Buy / wait</text>
+          <text x="300" y="50" textAnchor="middle" fontSize="11" fontWeight="700" fill="#fff" fontFamily="'Inter', sans-serif">Sell premium</text>
+          <text x="493" y="50" textAnchor="middle" fontSize="10.5" fontWeight="700" fill="#fff" fontFamily="'Inter', sans-serif">Caution</text>
+          {[['0%', 30], ['20%', 184], ['50%', 416], ['70%+', 570]].map(([lbl, x]) => (
+            <g key={lbl}>
+              <line x1={x} y1="62" x2={x} y2="70" stroke="#9b9b8e" strokeWidth="1" />
+              <text x={x} y="84" textAnchor="middle" fontSize="10" fill="#9b9b8e" fontFamily="'Space Mono', monospace">{lbl}</text>
+            </g>
+          ))}
+        </svg>
+        <figcaption style={{ fontFamily: "'Inter', sans-serif", fontSize: 12.5, color: '#6b6b60', textAlign: 'center', marginTop: 6 }}>
+          High IV → sell premium. Low IV → buy or wait. The posture comes before the structure.
+        </figcaption>
+      </figure>
+
       <p>
         If you only remember one thing: <strong>high IV means sell, low IV means buy (or wait)</strong>.
         For the full treatment, see{' '}

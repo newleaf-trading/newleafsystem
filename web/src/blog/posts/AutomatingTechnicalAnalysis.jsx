@@ -44,6 +44,28 @@ export default function AutomatingTechnicalAnalysis() {
       <blockquote>
         Score = Gamma (0–40) + IV (0–35) + Trend (0–25) = Total (0–100)
       </blockquote>
+
+      <figure style={{ margin: '24px 0 28px', padding: '20px 18px 12px', background: '#fff', border: '1px solid rgba(17,24,39,0.08)', borderRadius: 14 }}>
+        <svg viewBox="0 0 600 96" width="100%" role="img" aria-label="The 0 to 100 score splits into Gamma 40 points, IV 35 points, and Trend 25 points">
+          <rect x="0" y="14" width="240" height="44" fill="#0B2D23" />
+          <rect x="240" y="14" width="210" height="44" fill="#C9A96E" />
+          <rect x="450" y="14" width="150" height="44" fill="#6FA287" />
+          <line x1="240" y1="14" x2="240" y2="58" stroke="#F7F4EE" strokeWidth="2" />
+          <line x1="450" y1="14" x2="450" y2="58" stroke="#F7F4EE" strokeWidth="2" />
+          <text x="120" y="34" textAnchor="middle" fontSize="13" fontWeight="700" fill="#fff" fontFamily="'Inter', sans-serif">Gamma</text>
+          <text x="120" y="50" textAnchor="middle" fontSize="11" fill="rgba(255,255,255,.85)" fontFamily="'Space Mono', monospace">40 pts</text>
+          <text x="345" y="34" textAnchor="middle" fontSize="13" fontWeight="700" fill="#0B2D23" fontFamily="'Inter', sans-serif">IV</text>
+          <text x="345" y="50" textAnchor="middle" fontSize="11" fill="#3d3d35" fontFamily="'Space Mono', monospace">35 pts</text>
+          <text x="525" y="34" textAnchor="middle" fontSize="13" fontWeight="700" fill="#0B2D23" fontFamily="'Inter', sans-serif">Trend</text>
+          <text x="525" y="50" textAnchor="middle" fontSize="11" fill="#1f3a2e" fontFamily="'Space Mono', monospace">25 pts</text>
+          <text x="0" y="80" textAnchor="start" fontSize="10" fill="#9b9b8e" fontFamily="'Space Mono', monospace">0</text>
+          <text x="600" y="80" textAnchor="end" fontSize="10" fill="#9b9b8e" fontFamily="'Space Mono', monospace">100</text>
+        </svg>
+        <figcaption style={{ fontFamily: "'Inter', sans-serif", fontSize: 12.5, color: '#6b6b60', textAlign: 'center', marginTop: 6 }}>
+          Three weighted pillars sum to one 0–100 opportunity score. Gamma carries the most weight.
+        </figcaption>
+      </figure>
+
       <table>
         <thead>
           <tr><th>Pillar</th><th>Max points</th><th>What it measures</th></tr>

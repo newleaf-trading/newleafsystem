@@ -77,6 +77,37 @@ export default function CompoundingSmallEdge() {
           <tr><td>Year 5</td><td>~$885,000 (8.8×)</td><td><strong>~$298,000 (≈3×)</strong></td></tr>
         </tbody>
       </table>
+
+      <figure style={{ margin: '28px 0', padding: '20px 18px 14px', background: '#fff', border: '1px solid rgba(17,24,39,0.08)', borderRadius: 14 }}>
+        <svg viewBox="0 0 640 270" width="100%" role="img" aria-label="$100k compounding over five years: base model reaches about 8.8x, a conservative half-edge path still reaches about 3x">
+          {[[100, 230], [300, 180], [500, 130], [700, 80], [900, 30]].map(([lbl, y]) => (
+            <g key={lbl}>
+              <line x1="60" y1={y} x2="560" y2={y} stroke="#ECE7DB" strokeWidth="1" />
+              <text x="52" y={y + 4} textAnchor="end" fontSize="10" fill="#9b9b8e" fontFamily="'Space Mono', monospace">{`$${lbl}k`}</text>
+            </g>
+          ))}
+          {[['Start', 60], ['Y1', 160], ['Y2', 260], ['Y3', 360], ['Y4', 460], ['Y5', 560]].map(([lbl, x]) => (
+            <text key={lbl} x={x} y="252" textAnchor="middle" fontSize="11" fill="#6b6b60" fontFamily="'Inter', sans-serif">{lbl}</text>
+          ))}
+          <polyline points="60,230 160,216 260,195 360,162 460,112 560,34" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeDasharray="6 4" />
+          <polyline points="60,230 160,224 260,216 360,207 460,195 560,180" fill="none" stroke="#2E7D5B" strokeWidth="3" />
+          {[[60, 230], [160, 224], [260, 216], [360, 207], [460, 195], [560, 180]].map(([x, y], i) => (
+            <circle key={i} cx={x} cy={y} r="3" fill="#2E7D5B" />
+          ))}
+          <text x="566" y="37" fontSize="11" fontWeight="700" fill="#B08D3E" fontFamily="'Space Mono', monospace">≈$885k</text>
+          <text x="566" y="183" fontSize="11" fontWeight="700" fill="#2E7D5B" fontFamily="'Space Mono', monospace">≈$298k</text>
+          <g fontFamily="'Inter', sans-serif" fontSize="11" fill="#6b6b60">
+            <line x1="70" y1="24" x2="96" y2="24" stroke="#C9A96E" strokeWidth="2.5" strokeDasharray="6 4" />
+            <text x="102" y="28">Base model (full edge) · ≈8.8×</text>
+            <line x1="70" y1="42" x2="96" y2="42" stroke="#2E7D5B" strokeWidth="3" />
+            <text x="102" y="46">Conservative (half edge) · ≈3×</text>
+          </g>
+        </svg>
+        <figcaption style={{ fontFamily: "'Inter', sans-serif", fontSize: 12.5, color: '#6b6b60', textAlign: 'center', marginTop: 8 }}>
+          $100k compounding over five years. Even at half the modeled edge, the curve still roughly triples.
+        </figcaption>
+      </figure>
+
       <p>
         Read the right-hand column carefully. Even if your true edge is <strong>half</strong> of the
         model — a brutal haircut — you still roughly triple in five years. That is about a 24.6%
