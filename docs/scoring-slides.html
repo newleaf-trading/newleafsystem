@@ -196,16 +196,62 @@
     <div class="callout" style="border-left-color:var(--red)"><b>− Event-risk penalty</b> for earnings/ex-div inside the window. The result is the Setup Quality you see in the list.</div>
   </section>
 
-  <!-- 7 — STAGE 5: SEPA TREND -->
+  <!-- 7 — STAGE 5: WHAT SEPA IS (USP) -->
   <section class="slide">
-    <div class="step-no">Stage 5 of 5</div>
-    <h2>Adjust by the trend — the SEPA verdict</h2>
-    <p>A great level still loses if the stock is <em>falling</em> into it. The SEPA trend template (Minervini) checks the MA stack, 200-day slope, relative strength vs SPY, and 52-week position — then adjusts the score.</p>
-    <div class="vcards">
-      <div class="vcard va"><div class="vt">Aligned</div><div class="vd">Trend backs the short side — all four "up" checks pass.</div><div class="vm">+5</div></div>
-      <div class="vcard vn"><div class="vt">Neutral</div><div class="vd">No clear trend; tightening base → discount.</div><div class="vm">unchanged · ×0.85 VCP</div></div>
-      <div class="vcard vc"><div class="vt">Conflicted</div><div class="vd">3 of 4 "down" checks — support in a downtrend. A falling knife.</div><div class="vm">× 0.6</div></div>
+    <div class="step-no">Stage 5 of 5 · our USP</div>
+    <h2>Is the trend friendly? — the SEPA verdict</h2>
+    <p>Every options scanner can find a support level. Almost none ask the next question: <strong>is the stock actually trending up into it, or falling toward it?</strong> That's the difference between a good <em>level</em> and a good <em>trade</em> — and it's the layer we add that others don't.</p>
+    <div class="two" style="margin-top:6px">
+      <div class="callout purple" style="margin-top:0">
+        <b>What is SEPA?</b>
+        <p style="margin-top:6px;font-size:16px"><strong>S</strong>pecific <strong>E</strong>ntry <strong>P</strong>oint <strong>A</strong>nalysis — the trend template made famous by <strong>Mark Minervini</strong>, a US Investing Champion. A deterministic checklist that defines a <em>confirmed</em> trend — no opinion, no AI.</p>
+      </div>
+      <div>
+        <p style="font-weight:700;color:var(--ink);margin-bottom:2px">Six checks — price &amp; relative strength:</p>
+        <ul style="margin-top:6px">
+          <li>Moving averages stacked <span class="mono">50 &gt; 150 &gt; 200</span>, price above them</li>
+          <li>The 200-day is <strong>rising</strong> (slow, reliable confirmation)</li>
+          <li>Relative strength vs SPY is <strong>positive &amp; rising</strong> — leading the market</li>
+          <li>Within 25% of the 52-week high · clearly off the low</li>
+        </ul>
+      </div>
     </div>
+    <div class="vcards" style="margin-top:18px">
+      <div class="vcard va"><div class="vt">Aligned</div><div class="vd">All four "up" checks pass — endorse.</div><div class="vm">+5</div></div>
+      <div class="vcard vn"><div class="vt">Neutral</div><div class="vd">No clear trend — leave it alone.</div><div class="vm">unchanged · ×0.85 VCP</div></div>
+      <div class="vcard vc"><div class="vt">Conflicted</div><div class="vd">3 of 4 "down" checks — falling knife.</div><div class="vm">× 0.6</div></div>
+    </div>
+  </section>
+
+  <!-- 8 — SEPA IN ACTION: TWO STOCKS -->
+  <section class="slide">
+    <div class="kicker">SEPA in action · same scanner, opposite verdicts</div>
+    <h2>Two stocks, two verdicts</h2>
+    <div class="two" style="align-items:stretch">
+      <div class="card" style="border:2px solid var(--green);background:#f0fdf4">
+        <h3 style="color:#15803d">CSCO &nbsp;·&nbsp; ALIGNED &#9650;</h3>
+        <div style="margin-top:6px">
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:#15803d;font-weight:700">&#10003;</span><span>MA stack <span class="mono">105 &gt; 87 &gt; 83</span> — stacked up</span></div>
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:#15803d;font-weight:700">&#10003;</span><span>Price <span class="mono">$120</span> above the stack</span></div>
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:#15803d;font-weight:700">&#10003;</span><span>200-day rising</span></div>
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:#15803d;font-weight:700">&#10003;</span><span>RS vs SPY <span class="mono">+34.5%</span>, rising — leader</span></div>
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:#15803d;font-weight:700">&#10003;</span><span>Only 8% below the 52-week high</span></div>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-family:var(--mono);font-size:16px;color:var(--ink)"><b>4 / 4 up-checks → ALIGNED</b><br>Setup Quality 61 <span style="color:#15803d">+ 5 = 66</span></div>
+      </div>
+      <div class="card" style="border:2px solid var(--red);background:#fef2f2">
+        <h3 style="color:var(--red)">TLT &nbsp;·&nbsp; CONFLICTED &#9660;</h3>
+        <div style="margin-top:6px">
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:var(--red);font-weight:700">&#10007;</span><span>MA stack <span class="mono">85.6 &lt; 87.3 &lt; 87.9</span> — inverted</span></div>
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:var(--red);font-weight:700">&#10007;</span><span>Price <span class="mono">$86.75</span> below the 200-day</span></div>
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:var(--red);font-weight:700">&#10007;</span><span>200-day rolling over</span></div>
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:var(--red);font-weight:700">&#10007;</span><span>RS vs SPY <span class="mono">−12.4%</span> — lagging</span></div>
+          <div style="display:flex;gap:9px;margin:7px 0;font-size:15.5px"><span style="color:var(--gold-d);font-weight:700">!</span><span>Sitting near its 52-week low</span></div>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-family:var(--mono);font-size:16px;color:var(--ink)"><b>3 / 4 down-checks → CONFLICTED</b><br>Setup Quality 79 <span style="color:var(--red)">× 0.6 = 47</span></div>
+      </div>
+    </div>
+    <p style="margin-top:16px;font-size:16px;color:var(--ink-mid)"><strong>Same support-scanner score, opposite trades.</strong> The first four layers can't tell CSCO from TLT — both show a "good level." SEPA is what separates them.</p>
   </section>
 
   <!-- 8 — WORKED EXAMPLE -->
