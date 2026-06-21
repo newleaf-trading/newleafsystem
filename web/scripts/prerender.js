@@ -32,6 +32,9 @@ const ROUTES = [
   '/blog/covered-call-vs-cash-secured-put',
   '/blog/common-options-trading-mistakes',
   '/blog/weekly-options-income-plan',
+  '/blog/compounding-small-edge-3x-five-years',
+  '/blog/automating-technical-analysis-into-a-score',
+  '/blog/choosing-an-options-strategy-by-iv-and-regime',
 ];
 
 // Simple static file server with SPA fallback

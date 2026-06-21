@@ -79,6 +79,36 @@ export const blogPosts = [
     tags: ['weekly options', 'income strategy', 'trading plan', 'premium selling'],
     component: () => import('./posts/WeeklyOptionsIncomePlan'),
   },
+  {
+    slug: 'compounding-small-edge-3x-five-years',
+    title: 'How a Small Edge Compounds: Turning a 62% Win Rate Into 3× in Five Years',
+    description: 'Why a modest win rate and small per-trade risk can compound to roughly 3× over five years — and why risking 5% per trade gets you there slower, not faster.',
+    date: '2026-06-21',
+    readTime: '12 min',
+    category: 'Risk Management',
+    tags: ['compounding', 'position sizing', 'win rate', 'expected value', 'risk management'],
+    component: () => import('./posts/CompoundingSmallEdge'),
+  },
+  {
+    slug: 'automating-technical-analysis-into-a-score',
+    title: 'From Six Signals to One Number: How We Automate Technical Analysis Into a Score',
+    description: 'How RSI, Bollinger Bands, moving averages, volatility, and gamma walls combine into a single 0–100 opportunity score that drives every trade decision.',
+    date: '2026-06-21',
+    readTime: '11 min',
+    category: 'Fundamentals',
+    tags: ['technical analysis', 'scoring', 'automation', 'gamma', 'implied volatility'],
+    component: () => import('./posts/AutomatingTechnicalAnalysis'),
+  },
+  {
+    slug: 'choosing-an-options-strategy-by-iv-and-regime',
+    title: 'Which Options Strategy, and Why: Choosing by IV, Trend, and Gamma',
+    description: 'A rules-based decision tree for picking the right option structure — iron condor, butterfly, vertical spread, or calendar — from implied volatility, trend, and gamma walls.',
+    date: '2026-06-21',
+    readTime: '13 min',
+    category: 'Strategies',
+    tags: ['options strategies', 'strategy selection', 'implied volatility', 'iron condor', 'spreads'],
+    component: () => import('./posts/ChoosingStrategyByIV'),
+  },
 ];
 
 export const blogCategories = [
