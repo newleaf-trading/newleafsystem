@@ -119,6 +119,16 @@ export const blogPosts = [
     tags: ['portfolio allocation', 'diversification', 'rebalancing', 'all-weather', 'options overlay'],
     component: () => import('./posts/ModelPortfolioOptionsOverlay'),
   },
+  {
+    slug: 'improving-win-rate-technicals-sentiment-earnings',
+    title: 'How to Improve Your Win Rate: Score the Setup, Read the Sentiment, Skip the Earnings',
+    description: 'Win rate is the highest-leverage input. Raise it by being selective: score the technicals, overlay sentiment as a confirm/veto layer, and hard-exclude trades with earnings before expiry.',
+    date: '2026-06-21',
+    readTime: '12 min',
+    category: 'Risk Management',
+    tags: ['win rate', 'technical analysis', 'sentiment analysis', 'earnings', 'trade selection'],
+    component: () => import('./posts/ImprovingWinRate'),
+  },
 ];
 
 export const blogCategories = [

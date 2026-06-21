@@ -36,6 +36,7 @@ const ROUTES = [
   '/blog/automating-technical-analysis-into-a-score',
   '/blog/choosing-an-options-strategy-by-iv-and-regime',
   '/blog/ideal-portfolio-allocation-options-overlay',
+  '/blog/improving-win-rate-technicals-sentiment-earnings',
 ];
 
 // Routes we (re)render this run must come from the live SPA shell, never a
