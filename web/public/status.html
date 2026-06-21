@@ -471,7 +471,7 @@ async function checkServices() {
   try {
     const t0 = Date.now();
     const r = await fetch('https://us-central1-newleaf-trading.cloudfunctions.net/api/health', {
-      headers: { 'x-api-key': 'nl_31ee32be43bd4f07a3520ae15c4b3162' },
+      headers: { 'x-api-key': '__NL_API_KEY__' },
       signal: AbortSignal.timeout(10000)
     });
     const ms = Date.now() - t0;

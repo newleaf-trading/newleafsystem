@@ -1281,7 +1281,7 @@ async function loadSymbol(symbol) {
     if (!hasGamma && atmData?.expiries?.length) {
       try {
         const API_URL = window.__CONFIG__?.API_URL || 'https://us-central1-newleaf-trading.cloudfunctions.net/api';
-        const API_KEY = 'nl_31ee32be43bd4f07a3520ae15c4b3162';
+        const API_KEY = '__NL_API_KEY__';
         // Pick an expiry with 14-45 DTE for best OI data; fall back to first available
         const idealExpiry = atmData.expiries.find(e => e.dte >= 14 && e.dte <= 45)
           || atmData.expiries.find(e => e.dte >= 7)
@@ -3100,7 +3100,7 @@ async function onAIRankClick() {
 
     var res = await fetch(window.__CONFIG__?.API_URL || 'https://us-central1-newleaf-trading.cloudfunctions.net/api' + '/api/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': 'nl_31ee32be43bd4f07a3520ae15c4b3162' },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': '__NL_API_KEY__' },
       body: JSON.stringify({
         message: 'Rank these ' + stratType + ' variants for ' + ticker + ' by risk-adjusted return. Explain which is best and why in 3-4 sentences.',
         context: { mode: 'variant_ranking', ticker: ticker, strategy: stratType, variants: variants },

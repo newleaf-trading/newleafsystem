@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/clean-spa.js && vite build && node scripts/prerender.js",
+    "build": "node scripts/clean-spa.js && vite build && node scripts/inject-env.js && node scripts/prerender.js",
     "preview": "vite preview",
     "deploy": "npm run build && firebase deploy --only hosting:newleafsystem"
   },
