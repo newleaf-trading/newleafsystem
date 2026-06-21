@@ -44,7 +44,7 @@ export function DefendPage({ position, onOpenChat }) {
     <div className="dp-wrap">
       {/* ── Breadcrumb ── */}
       <div className="dp-breadcrumb">
-        &larr; <Link to="/invest/positions">Positions</Link>
+        &larr; <Link to="/invest/defend">Defend</Link>
         <span className="dp-sep">/</span>{d.symbol}
         <span className="dp-sep">/</span>{strategyLabel}
       </div>

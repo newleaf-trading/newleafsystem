@@ -207,7 +207,7 @@ export function BuildPageNew({ tiles }) {
           await removeFromShortlist(order.id);
         }
       }
-      navigate('/invest/positions');
+      navigate('/invest/defend');
     } catch (err) {
       console.error('Execute failed:', err);
       alert('Execution failed: ' + err.message);

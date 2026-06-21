@@ -130,7 +130,7 @@ export default function TradingLayout() {
           <Route path="/discover" element={<DiscoverPage tiles={tiles} />} />
           <Route path="/strategy/:id" element={<StrategyRouter tiles={tiles} onOpenChat={openChat} />} />
           <Route path="/build" element={<BuildPageNew tiles={tiles} />} />
-          <Route path="/positions" element={<PositionsPageNew tiles={tiles} onOpenChat={openChat} />} />
+          <Route path="/defend" element={<PositionsPageNew tiles={tiles} onOpenChat={openChat} />} />
           <Route path="/performance" element={<PerformancePageRebuild tiles={tiles} />} />
           <Route path="/projection" element={<ProjectionPage mode="investor" />} />
           <Route path="/plans" element={<PlansPage />} />
@@ -142,7 +142,8 @@ export default function TradingLayout() {
           <Route path="/admin" element={<AdminPage />} />
 
           {/* ═══ Legacy routes — keep working, redirect to new paths ═══ */}
-          <Route path="/portfolio" element={<Navigate to="/invest/positions" replace />} />
+          <Route path="/positions" element={<Navigate to="/invest/defend" replace />} />
+          <Route path="/portfolio" element={<Navigate to="/invest/defend" replace />} />
           <Route path="/position/:tileId" element={<PositionRedirect />} />
 
           {/* Legacy PositionDetail retired in Phase 6c — all traffic goes to /strategy/:id */}

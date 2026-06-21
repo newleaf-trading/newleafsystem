@@ -317,7 +317,7 @@ function CalmSummary({ activePositions, tiles, navigate, onUrgentCountChange }) 
             ? `All ${total} position${total !== 1 ? 's' : ''} on track`
             : `${nonUrgentCount} other position${nonUrgentCount !== 1 ? 's' : ''} on track`}
         </span>
-        <button className={styles.viewAllLink} onClick={() => navigate('/invest/positions')}>View all</button>
+        <button className={styles.viewAllLink} onClick={() => navigate('/invest/defend')}>View all</button>
       </div>
     </>
   );

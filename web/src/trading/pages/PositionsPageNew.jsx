@@ -179,8 +179,8 @@ export function PositionsPageNew({ tiles, onOpenChat }) {
 
       <div className="pn-ph">
         <div>
-          <span className={s.eyebrow}>Defend &middot; positions flagged</span>
-          <h1 className="pn-title-main">Positions</h1>
+          <span className={s.eyebrow}>Positions flagged by urgency</span>
+          <h1 className="pn-title-main">Defend</h1>
           <p className="pn-sub">Active positions sorted by urgency. The marker shows where each trade sits between max loss and max profit.</p>
         </div>
       </div>

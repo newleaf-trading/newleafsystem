@@ -160,7 +160,7 @@ export function BuildPage({ tiles }) {
       setExecuted(prev => new Set([...prev, ...newlyExecuted]));
       setShowConfirmModal(false);
       toast.success(`${newlyExecuted.size} position${newlyExecuted.size !== 1 ? 's' : ''} entered successfully`);
-      setTimeout(() => navigate('/invest/positions'), 500);
+      setTimeout(() => navigate('/invest/defend'), 500);
     } catch (err) {
       console.error('Execute failed:', err);
       toast.error('Failed to execute. Try again.');

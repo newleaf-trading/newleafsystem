@@ -166,7 +166,7 @@ export function DashboardPageNew({ user, tiles, onOpenChat }) {
               {totalCapital > 0 && <> &middot; capital deployed</>}
             </div>
             <div className="dh-herofoot-btns">
-              <button className="dh-hbtn dh-hbtn-dark" onClick={() => navigate('/invest/positions')}>Review exits &rarr;</button>
+              <button className="dh-hbtn dh-hbtn-dark" onClick={() => navigate('/invest/defend')}>Review exits &rarr;</button>
               <button className="dh-hbtn" onClick={() => navigate('/invest/discover')}>Discover ideas</button>
             </div>
           </div>
