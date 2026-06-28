@@ -22,6 +22,7 @@
       { "source": "/workbench/analysis", "destination": "/index.html" },
       { "source": "/workbench/analysis/**", "destination": "/index.html" },
       { "source": "/workbench/projection", "destination": "/index.html" },
+      { "source": "/workbench/plan", "destination": "/workbench/plan.html" },
       { "source": "/trading/**", "destination": "/index.html" },
       { "source": "/picks/**", "destination": "/index.html" },
       { "source": "/privacy-policy", "destination": "/privacy-policy.html" },

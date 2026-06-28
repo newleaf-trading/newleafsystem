@@ -234,6 +234,29 @@ export default function ProjectionPage({ mode = 'operator' }) {
     if (isInvestor && accountCapital != null) setCap(accountCapital);
   }, [isInvestor, accountCapital]);
 
+  // Operator: keep horizon / capital / risk-per-trade in sync with the Detail Plan
+  // surface (/workbench/plan) through a shared localStorage contract. capPct is stored
+  // as a fraction (engine units). Investor capital is account-bound, so sync is
+  // operator-only. Adopt the shared state once on mount…
+  useEffect(() => {
+    if (isInvestor) return;
+    try {
+      const sh = JSON.parse(localStorage.getItem('newleaf:projection:shared') || '{}');
+      if ([1, 3, 5].includes(sh.yrs)) setYrs(sh.yrs);
+      if (typeof sh.cap === 'number') setCap(sh.cap);
+      if (typeof sh.capPct === 'number') setCapPct(sh.capPct * 100);
+    } catch (e) { /* ignore malformed shared state */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // …and write it back whenever the operator changes these inputs.
+  useEffect(() => {
+    if (isInvestor) return;
+    try {
+      const prev = JSON.parse(localStorage.getItem('newleaf:projection:shared') || '{}');
+      localStorage.setItem('newleaf:projection:shared', JSON.stringify({ ...prev, yrs, cap, capPct: capPct / 100 }));
+    } catch (e) { /* ignore */ }
+  }, [isInvestor, yrs, cap, capPct]);
+
   // investor: default-select the first published template + prefill its plan name
   useEffect(() => {
     if (isInvestor && !selectedTemplateId && templates.length) setSelectedTemplateId(templates[0].id);

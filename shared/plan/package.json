@@ -1,0 +1,12 @@
+{
+  "name": "newleafsystem-shared-plan",
+  "version": "0.1.0",
+  "description": "Deterministic cadence/calendar/cycle/roll-up model behind the Workbench Detail Plan surface",
+  "main": "index.js",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "test": "node index.test.js",
+    "sync": "node sync.js"
+  }
+}
