@@ -1124,7 +1124,7 @@
       if (!ticker) return;
 
       // Snapshot is free — no rate limit check here (metering on verify/recommend only)
-      if (state.ticker !== ticker) state._techData = undefined; // drop cached chart data for the old ticker
+      if (state.ticker !== ticker) { state._techData = undefined; state._ivByExpiry = undefined; } // drop cached chart data for the old ticker
       state.ticker = ticker;
       const btn = $('#load-btn');
       btn.textContent = '...'; btn.disabled = true;
@@ -2361,7 +2361,7 @@
           bdg('IV rank', ev.iv.ivRank ?? 'n/a'),
           bdg('Term', ev.iv.termStructure),
           bdg('Premium', ev.iv.premiumFairness)
-        ], { body: escHtml(ev.iv.summary || ''), chartTab: 'bollinger', meta: seatMeta(byRole, 'iv') }));
+        ], { body: escHtml(ev.iv.summary || ''), chartTab: 'ivterm', meta: seatMeta(byRole, 'iv') }));
 
       if (ev.sentiment) {
         const cats = (ev.sentiment.catalystsInWindow || []).filter(Boolean);
@@ -2528,15 +2528,26 @@
     }
 
     // Fetch (and cache) the R2 technical report for the current ticker.
+    // Also captures the IV term structure (ATM IV by expiry) for the IV tab.
     async function loadDeskTechData() {
       if (state._techData !== undefined) return state._techData;
       let t = null;
       try {
         const r = await fetch(`${R2_BASE}/reports/${state.ticker}/latest.json`);
-        if (r.ok) { const j = await r.json(); t = j.technicalData || null; }
+        if (r.ok) { const j = await r.json(); t = j.technicalData || null; state._ivByExpiry = j.gammaData?.ivData?.ivByExpiry || null; }
       } catch (e) { console.warn('tech report fetch failed', e); }
       state._techData = t;
       return t;
+    }
+
+    // IV term structure: ATM IV plotted across expiries. Downward slope =
+    // backwardation (near-term fear), upward = contango/normal.
+    function drawIVTermMR(ivByExpiry) {
+      const entries = Object.entries(ivByExpiry || {}).sort((a, b) => new Date(a[0]) - new Date(b[0]));
+      if (entries.length < 2) return;
+      const labels = entries.map(([d]) => { const dt = new Date(d); return (dt.getMonth() + 1) + '/' + dt.getDate(); });
+      const vals = entries.map(([, v]) => v);
+      drawLineChartMR('techChartIVTerm_MR', { labels, series: [{ data: vals, color: '#0B2D23', width: 2, label: 'ATM IV' }], yFmt: v => v.toFixed(0) + '%' });
     }
 
     // Open the modal; defaultTab is 'gamma' | 'overview' | 'rsi' | 'bollinger' | 'macd' | 'sma'.
@@ -2553,6 +2564,8 @@
       const t = await loadDeskTechData();
       const g = state.r2Data?.gammaData, a = g?.analysis, iv = g?.ivData;
       const spot = state.spot;
+      const ivByExpiry = state._ivByExpiry;
+      const hasIvTerm = ivByExpiry && Object.keys(ivByExpiry).length >= 2;
 
       const conf = (v, lbl) => `<div class="ip-cell"><span class="ip-cell-lbl">${lbl}</span><span class="ip-cell-val">${Math.round((v||0)*100)}%</span><div class="ip-bar"><div class="ip-bar-fill" style="width:${Math.round((v||0)*100)}%;background:${v>=0.6?'var(--green)':v>=0.3?'var(--amber)':'var(--red)'}"></div></div></div>`;
       const topStrikes = (a?.topStrikes || []).slice(0, 8);
@@ -2573,6 +2586,7 @@
           <button class="ip-tab" data-at="gamma">Gamma</button>
           <button class="ip-tab" data-at="overview">Overview</button>
           <button class="ip-tab" data-at="rsi">RSI</button>
+          ${hasIvTerm ? '<button class="ip-tab" data-at="ivterm">IV Term</button>' : ''}
           <button class="ip-tab" data-at="bollinger">Bollinger</button>
           <button class="ip-tab" data-at="macd">MACD</button>
           <button class="ip-tab" data-at="sma">Moving Avg</button>
@@ -2612,22 +2626,27 @@
           ${cross20_50||cross50_200?`<div class="ip-section"><div class="ip-section-title">Crossover Status</div><div class="ip-grid cols-2">${cross20_50?crossBadge('SMA 20/50',cross20_50,'$'+sma20.toFixed(2),'$'+sma50v.toFixed(2)):''}${cross50_200?crossBadge('SMA 50/200',cross50_200,'$'+sma50v.toFixed(2),'$'+sma200.toFixed(2)):''}</div></div>`:''}`}
         </div>
         <div class="ip-tab-content" id="atRsi"><div class="ip-section-desc" style="margin-bottom:12px">RSI measures momentum 0-100. Above 70 = overbought, below 30 = oversold.</div><canvas id="techChartRSI_MR" style="width:100%;height:280px;display:block"></canvas></div>
+        <div class="ip-tab-content" id="atIvterm"><div class="ip-section-desc" style="margin-bottom:12px">ATM implied volatility across expiries. Downward slope = backwardation (near-term stress / event risk); upward = normal/contango.</div><canvas id="techChartIVTerm_MR" style="width:100%;height:280px;display:block"></canvas></div>
         <div class="ip-tab-content" id="atBollinger"><div class="ip-section-desc" style="margin-bottom:12px">Bollinger Bands: 2 std devs around 20-day SMA. Squeeze = big move coming.</div><canvas id="techChartBB_MR" style="width:100%;height:280px;display:block"></canvas></div>
         <div class="ip-tab-content" id="atMacd"><div class="ip-section-desc" style="margin-bottom:12px">MACD (12, 26, 9): green histogram = bullish momentum, red = bearish.</div><canvas id="techChartMACD_MR" style="width:100%;height:280px;display:block"></canvas></div>
         <div class="ip-tab-content" id="atSma"><div class="ip-section-desc" style="margin-bottom:12px">Golden Cross = short SMA above long SMA (uptrend). Death Cross = opposite.</div><canvas id="techChartSMA_MR" style="width:100%;height:280px;display:block"></canvas></div>
       `;
 
-      const tabMap = { gamma:'atGamma', overview:'atOverview', rsi:'atRsi', bollinger:'atBollinger', macd:'atMacd', sma:'atSma' };
+      const tabMap = { gamma:'atGamma', overview:'atOverview', rsi:'atRsi', ivterm:'atIvterm', bollinger:'atBollinger', macd:'atMacd', sma:'atSma' };
       const activate = (at) => {
         bodyEl.querySelectorAll('.ip-tab').forEach(x => x.classList.toggle('active', x.dataset.at === at));
         bodyEl.querySelectorAll('.ip-tab-content').forEach(c => c.classList.remove('active'));
         const panel = document.getElementById(tabMap[at]); if (panel) panel.classList.add('active');
         if (at === 'gamma') { if (a && a.contracts_analyzed > 0) requestAnimationFrame(() => drawGammaChartMR(a, spot)); }
+        else if (at === 'ivterm') { if (hasIvTerm) requestAnimationFrame(() => drawIVTermMR(ivByExpiry)); }
         else if (t) requestAnimationFrame(() => drawTechChartMR(at, t));
       };
       bodyEl.querySelectorAll('.ip-tab').forEach(tab => tab.addEventListener('click', () => activate(tab.dataset.at)));
-      // Fall back to gamma if a technical tab was requested but no tech data loaded.
-      activate((defaultTab !== 'gamma' && !t) ? 'gamma' : defaultTab);
+      // Resolve the requested tab to one that actually has data, else fall back to gamma.
+      let openTab = defaultTab;
+      if (openTab === 'ivterm' && !hasIvTerm) openTab = t ? 'bollinger' : 'gamma';
+      else if (openTab !== 'gamma' && openTab !== 'ivterm' && !t) openTab = 'gamma';
+      activate(openTab);
     };
 
     function setPhaseActive(phase) {
