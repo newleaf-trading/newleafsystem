@@ -78,8 +78,31 @@
     .vp-seat-tag .tag-supportive { background:var(--pass-bg);color:var(--pass-text); }
     .vp-seat-tag .tag-caution { background:var(--concern-bg);color:var(--concern-text); }
     .vp-seat-tag .tag-neutral { background:var(--cream-dark);color:var(--ink-muted); }
-    .vp-seat-transcript { font-size:11px;color:var(--ink-muted);line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);max-height:200px;overflow-y:auto; }
+    .vp-seat-transcript { font-size:11px;color:var(--ink-muted);line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);max-height:280px;overflow-y:auto; }
     .vp-seat-expand { font-size:10px;color:var(--teal);cursor:pointer;margin-top:4px;background:none;border:none;text-decoration:underline; }
+    /* Rich per-agent drawer (structured badges + full analysis) */
+    .vp-badges { display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px; }
+    .vp-badge { font-size:10px;padding:2px 7px;border-radius:4px;background:var(--cream-dark);color:var(--ink-muted);white-space:nowrap; }
+    .vp-badge b { color:var(--ink);font-weight:600; }
+    .vp-drawer-text { font-size:11px;color:var(--ink-mid);line-height:1.55; }
+    .vp-drawer-text ul { margin:4px 0 0;padding-left:16px; }
+    .vp-drawer-text li { margin-bottom:2px; }
+    .vp-round { margin-top:6px;padding-top:6px;border-top:1px dashed var(--border); }
+    .vp-round:first-child { margin-top:0;padding-top:0;border-top:none; }
+    .vp-round-h { font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-faint);font-weight:600;margin-bottom:2px; }
+    .vp-model { font-size:9px;color:var(--ink-faint);margin-top:6px;font-family:var(--mono); }
+    /* Raw model-call inspector */
+    .vp-traces { margin-top:10px;text-align:left; }
+    .vp-trace-sum { font-size:10px;color:var(--ink-muted);font-family:var(--mono);margin-bottom:8px;text-align:center; }
+    .vp-trace { border:1px solid var(--border);border-radius:6px;margin-bottom:6px;overflow:hidden;background:var(--white); }
+    .vp-trace-head { display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:11px; }
+    .vp-trace-head:hover { background:var(--cream); }
+    .vp-trace-model { font-size:9px;color:var(--ink-faint);font-family:var(--mono); }
+    .vp-trace-meta { font-size:9px;color:var(--ink-muted);font-family:var(--mono);white-space:nowrap; }
+    .vp-trace-body { display:none;padding:0 12px 10px; }
+    .vp-trace.open .vp-trace-body { display:block; }
+    .vp-trace-label { font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600;margin:8px 0 2px; }
+    .vp-trace-body pre { font-size:10px;line-height:1.5;color:var(--ink-mid);background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:8px;margin:0;max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-word; }
 
     /* Verdict */
     .v5-banner { padding:24px;border-radius:10px;text-align:center;margin-bottom:14px; }
@@ -765,9 +788,11 @@
         </div>
       </div>
 
-      <div style="text-align:center;margin-top:10px">
+      <div style="text-align:center;margin-top:10px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
         <button onclick="toggleAllTranscripts()" style="background:none;border:none;color:var(--teal);font-size:11px;cursor:pointer;text-decoration:underline" id="vp-expand-all">Expand all transcripts</button>
+        <button onclick="toggleTraceInspector()" style="background:none;border:none;color:var(--teal);font-size:11px;cursor:pointer;text-decoration:underline" id="vp-trace-btn">Inspect model calls</button>
       </div>
+      <div id="vp-trace-inspector" class="vp-traces hidden"></div>
     </div>
 
     <!-- ===== STAGE 5: Verdict ===== -->
@@ -2186,9 +2211,194 @@
         tagEl.innerHTML = `<span class="${cls}">${tag}</span>`;
       }
       if (transcript && txEl) {
-        txEl.textContent = transcript;
-        txEl.innerHTML += '<br><button class="vp-seat-expand" onclick="this.parentElement.classList.toggle(\'hidden\')">collapse</button>';
+        // `transcript` is trusted HTML built by populateRealSeats (all model-derived
+        // text is escaped there). Render it, then append a collapse control.
+        txEl.innerHTML = transcript + '<button class="vp-seat-expand" onclick="this.parentElement.classList.toggle(\'hidden\')">collapse</button>';
       }
+    }
+
+    // ---- Rich drawer helpers -------------------------------------------------
+    // Escape any model-derived string before it goes into innerHTML.
+    function escHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+      ));
+    }
+    // A label:value chip. Value is escaped; label is a trusted literal.
+    function bdg(label, val) {
+      if (val === undefined || val === null || val === '') return '';
+      return `<span class="vp-badge">${label}: <b>${escHtml(String(val))}</b></span>`;
+    }
+    // Assemble a drawer: badge row + optional body HTML + optional model meta line.
+    function drawer(badges, opts) {
+      opts = opts || {};
+      const chips = (badges || []).filter(Boolean).join('');
+      let html = chips ? `<div class="vp-badges">${chips}</div>` : '';
+      if (opts.body) html += `<div class="vp-drawer-text">${opts.body}</div>`;
+      if (opts.meta) html += `<div class="vp-model">${opts.meta}</div>`;
+      return html;
+    }
+    // Map raw LLM traces to their agent role via the "You are the {Role}" opener.
+    const TRACE_ROLE_KEY = {
+      'technical analyst': 'technical', 'gamma/flow analyst': 'gamma',
+      'iv/skew analyst': 'iv', 'sentiment/catalyst analyst': 'sentiment',
+      'bull researcher': 'bull', 'bear researcher': 'bear',
+      'risk manager': 'risk', 'judge': 'judge', 'trade fixer': 'fixer'
+    };
+    function traceRoleLabel(system) {
+      const m = /You are the ([\w/ ]+?) on the/i.exec(system || '');
+      return m ? m[1].trim() : '';
+    }
+    function mapTraces(traces) {
+      const byRole = {};
+      (traces || []).forEach(t => {
+        const key = TRACE_ROLE_KEY[traceRoleLabel(t.system).toLowerCase()] || 'other';
+        (byRole[key] = byRole[key] || []).push(t);
+      });
+      return byRole;
+    }
+    // A one-line "model · tokens · latency" meta for a seat, summed over its calls
+    // (bull/bear run twice). Returns '' when no trace is available (e.g. demo).
+    function seatMeta(byRole, key) {
+      const ts = byRole[key];
+      if (!ts || !ts.length) return '';
+      const inTok = ts.reduce((s, t) => s + (t.inputTokens || 0), 0);
+      const outTok = ts.reduce((s, t) => s + (t.outputTokens || 0), 0);
+      const ms = ts.reduce((s, t) => s + (t.durationMs || 0), 0);
+      return `${escHtml(ts[0].model || 'model')} · ${(inTok + outTok).toLocaleString()} tok · ${(ms / 1000).toFixed(1)}s`;
+    }
+    // Both debate rounds for one side, thesis + evidence bullets each.
+    function debateBody(role, rounds) {
+      return (rounds || []).map((r, i) => {
+        const side = r && r[role];
+        if (!side) return '';
+        const evs = (side.evidence || []).filter(Boolean)
+          .map(e => `<li>${escHtml(e)}</li>`).join('');
+        return `<div class="vp-round"><div class="vp-round-h">Round ${side.round || i + 1}</div>`
+          + `<div>${escHtml(side.thesis || '')}</div>`
+          + (evs ? `<ul>${evs}</ul>` : '') + `</div>`;
+      }).join('');
+    }
+
+    // Replace the scripted seat text with what the agents ACTUALLY returned,
+    // so Step 4 reflects the real desk run (findings + tag + full expandable analysis).
+    function populateRealSeats(vData) {
+      const ev = vData.evidence || {};
+      const rounds = vData.debate?.rounds || [];
+      const lastR = rounds[rounds.length - 1] || {};
+      const risk = vData.riskReport || {};
+      const verdict = vData.verdict || {};
+      const byRole = mapTraces(vData.traces);
+
+      const seat = (agent, finding, stance, transcript) => {
+        if (!finding) return;
+        setSeatState(agent, 'done', finding, stance, transcript);
+      };
+
+      if (ev.technical) seat('technical', ev.technical.summary, agentStance('technical', ev.technical, ev.technical.summary),
+        drawer([
+          bdg('Trend', ev.technical.trend),
+          bdg('RSI', ev.technical.rsi),
+          bdg('Breakout risk', ev.technical.breakoutRisk)
+        ], { body: escHtml(ev.technical.summary || ''), meta: seatMeta(byRole, 'technical') }));
+
+      if (ev.gamma) seat('gamma', ev.gamma.summary, agentStance('gamma', ev.gamma, ev.gamma.summary),
+        drawer([
+          bdg('Wall integrity', ev.gamma.wallIntegrity),
+          bdg('Flip distance', ev.gamma.flipDistance),
+          bdg('Spot', ev.gamma.insideBand ? 'inside band' : 'outside band')
+        ], { body: escHtml(ev.gamma.summary || ''), meta: seatMeta(byRole, 'gamma') }));
+
+      if (ev.iv) seat('iv', ev.iv.summary, agentStance('iv', ev.iv, ev.iv.summary),
+        drawer([
+          bdg('IV rank', ev.iv.ivRank ?? 'n/a'),
+          bdg('Term', ev.iv.termStructure),
+          bdg('Premium', ev.iv.premiumFairness)
+        ], { body: escHtml(ev.iv.summary || ''), meta: seatMeta(byRole, 'iv') }));
+
+      if (ev.sentiment) {
+        const cats = (ev.sentiment.catalystsInWindow || []).filter(Boolean);
+        const pol = ev.sentiment.polarity;
+        seat('sentiment', ev.sentiment.summary, agentStance('sentiment', ev.sentiment, ev.sentiment.summary),
+          drawer([
+            bdg('Polarity', typeof pol === 'number' ? (pol > 0 ? '+' : '') + pol : pol),
+            bdg('Catalysts in window', cats.length ? cats.join(', ') : 'none')
+          ], { body: escHtml(ev.sentiment.summary || ''), meta: seatMeta(byRole, 'sentiment') }));
+      }
+
+      if (lastR.bull) seat('bull', lastR.bull.thesis, 'supportive',
+        drawer([], { body: debateBody('bull', rounds), meta: seatMeta(byRole, 'bull') }));
+      if (lastR.bear) seat('bear', lastR.bear.thesis, 'caution',
+        drawer([], { body: debateBody('bear', rounds), meta: seatMeta(byRole, 'bear') }));
+
+      if (risk.rationale) seat('risk', risk.rationale, risk.portfolioFit === 'cleared' ? 'supportive' : 'caution',
+        drawer([
+          bdg('Portfolio fit', risk.portfolioFit),
+          bdg('Theta', risk.thetaImpact),
+          bdg('Vega', risk.vegaImpact)
+        ], { body: escHtml(risk.rationale || ''), meta: seatMeta(byRole, 'risk') }));
+
+      if (verdict.rationale) {
+        const flips = (verdict.flipConditions || []).filter(Boolean);
+        seat('judge', verdict.rationale, 'neutral',
+          drawer([
+            bdg('Call', verdict.call),
+            bdg('Confidence', verdict.confidence != null ? verdict.confidence : undefined)
+          ], {
+            body: escHtml(verdict.rationale || '')
+              + (flips.length ? `<div class="vp-round"><div class="vp-round-h">Flip conditions</div><ul>${flips.map(f => `<li>${escHtml(f)}</li>`).join('')}</ul></div>` : ''),
+            meta: seatMeta(byRole, 'judge')
+          }));
+      }
+
+      renderTraceInspector(vData);
+    }
+
+    // Raw model-call inspector: every LLM call in the run with its prompts,
+    // response, tokens and latency — the full "show the work" view.
+    function renderTraceInspector(vData) {
+      const el = $('#vp-trace-inspector');
+      if (!el) return;
+      const traces = (vData && vData.traces) || [];
+      const cost = (vData && vData.cost) || {};
+      if (!traces.length) {
+        el.innerHTML = '<div class="vp-trace-sum">No raw model traces were returned for this run.</div>';
+        return;
+      }
+      const totalTok = (cost.totalInputTokens || 0) + (cost.totalOutputTokens || 0);
+      const parts = [`${traces.length} model calls`];
+      if (totalTok) parts.push(`${totalTok.toLocaleString()} tokens`);
+      if (cost.totalCost != null) parts.push(`$${Number(cost.totalCost).toFixed(3)}`);
+      if (vData.durationMs) parts.push(`${(vData.durationMs / 1000).toFixed(1)}s`);
+      const header = `<div class="vp-trace-sum">${escHtml(parts.join(' · '))}</div>`;
+      el.innerHTML = header + traces.map((t, i) => {
+        const label = traceRoleLabel(t.system) || `Call ${i + 1}`;
+        const tok = (t.inputTokens || 0) + (t.outputTokens || 0);
+        const meta = [tok ? `${tok.toLocaleString()} tok` : '', t.durationMs ? `${(t.durationMs / 1000).toFixed(1)}s` : '', t.cost != null ? `$${Number(t.cost).toFixed(4)}` : ''].filter(Boolean).join(' · ');
+        return `<div class="vp-trace">
+          <div class="vp-trace-head" onclick="this.parentElement.classList.toggle('open')">
+            <span><b>${escHtml(label)}</b> <span class="vp-trace-model">${escHtml(t.model || '')}</span></span>
+            <span class="vp-trace-meta">${escHtml(meta)}</span>
+          </div>
+          <div class="vp-trace-body">
+            <div class="vp-trace-label">System prompt</div><pre>${escHtml(t.system || '')}</pre>
+            <div class="vp-trace-label">User prompt</div><pre>${escHtml(t.user || '')}</pre>
+            <div class="vp-trace-label">Response</div><pre>${escHtml(t.response || '')}</pre>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function toggleTraceInspector() {
+      const el = $('#vp-trace-inspector');
+      const btn = $('#vp-trace-btn');
+      if (!el) return;
+      const willShow = el.classList.contains('hidden');
+      // If the inspector was never populated (demo run, or no traces returned),
+      // fill it from the stored response so the toggle never opens to nothing.
+      if (willShow && !el.innerHTML.trim()) renderTraceInspector(state.verifyData || {});
+      el.classList.toggle('hidden');
+      if (btn) btn.textContent = willShow ? 'Hide model calls' : 'Inspect model calls';
     }
 
     function setPhaseActive(phase) {
@@ -2211,6 +2421,11 @@
         const txEl = $(`#vp-tx-${a}`);
         if (txEl) { txEl.textContent = ''; txEl.classList.add('hidden'); }
       });
+      // Reset the raw-trace inspector so a prior run's calls don't linger.
+      const insp = $('#vp-trace-inspector');
+      if (insp) { insp.innerHTML = ''; insp.classList.add('hidden'); }
+      const inspBtn = $('#vp-trace-btn');
+      if (inspBtn) inspBtn.textContent = 'Inspect model calls';
       setPhaseActive(1);
       $('#elapsed-timer').textContent = '0.0s';
 
@@ -2238,18 +2453,7 @@
       // Fire the /verify API call immediately (runs in parallel with the animation)
       let verifyPromise;
       if (!isDemo) {
-        const verifyLegs = state.legs.map(l => ({ type: l.type, side: l.side, strike: l.strike, expiry: state.selectedExpiry }));
-        verifyPromise = apiCall('/verify', {
-          method: 'POST',
-          body: {
-            ticker: state.ticker,
-            structure: state.selectedStrategy.strategy || state.selectedStrategy.id,
-            legs: verifyLegs,
-            netCredit: state.legs.reduce((s, l) => s + (l.side === 'short' ? l.mid : -l.mid), 0),
-            source: 'investor_draft',
-            modelMode: window.USER_MODEL_MODE || 'budget-qwq'
-          }
-        }).then(r => r.json());
+        verifyPromise = callVerify(state.legs);
       }
 
       const AGENT_TAGS = { technical: 'supportive', gamma: 'supportive', iv: 'caution', sentiment: 'neutral', bull: 'supportive', bear: 'caution', risk: 'caution', judge: 'neutral' };
@@ -2320,35 +2524,17 @@
         try {
           const vData = await verifyPromise;
           state.verifyData = vData; // store full response for stage 5
-          const v = vData.verdict || {};
-          const conf = v.confidence || 50;
-          const vCall = v.call || 'marginal';
-          const vClass = vCall === 'pass' ? 'pass' : vCall === 'fail' ? 'fail' : 'concern';
-          const verdictWords = { pass: 'Take it', marginal: 'Take it smaller', fail: 'Skip it' };
-          state.verdict = { verdictWord: verdictWords[vCall] || 'Take it smaller', confidence: conf, verdictClass: vClass, summary: v.rationale || '' };
-          // Evidence
-          state.evidence = vData.evidence || {};
-          // Risk
-          state.riskReport = vData.riskReport || {};
-          // Debate
-          state.debateRounds = vData.debate?.rounds || [];
-          if (state.debateRounds.length) {
-            const lastRound = state.debateRounds[state.debateRounds.length - 1];
-            state.debate = { bullWonOn: lastRound?.bull?.thesis?.slice(0, 80) || 'Premium richness', bearWonOn: lastRound?.bear?.thesis?.slice(0, 80) || 'Risk factors' };
-          } else {
-            state.debate = { bullWonOn: 'Evidence cited', bearWonOn: 'Risk factors identified' };
-          }
-          // Mutations from suggestedFix
-          if (vData.suggestedFix) {
-            state.mutations = [{ label: vData.suggestedFix.rationale?.slice(0, 40) || 'Suggested adjustment', from: conf, to: Math.min(100, conf + 15) }];
-          } else {
-            state.mutations = [{ label: 'Reduce size 50%', from: conf, to: Math.min(100, conf + 12) }, { label: 'Widen strikes $5', from: conf, to: Math.min(100, conf + 8) }];
-          }
+          state.verifyError = null;
+          applyVerifyResult(vData);
+          populateRealSeats(vData); // show what the agents actually found in Step 4
           state.totalTokens = (vData.cost?.totalInputTokens || 0) + (vData.cost?.totalOutputTokens || 0);
           state.totalTime = (vData.durationMs || 0) / 1000;
           addCost(vData.cost);
         } catch (err) {
-          state.verdict = { verdictWord: 'Error', confidence: 0, verdictClass: 'fail', summary: 'Verification failed: ' + err.message };
+          // Surface the failure — do NOT fall through to canned desk text.
+          state.verifyError = err.message;
+          state.evidence = {}; state.debateRounds = []; state.riskReport = {}; state.mutations = [];
+          state.verdict = { verdictWord: 'Verification unavailable', confidence: 0, verdictClass: 'fail', summary: 'The desk could not complete this run: ' + err.message, flipConditions: [] };
         }
       }
 
@@ -2373,12 +2559,152 @@
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
     /* ================================================================
+       VERIFY PLUMBING — single source of truth for the verdict shape
+       ================================================================ */
+    const VERDICT_WORDS = { pass: 'Take it', marginal: 'Take it smaller', fail: 'Skip it' };
+    function deriveVerdictClass(call) {
+      return call === 'pass' ? 'pass' : call === 'fail' ? 'fail' : 'concern';
+    }
+
+    // Run the 8-agent desk against a given set of legs. Returns raw /verify JSON.
+    function callVerify(legs) {
+      const verifyLegs = legs.map(l => ({ type: l.type, side: l.side, strike: l.strike, expiry: state.selectedExpiry }));
+      return apiCall('/verify', {
+        method: 'POST',
+        body: {
+          ticker: state.ticker,
+          structure: state.selectedStrategy.strategy || state.selectedStrategy.id,
+          legs: verifyLegs,
+          netCredit: legs.reduce((s, l) => s + (l.side === 'short' ? l.mid : -l.mid), 0),
+          source: 'investor_draft',
+          modelMode: window.USER_MODEL_MODE || 'budget-qwq'
+        }
+      }).then(async r => {
+        const data = await r.json().catch(() => ({}));
+        // Never silently render a fake verdict on a failed call — surface it.
+        if (!r.ok || data.error || !data.verdict) {
+          const msg = data.error
+            ? (typeof data.error === 'string' ? data.error : JSON.stringify(data.error))
+            : `Verify returned HTTP ${r.status}`;
+          throw new Error(msg);
+        }
+        return data;
+      });
+    }
+
+    // Map a raw /verify response into state. Used by the initial run AND by any
+    // re-verify after a mutation, so the verdict word/class is always derived
+    // the same way — never from client-invented thresholds.
+    function applyVerifyResult(vData) {
+      const v = vData.verdict || {};
+      const conf = v.confidence || 50;
+      const vCall = v.call || 'marginal';
+      state.verdict = {
+        verdictWord: VERDICT_WORDS[vCall] || 'Take it smaller',
+        confidence: conf,
+        verdictClass: deriveVerdictClass(vCall),
+        summary: v.rationale || '',
+        flipConditions: Array.isArray(v.flipConditions) ? v.flipConditions.filter(Boolean) : []
+      };
+      state.evidence = vData.evidence || {};
+      state.riskReport = vData.riskReport || {};
+      state.debateRounds = vData.debate?.rounds || [];
+      if (state.debateRounds.length) {
+        const lastRound = state.debateRounds[state.debateRounds.length - 1];
+        state.debate = { bullWonOn: lastRound?.bull?.thesis?.slice(0, 80) || 'Premium richness', bearWonOn: lastRound?.bear?.thesis?.slice(0, 80) || 'Risk factors' };
+      } else {
+        state.debate = { bullWonOn: 'Evidence cited', bearWonOn: 'Risk factors identified' };
+      }
+      state.mutations = buildMutations(vData);
+    }
+
+    // Only surface adjustments the desk actually grounded — never fabricate a
+    // target score. Each mutation carries a real action the trade can apply.
+    function buildMutations(vData) {
+      const muts = [];
+      const sf = vData.suggestedFix;
+      if (sf && sf.action !== 'wait') {
+        muts.push({
+          kind: 'suggestedFix',
+          label: sf.action === 'switch' ? `Switch to ${sf.strategy}` : 'Apply desk adjustment',
+          rationale: sf.rationale || '',
+          legs: Array.isArray(sf.legs) && sf.legs.length ? sf.legs : null
+        });
+      }
+      if (vData.riskReport?.portfolioFit === 'reduce_size') {
+        muts.push({
+          kind: 'reduce_size',
+          label: 'Reduce size 50%',
+          rationale: vData.riskReport.rationale || 'Risk desk flagged sizing — halving contracts cuts max loss in proportion.'
+        });
+      }
+      return muts;
+    }
+
+    // Apply a mutation's structural change to the live trade (legs / qty).
+    function applyMutationToTrade(m) {
+      if (m.kind === 'reduce_size') {
+        state.qty = Math.max(1, Math.round(state.qty * 0.5));
+      } else if (m.kind === 'suggestedFix' && Array.isArray(m.legs) && m.legs.length) {
+        state.legs = m.legs.map(pl => {
+          const ch = (state.chainData || []).find(c => Math.abs(c.strike - pl.strike) < 0.5);
+          const ct = ch ? ch[pl.type] : null;
+          return { type: pl.type, side: pl.side, strike: pl.strike, mid: (ct && ct.mid) || 0, iv: (ct && ct.iv) || 0 };
+        });
+      }
+    }
+
+    // Structured stance for a desk agent — uses the real report fields the API
+    // returns rather than keyword-matching the prose summary.
+    function agentStance(key, data, summary) {
+      if (key === 'technical' && data && data.trend) {
+        return data.trend === 'bullish' ? 'supportive' : data.trend === 'bearish' ? 'caution' : 'neutral';
+      }
+      if (key === 'gamma' && data && typeof data.insideBand === 'boolean') {
+        return data.insideBand ? 'supportive' : 'caution';
+      }
+      if (key === 'iv' && data && data.premiumFairness) {
+        return data.premiumFairness === 'rich' ? 'supportive' : data.premiumFairness === 'thin' ? 'caution' : 'neutral';
+      }
+      if (key === 'sentiment' && data) {
+        // A binary event in the window is the real risk for a premium seller —
+        // and the desk treats crowded (extreme) polarity as risky in EITHER
+        // direction, so both flag caution regardless of sign.
+        const cats = Array.isArray(data.catalystsInWindow) ? data.catalystsInWindow.filter(Boolean) : [];
+        if (cats.length) return 'caution';
+        if (typeof data.polarity === 'number') {
+          return Math.abs(data.polarity) > 0.6 ? 'caution' : 'supportive';
+        }
+      }
+      // Fallback heuristic when structured fields are absent (e.g. demo)
+      const s = (summary || '').toLowerCase();
+      if (/bullish|support|favorable|rich|contained/.test(s)) return 'supportive';
+      if (/bearish|caution|risk|thin|breach|reversal/.test(s)) return 'caution';
+      return 'neutral';
+    }
+
+    /* ================================================================
        STAGE 5: VERDICT & MUTATE
        ================================================================ */
     function renderStage5() {
       const v = state.verdict;
       if (!v) {
         $('#verdict-content').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">No verdict data available.</div>';
+        return;
+      }
+      // Failed desk run — show the real error, not a fabricated verdict.
+      if (state.verifyError) {
+        $('#verdict-content').innerHTML = `
+          <div class="v5-banner fail" style="text-align:left">
+            <span class="v5-pill fail">Verification failed</span>
+            <div style="font-size:18px;font-weight:800;margin:8px 0">The desk couldn't complete this run</div>
+            <div style="font-size:13px;color:var(--ink-mid);line-height:1.5">${state.verifyError}</div>
+            <div style="font-size:12px;color:var(--ink-muted);margin-top:10px">No verdict is shown because the agents did not return a result — retrying re-runs the full desk.</div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:14px">
+            <button class="btn-primary" onclick="goToStage(4)" style="padding:10px 20px">Retry verification</button>
+            <button class="btn-primary" onclick="goToStage(3)" style="padding:10px 20px;background:var(--white);color:var(--ink);border:1px solid var(--border)">Back to strikes</button>
+          </div>`;
         return;
       }
 
@@ -2389,22 +2715,43 @@
       const totalCredit = nc * 100 * state.qty;
       const legsStr = state.legs.map(l => `${l.side === 'short' ? 'S' : 'L'} ${l.strike}${l.type[0].toUpperCase()}`).join(' / ');
 
-      // Desk summary: tally supportive vs caution
+      // Desk summary: classify each agent by its structured report field.
+      // Sentiment also gets a catalyst line so the read is more than a polarity word.
+      const sentData = ev.sentiment;
+      const catalysts = Array.isArray(sentData?.catalystsInWindow) ? sentData.catalystsInWindow.filter(Boolean) : [];
+      const sentExtra = typeof sentData?.polarity === 'number'
+        ? ` · polarity ${sentData.polarity > 0 ? '+' : ''}${sentData.polarity.toFixed(2)} · ${catalysts.length ? 'catalysts: ' + catalysts.join(', ') : 'no catalysts in window'}`
+        : '';
       const agents = [
-        { name: 'Technical', data: ev.technical, summary: ev.technical?.summary || AGENT_RESULTS.technical },
-        { name: 'Gamma', data: ev.gamma, summary: ev.gamma?.summary || AGENT_RESULTS.gamma },
-        { name: 'IV/Skew', data: ev.iv, summary: ev.iv?.summary || AGENT_RESULTS.iv },
-        { name: 'Sentiment', data: ev.sentiment, summary: ev.sentiment?.summary || AGENT_RESULTS.sentiment },
+        { key: 'technical', name: 'Technical', data: ev.technical, summary: ev.technical?.summary || AGENT_RESULTS.technical },
+        { key: 'gamma', name: 'Gamma', data: ev.gamma, summary: ev.gamma?.summary || AGENT_RESULTS.gamma },
+        { key: 'iv', name: 'IV/Skew', data: ev.iv, summary: ev.iv?.summary || AGENT_RESULTS.iv },
+        { key: 'sentiment', name: 'Sentiment', data: ev.sentiment, summary: (ev.sentiment?.summary || AGENT_RESULTS.sentiment) + sentExtra },
       ];
-      const supportive = agents.filter(a => {
-        const s = (a.summary || '').toLowerCase();
-        return s.includes('bullish') || s.includes('support') || s.includes('favorable') || s.includes('rich') || s.includes('contained');
-      }).length;
-      const cautious = agents.length - supportive;
+      agents.forEach(a => { a.stance = agentStance(a.key, a.data, a.summary); });
+      const supportive = agents.filter(a => a.stance === 'supportive').length;
+      const cautious = agents.filter(a => a.stance === 'caution').length;
+      const neutralCount = agents.filter(a => a.stance === 'neutral').length;
 
       const ringColor = v.verdictClass === 'pass' ? 'var(--green)' : v.verdictClass === 'fail' ? 'var(--red)' : 'var(--yellow)';
       const confPct = v.confidence || 0;
       const scalePos = Math.max(0, Math.min(100, confPct));
+
+      // "What would change this verdict" — real flip conditions from the judge,
+      // falling back to the risk desk's reasoning. No longer a repeat of the summary.
+      const flips = v.flipConditions || [];
+      const flipInner = flips.length
+        ? `<strong>What would change this verdict:</strong><ul style="margin:6px 0 0;padding-left:18px">${flips.map(f => `<li style="margin-bottom:3px">${f}</li>`).join('')}</ul>`
+        : (state.riskReport?.rationale
+            ? `<strong>What drove the score:</strong> ${state.riskReport.rationale}`
+            : `<strong>What drove the score:</strong> The desk weighed analyst evidence, debate arguments, and risk factors.`);
+
+      // One-line read on how the debate resolved, tied to the verdict class.
+      const debateSummary = v.verdictClass === 'pass'
+        ? 'The desk judged the bull case stronger — evidence supports entry.'
+        : v.verdictClass === 'fail'
+          ? 'The desk judged the bear case stronger — risks outweigh the edge.'
+          : 'The desk found the case balanced — proceed smaller and watch the flip conditions.';
       $('#verdict-content').innerHTML = `
         <!-- Verdict banner -->
         <div class="v5-banner ${v.verdictClass}">
@@ -2440,61 +2787,79 @@
         <!-- What the desk found -->
         <div class="panel" style="padding:14px 18px;margin-top:12px">
           <div style="font-size:14px;font-weight:700;margin-bottom:10px">What the desk found</div>
-          <div style="display:flex;gap:12px;margin-bottom:12px">
+          <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap">
             <span style="font-size:12px;padding:4px 10px;border-radius:6px;background:var(--pass-bg);color:var(--pass-text);font-weight:600">${supportive} supportive</span>
             <span style="font-size:12px;padding:4px 10px;border-radius:6px;background:var(--concern-bg);color:var(--concern-text);font-weight:600">${cautious} caution</span>
+            ${neutralCount ? `<span style="font-size:12px;padding:4px 10px;border-radius:6px;background:var(--cream-dark);color:var(--ink-muted);font-weight:600">${neutralCount} neutral</span>` : ''}
           </div>
           ${agents.map(a => {
-            const isSupportive = (a.summary || '').toLowerCase().match(/bullish|support|favorable|rich|contained/);
-            const tagCls = isSupportive ? 'tag-supportive' : 'tag-caution';
-            const tagWord = isSupportive ? 'supportive' : 'caution';
+            const tagCls = a.stance === 'supportive' ? 'tag-supportive' : a.stance === 'caution' ? 'tag-caution' : 'tag-neutral';
             return `<div class="v5-desk-row">
               <span style="font-weight:600;min-width:80px">${a.name}</span>
               <span style="flex:1;color:var(--ink-muted)">${a.summary}</span>
-              <span class="vp-seat-tag"><span class="${tagCls}">${tagWord}</span></span>
+              <span class="vp-seat-tag"><span class="${tagCls}">${a.stance}</span></span>
             </div>`;
           }).join('')}
           <div style="font-size:12px;color:var(--ink-muted);margin-top:12px;line-height:1.6;padding:10px;background:var(--cream);border-radius:6px">
-            <strong>How the ${confPct} was reached:</strong> ${v.summary || 'The desk weighed analyst evidence, debate arguments, and risk factors to produce the confidence score.'}
+            ${flipInner}
           </div>
           <div style="margin-top:8px;text-align:center">
             <button onclick="goToStage(4)" style="background:none;border:none;color:var(--teal);font-size:11px;cursor:pointer;text-decoration:underline">View full transcripts in Step 4</button>
           </div>
         </div>
 
-        <!-- Mutations -->
+        <!-- Suggested adjustments -->
         ${state.mutations?.length ? `<div class="panel" style="padding:14px 18px;margin-top:12px">
-          <div style="font-size:14px;font-weight:700;margin-bottom:10px">One-click mutations</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px">Suggested adjustments</div>
+          <div style="font-size:11px;color:var(--ink-muted);margin-bottom:10px">Applying re-runs the desk on the new structure for a fresh score &mdash; no number is assumed.</div>
           <div style="display:grid;grid-template-columns:repeat(${Math.min(state.mutations.length,3)},1fr);gap:8px">
-            ${state.mutations.map((m, i) => `
-              <div class="panel" style="padding:12px;cursor:pointer;text-align:center;transition:all 0.15s;${i===0?'border-color:var(--teal);':''}${m.applied?'opacity:0.5;':''}" id="mutation-${i}" onclick="handleMutation(${i})">
-                ${i===0?'<div style="font-size:8px;background:var(--teal);color:white;padding:1px 6px;border-radius:3px;display:inline-block;margin-bottom:4px;font-weight:700">BEST</div>':''}
-                <div style="font-size:12px;font-weight:600">${m.label}</div>
-                <div style="font-size:14px;font-family:var(--mono);margin-top:4px">
-                  <span style="color:var(--ink-muted)">${m.from}</span>
-                  <span style="color:var(--green)"> \u2192 ${m.to}</span>
-                  <span style="font-size:10px;color:var(--green);font-weight:700"> \u25B2 +${m.to - m.from}</span>
-                </div>
-              </div>
-            `).join('')}
+            ${state.mutations.map((m, i) => {
+              const change = m.kind === 'reduce_size'
+                ? `${state.qty} \u2192 ${Math.max(1, Math.round(state.qty * 0.5))} contracts`
+                : (m.legs ? m.legs.map(l => `${l.side === 'short' ? 'S' : 'L'} ${l.strike}${l.type[0].toUpperCase()}`).join(' / ') : '');
+              return `
+              <div class="panel" style="padding:12px;cursor:pointer;transition:all 0.15s;${i===0?'border-color:var(--teal);':''}" id="mutation-${i}" onclick="handleMutation(${i})">
+                ${i===0?'<div style="font-size:8px;background:var(--teal);color:white;padding:1px 6px;border-radius:3px;display:inline-block;margin-bottom:4px;font-weight:700">SUGGESTED</div>':''}
+                <div style="font-size:12px;font-weight:600;margin-bottom:2px">${m.label}</div>
+                ${m.rationale ? `<div style="font-size:10px;color:var(--ink-muted);line-height:1.4;margin-bottom:6px">${m.rationale}</div>` : ''}
+                ${change ? `<div style="font-size:11px;font-family:var(--mono);color:var(--ink)">${change}</div>` : ''}
+                <div style="font-size:10px;color:var(--teal);font-weight:600;margin-top:6px">Apply &amp; re-verify \u2192</div>
+              </div>`;
+            }).join('')}
           </div>
         </div>` : ''}
 
-        <!-- Bull/Bear debate -->
+        <!-- Bull vs Bear debate -->
         ${state.debateRounds?.length || state.debate ? `<div class="panel" style="padding:14px 18px;margin-top:12px">
-          <details>
-            <summary style="font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">Bull vs Bear debate</summary>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-              <div style="padding:10px;background:rgba(26,140,94,0.06);border-radius:8px;border-left:3px solid var(--green)">
-                <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:4px">Bull Researcher</div>
-                <div style="font-size:11px;color:var(--ink-muted);line-height:1.5">${state.debate?.bullWonOn || state.debate?.bull?.wonOn || 'Premium richness supports the structure'}</div>
-              </div>
-              <div style="padding:10px;background:rgba(192,57,43,0.06);border-radius:8px;border-left:3px solid var(--red)">
-                <div style="font-size:11px;font-weight:600;color:var(--red);margin-bottom:4px">Bear Researcher</div>
-                <div style="font-size:11px;color:var(--ink-muted);line-height:1.5">${state.debate?.bearWonOn || state.debate?.bear?.wonOn || 'Risk factors require attention'}</div>
-              </div>
-            </div>
-          </details>
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px">Bull vs Bear debate</div>
+          <div style="font-size:11px;color:var(--ink-muted);margin-bottom:10px">${debateSummary}</div>
+          ${state.debateRounds?.length
+            ? state.debateRounds.map((r, i) => `
+              <div style="margin-bottom:10px">
+                ${state.debateRounds.length > 1 ? `<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink-faint);margin-bottom:4px">Round ${i + 1}</div>` : ''}
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                  <div style="padding:10px;background:rgba(26,140,94,0.06);border-radius:8px;border-left:3px solid var(--green)">
+                    <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:4px">💪 Bull Researcher</div>
+                    <div style="font-size:11px;color:var(--ink);line-height:1.5">${r.bull?.thesis || '—'}</div>
+                    ${(r.bull?.evidence || []).length ? `<ul style="margin:6px 0 0;padding-left:16px;font-size:10px;color:var(--ink-muted);line-height:1.5">${r.bull.evidence.map(e => `<li>${e}</li>`).join('')}</ul>` : ''}
+                  </div>
+                  <div style="padding:10px;background:rgba(192,57,43,0.06);border-radius:8px;border-left:3px solid var(--red)">
+                    <div style="font-size:11px;font-weight:600;color:var(--red);margin-bottom:4px">⚠ Bear Researcher</div>
+                    <div style="font-size:11px;color:var(--ink);line-height:1.5">${r.bear?.thesis || '—'}</div>
+                    ${(r.bear?.evidence || []).length ? `<ul style="margin:6px 0 0;padding-left:16px;font-size:10px;color:var(--ink-muted);line-height:1.5">${r.bear.evidence.map(e => `<li>${e}</li>`).join('')}</ul>` : ''}
+                  </div>
+                </div>
+              </div>`).join('')
+            : `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div style="padding:10px;background:rgba(26,140,94,0.06);border-radius:8px;border-left:3px solid var(--green)">
+                  <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:4px">💪 Bull Researcher</div>
+                  <div style="font-size:11px;color:var(--ink-muted);line-height:1.5">${state.debate?.bullWonOn || state.debate?.bull?.wonOn || 'Premium richness supports the structure'}</div>
+                </div>
+                <div style="padding:10px;background:rgba(192,57,43,0.06);border-radius:8px;border-left:3px solid var(--red)">
+                  <div style="font-size:11px;font-weight:600;color:var(--red);margin-bottom:4px">⚠ Bear Researcher</div>
+                  <div style="font-size:11px;color:var(--ink-muted);line-height:1.5">${state.debate?.bearWonOn || state.debate?.bear?.wonOn || 'Risk factors require attention'}</div>
+                </div>
+              </div>`}
         </div>` : ''}
 
         <!-- Actions -->
@@ -2519,58 +2884,39 @@
     async function handleMutation(index) {
       var card = document.getElementById('mutation-' + index);
       if (!card) return;
-      card.classList.add('reverifying');
-      card.innerHTML = '<div style="text-align:center;padding:8px;color:var(--text-muted)"><span class="mini-spinner"></span> Applying mutation...</div>';
-
       var m = state.mutations[index];
-      var label = (m.label || '').toLowerCase();
+      if (!m) return;
+      card.classList.add('reverifying');
+      card.innerHTML = '<div style="text-align:center;padding:8px;color:var(--text-muted)"><span class="mini-spinner"></span> Applying &amp; re-verifying...</div>';
 
-      await sleep(800);
-
-      // Apply the mutation to the actual trade
-      if (label.indexOf('reduce size') >= 0 || label.indexOf('cut size') >= 0) {
-        // Reduce qty by ~50%
-        state.qty = Math.max(1, Math.round(state.qty * 0.5));
-      } else if (label.indexOf('widen') >= 0) {
-        // Widen outer strikes by $5
-        var strikes = state.legs.map(function(l) { return l.strike; });
-        var minS = Math.min.apply(null, strikes);
-        var maxS = Math.max.apply(null, strikes);
-        state.legs.forEach(function(l) {
-          if (l.strike === minS) { l.strike -= 5; }
-          else if (l.strike === maxS) { l.strike += 5; }
-          // Re-enrich from chain
-          var ch = (state.chainData || []).find(function(c) { return Math.abs(c.strike - l.strike) < 0.5; });
-          var ct = ch ? ch[l.type] : null;
-          l.mid = (ct && ct.mid) || l.mid;
-          l.iv = (ct && ct.iv) || l.iv;
-        });
-      } else if (label.indexOf('roll puts') >= 0) {
-        // Move put strikes down by $5
-        state.legs.forEach(function(l) {
-          if (l.type === 'put') {
-            l.strike -= 5;
-            var ch = (state.chainData || []).find(function(c) { return Math.abs(c.strike - l.strike) < 0.5; });
-            var ct = ch ? ch[l.type] : null;
-            l.mid = (ct && ct.mid) || l.mid;
-            l.iv = (ct && ct.iv) || l.iv;
-          }
-        });
+      // Demo mode has no live desk to re-score against — keep it illustrative.
+      if (isDemo) {
+        await sleep(700);
+        if (typeof m.to === 'number') {
+          state.verdict.confidence = m.to;
+          var dc = m.to >= 70 ? 'pass' : m.to >= 50 ? 'concern' : 'fail';
+          state.verdict.verdictClass = dc;
+          state.verdict.verdictWord = VERDICT_WORDS[dc === 'concern' ? 'marginal' : dc] || state.verdict.verdictWord;
+        }
+        renderStage5();
+        return;
       }
 
-      // Update confidence
-      state.verdict.confidence = m.to;
-
-      // Update the verdict class based on new confidence
-      var conf = m.to;
-      state.verdict.verdictClass = conf >= 70 ? 'pass' : conf >= 50 ? 'concern' : 'fail';
-      var verdictWords = { pass: 'Take it', concern: 'Take it smaller', fail: 'Skip it' };
-      state.verdict.verdictWord = verdictWords[state.verdict.verdictClass] || state.verdict.verdictWord;
-
-      // Mark this mutation as applied
-      m.applied = true;
-
-      // Re-render with updated legs + confidence
+      // Real path: mutate the trade, then re-run the desk for a REAL score.
+      // We never assert a client-invented number — the confidence that shows is
+      // whatever the desk returns for the new structure.
+      applyMutationToTrade(m);
+      try {
+        var vData = await callVerify(state.legs);
+        state.verifyData = vData;
+        applyVerifyResult(vData);
+        state.totalTokens = (vData.cost?.totalInputTokens || 0) + (vData.cost?.totalOutputTokens || 0);
+        state.totalTime = (vData.durationMs || 0) / 1000;
+        addCost(vData.cost);
+      } catch (err) {
+        // Surface the failure honestly rather than faking an improvement.
+        state.verdict.summary = 'Re-verification failed: ' + err.message + ' — score unchanged.';
+      }
       renderStage5();
     }
 
