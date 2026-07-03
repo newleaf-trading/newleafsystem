@@ -2815,8 +2815,11 @@
     }
 
     // Run the 8-agent desk against a given set of legs. Returns raw /verify JSON.
-    function callVerify(legs) {
+    async function callVerify(legs) {
       const verifyLegs = legs.map(l => ({ type: l.type, side: l.side, strike: l.strike, expiry: state.selectedExpiry }));
+      // Attach the user's real Invest portfolio so the Risk Manager assesses
+      // actual concentration instead of guessing. Empty [] = not connected.
+      const portfolio = window.getInvestPortfolio ? await window.getInvestPortfolio().catch(() => []) : [];
       return apiCall('/verify', {
         method: 'POST',
         body: {
@@ -2825,6 +2828,7 @@
           legs: verifyLegs,
           netCredit: legs.reduce((s, l) => s + (l.side === 'short' ? l.mid : -l.mid), 0),
           source: 'investor_draft',
+          portfolio,
           modelMode: window.USER_MODEL_MODE || 'budget-qwq'
         }
       }).then(async r => {
@@ -3491,7 +3495,7 @@
      ═══════════════════════════════════════════════════════════════ -->
 <script type="module">
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-import { getFirestore, collection, doc, getDoc, setDoc, addDoc, updateDoc, serverTimestamp, increment }
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, serverTimestamp, increment }
   from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 import { getAuth, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
@@ -3556,6 +3560,34 @@ function todayKey() {
 function userDocId(email) {
   return email.replace(/[^a-zA-Z0-9]/g, '_');
 }
+
+// Read the signed-in user's active Invest positions (users/{uid}/positions in
+// newleafdb — the same collection the Invest app writes) and return a compact
+// snapshot for the Risk Manager. Capital-at-risk = maxLoss × contracts.
+// Returns [] when signed out or on any error — the desk then treats it as
+// "no portfolio connected" rather than failing.
+window.getInvestPortfolio = async function() {
+  try {
+    if (!auth.currentUser) return [];
+    const snap = await getDocs(collection(db, 'users', auth.currentUser.uid, 'positions'));
+    const out = [];
+    snap.forEach(d => {
+      const p = d.data() || {};
+      if (p.status && p.status !== 'active') return; // active positions only
+      if (!p.symbol) return;
+      const qty = Number(p.quantity) || 0;
+      const maxLoss = Number(p.maxLoss) || 0;
+      out.push({
+        symbol: String(p.symbol).toUpperCase(),
+        strategyType: p.strategyType || '',
+        quantity: qty,
+        capitalAtRisk: Math.round(maxLoss * qty),
+        shortPremium: Number(p.entryNetCredit) > 0,
+      });
+    });
+    return out;
+  } catch (e) { console.warn('getInvestPortfolio failed', e); return []; }
+};
 
 // Check if user has remaining requests today. Returns { allowed, used, limit }.
 window.checkUsageLimit = async function() {

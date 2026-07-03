@@ -12,6 +12,16 @@ export const TradeIdeaSchema = z.object({
   netCredit: z.number().optional(),
   bpRequired: z.number().optional(),
   source: z.enum(['picks', 'investor_draft']),
+  // Optional snapshot of the user's active Invest positions, passed by the
+  // client so the Risk Manager can assess real concentration instead of
+  // guessing. Compact by design — capital-at-risk is the exposure proxy.
+  portfolio: z.array(z.object({
+    symbol: z.string(),
+    strategyType: z.string().optional(),
+    quantity: z.number().optional(),
+    capitalAtRisk: z.number().optional(),
+    shortPremium: z.boolean().optional(),
+  })).optional(),
 });
 export type TradeIdea = z.infer<typeof TradeIdeaSchema>;
 
