@@ -1,9 +1,9 @@
 {
-  "_lastUpdated": "2026-06-19",
+  "_lastUpdated": "2026-07-02",
   "_source": "Yahoo Cloud Function (yfinance) + FMP ex-div supplement",
   "_symbolCount": 297,
-  "_earningsCount": 246,
-  "_exDivCount": 9,
+  "_earningsCount": 253,
+  "_exDivCount": 11,
   "symbols": {
     "SPY": {
       "earnings": null,
@@ -176,7 +176,7 @@
     "AAPL": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -184,15 +184,15 @@
     "MSFT": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": "2026-08-20",
       "exDivSource": "fmp",
-      "exDivFetchedAt": "2026-06-19"
+      "exDivFetchedAt": "2026-07-02"
     },
     "NVDA": {
       "earnings": "2026-08-26",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -200,7 +200,7 @@
     "AMZN": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -208,7 +208,7 @@
     "GOOG": {
       "earnings": "2026-07-23",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -216,7 +216,7 @@
     "META": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -224,7 +224,7 @@
     "TSLA": {
       "earnings": "2026-07-22",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -232,7 +232,7 @@
     "AMD": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -240,7 +240,7 @@
     "AVGO": {
       "earnings": "2026-09-03",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -248,7 +248,7 @@
     "NFLX": {
       "earnings": "2026-07-16",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -256,7 +256,7 @@
     "ADBE": {
       "earnings": "2026-09-10",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -264,7 +264,7 @@
     "CRM": {
       "earnings": "2026-09-02",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -272,7 +272,7 @@
     "INTC": {
       "earnings": "2026-07-23",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -280,7 +280,7 @@
     "PLTR": {
       "earnings": "2026-08-03",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -288,7 +288,7 @@
     "COIN": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -296,7 +296,7 @@
     "RIOT": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -304,15 +304,15 @@
     "MARA": {
       "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "RIVN": {
-      "earnings": null,
-      "earningsSource": null,
-      "earningsFetchedAt": null,
+      "earnings": "2026-07-30",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -320,15 +320,15 @@
     "LCID": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "SOFI": {
-      "earnings": "2026-07-28",
+      "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -336,7 +336,7 @@
     "SNAP": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -344,7 +344,7 @@
     "SHOP": {
       "earnings": "2026-08-05",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -352,15 +352,15 @@
     "JPM": {
       "earnings": "2026-07-14",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": "2026-07-06",
       "exDivSource": "fmp",
-      "exDivFetchedAt": "2026-06-19"
+      "exDivFetchedAt": "2026-07-02"
     },
     "BAC": {
       "earnings": "2026-07-14",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -368,7 +368,7 @@
     "GS": {
       "earnings": "2026-07-14",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -376,7 +376,7 @@
     "MS": {
       "earnings": "2026-07-15",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -384,7 +384,7 @@
     "C": {
       "earnings": "2026-07-14",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -392,15 +392,15 @@
     "WFC": {
       "earnings": "2026-07-14",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "SCHW": {
-      "earnings": "2026-07-16",
+      "earnings": "2026-07-21",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -408,7 +408,7 @@
     "XOM": {
       "earnings": "2026-07-31",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -416,7 +416,7 @@
     "CVX": {
       "earnings": "2026-07-31",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -424,7 +424,7 @@
     "COP": {
       "earnings": "2026-08-06",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -432,15 +432,15 @@
     "SLB": {
       "earnings": "2026-07-24",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "EOG": {
-      "earnings": null,
-      "earningsSource": null,
-      "earningsFetchedAt": null,
+      "earnings": "2026-08-04",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -448,15 +448,15 @@
     "MPC": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "PSX": {
-      "earnings": "2026-07-24",
+      "earnings": "2026-08-05",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -464,7 +464,7 @@
     "VLO": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -472,7 +472,7 @@
     "OXY": {
       "earnings": "2026-08-05",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -488,7 +488,7 @@
     "HAL": {
       "earnings": "2026-07-21",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -496,7 +496,7 @@
     "CAT": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -504,7 +504,7 @@
     "DE": {
       "earnings": "2026-08-20",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -512,15 +512,15 @@
     "CMI": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "IR": {
-      "earnings": null,
-      "earningsSource": null,
-      "earningsFetchedAt": null,
+      "earnings": "2026-07-30",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -528,7 +528,7 @@
     "EMR": {
       "earnings": "2026-08-05",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -536,7 +536,7 @@
     "HON": {
       "earnings": "2026-07-23",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -544,7 +544,7 @@
     "MMM": {
       "earnings": "2026-07-21",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -552,23 +552,23 @@
     "BA": {
       "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "LMT": {
-      "earnings": "2026-07-21",
+      "earnings": "2026-07-23",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "RTX": {
-      "earnings": "2026-07-21",
+      "earnings": "2026-07-23",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -576,31 +576,31 @@
     "GE": {
       "earnings": "2026-07-16",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
-      "exDiv": null,
-      "exDivSource": null,
-      "exDivFetchedAt": null
+      "earningsFetchedAt": "2026-07-02",
+      "exDiv": "2026-07-06",
+      "exDivSource": "fmp",
+      "exDivFetchedAt": "2026-07-02"
     },
     "UNH": {
       "earnings": "2026-07-16",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "PFE": {
-      "earnings": "2026-07-29",
+      "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
-      "exDiv": null,
-      "exDivSource": null,
-      "exDivFetchedAt": null
+      "earningsFetchedAt": "2026-07-02",
+      "exDiv": "2026-07-24",
+      "exDivSource": "fmp",
+      "exDivFetchedAt": "2026-07-02"
     },
     "JNJ": {
       "earnings": "2026-07-15",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -608,23 +608,23 @@
     "MRK": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "ABBV": {
-      "earnings": "2026-07-30",
+      "earnings": "2026-07-31",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
-      "exDiv": null,
-      "exDivSource": null,
-      "exDivFetchedAt": null
+      "earningsFetchedAt": "2026-07-02",
+      "exDiv": "2026-07-15",
+      "exDivSource": "fmp",
+      "exDivFetchedAt": "2026-07-02"
     },
     "LLY": {
       "earnings": "2026-08-05",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -632,15 +632,15 @@
     "WMT": {
       "earnings": "2026-08-20",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": "2026-08-21",
       "exDivSource": "fmp",
-      "exDivFetchedAt": "2026-06-19"
+      "exDivFetchedAt": "2026-07-02"
     },
     "COST": {
-      "earnings": null,
-      "earningsSource": null,
-      "earningsFetchedAt": null,
+      "earnings": "2026-09-24",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -648,15 +648,15 @@
     "TGT": {
       "earnings": "2026-08-19",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": "2026-08-12",
       "exDivSource": "fmp",
-      "exDivFetchedAt": "2026-06-19"
+      "exDivFetchedAt": "2026-07-02"
     },
     "KR": {
       "earnings": "2026-09-10",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -664,15 +664,15 @@
     "PG": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "KO": {
-      "earnings": "2026-07-21",
+      "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -680,7 +680,7 @@
     "PEP": {
       "earnings": "2026-07-09",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -688,7 +688,7 @@
     "MDLZ": {
       "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -696,15 +696,15 @@
     "CL": {
       "earnings": "2026-07-31",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "GIS": {
-      "earnings": "2026-07-01",
+      "earnings": "2026-09-23",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -712,7 +712,7 @@
     "HD": {
       "earnings": "2026-08-18",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -720,15 +720,15 @@
     "MCD": {
       "earnings": "2026-08-06",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "NKE": {
-      "earnings": "2026-06-30",
+      "earnings": "2026-09-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -736,7 +736,7 @@
     "NUE": {
       "earnings": "2026-07-27",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -744,7 +744,7 @@
     "FCX": {
       "earnings": "2026-07-22",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -752,7 +752,7 @@
     "NEM": {
       "earnings": "2026-07-23",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -760,7 +760,7 @@
     "VMC": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -776,7 +776,7 @@
     "APD": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -784,7 +784,7 @@
     "NEE": {
       "earnings": "2026-07-22",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -792,7 +792,7 @@
     "DUK": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -800,7 +800,7 @@
     "SO": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -808,7 +808,7 @@
     "D": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -816,7 +816,7 @@
     "AEP": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -824,7 +824,7 @@
     "BABA": {
       "earnings": "2026-08-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -832,7 +832,7 @@
     "BIDU": {
       "earnings": "2026-08-19",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -840,7 +840,7 @@
     "JD": {
       "earnings": "2026-08-11",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -848,7 +848,7 @@
     "PDD": {
       "earnings": "2026-08-25",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -896,15 +896,15 @@
     "TSM": {
       "earnings": "2026-07-16",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": "2026-09-16",
       "exDivSource": "fmp",
-      "exDivFetchedAt": "2026-06-19"
+      "exDivFetchedAt": "2026-07-02"
     },
     "MU": {
-      "earnings": "2026-06-24",
+      "earnings": "2026-09-23",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -912,7 +912,7 @@
     "ASML": {
       "earnings": "2026-07-15",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -920,7 +920,7 @@
     "ORCL": {
       "earnings": "2026-09-09",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -928,7 +928,7 @@
     "V": {
       "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -936,15 +936,15 @@
     "CSCO": {
       "earnings": "2026-08-12",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": "2026-07-06",
       "exDivSource": "fmp",
-      "exDivFetchedAt": "2026-06-19"
+      "exDivFetchedAt": "2026-07-02"
     },
     "MA": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -952,7 +952,7 @@
     "LRCX": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -960,7 +960,7 @@
     "ARM": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -968,7 +968,7 @@
     "AMAT": {
       "earnings": "2026-08-13",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -976,7 +976,7 @@
     "AZN": {
       "earnings": "2026-07-27",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -984,7 +984,7 @@
     "PM": {
       "earnings": "2026-07-22",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -992,7 +992,7 @@
     "IBM": {
       "earnings": "2026-07-22",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1000,7 +1000,7 @@
     "TXN": {
       "earnings": "2026-07-22",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1008,15 +1008,15 @@
     "DELL": {
       "earnings": "2026-09-03",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "KLAC": {
-      "earnings": "2026-07-30",
+      "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1024,7 +1024,7 @@
     "GEV": {
       "earnings": "2026-07-22",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1032,7 +1032,7 @@
     "LIN": {
       "earnings": "2026-07-31",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1040,7 +1040,7 @@
     "MRVL": {
       "earnings": "2026-08-27",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1048,7 +1048,7 @@
     "QCOM": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1056,7 +1056,7 @@
     "PANW": {
       "earnings": "2026-08-18",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1064,7 +1064,7 @@
     "SAP": {
       "earnings": "2026-07-23",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1072,7 +1072,7 @@
     "AXP": {
       "earnings": "2026-07-24",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1080,7 +1080,7 @@
     "ADI": {
       "earnings": "2026-08-19",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1088,15 +1088,15 @@
     "ANET": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "TMUS": {
-      "earnings": "2026-07-22",
+      "earnings": "2026-07-23",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1104,23 +1104,23 @@
     "VZ": {
       "earnings": "2026-07-24",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": "2026-07-10",
       "exDivSource": "fmp",
-      "exDivFetchedAt": "2026-06-19"
+      "exDivFetchedAt": "2026-07-02"
     },
     "AMGN": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "APP": {
-      "earnings": "2026-08-06",
+      "earnings": "2026-08-05",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1128,7 +1128,7 @@
     "TJX": {
       "earnings": "2026-08-19",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1136,15 +1136,15 @@
     "DIS": {
       "earnings": "2026-08-05",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
-      "exDiv": "2026-06-30",
-      "exDivSource": "fmp",
-      "exDivFetchedAt": "2026-06-19"
+      "earningsFetchedAt": "2026-07-02",
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
     },
     "CRWD": {
       "earnings": "2026-09-01",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1152,7 +1152,7 @@
     "APH": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1160,7 +1160,7 @@
     "BLK": {
       "earnings": "2026-07-15",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1168,7 +1168,7 @@
     "UNP": {
       "earnings": "2026-07-23",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1176,7 +1176,7 @@
     "GILD": {
       "earnings": "2026-08-06",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1184,7 +1184,7 @@
     "ABT": {
       "earnings": "2026-07-16",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1192,15 +1192,15 @@
     "T": {
       "earnings": "2026-07-22",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
-      "exDiv": null,
-      "exDivSource": null,
-      "exDivFetchedAt": null
+      "earningsFetchedAt": "2026-07-02",
+      "exDiv": "2026-07-10",
+      "exDivSource": "fmp",
+      "exDivFetchedAt": "2026-07-02"
     },
     "ETN": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1208,7 +1208,7 @@
     "GLW": {
       "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1216,7 +1216,7 @@
     "ISRG": {
       "earnings": "2026-07-16",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1224,7 +1224,7 @@
     "UBER": {
       "earnings": "2026-08-05",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1232,7 +1232,7 @@
     "BX": {
       "earnings": "2026-07-23",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1240,7 +1240,7 @@
     "PLD": {
       "earnings": "2026-07-16",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1248,7 +1248,7 @@
     "DHR": {
       "earnings": "2026-07-21",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1256,15 +1256,15 @@
     "BKNG": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "CB": {
-      "earnings": "2026-07-28",
+      "earnings": "2026-07-21",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1272,7 +1272,7 @@
     "SPGI": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1280,7 +1280,7 @@
     "CVS": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1288,7 +1288,7 @@
     "MO": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1296,7 +1296,7 @@
     "PGR": {
       "earnings": "2026-07-15",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1304,7 +1304,7 @@
     "LOW": {
       "earnings": "2026-08-19",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1312,7 +1312,7 @@
     "SYK": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1320,7 +1320,7 @@
     "BMY": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1328,7 +1328,7 @@
     "NOW": {
       "earnings": "2026-07-22",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1336,7 +1336,7 @@
     "VRT": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1344,7 +1344,7 @@
     "VRTX": {
       "earnings": "2026-08-03",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1352,7 +1352,7 @@
     "PH": {
       "earnings": "2026-08-06",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1366,17 +1366,17 @@
       "exDivFetchedAt": null
     },
     "SBUX": {
-      "earnings": "2026-07-28",
+      "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "FTNT": {
-      "earnings": "2026-08-05",
+      "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1384,7 +1384,7 @@
     "MDT": {
       "earnings": "2026-08-18",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1392,7 +1392,7 @@
     "PWR": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1400,7 +1400,7 @@
     "CDNS": {
       "earnings": "2026-07-27",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1408,15 +1408,15 @@
     "MAR": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "SPOT": {
-      "earnings": "2026-07-28",
+      "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1424,7 +1424,7 @@
     "TT": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1432,15 +1432,15 @@
     "HWM": {
       "earnings": "2026-08-06",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "GD": {
-      "earnings": "2026-07-22",
+      "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1448,7 +1448,7 @@
     "CME": {
       "earnings": "2026-07-22",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1456,7 +1456,7 @@
     "MCK": {
       "earnings": "2026-08-05",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1464,7 +1464,7 @@
     "ADP": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1472,7 +1472,7 @@
     "UPS": {
       "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1480,15 +1480,15 @@
     "PNC": {
       "earnings": "2026-07-15",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "CEG": {
-      "earnings": "2026-08-10",
+      "earnings": "2026-08-06",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1496,7 +1496,7 @@
     "AMT": {
       "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1504,7 +1504,7 @@
     "ELV": {
       "earnings": "2026-07-16",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1518,9 +1518,9 @@
       "exDivFetchedAt": null
     },
     "WM": {
-      "earnings": "2026-07-27",
+      "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1528,7 +1528,7 @@
     "NET": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1536,7 +1536,7 @@
     "WMB": {
       "earnings": "2026-08-03",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1544,7 +1544,7 @@
     "JCI": {
       "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1552,15 +1552,15 @@
     "MNST": {
       "earnings": "2026-08-06",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "CSX": {
-      "earnings": null,
-      "earningsSource": null,
-      "earningsFetchedAt": null,
+      "earnings": "2026-07-22",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1568,7 +1568,7 @@
     "USB": {
       "earnings": "2026-07-16",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1576,7 +1576,7 @@
     "CMCSA": {
       "earnings": "2026-07-23",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1584,7 +1584,7 @@
     "KKR": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1592,7 +1592,7 @@
     "DDOG": {
       "earnings": "2026-08-06",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1600,7 +1600,7 @@
     "SNOW": {
       "earnings": "2026-08-26",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1608,7 +1608,7 @@
     "HCA": {
       "earnings": "2026-07-24",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1616,7 +1616,7 @@
     "MELI": {
       "earnings": "2026-08-05",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1624,7 +1624,7 @@
     "INTU": {
       "earnings": "2026-08-20",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1632,15 +1632,15 @@
     "ICE": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "SPG": {
-      "earnings": "2026-08-03",
+      "earnings": "2026-08-10",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1648,31 +1648,31 @@
     "ABNB": {
       "earnings": "2026-08-05",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "FDX": {
-      "earnings": "2026-06-23",
-      "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
-      "exDiv": "2026-06-22",
-      "exDivSource": "fmp",
-      "exDivFetchedAt": "2026-06-19"
+      "earnings": null,
+      "earningsSource": null,
+      "earningsFetchedAt": null,
+      "exDiv": null,
+      "exDivSource": null,
+      "exDivFetchedAt": null
     },
     "MCO": {
       "earnings": "2026-07-23",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "HLT": {
-      "earnings": "2026-07-29",
+      "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1680,7 +1680,7 @@
     "NOC": {
       "earnings": "2026-07-21",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1688,7 +1688,7 @@
     "CI": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1696,15 +1696,15 @@
     "RCL": {
       "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "SHW": {
-      "earnings": "2026-07-21",
+      "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1712,7 +1712,7 @@
     "ORLY": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1720,7 +1720,7 @@
     "NXPI": {
       "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1728,7 +1728,7 @@
     "HOOD": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1736,7 +1736,7 @@
     "GM": {
       "earnings": "2026-07-21",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1744,7 +1744,7 @@
     "ROST": {
       "earnings": "2026-08-20",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1752,7 +1752,7 @@
     "APO": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1768,7 +1768,7 @@
     "MPWR": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1776,7 +1776,7 @@
     "ITW": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1784,7 +1784,7 @@
     "ECL": {
       "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1792,15 +1792,15 @@
     "BSX": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "CTAS": {
-      "earnings": null,
-      "earningsSource": null,
-      "earningsFetchedAt": null,
+      "earnings": "2026-07-15",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1808,15 +1808,15 @@
     "KMI": {
       "earnings": "2026-07-15",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "NSC": {
-      "earnings": null,
-      "earningsSource": null,
-      "earningsFetchedAt": null,
+      "earnings": "2026-07-23",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1824,7 +1824,7 @@
     "AON": {
       "earnings": "2026-07-24",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1832,7 +1832,7 @@
     "TDG": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1856,7 +1856,7 @@
     "MSI": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1872,7 +1872,7 @@
     "HSBC": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1880,7 +1880,7 @@
     "NVS": {
       "earnings": "2026-07-21",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1888,7 +1888,7 @@
     "RY": {
       "earnings": "2026-08-27",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1896,7 +1896,7 @@
     "SHEL": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1904,7 +1904,7 @@
     "TM": {
       "earnings": "2026-08-06",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1912,7 +1912,7 @@
     "SNDK": {
       "earnings": "2026-08-24",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1920,7 +1920,7 @@
     "MUFG": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1936,7 +1936,7 @@
     "TTE": {
       "earnings": "2026-07-23",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1944,7 +1944,7 @@
     "NVO": {
       "earnings": "2026-08-05",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1952,7 +1952,7 @@
     "STX": {
       "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1960,7 +1960,7 @@
     "TD": {
       "earnings": "2026-08-27",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1968,7 +1968,7 @@
     "SAN": {
       "earnings": "2026-07-22",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -1976,23 +1976,23 @@
     "WDC": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "RIO": {
-      "earnings": null,
-      "earningsSource": null,
-      "earningsFetchedAt": null,
+      "earnings": "2026-07-28",
+      "earningsSource": "yahoo",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "TMO": {
-      "earnings": "2026-07-22",
+      "earnings": "2026-07-23",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2000,7 +2000,7 @@
     "BUD": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2008,7 +2008,7 @@
     "SMFG": {
       "earnings": "2026-07-31",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2016,7 +2016,7 @@
     "WELL": {
       "earnings": "2026-07-27",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2024,7 +2024,7 @@
     "SCCO": {
       "earnings": "2026-07-27",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2032,7 +2032,7 @@
     "UBS": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2040,7 +2040,7 @@
     "SONY": {
       "earnings": "2026-07-31",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2056,7 +2056,7 @@
     "BBVA": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2064,7 +2064,7 @@
     "ENB": {
       "earnings": "2026-07-31",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2080,7 +2080,7 @@
     "HDB": {
       "earnings": "2026-07-18",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2088,7 +2088,7 @@
     "MFG": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2096,7 +2096,7 @@
     "BMO": {
       "earnings": "2026-08-25",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2104,7 +2104,7 @@
     "BP": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2112,7 +2112,7 @@
     "COF": {
       "earnings": "2026-07-21",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2120,7 +2120,7 @@
     "PBR": {
       "earnings": "2026-08-06",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2136,7 +2136,7 @@
     "SNY": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2144,7 +2144,7 @@
     "EQIX": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2160,7 +2160,7 @@
     "GSK": {
       "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2168,7 +2168,7 @@
     "CM": {
       "earnings": "2026-08-27",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2176,7 +2176,7 @@
     "BN": {
       "earnings": "2026-08-06",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2184,7 +2184,7 @@
     "BNS": {
       "earnings": "2026-08-25",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2200,7 +2200,7 @@
     "CNQ": {
       "earnings": "2026-08-06",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2208,7 +2208,7 @@
     "IBN": {
       "earnings": "2026-07-18",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2216,7 +2216,7 @@
     "EQNR": {
       "earnings": "2026-07-22",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2224,7 +2224,7 @@
     "ING": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2232,7 +2232,7 @@
     "ITUB": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2240,7 +2240,7 @@
     "NOK": {
       "earnings": "2026-07-23",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2248,7 +2248,7 @@
     "BCS": {
       "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2256,7 +2256,7 @@
     "AEM": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2264,7 +2264,7 @@
     "EPD": {
       "earnings": "2026-07-28",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2280,7 +2280,7 @@
     "ASX": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2296,15 +2296,15 @@
     "CP": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
     },
     "MRSH": {
-      "earnings": "2026-07-16",
+      "earnings": "2026-07-21",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2312,7 +2312,7 @@
     "LYG": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2320,7 +2320,7 @@
     "NTES": {
       "earnings": "2026-08-13",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2336,7 +2336,7 @@
     "AMX": {
       "earnings": "2026-07-21",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2344,7 +2344,7 @@
     "BAM": {
       "earnings": "2026-08-05",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2352,7 +2352,7 @@
     "SU": {
       "earnings": "2026-08-04",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2360,7 +2360,7 @@
     "CVNA": {
       "earnings": "2026-07-29",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2368,7 +2368,7 @@
     "TRP": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null
@@ -2376,7 +2376,7 @@
     "CRH": {
       "earnings": "2026-07-30",
       "earningsSource": "yahoo",
-      "earningsFetchedAt": "2026-06-19",
+      "earningsFetchedAt": "2026-07-02",
       "exDiv": null,
       "exDivSource": null,
       "exDivFetchedAt": null

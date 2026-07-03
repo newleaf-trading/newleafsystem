@@ -248,14 +248,19 @@ export default function ProjectionPage({ mode = 'operator' }) {
     } catch (e) { /* ignore malformed shared state */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  // …and write it back whenever the operator changes these inputs.
+  // …and write it back whenever the operator changes these inputs. `ev` (edge per trade,
+  // as a fraction) + `tpy` let the Detail Plan compound its capital at the SAME edge this
+  // page models, so the two surfaces reconcile instead of growing at different rates.
   useEffect(() => {
     if (isInvestor) return;
     try {
       const prev = JSON.parse(localStorage.getItem('newleaf:projection:shared') || '{}');
-      localStorage.setItem('newleaf:projection:shared', JSON.stringify({ ...prev, yrs, cap, capPct: capPct / 100 }));
+      localStorage.setItem('newleaf:projection:shared', JSON.stringify({
+        ...prev, yrs, cap, capPct: capPct / 100,
+        ev: sim?.ev ?? null, tpy: s?.tpy ?? null,
+      }));
     } catch (e) { /* ignore */ }
-  }, [isInvestor, yrs, cap, capPct]);
+  }, [isInvestor, yrs, cap, capPct, sim, s]);
 
   // investor: default-select the first published template + prefill its plan name
   useEffect(() => {
@@ -656,6 +661,9 @@ export default function ProjectionPage({ mode = 'operator' }) {
                       Publish as template
                     </button>
                   )}
+                  <a className={styles.planLink} href="/workbench/plan" title="Turn this projection into a week-by-week operating plan (carries your horizon + capital across)">
+                    Build the week-by-week plan →
+                  </a>
                 </>
               )}
             </>

@@ -203,6 +203,7 @@
   .yseg{height:100%;}
   .yseg.bcs{background:var(--teal);} .yseg.ic{background:var(--gold);} .yseg.bfly{background:var(--terracotta);}
   .ybar-row .yv{font-family:var(--mono);font-size:14px;font-weight:700;text-align:right;color:var(--forest);}
+  .ybar-row .yv .ybar-sub{display:block;font-size:9.5px;font-weight:400;color:var(--muted);letter-spacing:.02em;margin-top:2px;}
   .ylegend{display:flex;gap:16px;margin-top:14px;font-size:12px;color:#41513f;}
   .ylegend span{display:flex;align-items:center;gap:7px;}
   .year-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
@@ -216,6 +217,20 @@
   .ycard td{padding:6px 0;border-bottom:1px solid var(--hair);font-size:12.5px;}
   .ycard tr:last-child td{border-bottom:0;}
   .ycard td.num{text-align:right;font-family:var(--mono);font-weight:700;}
+
+  /* ---------- odds (POP / risk-reward) ---------- */
+  .odds-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
+  @media (max-width:900px){.odds-cards{grid-template-columns:1fr;}}
+  .ocard{border-radius:14px;padding:16px 18px;background:var(--forest);color:var(--cream);display:flex;flex-direction:column;gap:6px;}
+  .ocard.gold{background:var(--gold-soft);color:var(--forest);}
+  .ocard .o-label{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;opacity:.82;font-weight:700;}
+  .ocard .o-val{font-family:var(--serif);font-size:34px;font-weight:600;line-height:1;letter-spacing:-.02em;}
+  .ocard .o-sub{font-size:11.5px;opacity:.8;}
+  .odds-table th, .odds-table td{padding:9px 10px;}
+  .odds-table .oin{width:62px;border:1px solid var(--hair);border-radius:7px;padding:5px 7px;font-family:var(--mono);font-weight:700;font-size:12px;text-align:right;background:#fff;color:var(--ink);}
+  .odds-table .oin:focus{outline:2px solid var(--gold);}
+  .odds-table .num{font-family:var(--mono);font-weight:700;text-align:right;}
+  .odds-foot{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.5;}
 
   /* ---------- save bar ---------- */
   .savebar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;}
@@ -330,7 +345,17 @@
   <!-- YEARLY -->
   <section class="hidden" id="tab-yearly">
     <div class="panel" style="margin-bottom:18px;">
-      <div class="sec-head"><h2>Planned profit by year</h2><p>What the cadence is designed to realise per year, by structure. Planning figure, not a forecast of returns.</p></div>
+      <div class="sec-head"><h2>Probability of profit &amp; risk / reward</h2><p>How the selected strategy mix blends into a portfolio win rate and reward:risk. Edit any assumption to see the blend move.</p></div>
+      <div class="pad" id="oddsPanel" style="padding-top:12px;"></div>
+    </div>
+    <div class="panel" style="margin-bottom:18px;">
+      <div class="sec-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;">
+        <div><h2>Planned profit by year</h2><p id="yearLede">Realized gains reinvested — each year's positions scale with the capital it starts on. Planning figure, not a forecast of returns.</p></div>
+        <div class="mode-toggle" id="yearMode" style="flex:none;margin-top:4px;">
+          <button data-ym="compound" class="on">Compounding</button>
+          <button data-ym="flat">Fixed size</button>
+        </div>
+      </div>
       <div class="pad" id="yearBars" style="padding-top:10px;"></div>
     </div>
     <div class="panel">
@@ -393,11 +418,14 @@ const cfg = PM.defaultConfig();
 cfg.horizonYears = [1,3,5].includes(shared.yrs) ? shared.yrs : 3;
 if (typeof shared.cap === 'number') cfg.capital = shared.cap;             // carried over from projection
 if (typeof shared.capPct === 'number') cfg.riskPerTrade = Math.round(shared.cap * shared.capPct) || cfg.riskPerTrade;
+if (typeof shared.ev === 'number') cfg.edgePerTrade = shared.ev;          // per-trade edge → reconciled compounding
+if (typeof shared.tpy === 'number') cfg.projectionTpy = shared.tpy;       // projection trades/yr → closes the count gap
 
 const state = {
   cfg,
   currentWeek: 1,
   mode: 'sandbox',          // 'sandbox' | 'live'
+  yearMode: 'compound',     // 'compound' | 'flat' (reinvest gains vs constant size)
   posEdits: {},             // id -> {pnl,pnlPct,dte}  (sandbox what-if overrides)
   live: {},                 // id -> {pnl,pnlPct,dte}  (broker/journal feed)
   liveLoaded: false,
@@ -600,24 +628,93 @@ function renderMonthly(){
   $('#monthGrid').innerHTML = `<div class="month-grid">${html}</div>`;
 }
 
+/* ---------- probability of profit / risk-reward ---------- */
+const oPct = (x) => Math.round(x*100)+'%';
+const oRR = (x) => '1 : '+x.toFixed(2);
+/* full build — rebuilds rows + inputs (use on mix/horizon change, not per keystroke) */
+function renderOdds(){
+  const po = PM.portfolioOdds(state.cfg, opts());
+  if(!po.rows.length){ $('#oddsPanel').innerHTML = `<div style="color:var(--muted)">No active engines — turn one on to project odds.</div>`; return; }
+  const cards = `<div class="odds-cards">
+    <div class="ocard"><div class="o-label">Blended win rate (POP)</div><div class="o-val" id="oc-pop">${oPct(po.blendedPop)}</div><div class="o-sub">trade-weighted across the mix</div></div>
+    <div class="ocard gold"><div class="o-label">Blended reward : risk</div><div class="o-val" id="oc-rr">${oRR(po.blendedRewardToRisk)}</div><div class="o-sub" id="oc-rr-sub">${money(po.totalReward)} reward vs ${money(po.totalRisk)} risk</div></div>
+    <div class="ocard"><div class="o-label">Expectancy / trade</div><div class="o-val" id="oc-ev">${money(po.expectancyPerTrade)}</div><div class="o-sub" id="oc-ev-sub">${money(po.expectancyPerYear)} / yr at this cadence</div></div>
+  </div>`;
+  const rows = po.rows.map(r=>{
+    const s = PM.STRATS[r.key];
+    return `<tr data-row="${r.key}">
+      <td><div class="pos-name" style="display:flex;align-items:center;gap:7px;"><span class="swatch" style="background:${s.cssVar}"></span>${s.name}</div></td>
+      <td class="num">${Math.round(r.tradesPerYear)}</td>
+      <td><input class="oin" data-odd="pop" data-key="${r.key}" type="number" min="0" max="100" step="1" value="${Math.round(r.pop*100)}"></td>
+      <td style="white-space:nowrap;">1 : <input class="oin" data-odd="rewardToRisk" data-key="${r.key}" type="number" min="0.1" step="0.1" value="${r.rewardToRisk}" style="width:54px;"></td>
+      <td class="num o-rk" data-key="${r.key}">${money(r.reward)} / ${money(r.risk)}</td>
+      <td class="num o-share" data-key="${r.key}">${oPct(r.riskShare)}</td>
+      <td class="num o-ev" data-key="${r.key}">${money(r.ev)}</td>
+    </tr>`;
+  }).join('');
+  $('#oddsPanel').innerHTML = cards + `
+    <table class="odds-table">
+      <thead><tr><th>Structure</th><th style="text-align:right;">Trades / yr</th><th>POP %</th><th>Reward : risk</th><th style="text-align:right;">Reward / risk $</th><th style="text-align:right;">Risk share</th><th style="text-align:right;">EV / trade</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="odds-foot">POP and reward:risk are editable planning assumptions per structure — risk $ is derived as target credit ÷ reward:risk. The blend re-weights automatically as you turn engines on/off or change contracts, so you can see how the strategy selection moves overall odds.</div>`;
+}
+/* light update — recompute blend + derived cells WITHOUT re-rendering inputs (keeps focus) */
+function updateOddsDerived(){
+  const po = PM.portfolioOdds(state.cfg, opts());
+  if(!po.rows.length) return;
+  const set = (id,v)=>{ const el=$(id); if(el) el.textContent=v; };
+  set('#oc-pop', oPct(po.blendedPop));
+  set('#oc-rr', oRR(po.blendedRewardToRisk));
+  set('#oc-rr-sub', money(po.totalReward)+' reward vs '+money(po.totalRisk)+' risk');
+  set('#oc-ev', money(po.expectancyPerTrade));
+  set('#oc-ev-sub', money(po.expectancyPerYear)+' / yr at this cadence');
+  po.rows.forEach(r=>{
+    const rk=document.querySelector(`.o-rk[data-key="${r.key}"]`); if(rk) rk.textContent=money(r.reward)+' / '+money(r.risk);
+    const sh=document.querySelector(`.o-share[data-key="${r.key}"]`); if(sh) sh.textContent=oPct(r.riskShare);
+    const ev=document.querySelector(`.o-ev[data-key="${r.key}"]`); if(ev) ev.textContent=money(r.ev);
+  });
+}
+
 /* ---------- yearly ---------- */
+function yearRows(){
+  // 'compound' reinvests realized gains into next year's position size; 'flat' is constant size.
+  if(state.yearMode==='flat'){
+    return PM.yearBuckets(state.cfg, opts()).map(y=>Object.assign({}, y, { plannedBase:y.planned, capitalStart:null, returnPct:null }));
+  }
+  return PM.compoundYears(state.cfg, opts());
+}
 function renderYearly(){
-  const years = PM.yearBuckets(state.cfg, opts());
+  renderOdds();
+  const compounding = state.yearMode!=='flat';
+  const years = yearRows();
+  const edged = compounding && years[0] && years[0].basis==='edge';
+  $('#yearLede').textContent = !compounding
+    ? 'Constant position size every year — the raw cadence output before reinvesting gains. Planning figure, not a forecast of returns.'
+    : edged
+      ? (years[0].tpyMatched
+          ? `Matched to the projection — compounding at its ${(years[0].edgePerTrade*100).toFixed(2)}%/trade edge over its ${years[0].trades} trades/yr (this cadence schedules ${years[0].scheduledTrades}/yr). Same curve as /workbench/projection.`
+          : `Reconciled with the projection — compounding at its ${(years[0].edgePerTrade*100).toFixed(2)}%/trade edge over this cadence's ~${years[0].trades} trades/yr, gains reinvested.`)
+      : 'Realized gains reinvested at the plan’s own rate. Open the projection page to compound at its per-trade edge instead.';
   const maxP = Math.max(1,...years.map(y=>y.planned));
   $('#yearBars').innerHTML = years.map(y=>{
     const segs = PM.STRAT_ORDER.map(k=>{
       const w=(y.plannedBy[k]/maxP)*100;
       return w>0?`<div class="yseg ${k}" style="width:${w}%" title="${PM.STRATS[k].name}: ${money(y.plannedBy[k])}"></div>`:'';
     }).join('');
-    return `<div class="ybar-row"><div class="yl">Yr ${y.year}</div><div class="ytrack">${segs}</div><div class="yv">${money(y.planned)}</div></div>`;
+    const sub = compounding ? `<span class="ybar-sub">on ${money(y.capitalStart)} · +${Math.round(y.returnPct*100)}%</span>` : '';
+    return `<div class="ybar-row"><div class="yl">Yr ${y.year}</div><div class="ytrack">${segs}</div><div class="yv">${money(y.planned)}${sub}</div></div>`;
   }).join('') + `<div class="ylegend">
     <span><span class="swatch" style="background:var(--teal)"></span>Bull Call Spread</span>
     <span><span class="swatch" style="background:var(--gold)"></span>Iron Condor</span>
-    <span><span class="swatch" style="background:var(--terracotta)"></span>Butterfly</span></div>`;
+    <span><span class="swatch" style="background:var(--terracotta)"></span>Butterfly</span>
+    ${compounding && years.length>1 ? `<span style="margin-left:auto;color:var(--forest);font-weight:600;">${money(years[0].capitalStart)} → ${money(years[years.length-1].capitalEnd)} capital · ${money(years.reduce((a,y)=>a+y.planned,0))} total</span>` : ''}</div>`;
 
   $('#yearGrid').innerHTML = `<div class="year-grid">${years.map(y=>`
     <div class="ycard"><div class="yhead"><h4>Year ${y.year}</h4><span class="yp">${money(y.planned)}</span></div>
       <div class="ybody"><table>
+        ${compounding ? `<tr><td>Capital base</td><td class="num">${money(y.capitalStart)} → ${money(y.capitalEnd)}</td></tr>
+        <tr><td>Return on capital</td><td class="num">+${Math.round(y.returnPct*100)}%</td></tr>` : ''}
         <tr><td>Total opened</td><td class="num">${y.openTotal}</td></tr>
         <tr><td>Total expired</td><td class="num">${y.closeTotal}</td></tr>
         ${PM.STRAT_ORDER.filter(k=>y.closes[k]>0).map(k=>`<tr><td><span class="swatch" style="background:${PM.STRATS[k].hex};margin-right:6px;display:inline-block;"></span>${PM.STRATS[k].name}</td><td class="num">${money(y.plannedBy[k])}</td></tr>`).join('')}
@@ -679,11 +776,16 @@ function buildPlanTemplate(){
     horizonYears: state.cfg.horizonYears,
     capital: state.cfg.capital,
     riskPerTrade: state.cfg.riskPerTrade,
+    edgePerTrade: typeof state.cfg.edgePerTrade === 'number' ? state.cfg.edgePerTrade : null,
+    projectionTpy: typeof state.cfg.projectionTpy === 'number' ? state.cfg.projectionTpy : null,
     preset: PM.presetOf(state.cfg),
     lanes: state.cfg.lanes,
     thresholds: state.cfg.thresholds,
     targets: state.cfg.targets,
-    yearly: PM.yearBuckets(state.cfg, opts()).map(y=>({ year:y.year, planned:y.planned })),
+    odds: state.cfg.odds,
+    portfolioOdds: (()=>{ const po=PM.portfolioOdds(state.cfg, opts()); return { blendedPop: po.blendedPop, blendedRewardToRisk: po.blendedRewardToRisk, expectancyPerTrade: po.expectancyPerTrade }; })(),
+    yearMode: state.yearMode,
+    yearly: PM.compoundYears(state.cfg, opts()).map(y=>({ year:y.year, plannedBase:y.plannedBase, planned:y.planned, capitalStart:y.capitalStart, capitalEnd:y.capitalEnd, returnPct:y.returnPct })),
     provenance: {
       model_used: null,
       prompt_version: null,
@@ -783,6 +885,27 @@ $('#tabs').addEventListener('click', (e)=>{
   ['week','monthly','yearly','calendar','compliance'].forEach(name=>$('#tab-'+name).classList.toggle('hidden', name!==t));
 });
 
+// editable POP / reward:risk assumptions → re-blend
+$('#oddsPanel').addEventListener('input', (e)=>{
+  const inp = e.target.closest('input[data-odd]'); if(!inp) return;
+  const odd=inp.dataset.odd, key=inp.dataset.key;
+  state.cfg.odds = state.cfg.odds || {};
+  state.cfg.odds[key] = Object.assign({}, PM.oddsOf(state.cfg, key), state.cfg.odds[key]);
+  let v = parseFloat(inp.value)||0;
+  if(odd==='pop') v = Math.max(0, Math.min(1, v/100));
+  else v = Math.max(0.1, v);
+  state.cfg.odds[key][odd] = v;
+  updateOddsDerived();   // re-blend in place — the edited input keeps focus
+});
+
+// compounding / fixed-size toggle for the yearly view
+$('#yearMode').addEventListener('click', (e)=>{
+  const b = e.target.closest('button'); if(!b) return;
+  state.yearMode = b.dataset.ym;
+  document.querySelectorAll('#yearMode button').forEach(x=>x.classList.toggle('on', x===b));
+  renderYearly();
+});
+
 $('#savePlan').addEventListener('click', savePlanTemplate);
 
 // react to projection-page horizon changes from another tab
@@ -796,6 +919,8 @@ window.addEventListener('storage', (e)=>{
   }
   if(typeof s.cap==='number') state.cfg.capital = s.cap;
   if(typeof s.cap==='number' && typeof s.capPct==='number') state.cfg.riskPerTrade = Math.round(s.cap*s.capPct);
+  if(typeof s.ev==='number') state.cfg.edgePerTrade = s.ev;   // projection edge → reconciled growth
+  if(typeof s.tpy==='number') state.cfg.projectionTpy = s.tpy; // projection tpy → closes the count gap
   renderAll();
 });
 

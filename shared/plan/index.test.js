@@ -93,6 +93,54 @@ console.log('roll-up totals (spec)');
   eq(y1.plannedBy.bcs + y1.plannedBy.ic + y1.plannedBy.bfly, y1.planned, 'year planned == Σ per-structure');
 }
 
+// ── compoundYears (reinvest realized gains) ────────────────────────────────
+console.log('compoundYears');
+{
+  const c = cfg(5); c.capital = 100000;
+  const flat = M.yearBuckets(c, OPTS);
+  const comp = M.compoundYears(c, OPTS);
+  eq(comp.length, 5, '5 compounded year rows');
+  // Year 1 is unscaled (factor 1.0)
+  assert(approxEq(comp[0].planned, flat[0].planned), 'year 1 planned == base (factor 1.0)');
+  eq(comp[0].capitalStart, 100000, 'year 1 starts at capital');
+  // Each subsequent year strictly grows (gains reinvested)
+  for (let i = 1; i < comp.length; i++) {
+    assert(comp[i].planned > comp[i - 1].planned, `year ${i + 1} planned > year ${i} (compounding)`);
+    assert(approxEq(comp[i].capitalStart, comp[i - 1].capitalEnd), `year ${i + 1} opens at prior year-end capital`);
+  }
+  // per-structure split still sums to the (scaled) year total
+  const y2 = comp[1];
+  assert(approxEq(y2.plannedBy.bcs + y2.plannedBy.ic + y2.plannedBy.bfly, y2.planned), 'compounded per-structure sums to year total');
+  // higher capital → smaller % return → less compounding lift
+  const rich = cfg(5); rich.capital = 1000000;
+  const compRich = M.compoundYears(rich, OPTS);
+  assert((compRich[4].planned / compRich[0].planned) < (comp[4].planned / comp[0].planned), 'more capital → flatter compounding');
+
+  // RECONCILED with projection edge: capital compounds at edge over the plan's trade count
+  const edged = cfg(1); edged.capital = 100000; edged.edgePerTrade = 0.0036; // 0.36%/trade
+  const ce = M.compoundYears(edged, OPTS);
+  const trades1 = ce[0].trades;
+  assert(trades1 > 0, 'year carries its scheduled trade count');
+  eq(ce[0].basis, 'edge', 'edge basis when edgePerTrade set');
+  assert(approxEq(ce[0].capitalEnd, 100000 * Math.pow(1.0036, trades1)), 'capitalEnd = cap·(1+edge)^trades');
+  // a bigger edge → strictly more growth (monotonic in edge)
+  const edged2 = cfg(1); edged2.capital = 100000; edged2.edgePerTrade = 0.0072;
+  assert(M.compoundYears(edged2, OPTS)[0].planned > ce[0].planned, 'larger edge → more planned growth');
+  // no edge → falls back to self-rate (basis 'realized')
+  eq(M.compoundYears(cfg(1), OPTS)[0].basis, 'realized', 'no edge → realized self-rate basis');
+
+  // RECONCILED + tpy match: plan final capital == projection's cap·(1+ev)^(tpy·yrs)
+  const match = cfg(5); match.capital = 100000; match.edgePerTrade = 0.0036; match.projectionTpy = 240;
+  const cm = M.compoundYears(match, OPTS);
+  cm.forEach((y, i) => { assert(y.tpyMatched === true, `year ${i + 1} uses projection tpy`); eq(y.trades, 240, `year ${i + 1} compounds over 240 trades`); });
+  const planFinal = cm[cm.length - 1].capitalEnd;
+  const projFinal = 100000 * Math.pow(1.0036, 240 * 5); // projection engine's expected final
+  assert(approxEq(planFinal / projFinal, 1) || Math.abs(planFinal - projFinal) / projFinal < 1e-9, 'plan final == projection final when tpy matched');
+  // scheduledTrades still reports the cadence's own count (transparency)
+  assert(cm[0].scheduledTrades > 0 && cm[0].scheduledTrades !== 240, 'scheduledTrades reports the cadence count, distinct from tpy');
+}
+function approxEq(a, b) { return Math.abs(a - b) < 0.01; }
+
 // ── positionsForWeek ───────────────────────────────────────────────────────
 console.log('positionsForWeek');
 {
@@ -141,6 +189,40 @@ eq(M.presetOf(cfg(1)), 'base', 'default lanes match base preset');
 {
   const edited = cfg(1); edited.lanes.bcs.qty = 9;
   eq(M.presetOf(edited), 'custom', 'editing a lane → custom');
+}
+
+// ── probability of profit / risk-reward ────────────────────────────────────
+console.log('portfolioOdds');
+function approx(a, b, tol) { return Math.abs(a - b) <= (tol || 0.005); }
+{
+  const c = cfg(3);
+  // defaults: ic pop .70 rr 1, bfly pop .45 rr 2, bcs pop .70 rr 2
+  eq(M.oddsOf(c, 'ic').rewardToRisk, 1, 'ic reward:risk 1');
+  eq(M.oddsOf(c, 'bfly').pop, 0.45, 'bfly pop 0.45');
+  // risk = target ÷ rewardToRisk
+  eq(M.riskOf(c, 'bcs'), 90, 'bcs risk = 180 / 2 = 90');
+  eq(M.riskOf(c, 'ic'), 120, 'ic risk = 120 / 1 = 120');
+  eq(M.riskOf(c, 'bfly'), 40, 'bfly risk = 80 / 2 = 40');
+
+  const po = M.portfolioOdds(c, OPTS);
+  // base/3yr trade counts: 52 BCS, 156 IC, 312 BFLY (= 520 trades)
+  eq(po.trades, 520, 'total trades = 520');
+  // blended POP = (52·.70 + 156·.70 + 312·.45) / 520
+  assert(approx(po.blendedPop, (52*0.70 + 156*0.70 + 312*0.45) / 520), 'blended POP weighted by trade count');
+  // blended reward:risk = Σreward / Σrisk
+  const totR = 52*180 + 156*120 + 312*80;          // 53,040 (== planned profit)
+  const totK = 52*90 + 156*120 + 312*40;           // risk dollars
+  assert(approx(po.blendedRewardToRisk, totR / totK, 0.001), 'blended reward:risk = Σreward/Σrisk');
+  eq(po.totalReward, 53040, 'total reward == planned profit');
+  // expectancy per trade = Σ(ev·n)/Σn ; ev_i = pop·reward − (1−pop)·risk
+  const ev = { bcs: 0.70*180 - 0.30*90, ic: 0.70*120 - 0.30*120, bfly: 0.45*80 - 0.55*40 };
+  const expExpect = (ev.bcs*52 + ev.ic*156 + ev.bfly*312) / 520;
+  assert(approx(po.expectancyPerTrade, expExpect, 0.001), 'expectancy per trade blends EV');
+  // selecting strategies changes the blend: condor-only mix → POP 70%, R:R 1:1
+  const icOnly = cfg(3); icOnly.lanes = JSON.parse(JSON.stringify(M.PRESETS.condors3));
+  const po2 = M.portfolioOdds(icOnly, OPTS);
+  assert(approx(po2.blendedPop, 0.70), 'IC-only mix → blended POP 70%');
+  assert(approx(po2.blendedRewardToRisk, 1, 0.001), 'IC-only mix → blended R:R 1:1');
 }
 
 // ── compliance ─────────────────────────────────────────────────────────────

@@ -68,6 +68,15 @@
   };
   var DEFAULT_TARGETS = { bcs: 180, ic: 120, bfly: 80 };
 
+  // Per-structure trade odds (editable per book). pop = probability of profit (0..1);
+  // rewardToRisk = max-profit ÷ max-loss (so "1 : 2 risk:reward" → rewardToRisk 2). With
+  // target credit as the reward, planned risk per trade = target ÷ rewardToRisk.
+  var DEFAULT_ODDS = {
+    bcs: { pop: 0.70, rewardToRisk: 2 }, // 3-week bull call spread — directional, 1:2 risk:reward
+    ic: { pop: 0.70, rewardToRisk: 1 }, // iron condor — range-bound, 1:1 risk:reward
+    bfly: { pop: 0.45, rewardToRisk: 2 }, // butterfly — pin-the-body, 1:2 risk:reward
+  };
+
   function defaultConfig() {
     return {
       horizonYears: 3,
@@ -77,6 +86,7 @@
       lanes: clone(PRESETS.base),
       thresholds: clone(DEFAULT_THRESHOLDS),
       targets: clone(DEFAULT_TARGETS),
+      odds: clone(DEFAULT_ODDS),
     };
   }
 
@@ -92,6 +102,16 @@
   function targetOf(cfg, key) {
     var t = cfg.targets && cfg.targets[key];
     return typeof t === 'number' ? t : DEFAULT_TARGETS[key];
+  }
+  function oddsOf(cfg, key) {
+    var o = (cfg.odds && cfg.odds[key]) || {};
+    var d = DEFAULT_ODDS[key];
+    return { pop: num(o.pop, d.pop), rewardToRisk: num(o.rewardToRisk, d.rewardToRisk) };
+  }
+  /** Planned max-loss dollars per contract = reward (target credit) ÷ reward-to-risk. */
+  function riskOf(cfg, key) {
+    var rr = oddsOf(cfg, key).rewardToRisk;
+    return rr > 0 ? targetOf(cfg, key) / rr : 0;
   }
   function thresholds(cfg) {
     var t = (cfg && cfg.thresholds) || {};
@@ -276,6 +296,61 @@
   function zero() { return { bcs: 0, ic: 0, bfly: 0 }; }
 
   /**
+   * compoundYears(cfg, opts) — the per-year roll-up with REALIZED GAINS REINVESTED.
+   * The cadence (trade shape + counts) is fixed; each year's positions are sized to the
+   * capital available at the start of that year, so banked profit compounds forward.
+   *
+   * Growth rate, in priority order:
+   *   1. RECONCILED — when cfg.edgePerTrade is set (shared from /workbench/projection), capital
+   *      compounds at that per-trade edge:
+   *        planned_y = capitalStart_y · ((1 + edge)^trades_y − 1)
+   *      To match the projection curve byte-for-byte, trades_y uses the projection's trades/year
+   *      (cfg.projectionTpy) when shared; otherwise the plan's own scheduled opens. Both counts
+   *      are returned (trades = the one used, scheduledTrades = the cadence's own) so the swap is
+   *      transparent.
+   *   2. SELF-RATE — no projection edge available → reinvest the realized credit at the plan's
+   *      own implied annual return (planned scales with capital).
+   * Per-structure dollars are attributed by each structure's realized-credit share, so the
+   * stacked total always reconciles. Deterministic. `yearBuckets` stays the flat constant-size
+   * view; this is the compounding overlay.
+   */
+  function compoundYears(cfg, opts) {
+    var base = yearBuckets(cfg, opts);
+    var capital = Math.max(1, num(cfg.capital, 100000));
+    var edge = num(cfg.edgePerTrade, NaN);
+    var useEdge = isFinite(edge) && edge > 0;
+    var tpyOverride = num(cfg.projectionTpy, NaN);
+    var matchTpy = useEdge && isFinite(tpyOverride) && tpyOverride > 0;
+    // per-year scheduled opens (the cadence's own trade count) from the calendar
+    var opensByYear = {};
+    buildCalendar(cfg, opts).forEach(function (w) {
+      var y = Math.ceil(w.week / WEEKS_PER_YEAR), n = 0;
+      for (var k in w.opens) n += w.opens[k];
+      opensByYear[y] = (opensByYear[y] || 0) + n;
+    });
+    var capStart = capital;
+    return base.map(function (y) {
+      var scheduled = opensByYear[y.year] || 0;
+      var trades = matchTpy ? tpyOverride : scheduled; // projection's tpy closes the count gap
+      var planned = useEdge
+        ? capStart * (Math.pow(1 + edge, trades) - 1)   // edge-compounded capital growth
+        : y.planned * (capStart / capital);             // self-rate realized-credit reinvest
+      var plannedBy = {};
+      STRAT_ORDER.forEach(function (k) { plannedBy[k] = y.planned > 0 ? (y.plannedBy[k] / y.planned) * planned : 0; });
+      var row = {
+        year: y.year, openTotal: y.openTotal, closeTotal: y.closeTotal, closes: y.closes,
+        plannedBase: y.planned, planned: planned, plannedBy: plannedBy,
+        capitalStart: capStart, capitalEnd: capStart + planned,
+        returnPct: capStart > 0 ? planned / capStart : 0,
+        trades: trades, scheduledTrades: scheduled, tpyMatched: matchTpy,
+        basis: useEdge ? 'edge' : 'realized', edgePerTrade: useEdge ? edge : null,
+      };
+      capStart += planned;
+      return row;
+    });
+  }
+
+  /**
    * monthBuckets(cfg, opts) -> calendar-month buckets of opens / expiries / planned realised
    * profit (sum of expiring contracts' target credit). hYear = ceil(firstWeek / 52).
    */
@@ -310,6 +385,49 @@
       STRAT_ORDER.forEach(function (k) { yo.closes[k] += m.closes[k]; yo.plannedBy[k] += m.closes[k] * targetOf(cfg, k); });
     });
     return order.map(function (y) { return map[y]; });
+  }
+
+  // ── PROBABILITY OF PROFIT / RISK-REWARD ─────────────────────────────────────
+  /**
+   * portfolioOdds(cfg, opts) — blends each active structure's POP and reward:risk into
+   * portfolio-level figures, so the operator can see how the strategy MIX moves overall odds.
+   *   blendedPop          = trade-count-weighted average POP (expected win rate of the book)
+   *   blendedRewardToRisk = Σ(reward$ over all trades) ÷ Σ(risk$ over all trades)
+   *   expectancyPerTrade  = Σ EV ÷ trades, where EV = pop·reward − (1−pop)·risk
+   * Trade count = number of contracts that expire over the horizon (closes), so the weighting
+   * is driven by exactly the cadence the calendar schedules. All deterministic.
+   */
+  function portfolioOdds(cfg, opts) {
+    var weeks = buildCalendar(cfg, opts);
+    var trades = zero();
+    weeks.forEach(function (w) { for (var k in w.closes) trades[k] += w.closes[k]; });
+    var years = Math.max(1, (cfg.horizonYears | 0) || 1);
+    var rows = [];
+    var totReward = 0, totRisk = 0, totWins = 0, totTrades = 0, totEv = 0;
+    STRAT_ORDER.forEach(function (k) {
+      var n = trades[k];
+      if (n === 0) return;
+      var o = oddsOf(cfg, k);
+      var reward = targetOf(cfg, k);
+      var risk = riskOf(cfg, k);
+      var ev = o.pop * reward - (1 - o.pop) * risk;
+      rows.push({
+        key: k, trades: n, tradesPerYear: n / years, pop: o.pop, rewardToRisk: o.rewardToRisk,
+        reward: reward, risk: risk, ev: ev,
+      });
+      totReward += reward * n; totRisk += risk * n; totWins += o.pop * n; totTrades += n; totEv += ev * n;
+    });
+    // share of total risk dollars deployed (the denominator each row contributes to R/R)
+    rows.forEach(function (r) { r.riskShare = totRisk ? (r.risk * r.trades) / totRisk : 0; });
+    return {
+      rows: rows,
+      trades: totTrades,
+      blendedPop: totTrades ? totWins / totTrades : 0,
+      blendedRewardToRisk: totRisk ? totReward / totRisk : 0,
+      expectancyPerTrade: totTrades ? totEv / totTrades : 0,
+      totalReward: totReward, totalRisk: totRisk, totalEv: totEv,
+      expectancyPerYear: totEv / years,
+    };
   }
 
   // ── COMPLIANCE ──────────────────────────────────────────────────────────────
@@ -351,10 +469,14 @@
     PRESET_LABELS: PRESET_LABELS,
     DEFAULT_THRESHOLDS: DEFAULT_THRESHOLDS,
     DEFAULT_TARGETS: DEFAULT_TARGETS,
+    DEFAULT_ODDS: DEFAULT_ODDS,
     CHECK_ITEMS: CHECK_ITEMS,
     defaultConfig: defaultConfig,
     totalWeeks: totalWeeks,
     laneOf: laneOf,
+    oddsOf: oddsOf,
+    riskOf: riskOf,
+    portfolioOdds: portfolioOdds,
     presetOf: presetOf,
     nextMondayISO: nextMondayISO,
     weekDateISO: weekDateISO,
@@ -364,6 +486,7 @@
     statusOf: statusOf,
     monthBuckets: monthBuckets,
     yearBuckets: yearBuckets,
+    compoundYears: compoundYears,
     compliancePct: compliancePct,
     missingScheduledOpen: missingScheduledOpen,
   };
