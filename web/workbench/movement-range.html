@@ -273,7 +273,7 @@ footer b{color:var(--forest)}
             <div><span class="pill amber" style="font-size:10px">NEUTRAL</span> no trend opinion &rarr; unchanged &mdash; unless a <b>VCP</b> base is tightening (imminent volatility expansion), then <b>&times; 0.85</b>.</div>
           </div>
           <div style="margin-top:12px;padding:10px 12px;background:#fbf3e0;border:1px solid var(--amber);border-radius:8px;font-size:11.5px;line-height:1.5;color:#5a4a2a">
-            <b>Not yet proven.</b> The multipliers (0.6 / +5 / 0.85) are <b>placeholder starting points, not backtested</b> — that's why the overlay is labelled <b>UNVALIDATED</b>. Leave the filter <b>Off</b> to rank on Stage 1 alone; switch it <b>On</b> to preview how a validated trend filter would re-rank.<br><span style="color:#8a7a5a">Note: the verdict currently reads trend direction only — making it structure-aware (so a bearish setup in a downtrend counts as aligned) is a pending refinement.</span>
+            <b>Structure-aware.</b> The verdict is read relative to your suggested trade: a downtrend <i>fights</i> a put sale (falling knife) but <i>backs</i> a bear-call spread; any strong trend fights a range structure (condor/butterfly). So the same downtrend can be CONFLICTED for one setup and ALIGNED for another.<br><br><b>Not yet proven.</b> The multipliers (0.6 / +5 / 0.85) are <b>placeholder starting points, not backtested</b> — that's why the overlay is labelled <b>UNVALIDATED</b>. Leave the filter <b>Off</b> to rank on Stage 1 alone; switch it <b>On</b> to preview how a validated trend filter would re-rank.
           </div>
         </div>
 
@@ -322,14 +322,39 @@ let filters = { pos: 'any', prem: 'any', sort: 'sq', preset: null };
 // to Setup Quality and used for ranking. Multipliers are placeholders (unvalidated).
 let applyTrend = false;
 
-// Trend-adjusted Setup Quality — mirrors the "would become" preview math.
+// Directional class of the SUGGESTED structure's short side.
+function structureDir(r) {
+  const b = (r.bias || '').toLowerCase();
+  if (b.includes('bull')) return 'bullish';   // bull_put_spread — profits if price stays up
+  if (b.includes('bear')) return 'bearish';   // bear_call_spread — profits if price stays down
+  if (b.includes('condor') || b.includes('butterfly') || b.includes('strangle') || b.includes('straddle')) return 'neutral';
+  const reg = (r.regime || '').toLowerCase();  // fallback: which rail we sell against
+  if (reg.includes('support')) return 'bullish';
+  if (reg.includes('resistance')) return 'bearish';
+  return 'neutral';
+}
+
+// The trend verdict RELATIVE TO THE SETUP — does the trend back or fight the short side?
+// Raw verdict is trend direction (aligned=uptrend, conflicted=downtrend). A downtrend
+// fights put-selling (bullish) but BACKS call-selling (bearish); any strong trend fights
+// a range structure (condor/butterfly). This is the structure-aware verdict.
+function effectiveVerdict(r) {
+  const tr = r.d.trend; if (!tr) return null;
+  const raw = tr.verdict, dir = structureDir(r);
+  if (dir === 'bullish') return raw;                       // uptrend backs, downtrend fights
+  if (dir === 'bearish') return raw === 'aligned' ? 'conflicted' : raw === 'conflicted' ? 'aligned' : 'neutral'; // flip
+  return (raw === 'aligned' || raw === 'conflicted') ? 'conflicted' : 'neutral'; // range: any strong trend is bad
+}
+
+// Trend-adjusted Setup Quality — structure-aware.
 function adjustedSQ(r) {
   const q = r.quality.total, tr = r.d.trend;
   if (!tr) return q;
   const m = tr.multipliers || {};
+  const v = effectiveVerdict(r);
   let adj = q;
-  if (tr.verdict === 'conflicted') adj = q * (m.conflictMultiplier ?? 1);
-  else if (tr.verdict === 'aligned') adj = q + (m.alignBonus ?? 0);
+  if (v === 'conflicted') adj = q * (m.conflictMultiplier ?? 1);
+  else if (v === 'aligned') adj = q + (m.alignBonus ?? 0);
   else if (tr.vcpActive) adj = q * (m.vcpNeutralMultiplier ?? 1);
   return Math.round(Math.max(0, Math.min(100, adj)));
 }
@@ -602,7 +627,7 @@ function renderTable() {
     </div>` : '';
 
     document.getElementById('table-area').innerHTML = `<table><thead><tr>
-      <th ${thS('sq')}>Setup &#9660;</th><th>Trend <a href="/docs/trend-algorithm-design.html" target="_blank" title="How the trend verdict is calculated — checks, formulas, algorithm" style="font-size:8px;font-weight:700;letter-spacing:.03em;color:${applyTrend ? 'var(--amber)' : 'var(--muted)'};border:1px solid ${applyTrend ? 'var(--amber)' : 'var(--border)'};border-radius:3px;padding:1px 4px;white-space:nowrap;text-decoration:none;cursor:pointer">${applyTrend ? 'APPLIED · UNVALIDATED' : 'SHADOW · ADVISORY · UNVALIDATED'} ↗</a></th><th>Symbol</th><th class="r">Price</th><th>Nearest zone</th>
+      <th ${thS('sq')}>Setup &#9660;</th>${applyTrend ? `<th>Trend <a href="/docs/trend-algorithm-design.html" target="_blank" title="How the trend verdict is calculated — checks, formulas, algorithm" style="font-size:8px;font-weight:700;letter-spacing:.03em;color:var(--amber);border:1px solid var(--amber);border-radius:3px;padding:1px 4px;white-space:nowrap;text-decoration:none;cursor:pointer">APPLIED · UNVALIDATED ↗</a></th>` : ''}<th>Symbol</th><th class="r">Price</th><th>Nearest zone</th>
       <th>S/R Score</th><th>RQ</th><th>Evidence</th><th>Distance</th><th class="r">Med. 5d</th>
       <th>Premium</th><th>Suggested</th><th></th>
     </tr></thead><tbody>${displayRows.map(r => renderRow(r) + renderDetailRow(r)).join('')}</tbody></table>
@@ -682,26 +707,24 @@ function renderRow(r) {
     ? `<div style="font-size:9px;color:var(--muted);margin-top:1px">was ${q.total}</div>` : '';
   const liqTag = !r.d.oiAvailable ? '<span class="tag-unverified">OI unverified</span>' : '';
 
-  // ── Phase 4a: advisory trend verdict — DISPLAY ONLY. Does not touch q.total or the sort. ──
+  // ── Trend cell (only shown when the filter is applied) — STRUCTURE-AWARE verdict. ──
   const tr = r.d.trend;
   let trendCell = '<span style="color:var(--muted)">--</span>';
   if (tr) {
-    const pcls = { aligned: 'green', neutral: 'amber', conflicted: 'red' }[tr.verdict] || 'grey';
-    const m = tr.multipliers || {};
-    let adj = q.total;
-    if (tr.verdict === 'conflicted') adj = q.total * (m.conflictMultiplier ?? 1);
-    else if (tr.verdict === 'aligned') adj = q.total + (m.alignBonus ?? 0);
-    else if (tr.vcpActive) adj = q.total * (m.vcpNeutralMultiplier ?? 1);
-    adj = Math.round(Math.max(0, Math.min(100, adj)));
-    const upN = ['maStack', 'priceAboveStack', 'ma200Rising', 'rsPositive'].filter(k => tr.checks && tr.checks[k]).length;
-    const preview = adj !== q.total ? `<div style="font-size:10px;color:var(--muted)" title="preview of future live behaviour — NOT applied to the live score">would become ${adj}</div>` : '';
-    trendCell = `<span class="pill ${pcls}" title="up-core ${upN}/4${tr.vcpActive ? ' · VCP' : ''}${tr.overlap ? ' · overlaps velocity guard' : ''}">${tr.verdict.toUpperCase()}</span>`
-      + `<div class="ev" style="margin-top:2px;color:var(--muted)">up ${upN}/4${tr.vcpActive ? ' · vcp' : ''}${tr.overlap ? ' · overlap' : ''}</div>${preview}`;
+    const ev = effectiveVerdict(r);
+    const pcls = { aligned: 'green', neutral: 'amber', conflicted: 'red' }[ev] || 'grey';
+    const dir = structureDir(r);
+    const trendWord = { aligned: 'uptrend', conflicted: 'downtrend', neutral: 'no trend' }[tr.verdict] || tr.verdict;
+    const relate = ev === 'conflicted' ? 'fights' : ev === 'aligned' ? 'backs' : 'is neutral to';
+    const adj = adjustedSQ(r);
+    const delta = adj !== q.total ? `<div style="font-size:10px;color:var(--muted)">&#8594; ${adj}</div>` : '';
+    trendCell = `<span class="pill ${pcls}" title="Prevailing ${trendWord} vs a ${dir} setup — the trend ${relate} the short side${tr.vcpActive ? ' · VCP base tightening' : ''}">${ev.toUpperCase()}</span>`
+      + `<div class="ev" style="margin-top:2px;color:var(--muted)">${trendWord} · ${dir}${tr.vcpActive ? ' · vcp' : ''}</div>${delta}`;
   }
 
   return `<tr class="row ${openDetail === d.symbol ? 'open' : ''}" onclick="toggleDetail('${d.symbol}')">
     <td><div class="score"><div class="ring" style="--p:${shownScore};--c:${ringColor}"><i>${shownScore}</i></div><div class="lbl">Setup<br>Quality</div>${sqWasNote}</div></td>
-    <td>${trendCell}</td>
+    ${applyTrend ? `<td>${trendCell}</td>` : ''}
     <td class="sym"><b>${d.symbol}</b><span>${regLbl} · conf ${r.confidence}</span></td>
     <td class="r num">${d.price.toFixed(2)}<br><span style="color:${d.changePct >= 0 ? 'var(--green)' : 'var(--red)'}">${d.changePct >= 0 ? '+' : ''}${d.changePct.toFixed(1)}%</span></td>
     <td><span class="pill ${zonePill}">${zoneType} ZONE</span><div class="ev" style="margin-top:3px">${zoneDesc}</div></td>
@@ -722,7 +745,7 @@ function renderRow(r) {
 }
 
 function renderDetailRow(r) {
-  if (openDetail !== r.d.symbol) return `<tr class="detail"><td colspan="13"></td></tr>`;
+  if (openDetail !== r.d.symbol) return `<tr class="detail"><td colspan="${applyTrend ? 13 : 12}"></td></tr>`;
   const d = r.d, ns = r.nearS, nr = r.nearR, q = r.quality;
   const zonePanels = (stats, type) => stats.map(s => {
     const isS = type === 'support', rate = isS ? s.holdCount : s.rejectCount, lbl = isS ? 'holds' : 'rejects';
@@ -737,52 +760,60 @@ function renderDetailRow(r) {
   const breakdownLi = (label, val, weight) => `<div class="li"><span>${label}</span><span class="bbar"><i style="width:${val}%"></i></span><span class="w">${val} × ${weight}</span></div>`;
   const cont = r.containment;
 
-  // ── Trend overlay explainer — why the (advisory) score would change. Display-only. ──
+  // ── Trend overlay — structure-aware. Only shown when the filter is applied. ──
   const trendSection = (() => {
+    if (!applyTrend) return '';
     const tr = r.d.trend;
     if (!tr) return '';
-    const vHex = { aligned: '#1a8c5e', neutral: '#b8800f', conflicted: '#c0392b' }[tr.verdict] || '#6b6b60';
-    const tint = { aligned: '#f0faf4', neutral: '#fbf6ec', conflicted: '#fdf2f1' }[tr.verdict] || '#f7f5f0';
-    const pcls = { aligned: 'green', neutral: 'amber', conflicted: 'red' }[tr.verdict] || 'grey';
+    const ev = effectiveVerdict(r);
+    const dir = structureDir(r);
+    const rawWord = { aligned: 'uptrend', conflicted: 'downtrend', neutral: 'no clear trend' }[tr.verdict] || tr.verdict;
+    const vHex = { aligned: '#1a8c5e', neutral: '#b8800f', conflicted: '#c0392b' }[ev] || '#6b6b60';
+    const tint = { aligned: '#f0faf4', neutral: '#fbf6ec', conflicted: '#fdf2f1' }[ev] || '#f7f5f0';
+    const pcls = { aligned: 'green', neutral: 'amber', conflicted: 'red' }[ev] || 'grey';
     const m = tr.multipliers || {};
-    const downN = [tr.down?.maStackDown, tr.down?.priceBelow200, tr.down?.rsNegative, tr.down?.ma200Falling].filter(Boolean).length;
-    let adj = q.total, mathLabel = 'no change', why = '';
-    if (tr.verdict === 'conflicted') {
-      adj = Math.round(q.total * (m.conflictMultiplier ?? 1));
+    const adj = adjustedSQ(r);
+    let mathLabel = 'no change', why = '';
+    if (ev === 'conflicted') {
       mathLabel = `× ${m.conflictMultiplier} conflict multiplier`;
-      why = `The prevailing trend is fighting the short side — <b>${downN} of 4</b> down-template checks fire (inverted MA stack, price below the 200-day, negative relative strength${tr.down?.ma200Falling ? ', 200-day rolling over' : ''}). Selling puts at this support is selling <i>into</i> a downtrend — the falling-knife case the overlay exists to demote. The penalty is multiplicative, so the highest-Setup-Quality knives (which look most attractive) are discounted hardest.`;
-    } else if (tr.verdict === 'aligned') {
-      adj = Math.round(q.total + (m.alignBonus ?? 0));
+      why = dir === 'bullish'
+        ? `The prevailing <b>${rawWord}</b> fights the short side — selling puts at support is selling <i>into</i> a downtrend (the falling-knife case). The penalty is multiplicative, so the most attractive knives are cut hardest.`
+        : dir === 'bearish'
+        ? `The prevailing <b>${rawWord}</b> fights the short side — price is drifting up toward your short call. A bear-call sold into an uptrend is under pressure, so it's demoted.`
+        : `A strong <b>${rawWord}</b> works against a range structure — price is more likely to break out of the band, so this neutral setup is demoted.`;
+    } else if (ev === 'aligned') {
       mathLabel = `+ ${m.alignBonus} align bonus`;
-      why = `The trend backs the short side — <b>all four</b> up-template checks hold (rising 50&gt;150&gt;200 stack, price leading, positive relative strength vs SPY). An upward drift helps a bull-put hold its short strike, so the setup gets a small endorsement.`;
+      why = dir === 'bearish'
+        ? `The prevailing <b>${rawWord}</b> backs the short side — a bear-call benefits as price drifts away from the short call, so the setup gets a small endorsement.`
+        : `The prevailing <b>${rawWord}</b> backs the short side — upward drift helps a bull-put hold its short strike, so the setup gets a small endorsement.`;
     } else if (tr.vcpActive) {
-      adj = Math.round(q.total * (m.vcpNeutralMultiplier ?? 1));
       mathLabel = `× ${m.vcpNeutralMultiplier} VCP discount`;
-      why = `No directional trend, but a volatility-contraction base is tightening — an imminent range expansion is the worst entry for a premium seller, so the score is discounted.`;
+      why = `No directional trend, but a volatility-contraction base is tightening — imminent range expansion is the worst entry for a premium seller, so the score is discounted.`;
     } else {
-      why = `No directional trend opinion — neither the up- nor down-template fires, so the setup is left unchanged.`;
+      why = `The prevailing <b>${rawWord}</b> neither backs nor fights this ${dir} setup — left unchanged.`;
     }
     const core = tr.verdict === 'conflicted'
       ? [['MA stack inverted', tr.down?.maStackDown], ['Price &lt; 200-day', tr.down?.priceBelow200], ['RS negative', tr.down?.rsNegative], ['200-day falling', tr.down?.ma200Falling]]
       : [['MA stack 50&gt;150&gt;200', tr.checks?.maStack], ['Price &gt; stack', tr.checks?.priceAboveStack], ['200-day rising', tr.checks?.ma200Rising], ['RS positive', tr.checks?.rsPositive]];
     const chips = core.map(([label, ok]) => `<span style="font-size:11px;padding:3px 10px;border-radius:20px;${ok ? `background:${vHex}1a;color:${vHex};border:1px solid ${vHex}55;font-weight:600` : 'background:transparent;color:var(--muted);border:1px solid var(--line)'}">${ok ? '&#10003;' : '&#183;'} ${label}</span>`).join('');
-    const becomes = adj !== q.total ? `would become <b style="color:${vHex}">${adj}</b>` : `<b>unchanged</b>`;
+    const becomes = adj !== q.total ? `<b style="color:${vHex}">${adj}</b>` : `<b>unchanged</b>`;
     return `<div style="background:${tint};border:1px solid ${vHex}40;border-radius:12px;padding:16px 18px;margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-family:'Fraunces',serif;font-size:15px;font-weight:700;color:var(--ink)">Trend overlay</span>
-          <span class="pill ${pcls}">${tr.verdict.toUpperCase()}</span>
-          <span style="font-size:9px;font-weight:700;letter-spacing:.04em;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:1px 6px">SHADOW · ADVISORY · UNVALIDATED</span>
+          <span class="pill ${pcls}">${ev.toUpperCase()}</span>
+          <span style="font-size:11px;color:var(--muted)">${rawWord} vs ${dir} setup</span>
+          <span style="font-size:9px;font-weight:700;letter-spacing:.04em;color:var(--amber);border:1px solid var(--amber);border-radius:3px;padding:1px 6px">APPLIED · UNVALIDATED</span>
         </div>
         <div style="font-size:13px;color:var(--ink)">Setup Quality <b>${q.total}</b> &nbsp;&#8594;&nbsp; ${becomes} <span style="color:var(--muted)">(${mathLabel})</span></div>
       </div>
       <div style="font-size:12.5px;color:var(--ink);opacity:.82;margin-top:10px;line-height:1.55;max-width:860px">${why}</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">${chips}${tr.overlap ? '<span style="font-size:11px;padding:3px 10px;border-radius:20px;background:#fff3e0;color:#92400e;border:1px solid #d9770655;font-weight:600">also tripped the velocity guard (overlap)</span>' : ''}${tr.vcpActive ? '<span style="font-size:11px;padding:3px 10px;border-radius:20px;background:#eef;color:#5b21b6;border:1px solid #7c3aed55">VCP base tightening</span>' : ''}</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:12px;font-style:italic">Display-only — your live Setup Quality is <b>unchanged</b>. This previews how the score would move once the trend filter is validated by the forward-test (placeholder multipliers).</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:12px;font-style:italic">Applied to Setup Quality &amp; ranking. Verdict is read relative to your suggested structure (a downtrend <i>backs</i> a bear-call but <i>fights</i> a put sale). Multipliers are placeholder starting points — not yet backtested.</div>
     </div>`;
   })();
 
-  return `<tr class="detail open"><td colspan="13">
+  return `<tr class="detail open"><td colspan="${applyTrend ? 13 : 12}">
     ${trendSection}
     <div class="dgrid">
       <div class="panel"><div class="ph"><h4>Clustered zones</h4><span class="ev" style="font-size:10px">levels &lt; 0.6×ATR apart merged</span></div>
