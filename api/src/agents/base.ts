@@ -40,7 +40,7 @@ export abstract class BaseAgent<Input, Report> {
     await this.store.updateAgent(jobId, this.name, status, payload);
   }
 
-  protected extractJSON<T>(raw: string, schema: z.ZodType<T>): T {
+  protected extractJSON<S extends z.ZodTypeAny>(raw: string, schema: S): z.infer<S> {
     // Strip markdown code fences if present
     let cleaned = raw.trim();
     const fenceMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
