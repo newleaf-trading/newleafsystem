@@ -2281,9 +2281,31 @@
       const chips = (badges || []).filter(Boolean).join('');
       let html = chips ? `<div class="vp-badges">${chips}</div>` : '';
       if (opts.body) html += `<div class="vp-drawer-text">${opts.body}</div>`;
-      if (opts.chartTab) html += `<div><button class="vp-chart-btn" onclick="event.stopPropagation();window.showDeskChart('${opts.chartTab}')">📈 Visualize on chart</button></div>`;
+      if (opts.chartTabs && opts.chartTabs.length) {
+        html += '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'
+          + opts.chartTabs.map(c => `<button class="vp-chart-btn" onclick="event.stopPropagation();window.showDeskChart('${c.tab}')">📈 ${escHtml(c.label)}</button>`).join('')
+          + '</div>';
+      }
       if (opts.meta) html += `<div class="vp-model">${opts.meta}</div>`;
       return html;
+    }
+
+    // Pick the chart(s) actually relevant to what an agent's finding discusses,
+    // so "Visualize on chart" lands on the right view (e.g. a technical note
+    // about Bollinger + SMA opens those, not RSI). Keyword-driven off the summary.
+    function chartTabsFor(key, data) {
+      if (key === 'gamma') return [{ label: 'Gamma walls', tab: 'gamma' }];
+      if (key === 'iv') return [{ label: 'IV term structure', tab: 'ivterm' }];
+      if (key !== 'technical') return [];
+      const s = (data.summary || '').toLowerCase();
+      const tabs = [];
+      const add = (t, label) => { if (!tabs.some(x => x.tab === t)) tabs.push({ tab: t, label }); };
+      if (/bollinger|\bband|atr|volatil|gap|squeeze/.test(s)) add('bollinger', 'Bollinger');
+      if (/\bsma\b|moving average|\bma stack|alignment|golden cross|death cross|\badx\b|\btrend/.test(s)) add('sma', 'Moving Avg');
+      if (/macd|signal line|momentum shift/.test(s)) add('macd', 'MACD');
+      if (/\brsi\b|overbought|oversold|divergence/.test(s)) add('rsi', 'RSI');
+      if (!tabs.length) add('rsi', 'RSI'); // sensible default
+      return tabs.slice(0, 3);
     }
     // Map raw LLM traces to their agent role via the "You are the {Role}" opener.
     const TRACE_ROLE_KEY = {
@@ -2347,21 +2369,21 @@
           bdg('Trend', ev.technical.trend),
           bdg('RSI', ev.technical.rsi),
           bdg('Breakout risk', ev.technical.breakoutRisk)
-        ], { body: escHtml(ev.technical.summary || ''), chartTab: 'rsi', meta: seatMeta(byRole, 'technical') }));
+        ], { body: escHtml(ev.technical.summary || ''), chartTabs: chartTabsFor('technical', ev.technical), meta: seatMeta(byRole, 'technical') }));
 
       if (ev.gamma) seat('gamma', ev.gamma.summary, agentStance('gamma', ev.gamma, ev.gamma.summary),
         drawer([
           bdg('Wall integrity', ev.gamma.wallIntegrity),
           bdg('Flip distance', ev.gamma.flipDistance),
           bdg('Spot', ev.gamma.insideBand ? 'inside band' : 'outside band')
-        ], { body: escHtml(ev.gamma.summary || ''), chartTab: 'gamma', meta: seatMeta(byRole, 'gamma') }));
+        ], { body: escHtml(ev.gamma.summary || ''), chartTabs: chartTabsFor('gamma', ev.gamma), meta: seatMeta(byRole, 'gamma') }));
 
       if (ev.iv) seat('iv', ev.iv.summary, agentStance('iv', ev.iv, ev.iv.summary),
         drawer([
           bdg('IV rank', ev.iv.ivRank ?? 'n/a'),
           bdg('Term', ev.iv.termStructure),
           bdg('Premium', ev.iv.premiumFairness)
-        ], { body: escHtml(ev.iv.summary || ''), chartTab: 'ivterm', meta: seatMeta(byRole, 'iv') }));
+        ], { body: escHtml(ev.iv.summary || ''), chartTabs: chartTabsFor('iv', ev.iv), meta: seatMeta(byRole, 'iv') }));
 
       if (ev.sentiment) {
         const cats = (ev.sentiment.catalystsInWindow || []).filter(Boolean);
