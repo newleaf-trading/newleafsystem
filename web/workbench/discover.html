@@ -1748,12 +1748,49 @@
       }
     }
 
+    // Structures that are supposed to COLLECT premium (credit). A net debit on
+    // one of these is a structural red flag — the whole point is to get paid.
+    const CREDIT_STRUCTURES = /broken_wing_butterfly|iron_condor|iron_butterfly|bull_put|bear_call|short_strangle|short_straddle|credit/i;
+
+    function dteForExpiry(expiry) {
+      if (!expiry) return null;
+      const d = Math.round((new Date(expiry).getTime() - Date.now()) / 86400000);
+      return Number.isFinite(d) ? d : null;
+    }
+
+    // Deterministic pre-flight red flags — computed BEFORE the 8-agent run so a
+    // structurally-doomed pick is caught in Phase 2, not only after Verify.
+    function preflightWarnings(s) {
+      const w = [];
+      const gv = state.engineSnapshot?.gateValues || {};
+      const name = (s.id || s.strategy || '').toLowerCase();
+      const isCreditStructure = CREDIT_STRUCTURES.test(name);
+
+      if (isCreditStructure && typeof s.netCredit === 'number' && s.netCredit < 0) {
+        w.push(`Prices as a $${Math.abs(s.netCredit).toFixed(2)} <b>net debit</b> — a premium-selling structure should collect a credit. Capped upside for a debit is poor risk/reward.`);
+      }
+      if (isCreditStructure && typeof gv.ivRvRatio === 'number' && gv.ivRvRatio > 0 && gv.ivRvRatio < 1.0) {
+        w.push(`IV/RV ${gv.ivRvRatio.toFixed(2)} — <b>thin premium</b> (implied below realized vol); you're paid too little to sell here.`);
+      }
+      const dte = dteForExpiry(state.selectedExpiry);
+      const eDays = state.earningsDaysOut;
+      if (typeof eDays === 'number' && eDays > 0 && dte != null && eDays <= dte) {
+        w.push(`<b>Earnings in ~${eDays}d</b> — inside your ${dte}-day window. Binary event risk before expiry.`);
+      }
+      return w;
+    }
+
     function renderStrategyCards(strategies) {
       const container = $('#strategy-cards');
       container.innerHTML = strategies.map((s, i) => {
         const scoreColor = s.score >= 75 ? 'var(--green)' : s.score >= 60 ? 'var(--yellow)' : 'var(--red)';
         const isTop = i === 0;
         const creditLabel = typeof s.netCredit === 'number' && s.netCredit >= 0 ? 'Credit $' + s.netCredit.toFixed(2) : 'Debit $' + Math.abs(s.netCredit).toFixed(2);
+        const warnings = preflightWarnings(s);
+        const warnHtml = warnings.length ? `<div style="margin-top:10px;padding:8px 10px;background:var(--concern-bg);border:1px solid var(--concern-border);border-radius:6px">
+          <div style="font-size:9px;font-weight:700;color:var(--concern-text);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">&#9888; Pre-flight flags — the desk will likely fail this</div>
+          ${warnings.map(x => `<div style="font-size:11px;color:var(--concern-text);line-height:1.45">&bull; ${x}</div>`).join('')}
+        </div>` : '';
         return `
           <div class="panel" style="padding:14px 18px;margin-bottom:10px;cursor:pointer;transition:all 0.15s;border:${isTop ? '1.5px solid var(--teal)' : '1px solid var(--border)'}" onclick="selectStrategy(${i})" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
             <div style="display:flex;align-items:center;gap:14px">
@@ -1770,6 +1807,7 @@
                 <div style="font-size:10px;color:var(--ink-muted);margin-top:2px">${s.legs}</div>
               </div>
             </div>
+            ${warnHtml}
           </div>
         `;
       }).join('');
@@ -2895,18 +2933,43 @@
       state.mutations = buildMutations(vData);
     }
 
-    // Only surface adjustments the desk actually grounded — never fabricate a
-    // target score. Each mutation carries a real action the trade can apply.
+    // Price a set of proposed legs against the live chain to verify (deterministically)
+    // whether the desk's alternative actually collects a credit. Returns null if we
+    // can't price every leg (so we never assert a credit we didn't compute).
+    function priceProposedLegs(legs) {
+      let nc = 0;
+      for (const l of legs) {
+        const ch = (state.chainData || []).find(c => Math.abs(c.strike - l.strike) < 0.5);
+        const mid = ch?.[l.type]?.mid;
+        if (mid == null) return null; // missing a leg price — can't verify
+        nc += l.side === 'short' ? mid : -mid;
+      }
+      return { netCredit: nc, isCredit: nc >= 0 };
+    }
+
+    // Surface what the desk says to do instead — including "wait" (informational)
+    // and, for a concrete alternative, a deterministic check that it nets a credit.
     function buildMutations(vData) {
       const muts = [];
       const sf = vData.suggestedFix;
-      if (sf && sf.action !== 'wait') {
-        muts.push({
-          kind: 'suggestedFix',
-          label: sf.action === 'switch' ? `Switch to ${sf.strategy}` : 'Apply desk adjustment',
-          rationale: sf.rationale || '',
-          legs: Array.isArray(sf.legs) && sf.legs.length ? sf.legs : null
-        });
+      if (sf) {
+        if (sf.action === 'wait') {
+          muts.push({
+            kind: 'wait',
+            label: 'Desk recommends: wait',
+            rationale: sf.waitCondition || sf.rationale || 'Conditions unfavorable — wait before entering.'
+          });
+        } else {
+          const legs = Array.isArray(sf.legs) && sf.legs.length ? sf.legs : null;
+          muts.push({
+            kind: 'suggestedFix',
+            label: sf.action === 'switch' ? `Use instead: ${sf.strategy}` : `Adjust to ${sf.strategy || 'a better structure'}`,
+            strategy: sf.strategy || '',
+            rationale: sf.rationale || '',
+            legs,
+            priced: legs ? priceProposedLegs(legs) : null
+          });
+        }
       }
       if (vData.riskReport?.portfolioFit === 'reduce_size') {
         muts.push({
@@ -3095,16 +3158,23 @@
           <div style="font-size:11px;color:var(--ink-muted);margin-bottom:10px">Applying re-runs the desk on the new structure for a fresh score &mdash; no number is assumed.</div>
           <div style="display:grid;grid-template-columns:repeat(${Math.min(state.mutations.length,3)},1fr);gap:8px">
             ${state.mutations.map((m, i) => {
+              const isWait = m.kind === 'wait';
               const change = m.kind === 'reduce_size'
                 ? `${state.qty} \u2192 ${Math.max(1, Math.round(state.qty * 0.5))} contracts`
                 : (m.legs ? m.legs.map(l => `${l.side === 'short' ? 'S' : 'L'} ${l.strike}${l.type[0].toUpperCase()}`).join(' / ') : '');
+              // Deterministic check: does the desk's proposed alternative actually net a credit?
+              const pricedHtml = m.priced
+                ? `<div style="font-size:10px;margin-top:5px;font-weight:700;color:${m.priced.isCredit ? 'var(--green)' : 'var(--red)'}">${m.priced.isCredit ? '\u2713 nets a credit' : '\u26a0 still a net debit'} $${Math.abs(m.priced.netCredit).toFixed(2)}</div>`
+                : (m.kind === 'suggestedFix' && m.legs ? `<div style="font-size:10px;margin-top:5px;color:var(--ink-muted)">credit not verifiable (missing chain price)</div>` : '');
               return `
-              <div class="panel" style="padding:12px;cursor:pointer;transition:all 0.15s;${i===0?'border-color:var(--teal);':''}" id="mutation-${i}" onclick="handleMutation(${i})">
-                ${i===0?'<div style="font-size:8px;background:var(--teal);color:white;padding:1px 6px;border-radius:3px;display:inline-block;margin-bottom:4px;font-weight:700">SUGGESTED</div>':''}
+              <div class="panel" style="padding:12px;${isWait ? '' : 'cursor:pointer;'}transition:all 0.15s;${i===0 && !isWait ? 'border-color:var(--teal);' : ''}" id="mutation-${i}" ${isWait ? '' : `onclick="handleMutation(${i})"`}>
+                ${i===0 && !isWait ? '<div style="font-size:8px;background:var(--teal);color:white;padding:1px 6px;border-radius:3px;display:inline-block;margin-bottom:4px;font-weight:700">SUGGESTED</div>' : ''}
+                ${isWait ? '<div style="font-size:8px;background:var(--concern-border);color:white;padding:1px 6px;border-radius:3px;display:inline-block;margin-bottom:4px;font-weight:700">DESK VERDICT</div>' : ''}
                 <div style="font-size:12px;font-weight:600;margin-bottom:2px">${m.label}</div>
                 ${m.rationale ? `<div style="font-size:10px;color:var(--ink-muted);line-height:1.4;margin-bottom:6px">${m.rationale}</div>` : ''}
                 ${change ? `<div style="font-size:11px;font-family:var(--mono);color:var(--ink)">${change}</div>` : ''}
-                <div style="font-size:10px;color:var(--teal);font-weight:600;margin-top:6px">Apply &amp; re-verify \u2192</div>
+                ${pricedHtml}
+                ${isWait ? '' : `<div style="font-size:10px;color:var(--teal);font-weight:600;margin-top:6px">Apply &amp; re-verify \u2192</div>`}
               </div>`;
             }).join('')}
           </div>
