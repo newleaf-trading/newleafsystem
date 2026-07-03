@@ -30,6 +30,7 @@ export const analyzeTechnicals: (bars: any[], spot: number) => any = engine.anal
 export const calcScore: (gammaData: any, technicalData: any) => { total: number; pillars: { gamma: number; iv: number; trend: number }; hasOptions: boolean } = engine.calcScore;
 export const getDirection: (gammaData: any, technicalData: any) => 'bullish' | 'bearish' | 'neutral' = engine.getDirection;
 export const selectStrategy: (gammaData: any, direction: string, snapshotPrice: number, technicalData: any) => any = engine.selectStrategy;
+export const premiumRiskPenalty: (strategyCode: string, gammaData: any, technicalData: any) => { penalty: number; reasons: string[] } = engine.premiumRiskPenalty;
 export const STRATEGIES: Record<string, any> = engine.STRATEGIES;
 export const reconcileDirection: (rawDirection: string, strategyCode: string) => string = engine.reconcileDirection;
 export const analyzeGammaEnhanced: (contracts: any[], spot: number, dteMin: number, dteMax: number, oiDeltaData: any) => any = gammaModule.analyzeGammaEnhanced;

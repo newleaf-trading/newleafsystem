@@ -4,7 +4,7 @@ import { requireTier } from '../middleware/rbac.js';
 import { LLMRouter, type ModelTier } from '../llm/router.js';
 import { getStockSnapshot, getOptionsSnapshot, getHistoricalBars } from '../tools/alpaca.js';
 import { computeIndicators } from '../tools/indicators.js';
-import { analyzeTechnicals, calcScore, getDirection, selectStrategy, reconcileDirection, analyzeGammaEnhanced } from '../tools/strategy-engine.js';
+import { analyzeTechnicals, calcScore, getDirection, selectStrategy, reconcileDirection, analyzeGammaEnhanced, premiumRiskPenalty } from '../tools/strategy-engine.js';
 import { fetchNasdaqOI, fetchYahooContracts, findGammaWalls } from '../tools/nasdaq-oi.js';
 import { buildDecision } from '../tools/decision-engine.js';
 import { computeReactionGate, applyReactionGate, type ReactionGate } from '../tools/reaction-features.js';
@@ -165,14 +165,20 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
       console.log(`[Recommend] Leg builder warnings for ${tk}: ${builtLegsResult.meta.warnings.join('; ')}`);
     }
 
+    // Down-score a credit structure when premium is thin (IV/RV < 1) — same
+    // penalty the scanner applies, so discover and scanner agree on the number.
+    const { penalty: premPenalty, reasons: premReasons } = premiumRiskPenalty(effStrategy, gammaData, technicalData);
+    const baseScore = (!reactionChanged && strategy.bwbBonus) ? score + strategy.bwbBonus : score;
     let enginePick: {
       strategy: string; direction: string; score: number;
-      pillars: typeof pillars; reasoningOverride?: any;
+      pillars: typeof pillars; reasoningOverride?: any; premiumPenalty?: number; premiumReasons?: string[];
     } = {
       strategy: effStrategy,
       direction: effDirection,
-      score: (!reactionChanged && strategy.bwbBonus) ? score + strategy.bwbBonus : score,
+      score: Math.max(0, baseScore + premPenalty),
       pillars,
+      premiumPenalty: premPenalty,
+      premiumReasons: premReasons,
     };
 
     // Gate trace: show exactly why each gate passed/failed (for debugging)

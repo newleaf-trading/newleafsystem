@@ -40,7 +40,7 @@ const { analyzeGammaEnhanced } = require('./gamma-analyzer-enhanced');
 // ── Shared Strategy Engine (single source of truth for scanner + discover) ───
 const {
   analyzeTechnicals, calcScore, getDirection, selectStrategy, reconcileDirection, STRATEGIES,
-  calcRealizedVol, calcATRPct, calcSMA, calcBB, calcRSI,
+  calcRealizedVol, calcATRPct, calcSMA, calcBB, calcRSI, premiumRiskPenalty,
 } = require('./strategy-engine');
 
 // ── ATM Contracts for Strategy Builder ───────────────────────────────────────
@@ -847,7 +847,7 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
       realizedVol30d:technicalData.realizedVol30d, atrPct:technicalData.atrPct },
     gammaData,
     scoring: {
-      opportunityScore: strategy.bwbBonus ? opportunityScore + strategy.bwbBonus : opportunityScore,
+      opportunityScore: Math.max(0, (strategy.bwbBonus ? opportunityScore + strategy.bwbBonus : opportunityScore) + premiumRiskPenalty(strategy.code, gammaData, technicalData).penalty),
       pillars, direction, strategy, hasOptions,
       ...(strategy.code === 'broken_wing_butterfly' ? { bwbBonus: strategy.bwbBonus } : {})
     },
@@ -928,7 +928,7 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
             if (_g) { oiStrat = { ...STRATEGIES[_g.strategy], reactionNote: _g.note, gammaCode: oiStrat.code }; oiDir = _g.direction; }
           } catch (_) { /* keep gamma pick */ }
           report.scoring = {
-            opportunityScore: oiStrat.bwbBonus ? oiScore + oiStrat.bwbBonus : oiScore,
+            opportunityScore: Math.max(0, (oiStrat.bwbBonus ? oiScore + oiStrat.bwbBonus : oiScore) + premiumRiskPenalty(oiStrat.code, report.gammaData, technicalData).penalty),
             pillars: oiPillars, direction: oiDir, strategy: oiStrat, hasOptions: oiHasOpts,
             ...(oiStrat.code === 'broken_wing_butterfly' ? { bwbBonus: oiStrat.bwbBonus } : {})
           };
