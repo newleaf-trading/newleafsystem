@@ -367,6 +367,11 @@ if (ONCE) {
     if (fs.existsSync(healthScript)) {
       spawn('bash', [healthScript], { cwd: __dirname, stdio: 'inherit' });
     }
+
+    // Reconcile the R2 manifest from the local reports dir (source of truth).
+    // Guards against a partial run leaving a stale/short manifest on R2
+    // (the 110-vs-297 bug). No-ops when R2 is already current.
+    runJob('sync-manifest.cjs').catch(e => console.error(`[${nowET()}] manifest sync error:`, e.message));
   }, TZ);
 
   // Cleanup child processes on scheduler exit
