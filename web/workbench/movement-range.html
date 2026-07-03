@@ -189,8 +189,11 @@ footer b{color:var(--forest)}
 <main class="main">
   <div class="titlebar">
     <div><h1>Movement & Range — Setups</h1>
-    <p class="sub">Deterministic S/R analysis ranked by <b>Setup Quality</b>. The funnel shows why symbols were removed — you review the top setups, not all 110.</p></div>
-    <div class="actions"><button class="btn" onclick="exportCSV()">Export CSV</button><button class="btn primary" onclick="loadData()">Run Analysis</button></div>
+    <p class="sub">Deterministic S/R analysis ranked by <b>Setup Quality</b>. The funnel shows why symbols were removed — you review the top setups, not all 296. <a onclick="showScoreExplainer()" style="cursor:pointer;color:var(--forest);font-weight:600;white-space:nowrap">&#9432; How is this scored?</a></p></div>
+    <div class="actions"><button class="btn" id="minervini-toggle" onclick="toggleMinervini()" title="Apply the Minervini trend template to Setup Quality (re-scores & re-ranks). Placeholder multipliers — not yet backtested.">Trend filter: Off</button><button class="btn" onclick="exportCSV()">Export CSV</button><button class="btn primary" onclick="loadData()">Run Analysis</button></div>
+  </div>
+  <div id="trend-applied-note" style="display:none;margin:0 0 10px;padding:8px 12px;background:var(--amber-bg,#fbf3e0);border:1px solid var(--amber,#c98a2e);border-radius:8px;font-size:12px;color:var(--ink)">
+    <b>Minervini trend filter applied.</b> Setup Quality is re-scored by the trend overlay (conflicted &times;0.6, aligned +5, VCP &times;0.85) and the table is re-ranked. These multipliers are <b>placeholder starting points, not yet backtested</b> — treat the re-ranking as directional, not proven. <a onclick="showScoreExplainer()" style="cursor:pointer;color:var(--forest);font-weight:600">How scoring works &rsaquo;</a>
   </div>
   <div class="funnel" id="funnel"><div class="fstep"><div class="k">Scanned</div><div class="v" id="f-scan">--</div><div class="d">loading...</div></div></div>
   <div class="modes" id="modes">
@@ -240,6 +243,48 @@ footer b{color:var(--forest)}
   <div class="info-popup-overlay" id="summaryPopupOverlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
     <div class="info-popup" style="width:700px"><div class="info-popup-hdr" style="border-bottom-color:#3b82f6"><div class="info-popup-title" id="summaryPopupTitle" style="color:#1e40af">AI Setup Summary</div><button class="info-popup-close" onclick="document.getElementById('summaryPopupOverlay').style.display='none'">&times;</button></div><div class="info-popup-body" id="summaryPopupBody" style="font-size:14px;line-height:1.7;color:var(--ink)">Loading...</div></div>
   </div>
+  <!-- Score explainer popup (two-stage: Setup Quality + Minervini overlay) -->
+  <div class="info-popup-overlay" id="scoreExplainOverlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+    <div class="info-popup">
+      <div class="info-popup-hdr"><div class="info-popup-title">How a setup is scored</div><button class="info-popup-close" onclick="document.getElementById('scoreExplainOverlay').style.display='none'">&times;</button></div>
+      <div class="info-popup-body">
+        <p style="font-size:13px;color:#555;line-height:1.5;margin-bottom:18px">Every symbol goes through <b>two stages</b>. Stage&nbsp;1 always drives the ranking; Stage&nbsp;2 is an optional trend filter you switch on with <b>Trend filter</b>.</p>
+
+        <div class="ip-section">
+          <div class="ip-section-title" style="color:var(--forest);border-color:var(--forest)">Stage 1 &middot; Setup Quality (0&ndash;100) &mdash; always live</div>
+          <div class="ip-section-desc">A deterministic reaction-engine score: how good is this level to sell premium against, right now? Seven weighted components:</div>
+          <div style="font-size:12px;line-height:1.7">
+            <div><b>Zone score</b> <span style="color:#999">&times;0.30</span> &mdash; how reliably price holds/rejects the zone you'd sell against (Wilson-smoothed rate, needs &ge;3 touches).</div>
+            <div><b>Premium richness</b> <span style="color:#999">&times;0.20</span> &mdash; are you paid enough? Implied vs realized vol (IV/RV).</div>
+            <div><b>Regime confidence</b> <span style="color:#999">&times;0.15</span> &mdash; how clearly range-bound vs trending.</div>
+            <div><b>Distance / approach</b> <span style="color:#999">&times;0.15</span> &mdash; how close price is to the zone, and how fast it's approaching.</div>
+            <div><b>Option liquidity</b> <span style="color:#999">&times;0.10</span> &mdash; tradeable spreads &amp; open interest.</div>
+            <div><b>Forward-return edge</b> <span style="color:#999">&times;0.10</span> &mdash; historical median 5-day move from similar touches.</div>
+            <div><b>Event-risk penalty</b> <span style="color:#999">&minus;</span> &mdash; subtracts for earnings / ex-div inside the trade window.</div>
+          </div>
+        </div>
+
+        <div class="ip-section">
+          <div class="ip-section-title" style="color:var(--amber);border-color:var(--amber)">Stage 2 &middot; Minervini Trend Template &mdash; optional overlay</div>
+          <div class="ip-section-desc">A deterministic <b>SEPA-style trend template</b> (Mark Minervini) checks whether the prevailing trend backs or fights the short side: the 50/150/200-day MA stack, price vs that stack, 200-day slope, relative strength vs SPY, and 52-week structure. It emits one verdict:</div>
+          <div style="font-size:12px;line-height:1.8">
+            <div><span class="pill green" style="font-size:10px">ALIGNED</span> uptrend backs the setup &rarr; <b>Setup Quality + 5</b></div>
+            <div><span class="pill red" style="font-size:10px">CONFLICTED</span> selling into a downtrend (falling knife) &rarr; <b>Setup Quality &times; 0.6</b> &mdash; multiplicative, so the most tempting high-quality knives are cut hardest.</div>
+            <div><span class="pill amber" style="font-size:10px">NEUTRAL</span> no trend opinion &rarr; unchanged &mdash; unless a <b>VCP</b> base is tightening (imminent volatility expansion), then <b>&times; 0.85</b>.</div>
+          </div>
+          <div style="margin-top:12px;padding:10px 12px;background:#fbf3e0;border:1px solid var(--amber);border-radius:8px;font-size:11.5px;line-height:1.5;color:#5a4a2a">
+            <b>Not yet proven.</b> The multipliers (0.6 / +5 / 0.85) are <b>placeholder starting points, not backtested</b> — that's why the overlay is labelled <b>UNVALIDATED</b>. Leave the filter <b>Off</b> to rank on Stage 1 alone; switch it <b>On</b> to preview how a validated trend filter would re-rank.<br><span style="color:#8a7a5a">Note: the verdict currently reads trend direction only — making it structure-aware (so a bearish setup in a downtrend counts as aligned) is a pending refinement.</span>
+          </div>
+        </div>
+
+        <div class="ip-section" style="margin-bottom:0">
+          <div class="ip-section-title">The maths</div>
+          <div style="font-size:12px;color:#555;line-height:1.6">Final = <b>Stage 1</b>, then (if the filter is on) &times;&nbsp;or&nbsp;+ the <b>Stage 2</b> adjustment, clamped 0&ndash;100. Example: a setup at <b>76</b> with a <span class="pill red" style="font-size:10px">CONFLICTED</span> verdict becomes <b>76 &times; 0.6 = 46</b>.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Analysis popup (Gamma + Technicals combined) -->
   <div class="info-popup-overlay" id="analysisPopupOverlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
     <div class="info-popup"><div class="info-popup-hdr"><div class="info-popup-title" id="analysisPopupTitle">Analysis</div><button class="info-popup-close" onclick="document.getElementById('analysisPopupOverlay').style.display='none'">&times;</button></div><div class="info-popup-body" id="analysisPopupBody">Loading...</div></div>
@@ -270,6 +315,35 @@ const MAX_DISPLAY = 15;
 
 // ── Filter state ──
 let filters = { pos: 'any', prem: 'any', sort: 'sq', preset: null };
+
+// ── Minervini trend overlay: apply-to-score toggle ──
+// OFF (default) = the overlay is shadow/advisory; Setup Quality is the raw
+// reaction-engine score. ON = the trend verdict's multiplier/bonus is applied
+// to Setup Quality and used for ranking. Multipliers are placeholders (unvalidated).
+let applyTrend = false;
+
+// Trend-adjusted Setup Quality — mirrors the "would become" preview math.
+function adjustedSQ(r) {
+  const q = r.quality.total, tr = r.d.trend;
+  if (!tr) return q;
+  const m = tr.multipliers || {};
+  let adj = q;
+  if (tr.verdict === 'conflicted') adj = q * (m.conflictMultiplier ?? 1);
+  else if (tr.verdict === 'aligned') adj = q + (m.alignBonus ?? 0);
+  else if (tr.vcpActive) adj = q * (m.vcpNeutralMultiplier ?? 1);
+  return Math.round(Math.max(0, Math.min(100, adj)));
+}
+// The score to DISPLAY and SORT by, respecting the toggle.
+function shownSQ(r) { return applyTrend ? adjustedSQ(r) : r.quality.total; }
+
+function toggleMinervini() {
+  applyTrend = !applyTrend;
+  const btn = document.getElementById('minervini-toggle');
+  if (btn) { btn.classList.toggle('primary', applyTrend); btn.textContent = 'Trend filter: ' + (applyTrend ? 'On' : 'Off'); }
+  const note = document.getElementById('trend-applied-note');
+  if (note) note.style.display = applyTrend ? '' : 'none';
+  renderTable();
+}
 
 function setFilter(key, btn) {
   filters[key] = btn.dataset.v;
@@ -499,9 +573,9 @@ function renderTable() {
         const order = filters.sort === 'trend-risk' ? { conflicted: 0, neutral: 1, aligned: 2 } : { aligned: 0, neutral: 1, conflicted: 2 };
         const ra = order[a.d.trend?.verdict] ?? 3, rb = order[b.d.trend?.verdict] ?? 3;
         if (ra !== rb) return ra - rb;
-        return b.quality.total - a.quality.total;
+        return shownSQ(b) - shownSQ(a);
       }
-      return b.quality.total - a.quality.total; // default: sq
+      return shownSQ(b) - shownSQ(a); // default: sq (trend-adjusted when the filter is on)
     });
   }
 
@@ -528,7 +602,7 @@ function renderTable() {
     </div>` : '';
 
     document.getElementById('table-area').innerHTML = `<table><thead><tr>
-      <th ${thS('sq')}>Setup &#9660;</th><th>Trend <a href="/docs/trend-algorithm-design.html" target="_blank" title="How the trend verdict is calculated — checks, formulas, algorithm" style="font-size:8px;font-weight:700;letter-spacing:.03em;color:var(--muted);border:1px solid var(--border);border-radius:3px;padding:1px 4px;white-space:nowrap;text-decoration:none;cursor:pointer">SHADOW · ADVISORY · UNVALIDATED ↗</a></th><th>Symbol</th><th class="r">Price</th><th>Nearest zone</th>
+      <th ${thS('sq')}>Setup &#9660;</th><th>Trend <a href="/docs/trend-algorithm-design.html" target="_blank" title="How the trend verdict is calculated — checks, formulas, algorithm" style="font-size:8px;font-weight:700;letter-spacing:.03em;color:${applyTrend ? 'var(--amber)' : 'var(--muted)'};border:1px solid ${applyTrend ? 'var(--amber)' : 'var(--border)'};border-radius:3px;padding:1px 4px;white-space:nowrap;text-decoration:none;cursor:pointer">${applyTrend ? 'APPLIED · UNVALIDATED' : 'SHADOW · ADVISORY · UNVALIDATED'} ↗</a></th><th>Symbol</th><th class="r">Price</th><th>Nearest zone</th>
       <th>S/R Score</th><th>RQ</th><th>Evidence</th><th>Distance</th><th class="r">Med. 5d</th>
       <th>Premium</th><th>Suggested</th><th></th>
     </tr></thead><tbody>${displayRows.map(r => renderRow(r) + renderDetailRow(r)).join('')}</tbody></table>
@@ -602,7 +676,10 @@ function renderRow(r) {
   const distBar = r.distPct < 10 ? Math.max(5, (r.distPct / 5) * 100) : 95;
   const med5 = r.fwd?.median5d;
   const med5Lbl = med5 != null ? (med5 >= 0 ? '+' : '') + (med5 * 100).toFixed(1) + '%' : '--';
-  const ringColor = q.total >= 75 ? 'var(--green)' : q.total >= 65 ? 'var(--gold)' : 'var(--red)';
+  const shownScore = shownSQ(r);
+  const ringColor = shownScore >= 75 ? 'var(--green)' : shownScore >= 65 ? 'var(--gold)' : 'var(--red)';
+  const sqWasNote = (applyTrend && shownScore !== q.total)
+    ? `<div style="font-size:9px;color:var(--muted);margin-top:1px">was ${q.total}</div>` : '';
   const liqTag = !r.d.oiAvailable ? '<span class="tag-unverified">OI unverified</span>' : '';
 
   // ── Phase 4a: advisory trend verdict — DISPLAY ONLY. Does not touch q.total or the sort. ──
@@ -623,7 +700,7 @@ function renderRow(r) {
   }
 
   return `<tr class="row ${openDetail === d.symbol ? 'open' : ''}" onclick="toggleDetail('${d.symbol}')">
-    <td><div class="score"><div class="ring" style="--p:${q.total};--c:${ringColor}"><i>${q.total}</i></div><div class="lbl">Setup<br>Quality</div></div></td>
+    <td><div class="score"><div class="ring" style="--p:${shownScore};--c:${ringColor}"><i>${shownScore}</i></div><div class="lbl">Setup<br>Quality</div>${sqWasNote}</div></td>
     <td>${trendCell}</td>
     <td class="sym"><b>${d.symbol}</b><span>${regLbl} · conf ${r.confidence}</span></td>
     <td class="r num">${d.price.toFixed(2)}<br><span style="color:${d.changePct >= 0 ? 'var(--green)' : 'var(--red)'}">${d.changePct >= 0 ? '+' : ''}${d.changePct.toFixed(1)}%</span></td>
@@ -1016,7 +1093,9 @@ function drawTechChartMR(tabId, td) {
 }
 
 // Close popups on Escape
-document.addEventListener('keydown', e => { if (e.key==='Escape') { ['analysisPopupOverlay','summaryPopupOverlay','legBuilderOverlay'].forEach(id => { const o = document.getElementById(id); if (o) o.style.display='none'; }); }});
+function showScoreExplainer() { document.getElementById('scoreExplainOverlay').style.display = 'flex'; }
+
+document.addEventListener('keydown', e => { if (e.key==='Escape') { ['analysisPopupOverlay','summaryPopupOverlay','legBuilderOverlay','scoreExplainOverlay'].forEach(id => { const o = document.getElementById(id); if (o) o.style.display='none'; }); }});
 
 // ════════════════════════════════════════════════════════════════════════════
 // LEG BUILDER — auto-build best legs from option chain & show payoff chart
