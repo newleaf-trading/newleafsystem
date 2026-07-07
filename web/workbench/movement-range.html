@@ -182,6 +182,22 @@ footer b{color:var(--forest)}
 .lb-expiry-btn.on{background:var(--forest);color:var(--cream);border-color:var(--forest)}
 .pill.clickable{cursor:pointer;transition:all .15s}
 .pill.clickable:hover{opacity:.85;box-shadow:0 1px 4px rgba(0,0,0,.12);transform:translateY(-1px)}
+/* Video explainer CTA — sits between title block and action buttons */
+.video-cta{display:inline-flex;align-items:center;gap:10px;align-self:center;padding:6px 16px 6px 6px;background:var(--card);border:1px solid var(--line);border-radius:12px;cursor:pointer;text-align:left;transition:box-shadow .15s,border-color .15s,transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.04);font-family:inherit;flex-shrink:0}
+.video-cta:hover{border-color:var(--forest);box-shadow:0 4px 14px rgba(15,61,46,.14);transform:translateY(-1px)}
+.video-cta-thumb{position:relative;flex:none;width:80px;height:45px;border-radius:7px;overflow:hidden;background:#000}
+.video-cta-thumb img{width:100%;height:100%;object-fit:cover;display:block;opacity:.92}
+.video-cta:hover .video-cta-thumb img{opacity:1}
+.video-cta-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;background:rgba(181,72,58,.95);box-shadow:0 1px 4px rgba(0,0,0,.45);transition:transform .15s}
+.video-cta:hover .video-cta-play{transform:translate(-50%,-50%) scale(1.08)}
+.video-cta-play::after{content:"";position:absolute;left:53%;top:50%;transform:translate(-50%,-50%);border-style:solid;border-width:5px 0 5px 9px;border-color:transparent transparent transparent #fff}
+.video-cta-txt{display:flex;flex-direction:column;line-height:1.3;gap:1px}
+.video-cta-txt b{font-size:13px;color:var(--ink);font-weight:600}
+.video-cta-badge{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--forest);background:var(--green-bg);border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:middle}
+.video-cta-txt span{font-size:11px;color:var(--muted)}
+.video-cta.seen .video-cta-badge{display:none}
+@keyframes videoPulse{0%{box-shadow:0 0 0 0 rgba(15,61,46,.35)}70%{box-shadow:0 0 0 8px rgba(15,61,46,0)}100%{box-shadow:0 0 0 0 rgba(15,61,46,0)}}
+.video-cta:not(.seen){animation:videoPulse 2.4s ease-out 3}
 </style>
 </head>
 <body>
@@ -190,6 +206,7 @@ footer b{color:var(--forest)}
   <div class="titlebar">
     <div><h1>Movement & Range — Setups</h1>
     <p class="sub">Deterministic S/R analysis ranked by <b>Setup Quality</b>. The funnel shows why symbols were removed — you review the top setups, not all 296. <a onclick="showScoreExplainer()" style="cursor:pointer;color:var(--forest);font-weight:600;white-space:nowrap">&#9432; How is this scored?</a></p></div>
+    <button class="video-cta" id="videoCta" onclick="showScoreExplainer()" aria-label="Watch: how the Setup Quality score works"><span class="video-cta-thumb"><img src="https://img.youtube.com/vi/Bgv_S-qp2sw/mqdefault.jpg" alt="" loading="lazy"><span class="video-cta-play"></span></span><span class="video-cta-txt"><b>Watch: how scoring works<span class="video-cta-badge">2-min</span></b><span>New to this page? Start here.</span></span></button>
     <div class="actions"><button class="btn" id="minervini-toggle" onclick="toggleMinervini()" title="Apply the Minervini trend template to Setup Quality (re-scores & re-ranks). Placeholder multipliers — not yet backtested.">Trend filter: Off</button><button class="btn" onclick="exportCSV()">Export CSV</button><button class="btn primary" onclick="loadData()">Run Analysis</button></div>
   </div>
   <div id="trend-applied-note" style="display:none;margin:0 0 10px;padding:8px 12px;background:var(--amber-bg,#fbf3e0);border:1px solid var(--amber,#c98a2e);border-radius:8px;font-size:12px;color:var(--ink)">
@@ -248,6 +265,9 @@ footer b{color:var(--forest)}
     <div class="info-popup">
       <div class="info-popup-hdr"><div class="info-popup-title">How a setup is scored</div><button class="info-popup-close" onclick="document.getElementById('scoreExplainOverlay').style.display='none'">&times;</button></div>
       <div class="info-popup-body">
+        <div style="position:relative;width:100%;padding-bottom:56.25%;height:0;margin-bottom:18px;border-radius:8px;overflow:hidden;background:#000">
+          <iframe src="https://www.youtube.com/embed/Bgv_S-qp2sw" title="How the Setup Quality score works" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>
+        </div>
         <p style="font-size:13px;color:#555;line-height:1.5;margin-bottom:18px">Every symbol goes through <b>two stages</b>. Stage&nbsp;1 always drives the ranking; Stage&nbsp;2 is an optional trend filter you switch on with <b>Trend filter</b>.</p>
 
         <div class="ip-section">
@@ -1124,7 +1144,9 @@ function drawTechChartMR(tabId, td) {
 }
 
 // Close popups on Escape
-function showScoreExplainer() { document.getElementById('scoreExplainOverlay').style.display = 'flex'; }
+function showScoreExplainer() { document.getElementById('scoreExplainOverlay').style.display = 'flex'; markVideoSeen(); }
+function markVideoSeen() { try { localStorage.setItem('mr_scoreVideoSeen', '1'); } catch (e) {} var c = document.getElementById('videoCta'); if (c) c.classList.add('seen'); }
+try { if (localStorage.getItem('mr_scoreVideoSeen')) { var _c = document.getElementById('videoCta'); if (_c) _c.classList.add('seen'); } } catch (e) {}
 
 document.addEventListener('keydown', e => { if (e.key==='Escape') { ['analysisPopupOverlay','summaryPopupOverlay','legBuilderOverlay','scoreExplainOverlay'].forEach(id => { const o = document.getElementById(id); if (o) o.style.display='none'; }); }});
 
