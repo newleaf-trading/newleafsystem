@@ -621,6 +621,11 @@
             <button onclick="hide($('#technical-deep-dive'))" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink-muted)">&times;</button>
           </div>
           <p style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:14px">Computed from 250 daily closing prices via the NewLeaf indicators engine. These are real values, not LLM-generated.</p>
+          <div id="ddTechChartWrap" style="margin-bottom:16px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-muted);font-weight:600;margin-bottom:6px">Price &amp; moving averages</div>
+            <canvas id="ddTechChart" style="width:100%;height:220px;display:block"></canvas>
+            <div style="display:flex;gap:16px;justify-content:center;margin-top:6px;font-size:10px;color:var(--ink-muted)"><span><span style="display:inline-block;width:12px;height:2px;background:#0B2D23;vertical-align:middle"></span> Price</span><span><span style="display:inline-block;width:12px;height:2px;background:#2d7d4f;vertical-align:middle"></span> SMA20</span><span><span style="display:inline-block;width:12px;height:2px;background:#c0392b;vertical-align:middle"></span> SMA50</span></div>
+          </div>
           <div id="technical-content" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
         </div>
 
@@ -630,6 +635,11 @@
             <button onclick="hide($('#iv-deep-dive'))" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink-muted)">&times;</button>
           </div>
           <p style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:14px">Implied volatility from the options chain. Higher IV means richer premiums for sellers but more expected movement.</p>
+          <div id="ddIvChartWrap" style="margin-bottom:16px">
+            <div id="ddIvChartTitle" style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-muted);font-weight:600;margin-bottom:6px">IV term structure</div>
+            <canvas id="ddIvChart" style="width:100%;height:180px;display:none"></canvas>
+            <div id="ddIvGauge"></div>
+          </div>
           <div id="iv-content" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px"></div>
         </div>
 
@@ -858,7 +868,7 @@
     /* ================================================================
        DISCOVER.HTML — Guided "ticker to verified trade" journey
        ================================================================ */
-    import { computeNetCredit as _computeNC, computeMaxLoss as _computeML, computeBreakevens as _computeBE, pnlAt as _pnlAt } from './public/js/legMath.js';
+    import { computeNetCredit as _computeNC, computeMaxLoss as _computeML, computeMaxProfit as _computeMP, computeBreakevens as _computeBE, pnlAt as _pnlAt } from './public/js/legMath.js';
     import { drawPayoffChart as _drawPayoff } from './public/js/payoffChart.js';
     import { renderGammaAnalysis as _renderGamma } from './public/js/gammaChart.js';
     const $ = s => document.querySelector(s);
@@ -1496,6 +1506,60 @@
         item('MACD Signal', ind.macdSignal != null ? ind.macdSignal.toFixed(3) : '---', 'Signal line (9-period EMA of MACD)') +
         item('SMA Trend', trend, trendDesc) +
         item('Bollinger Width', bbw != null ? bbw.toFixed(2) + '%' : '---', bbwDesc);
+      drawDDTechChart();
+    }
+
+    // Price + SMA20/SMA50 trend chart for the Technical deep-dive. Uses the R2 daily-bar
+    // report; hides gracefully (tiles remain) if the series isn't available.
+    async function drawDDTechChart() {
+      const wrap = document.getElementById('ddTechChartWrap');
+      try {
+        const td = await loadDeskTechData();
+        const ph = (td && td.priceHistory) ? td.priceHistory : [];
+        if (ph.length < 30) { if (wrap) wrap.style.display = 'none'; return; }
+        if (wrap) wrap.style.display = '';
+        const prices = ph.map(p => p.c);
+        const dates = ph.map(p => { const d = new Date(p.t); return (d.getMonth() + 1) + '/' + d.getDate(); });
+        const sma = n => prices.map((_, i) => i >= n - 1 ? prices.slice(i - n + 1, i + 1).reduce((a, b) => a + b, 0) / n : null);
+        drawLineChartMR('ddTechChart', { labels: dates, series: [
+          { data: prices, color: '#0B2D23', width: 2, label: 'Price' },
+          { data: sma(20), color: '#2d7d4f', width: 1.5, label: 'SMA20' },
+          { data: sma(50), color: '#c0392b', width: 1.5, label: 'SMA50' },
+        ] });
+      } catch (e) { if (wrap) wrap.style.display = 'none'; }
+    }
+
+    // IV term-structure line (ATM IV across expiries). Falls back to a low/fair/rich gauge
+    // when only a single expiry is available so the IV panel always shows a visual.
+    async function drawDDIvChart() {
+      const wrap = document.getElementById('ddIvChartWrap');
+      const canvas = document.getElementById('ddIvChart');
+      const gauge = document.getElementById('ddIvGauge');
+      const title = document.getElementById('ddIvChartTitle');
+      try {
+        await loadDeskTechData(); // populates state._ivByExpiry
+        const ivMap = state._ivByExpiry || (state.r2Data && state.r2Data.gammaData && state.r2Data.gammaData.ivData && state.r2Data.gammaData.ivData.ivByExpiry) || {};
+        const entries = Object.entries(ivMap).sort((a, b) => new Date(a[0]) - new Date(b[0]));
+        if (wrap) wrap.style.display = '';
+        if (entries.length >= 2) {
+          if (title) title.textContent = 'IV term structure';
+          if (gauge) gauge.innerHTML = '';
+          if (canvas) canvas.style.display = 'block';
+          const labels = entries.map(([d]) => { const dt = new Date(d); return (dt.getMonth() + 1) + '/' + dt.getDate(); });
+          const vals = entries.map(([, v]) => v);
+          drawLineChartMR('ddIvChart', { labels, series: [{ data: vals, color: '#0B2D23', width: 2, label: 'ATM IV' }], yFmt: v => v.toFixed(0) + '%' });
+        } else {
+          // Fallback gauge from the categorical IV level
+          if (canvas) canvas.style.display = 'none';
+          if (title) title.textContent = 'IV level — where premium sits';
+          const iv = (state.r2Data && state.r2Data.gammaData && state.r2Data.gammaData.ivData) || {};
+          const lvl = String(iv.ivLevel || '').toLowerCase();
+          const atm = iv.atmIv != null ? iv.atmIv.toFixed(1) + '%' : '--';
+          const pos = lvl === 'high' ? 83 : lvl === 'low' ? 17 : 50;
+          const color = lvl === 'high' ? '#b07f2e' : lvl === 'low' ? '#2d7d4f' : '#c99a2e';
+          if (gauge) gauge.innerHTML = `<div style="position:relative;height:10px;border-radius:5px;background:linear-gradient(90deg,#e9f5ee,#fbf4dd,#f7edd6)"><div style="position:absolute;left:calc(${pos}% - 1px);top:-3px;bottom:-3px;width:2px;background:#0B0F14;border-radius:1px"></div></div><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--ink-muted);margin-top:4px"><span>Cheap</span><span>Fair</span><span>Rich</span></div><div style="text-align:center;margin-top:8px;font-size:12px;color:var(--ink-muted)"><b style="color:${color};text-transform:capitalize">${lvl || '—'}</b> · ATM IV ${atm}<div style="font-size:10px;font-style:italic;margin-top:2px">Single expiry — term structure needs 2+ dates.</div></div>`;
+        }
+      } catch (e) { if (wrap) wrap.style.display = 'none'; }
     }
 
     function renderIVPanel() {
@@ -1518,6 +1582,7 @@
         item('IV Level', ivLevel, 'Relative to recent history') +
         item('Contracts', state.r2Data?.gammaData?.analysis?.contracts_analyzed || '---', 'Options contracts analyzed') +
         expiryHtml;
+      drawDDIvChart();
     }
 
     function renderGammaAnalysis(ga, r2, spot) {
@@ -2182,12 +2247,13 @@
       // Compute metrics via shared legMath.js
       const nc = computeNetCredit();
       const ml = computeMaxLoss(nc);
+      const mp = computeMaxProfit(nc);       // real max profit from the payoff curve (not just net premium)
       const breakevens = computeBreakevens();
       const beStr = breakevens.length ? breakevens.map(b => '$' + b.toFixed(0)).join(' / ') : 'N/A';
       const perShare = nc;
       const perContract = nc * 100;
       const totalCredit = nc * 100 * state.qty;
-      const rr = typeof ml === 'number' && ml > 0 ? (Math.abs(totalCredit) / ml).toFixed(2) : 'N/A';
+      const rr = typeof ml === 'number' && ml > 0 && typeof mp === 'number' ? (mp / ml).toFixed(2) : 'N/A';
       // Estimate PoP from breakeven range vs spot
       const estimatedPop = breakevens.length >= 2
         ? Math.round(Math.min(95, Math.max(30, 100 * (breakevens[1] - breakevens[0]) / (state.spot * 0.4))))
@@ -2217,8 +2283,8 @@
         </div>`;
 
       $('#drill-metrics').innerHTML =
-        metric('Max Profit', (totalCredit >= 0 ? '+' : '') + '$' + Math.abs(totalCredit).toLocaleString('en-US', {maximumFractionDigits:0}),
-          `$${Math.abs(perShare).toFixed(2)}/share \u00d7 ${state.qty} contracts`, totalCredit >= 0 ? 'var(--green)' : 'var(--red)') +
+        metric('Max Profit', typeof mp === 'number' ? '+$' + mp.toLocaleString('en-US', {maximumFractionDigits:0}) : 'N/A',
+          `best case at expiration \u00b7 ${state.qty} contracts`, 'var(--green)') +
         metric('Max Loss', typeof ml === 'number' ? '-$' + ml.toLocaleString('en-US', {maximumFractionDigits:0}) : 'N/A',
           'defined risk', 'var(--red)') +
         metric('PoP', estimatedPop + '%', 'probability of profit', '') +
@@ -2370,6 +2436,7 @@
     // Delegated to shared/legMath.js
     function computeNetCredit() { return _computeNC(state.legs); }
     function computeMaxLoss(netCredit) { return _computeML(state.legs, state.qty, netCredit); }
+    function computeMaxProfit(netCredit) { return _computeMP(state.legs, state.qty, netCredit); }
     function computeBreakevens() { return _computeBE(state.legs, state.qty); }
 
     function updateQty(input) {
@@ -3459,7 +3526,7 @@
         var nc = computeNetCredit();
         var ml = computeMaxLoss(nc);
         var bk = computeBreakevens();
-        var maxProfit = Math.abs(nc * 100 * state.qty);
+        var maxProfit = computeMaxProfit(nc);   // payoff-based, not just net premium
         var rr = ml > 0 ? maxProfit / ml : 0;
         var dte = Math.round((new Date(state.selectedExpiry + 'T16:00:00').getTime() - Date.now()) / 86400000);
         var stratName = state.selectedStrategy?.strategy || state.selectedStrategy?.name || 'Unknown';
@@ -3676,9 +3743,9 @@
           legs: state.legs.map(l => ({ action: l.side === 'short' ? 'SELL' : 'BUY', type: l.type.toUpperCase(), strike: l.strike, premium: l.mid, delta: l.delta || 0 })),
           greeks: {},
           netCredit: nc,
-          maxProfit: Math.abs(nc * 100 * state.qty),
+          maxProfit: computeMaxProfit(nc),
           maxLoss: ml,
-          rewardRisk: ml > 0 ? Math.abs(nc * 100 * state.qty) / ml : 0,
+          rewardRisk: ml > 0 ? computeMaxProfit(nc) / ml : 0,
           pop: state.legs.length ? 50 + Math.round(nc * 10) : 0,
           breakevens: bk,
           gammaData: { put_wall: state.gexPutWall || state.putWall, call_wall: state.gexCallWall || state.callWall },
