@@ -1707,6 +1707,32 @@
           const chainJson = await chainRes.json();
           state.chainData = chainJson.strikes || [];
           const data = await recRes.json();
+          // ── Debug: surface WHY the engine did/didn't return a trade (e.g. BA NO_TRADE) ──
+          try {
+            const rec = data.recommendation || {};
+            const snap = data.engineSnapshot || {};
+            const trace = snap.gateTrace || [];
+            const stratCount = (rec.strategies || []).length;
+            const decision = trace.find(g => /deterministic_decision/i.test(g.gate || ''));
+            const knife = trace.find(g => /falling_knife/i.test(g.reason || '') || /falling_knife/i.test(g.flag || ''));
+            console.groupCollapsed(`[discover:recommend] ${state.ticker} → ${stratCount} strateg${stratCount === 1 ? 'y' : 'ies'}${stratCount ? '' : '  ⚠️ NO TRADE'}`);
+            console.log('ticker/expiry:', state.ticker, state.selectedExpiry, '| modelMode:', window.USER_MODEL_MODE || 'budget-qwq');
+            console.log('recommendation:', rec);
+            console.log('gateValues:', snap.gateValues);
+            // reactionFeatures = the shared S/R reaction gate result — holds the ACTUAL veto inputs
+            // (regime, bias, trendIntoZone, biasCategory, noTradeReason) that gateValues omits.
+            console.log('reactionFeatures (S/R gate — veto inputs):', data.reactionFeatures);
+            if (trace.length) console.table(trace.map(g => ({ gate: g.gate, passed: g.passed, reason: g.reason })));
+            if (decision) console.log('deterministic_decision:', decision.passed ? '✓' : '✗', decision.reason);
+            if (!stratCount) {
+              const rf = data.reactionFeatures || {};
+              console.warn('NO_TRADE reason →', knife?.reason || decision?.reason || '(no deterministic_decision in gateTrace)');
+              console.warn(`Reaction gate: regime=${rf.regime}, bias=${rf.bias}, trendIntoZone=${rf.trendIntoZone}, biasCategory=${rf.biasCategory}`);
+              console.warn('Falling-knife veto (shared/reaction/gate.cjs:83) fires on ANY trendIntoZone+no_trade — it does NOT check trend direction, so an uptrend-into-resistance is mislabeled "falling_knife" (see regime.cjs:81-83).');
+            }
+            console.log('raw response:', data);
+            console.groupEnd();
+          } catch (dbgErr) { console.warn('[discover:recommend] debug logging failed', dbgErr); }
           strategies = (data.recommendation?.strategies || []).map(s => {
             // Format legs for display and compute netCredit from chain
             const legsArr = s.legs || [];
@@ -2640,9 +2666,35 @@
       const sma20 = closes.length>=20?closes.slice(-20).reduce((x,y)=>x+y,0)/20:null;
       const sma50v = closes.length>=50?closes.slice(-50).reduce((x,y)=>x+y,0)/50:null;
       const sma200 = closes.length>=200?closes.slice(-200).reduce((x,y)=>x+y,0)/200:null;
-      const cross20_50 = sma20&&sma50v?(sma20>sma50v?'golden':'death'):null;
-      const cross50_200 = sma50v&&sma200?(sma50v>sma200?'golden':'death'):null;
-      const crossBadge = (label,status,short,long) => { const isG=status==='golden',bg=isG?'var(--green-bg)':'var(--red-bg)',color=isG?'var(--green)':'var(--red)'; return `<div style="background:${bg};border-radius:6px;padding:8px 12px"><div style="font-family:var(--mono),monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px">${label}</div><div style="font-size:14px;font-weight:700;color:${color}">${isG?'Golden Cross':'Death Cross'}</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Short ${short} vs Long ${long}</div></div>`; };
+      // Event-based crossover: only call it a Golden/Death Cross when the lines ACTUALLY
+      // crossed within the last N bars. Otherwise it's just a persistent state (short above/
+      // below long) and we show that without the bearish/bullish alarm styling — so a rising
+      // stock whose SMA20 sits just under SMA50 isn't mislabeled a "Death Cross".
+      const CROSS_LOOKBACK = 10;
+      const smaSeries = (arr, n) => arr.map((_, i) => i >= n - 1 ? arr.slice(i - n + 1, i + 1).reduce((x, y) => x + y, 0) / n : null);
+      const recentCross = (shortA, longA) => {
+        const n = shortA.length;
+        for (let i = n - 1; i > 0; i--) {
+          const a = shortA[i], b = longA[i], pa = shortA[i - 1], pb = longA[i - 1];
+          if (a == null || b == null || pa == null || pb == null) continue;
+          const now = a - b, prev = pa - pb;
+          if (prev <= 0 && now > 0) return (n - 1 - i) <= CROSS_LOOKBACK ? 'golden' : null;
+          if (prev >= 0 && now < 0) return (n - 1 - i) <= CROSS_LOOKBACK ? 'death' : null;
+        }
+        return null;
+      };
+      const sma20arr = closes.length >= 20 ? smaSeries(closes, 20) : [];
+      const sma50arr = closes.length >= 50 ? smaSeries(closes, 50) : [];
+      const sma200arr = closes.length >= 200 ? smaSeries(closes, 200) : [];
+      const cross20_50 = (sma20 && sma50v) ? { evt: recentCross(sma20arr, sma50arr), above: sma20 > sma50v } : null;
+      const cross50_200 = (sma50v && sma200) ? { evt: recentCross(sma50arr, sma200arr), above: sma50v > sma200 } : null;
+      const crossBadge = (label, info, shortName, longName, short, long) => {
+        if (info.evt) {
+          const isG = info.evt === 'golden', bg = isG ? 'var(--green-bg)' : 'var(--red-bg)', color = isG ? 'var(--green)' : 'var(--red)';
+          return `<div style="background:${bg};border-radius:6px;padding:8px 12px"><div style="font-family:var(--mono),monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px">${label}</div><div style="font-size:14px;font-weight:700;color:${color}">${isG ? 'Golden Cross' : 'Death Cross'} <span style="font-weight:500;font-size:10px">· last ${CROSS_LOOKBACK} bars</span></div><div style="font-size:10px;color:var(--muted);margin-top:2px">Short ${short} vs Long ${long}</div></div>`;
+        }
+        return `<div style="background:rgba(0,0,0,.04);border-radius:6px;padding:8px 12px"><div style="font-family:var(--mono),monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px">${label}</div><div style="font-size:14px;font-weight:700;color:var(--ink,#0B0F14)">${shortName} ${info.above ? 'above' : 'below'} ${longName}</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Short ${short} vs Long ${long} · no recent cross</div></div>`;
+      };
 
       bodyEl.innerHTML = `
         <div class="ip-tabs">
@@ -2686,7 +2738,7 @@
             <div class="ip-grid cols-4"><div class="ip-cell"><span class="ip-cell-lbl">SMA 50</span><span class="ip-cell-val ${t.aboveSMA50?'green':'red'}">$${t.sma50?.toFixed(2)||'--'}</span><span class="ip-cell-sub">${t.aboveSMA50?'Above':'Below'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">SMA 100</span><span class="ip-cell-val ${t.aboveSMA100?'green':'red'}">$${t.sma100?.toFixed(2)||'--'}</span><span class="ip-cell-sub">${t.aboveSMA100?'Above':'Below'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Realized Vol 30d</span><span class="ip-cell-val">${t.realizedVol30d!=null?(t.realizedVol30d*100).toFixed(1)+'%':'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">ATR %</span><span class="ip-cell-val">${t.atrPct!=null?(t.atrPct*100).toFixed(2)+'%':'--'}</span></div></div></div>
           <div class="ip-section"><div class="ip-section-title">Support & Resistance</div>
             <div class="ip-grid cols-2"><div class="ip-cell"><span class="ip-cell-lbl">Support 1</span><span class="ip-cell-val green">$${sr.support1?.toFixed(2)||'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Resistance 1</span><span class="ip-cell-val red">$${sr.resistance1?.toFixed(2)||'--'}</span></div></div></div>
-          ${cross20_50||cross50_200?`<div class="ip-section"><div class="ip-section-title">Crossover Status</div><div class="ip-grid cols-2">${cross20_50?crossBadge('SMA 20/50',cross20_50,'$'+sma20.toFixed(2),'$'+sma50v.toFixed(2)):''}${cross50_200?crossBadge('SMA 50/200',cross50_200,'$'+sma50v.toFixed(2),'$'+sma200.toFixed(2)):''}</div></div>`:''}`}
+          ${cross20_50||cross50_200?`<div class="ip-section"><div class="ip-section-title">Crossover Status</div><div class="ip-grid cols-2">${cross20_50?crossBadge('SMA 20/50',cross20_50,'SMA20','SMA50','$'+sma20.toFixed(2),'$'+sma50v.toFixed(2)):''}${cross50_200?crossBadge('SMA 50/200',cross50_200,'SMA50','SMA200','$'+sma50v.toFixed(2),'$'+sma200.toFixed(2)):''}</div></div>`:''}`}
         </div>
         <div class="ip-tab-content" id="atRsi"><div class="ip-section-desc" style="margin-bottom:12px">RSI measures momentum 0-100. Above 70 = overbought, below 30 = oversold.</div><canvas id="techChartRSI_MR" style="width:100%;height:280px;display:block"></canvas></div>
         <div class="ip-tab-content" id="atIvterm"><div class="ip-section-desc" style="margin-bottom:12px">ATM implied volatility across expiries. Downward slope = backwardation (near-term stress / event risk); upward = normal/contango.</div><canvas id="techChartIVTerm_MR" style="width:100%;height:280px;display:block"></canvas></div>
