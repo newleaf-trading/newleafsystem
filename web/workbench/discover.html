@@ -592,16 +592,16 @@
 
         <!-- Deep-dive analysis row -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px" id="deep-dive-row" class="hidden">
-          <div class="panel" style="padding:14px;cursor:pointer;transition:box-shadow 0.2s" onclick="openDeepDive('gamma')" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600;margin-bottom:4px">Gamma Walls</div>
+          <div class="panel" id="dd-card-gamma" style="padding:14px;cursor:pointer;transition:box-shadow 0.2s;border-left:3px solid transparent" onclick="openDeepDive('gamma')" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600">Gamma Walls</div><span id="dd-verdict-gamma"></span></div>
             <div style="font-size:12px;color:var(--ink-muted)">GEX by strike, OI breakdown, top gamma strikes</div>
           </div>
-          <div class="panel" style="padding:14px;cursor:pointer;transition:box-shadow 0.2s" onclick="openDeepDive('technical')" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600;margin-bottom:4px">Technical</div>
+          <div class="panel" id="dd-card-technical" style="padding:14px;cursor:pointer;transition:box-shadow 0.2s;border-left:3px solid transparent" onclick="openDeepDive('technical')" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600">Technical</div><span id="dd-verdict-technical"></span></div>
             <div style="font-size:12px;color:var(--ink-muted)">RSI, MACD, Bollinger Bands, SMA trend</div>
           </div>
-          <div class="panel" style="padding:14px;cursor:pointer;transition:box-shadow 0.2s" onclick="openDeepDive('iv')" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600;margin-bottom:4px">IV &amp; Skew</div>
+          <div class="panel" id="dd-card-iv" style="padding:14px;cursor:pointer;transition:box-shadow 0.2s;border-left:3px solid transparent" onclick="openDeepDive('iv')" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600">IV &amp; Skew</div><span id="dd-verdict-iv"></span></div>
             <div style="font-size:12px;color:var(--ink-muted)">ATM IV, IV level, term structure</div>
           </div>
         </div>
@@ -1386,8 +1386,71 @@
         $('#conf-sub-bars').innerHTML = bar(state.oiConf, 'Open Interest') + bar(state.volConf, 'Volume') + bar(state.deltaConf, 'Delta');
         show($('#gamma-confidence-panel'));
       }
-      // Show deep-dive row
+      // Show deep-dive row + tint each card with its at-a-glance verdict
       show($('#deep-dive-row'));
+      renderDeepDiveVerdicts();
+    }
+
+    // ── Snapshot card verdicts: tint each deep-dive card so the user gets an at-a-glance read.
+    //    light green = bullish, light pink = bearish, light yellow = neutral.
+    //    Technical + Gamma are directional; IV & Skew shows premium richness (no bull/bear at
+    //    snapshot — no skew data), so it's green=cheap / yellow=fair / amber=rich.
+    const DD_TONES = {
+      bull:    { bg: '#e9f5ee', border: '#2d7d4f', text: '#256b45', label: 'Bullish' },
+      bear:    { bg: '#fdecec', border: '#c0392b', text: '#a5342a', label: 'Bearish' },
+      neutral: { bg: '#fbf4dd', border: '#c99a2e', text: '#8a6d1e', label: 'Neutral' },
+      cheap:   { bg: '#e9f5ee', border: '#2d7d4f', text: '#256b45', label: 'Cheap' },
+      fair:    { bg: '#fbf4dd', border: '#c99a2e', text: '#8a6d1e', label: 'Fair' },
+      rich:    { bg: '#f7edd6', border: '#b07f2e', text: '#8a6320', label: 'Rich' },
+    };
+
+    function ddTechnicalVerdict() {
+      const tr = String(state.trend || '').toLowerCase();
+      let s = 0;
+      if (/bull|up/.test(tr)) s++; else if (/bear|down/.test(tr)) s--;
+      if (typeof state.rsi === 'number') { if (state.rsi >= 55) s++; else if (state.rsi <= 45) s--; }
+      const detail = `trend ${state.trend || '?'}, RSI ${state.rsi != null ? state.rsi.toFixed(0) : '?'}`;
+      if (s > 0) return { tone: 'bull', title: detail };
+      if (s < 0) return { tone: 'bear', title: detail };
+      return { tone: 'neutral', title: detail };
+    }
+
+    function ddGammaVerdict() {
+      const ts = (state.r2Data && state.r2Data.gammaData && state.r2Data.gammaData.analysis && state.r2Data.gammaData.analysis.topStrikes) || [];
+      if (!ts.length) return null;
+      let call = 0, put = 0;
+      for (const s of ts) { call += Math.abs(s.callGex || 0); put += Math.abs(s.putGex || 0); }
+      const tot = call + put;
+      if (tot <= 0) return { tone: 'neutral', title: 'No GEX data' };
+      const ratio = (call - put) / tot;
+      const nums = `call GEX ${(call / 1e6).toFixed(1)}M vs put GEX ${(put / 1e6).toFixed(1)}M`;
+      if (ratio > 0.15) return { tone: 'bull', title: 'call-dominant · ' + nums };
+      if (ratio < -0.15) return { tone: 'bear', title: 'put-dominant · ' + nums };
+      return { tone: 'neutral', title: 'balanced · ' + nums };
+    }
+
+    function ddIvVerdict() {
+      const lvl = String((state.r2Data && state.r2Data.gammaData && state.r2Data.gammaData.ivData && state.r2Data.gammaData.ivData.ivLevel) || '').toLowerCase();
+      const atm = state.atmIv != null ? state.atmIv.toFixed(1) + '%' : '';
+      if (lvl === 'high') return { tone: 'rich', title: `IV ${atm} — expensive, good for sellers` };
+      if (lvl === 'low') return { tone: 'cheap', title: `IV ${atm} — cheap, good for buyers` };
+      if (lvl) return { tone: 'fair', title: `IV ${atm} — fairly priced` };
+      return null;
+    }
+
+    function setDDVerdict(cardEl, spanEl, v) {
+      if (!cardEl || !spanEl) return;
+      if (!v) { cardEl.style.background = ''; cardEl.style.borderLeftColor = 'transparent'; spanEl.innerHTML = ''; return; }
+      const t = DD_TONES[v.tone] || DD_TONES.neutral;
+      cardEl.style.background = t.bg;
+      cardEl.style.borderLeftColor = t.border;
+      spanEl.innerHTML = `<span title="${(v.title || '').replace(/"/g, '&quot;')}" style="font-size:10px;font-weight:700;letter-spacing:.03em;color:${t.text};white-space:nowrap">${t.label}</span>`;
+    }
+
+    function renderDeepDiveVerdicts() {
+      setDDVerdict($('#dd-card-technical'), $('#dd-verdict-technical'), ddTechnicalVerdict());
+      setDDVerdict($('#dd-card-gamma'), $('#dd-verdict-gamma'), ddGammaVerdict());
+      setDDVerdict($('#dd-card-iv'), $('#dd-verdict-iv'), ddIvVerdict());
     }
 
     function openDeepDive(type) {
