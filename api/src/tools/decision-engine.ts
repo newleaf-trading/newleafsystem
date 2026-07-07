@@ -35,7 +35,8 @@ export interface DecisionContext {
   missingInputs: number;       // count of {IV/RV, reliable gamma, liquidity} missing
   legsBuilt: boolean;          // deterministic legs constructed (>=2)
   // reaction gate (Step 2)
-  reactionVeto?: boolean;        // falling knife — trend into a zone → NO_TRADE
+  reactionVeto?: boolean;        // trend into a zone → NO_TRADE (falling knife OR melt-up into resistance)
+  reactionFlag?: string | null;  // direction-aware veto flag: 'falling_knife' | 'melt_up_into_resistance'
   reactionApproaching?: boolean; // promoted to a directional rail but price isn't testing it yet → cap WATCHLIST
   reactionNote?: string | null;  // human-readable reaction reason
   // rationale context
@@ -186,7 +187,7 @@ export function buildDecision(ctx: DecisionContext): DecisionResult {
 
   // Hard fails first.
   if (!ctx.legsBuilt) return noTrade('NO_TRADE', ['legs_not_constructible']);
-  if (ctx.reactionVeto) return noTrade('NO_TRADE', ['falling_knife']);  // trend into a zone — don't sell premium
+  if (ctx.reactionVeto) return noTrade('NO_TRADE', [ctx.reactionFlag || 'falling_knife']);  // trend into a zone — don't sell premium
   if (ctx.missingInputs >= 2 && regime === 'No-trade / wait') return noTrade('DATA_ERROR', ['insufficient_data']);
   if (regime === 'No-trade / wait') return noTrade('NO_TRADE');
 

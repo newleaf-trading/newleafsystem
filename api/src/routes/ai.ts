@@ -117,6 +117,7 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
     let effDirection: 'bullish' | 'bearish' | 'neutral' = direction as any;
     let reactionGate: ReactionGate | null = null;
     let reactionNote: string | null = null;
+    let reactionFlag: string | null = null;
     let reactionChanged = false;
     let reactionVeto = false;
     let reactionApproaching = false;
@@ -137,7 +138,8 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
         reactionNote = act.note;
         if (act.veto) {
           reactionVeto = true;
-          console.log(`[Recommend] Reaction VETO (${tk}): ${act.note}`);
+          reactionFlag = act.flag || null;
+          console.log(`[Recommend] Reaction VETO (${tk}) [${act.flag}]: ${act.note}`);
         } else if (act.strategy) {
           reactionChanged = true;
           effStrategy = act.strategy;
@@ -236,7 +238,7 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
       legsBuilt: detLegs.length >= 2,
       putWall: pwall, callWall: cwall,
       gammaConfidencePct: Math.round(conf * 100), bandWidthPct: bw,
-      reactionVeto, reactionApproaching, reactionNote,
+      reactionVeto, reactionApproaching, reactionNote, reactionFlag,
     });
     const detNoTrade = det.decision === 'NO_TRADE' || det.decision === 'DATA_ERROR';
     if (reactionChanged && !detNoTrade) det.dataFlags.push('reaction_promoted');

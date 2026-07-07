@@ -35,7 +35,7 @@ function computeReactionGate(input) {
   if (nearS && nearR && nearS.zone.hi < nearR.zone.lo) containment = computeContainment(candles, nearS.zone, nearR.zone, 45);
 
   // CRITICAL: pass { candles } so trendDirection (→ trendIntoZone falling-knife flag) is computed.
-  const { regime, confidence, trendIntoZone } = classifyRegime(spot, nearS, nearR, containment, adx, atrPct || 0.02, { candles });
+  const { regime, confidence, trendIntoZone, trendIntoZoneSide } = classifyRegime(spot, nearS, nearR, containment, adx, atrPct || 0.02, { candles });
 
   const bandCentre = nearS && nearR && nearS.zone.hi < nearR.zone.lo ? (nearS.zone.hi + nearR.zone.lo) / 2 : null;
   const biasResult = mapBias({
@@ -52,7 +52,7 @@ function computeReactionGate(input) {
   const rail = z => (z && !z.untested) ? { level: (z.zone.hi + z.zone.lo) / 2, score: z.score, rate: z.smoothedRate, tested: true } : null;
 
   return {
-    regime, regimeConfidence: confidence, trendIntoZone: !!trendIntoZone,
+    regime, regimeConfidence: confidence, trendIntoZone: !!trendIntoZone, trendIntoZoneSide: trendIntoZoneSide || null,
     bias: biasResult.bias, biasCategory: biasResult.category, posInRange: biasResult.posInRange,
     noTradeReason: biasResult.noTradeReason || null,
     support: rail(nearS), resistance: rail(nearR),
@@ -79,9 +79,18 @@ const PROMOTABLE = {
 function applyReactionGate(gammaStrategyCode, gate) {
   if (!gate) return null;
 
-  // Falling-knife veto applies to ANY premium-selling pick (mapBias returns no_trade + trendIntoZone).
+  // Trend-into-zone veto applies to ANY premium-selling pick (mapBias returns no_trade + trendIntoZone).
+  // The flag is DIRECTION-AWARE: a downtrend into support is a falling knife; an uptrend into
+  // resistance is a melt-up / breakout risk — labelling the latter "falling_knife" is wrong.
   if (gate.trendIntoZone && gate.bias === 'no_trade') {
-    return { veto: true, flag: 'falling_knife', note: gate.noTradeReason || `falling-knife risk — trend into zone (${gate.regime})` };
+    const intoResistance = gate.trendIntoZoneSide === 'resistance';
+    return {
+      veto: true,
+      flag: intoResistance ? 'melt_up_into_resistance' : 'falling_knife',
+      note: gate.noTradeReason || (intoResistance
+        ? `melt-up / breakout risk — uptrend into resistance (${gate.regime})`
+        : `falling-knife risk — downtrend into support (${gate.regime})`),
+    };
   }
 
   // Only re-route NEUTRAL gamma picks; never flip an already-directional engine pick.

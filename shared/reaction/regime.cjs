@@ -60,6 +60,7 @@ function classifyRegime(spot, nearestSupport, nearestResistance, containment, ad
   const scoreable = (z) => z && !z.untested;
   const tDir = opts?.candles ? trendDirection(opts.candles) : 'flat';
   let trendIntoZone = false;
+  let trendIntoZoneSide = null; // 'support' (downtrend→falling knife) | 'resistance' (uptrend→melt-up/breakout)
 
   // ── 1. Breakout/breakdown: spot beyond a scoreable zone ──
   if (scoreable(nearestResistance) && spot > nearestResistance.zone.touchHi) {
@@ -76,16 +77,16 @@ function classifyRegime(spot, nearestSupport, nearestResistance, containment, ad
     // Check if trending INTO a nearby zone (falling-knife / breakout-risk)
     if (tDir === 'down' && scoreable(nearestSupport)) {
       const distToS = spot - nearestSupport.zone.lo; // distance to zone lo (can be negative if inside/below)
-      if (distToS < 1.5 * atrDist && distToS > -0.5 * atrDist) trendIntoZone = true; // downtrend into/near support
+      if (distToS < 1.5 * atrDist && distToS > -0.5 * atrDist) { trendIntoZone = true; trendIntoZoneSide = 'support'; } // downtrend into/near support → falling knife
     }
     if (tDir === 'up' && scoreable(nearestResistance)) {
       const distToR = nearestResistance.zone.hi - spot;
-      if (distToR < 1.5 * atrDist && distToR > -0.5 * atrDist) trendIntoZone = true; // uptrend into/near resistance
+      if (distToR < 1.5 * atrDist && distToR > -0.5 * atrDist) { trendIntoZone = true; trendIntoZoneSide = 'resistance'; } // uptrend into/near resistance → melt-up/breakout, NOT a falling knife
     }
     return {
       regime: 'trending',
       confidence: Math.round(Math.min(80, 40 + ((adx || 25) - 25) * 2)),
-      trendIntoZone,
+      trendIntoZone, trendIntoZoneSide,
     };
   }
 
