@@ -1137,7 +1137,24 @@
       if (!ticker) return;
 
       // Snapshot is free — no rate limit check here (metering on verify/recommend only)
-      if (state.ticker !== ticker) { state._techData = undefined; state._ivByExpiry = undefined; } // drop cached chart data for the old ticker
+      // New ticker → wipe EVERYTHING derived from the previous one so no stale data
+      // (strategies, drill-in, verify, verdict, charts, gamma cards) can linger on screen.
+      if (state.ticker !== ticker) {
+        state._techData = undefined; state._ivByExpiry = undefined; state._reportIv = undefined;
+        state.strategies = []; state.selectedStrategy = null; state.selectedStrategyIndex = -1;
+        state.legs = []; state.chainData = []; state.qty = 10;
+        state.verdict = null; state.mutations = []; state.debate = null; state.debateRounds = [];
+        state.evidence = {}; state.riskReport = {}; state.verifyData = null;
+        state.enginePick = null; state.r2Data = null; state.gammaData = null; state.selectedExpiry = '';
+        state.confScore = null; state.oiConf = null; state.volConf = null; state.deltaConf = null;
+        state.gexPutWall = null; state.gexCallWall = null; state.atmIv = null;
+        // Clear rendered panels so a forward-nav can never flash previous-ticker content.
+        ['#strategy-cards', '#drill-metrics', '#technical-content', '#iv-content'].forEach(function (id) { var el = document.querySelector(id); if (el) el.innerHTML = ''; });
+        ['#technical-deep-dive', '#iv-deep-dive', '#gamma-deep-dive', '#deep-dive-row', '#gamma-confidence-panel'].forEach(function (id) { var el = document.querySelector(id); if (el) el.classList.add('hidden'); });
+        var findBtn = document.getElementById('find-strategies-btn'); if (findBtn) findBtn.disabled = true;
+        // Return to the snapshot step and lock stages 2–6 until the new ticker is re-run.
+        maxStage = 1; currentStage = 1; goToStage(1, true);
+      }
       state.ticker = ticker;
       const btn = $('#load-btn');
       btn.textContent = '...'; btn.disabled = true;
@@ -1381,7 +1398,9 @@
       $('#gex-put-wall').textContent = state.gexPutWall ? `$${state.gexPutWall}` : (state.putWall ? `$${state.putWall}` : '---');
       $('#gex-call-wall').textContent = state.gexCallWall ? `$${state.gexCallWall}` : (state.callWall ? `$${state.callWall}` : '---');
       // ATM IV
-      if (state.atmIv) $('#stat-iv').textContent = state.atmIv.toFixed(1) + '%';
+      // ATM IV tile is filled from the trustworthy R2 report once it loads (renderDeepDiveVerdicts);
+      // show a pending dash rather than the unreliable gamma-analysis value.
+      $('#stat-iv').textContent = '--';
       // Confidence
       if (state.confScore != null) {
         const pct = Math.round(state.confScore * 100);
@@ -1439,9 +1458,20 @@
       return { tone: 'neutral', title: 'balanced · ' + nums };
     }
 
+    // Trustworthy IV data = the R2 nightly report (state._reportIv). The live gamma-analysis
+    // ivData is on a broken scale (e.g. SHOP shows 1.6% when real ATM IV is 66%), so we DON'T
+    // fall back to it — a ticker with no report IV honestly shows "unavailable".
+    function bestIvData() {
+      const rep = state._reportIv;
+      if (rep && typeof rep.atmIv === 'number') return rep;
+      return null;
+    }
+
     function ddIvVerdict() {
-      const lvl = String((state.r2Data && state.r2Data.gammaData && state.r2Data.gammaData.ivData && state.r2Data.gammaData.ivData.ivLevel) || '').toLowerCase();
-      const atm = state.atmIv != null ? state.atmIv.toFixed(1) + '%' : '';
+      const iv = bestIvData();
+      if (!iv) return null; // no trustworthy IV data → no tint
+      const lvl = String(iv.ivLevel || '').toLowerCase();
+      const atm = iv.atmIv != null ? iv.atmIv.toFixed(1) + '%' : '';
       if (lvl === 'high') return { tone: 'rich', title: `IV ${atm} — expensive, good for sellers` };
       if (lvl === 'low') return { tone: 'cheap', title: `IV ${atm} — cheap, good for buyers` };
       if (lvl) return { tone: 'fair', title: `IV ${atm} — fairly priced` };
@@ -1461,6 +1491,15 @@
       setDDVerdict($('#dd-card-technical'), $('#dd-verdict-technical'), ddTechnicalVerdict());
       setDDVerdict($('#dd-card-gamma'), $('#dd-verdict-gamma'), ddGammaVerdict());
       setDDVerdict($('#dd-card-iv'), $('#dd-verdict-iv'), ddIvVerdict());
+      // The trustworthy IV numbers come from the R2 report (loaded async). Once it's in,
+      // re-tint the IV card and correct the ATM IV tile so they agree with the term chart.
+      const tickerAtLoad = state.ticker;
+      loadDeskTechData().then(() => {
+        if (state.ticker !== tickerAtLoad) return; // ticker changed mid-flight — drop stale update
+        setDDVerdict($('#dd-card-iv'), $('#dd-verdict-iv'), ddIvVerdict());
+        const iv = bestIvData();
+        const el = $('#stat-iv'); if (el) el.textContent = (iv && typeof iv.atmIv === 'number') ? iv.atmIv.toFixed(1) + '%' : '--';
+      }).catch(() => {});
     }
 
     function openDeepDive(type) {
@@ -1549,10 +1588,15 @@
           const vals = entries.map(([, v]) => v);
           drawLineChartMR('ddIvChart', { labels, series: [{ data: vals, color: '#0B2D23', width: 2, label: 'ATM IV' }], yFmt: v => v.toFixed(0) + '%' });
         } else {
-          // Fallback gauge from the categorical IV level
+          // Fallback: single-expiry gauge, or an honest "unavailable" when there's no report IV.
           if (canvas) canvas.style.display = 'none';
+          const iv = bestIvData();
+          if (!iv) {
+            if (title) title.textContent = 'IV & skew';
+            if (gauge) gauge.innerHTML = `<div style="text-align:center;padding:6px 0;font-size:12px;color:var(--ink-muted);font-style:italic">IV data unavailable for this ticker.</div>`;
+            return;
+          }
           if (title) title.textContent = 'IV level — where premium sits';
-          const iv = (state.r2Data && state.r2Data.gammaData && state.r2Data.gammaData.ivData) || {};
           const lvl = String(iv.ivLevel || '').toLowerCase();
           const atm = iv.atmIv != null ? iv.atmIv.toFixed(1) + '%' : '--';
           const pos = lvl === 'high' ? 83 : lvl === 'low' ? 17 : 50;
@@ -1562,13 +1606,23 @@
       } catch (e) { if (wrap) wrap.style.display = 'none'; }
     }
 
-    function renderIVPanel() {
-      const iv = state.r2Data?.gammaData?.ivData || {};
+    async function renderIVPanel() {
+      await loadDeskTechData(); // ensure the trustworthy R2 report IV is loaded before rendering tiles
       const item = (lbl, val, desc) => `<div style="background:var(--cream);border-radius:8px;padding:10px 12px">
         <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-muted);font-weight:600">${lbl}</div>
         <div style="font-size:18px;font-weight:700;font-family:var(--mono);margin:4px 0">${val}</div>
         <div style="font-size:11px;color:var(--ink-muted);font-style:italic">${desc}</div>
       </div>`;
+      const contracts = state.r2Data?.gammaData?.analysis?.contracts_analyzed || '---';
+      const iv = bestIvData();
+      if (!iv) {
+        $('#iv-content').innerHTML =
+          item('ATM IV', '--', 'IV data unavailable for this ticker') +
+          item('IV Level', '--', 'No report IV available') +
+          item('Contracts', contracts, 'Options contracts analyzed');
+        drawDDIvChart();
+        return;
+      }
       const atmIv = iv.atmIv;
       const ivLevel = iv.ivLevel || '---';
       const ivDesc = ivLevel === 'high' ? 'Options are expensive — good for sellers' : ivLevel === 'low' ? 'Options are cheap — good for buyers' : 'Options are fairly priced';
@@ -1578,9 +1632,9 @@
       ).join('');
 
       $('#iv-content').innerHTML =
-        item('ATM IV', atmIv ? atmIv.toFixed(1) + '%' : '---', ivDesc) +
+        item('ATM IV', atmIv != null ? atmIv.toFixed(1) + '%' : '--', ivDesc) +
         item('IV Level', ivLevel, 'Relative to recent history') +
-        item('Contracts', state.r2Data?.gammaData?.analysis?.contracts_analyzed || '---', 'Options contracts analyzed') +
+        item('Contracts', contracts, 'Options contracts analyzed') +
         expiryHtml;
       drawDDIvChart();
     }
@@ -2809,7 +2863,7 @@
       let t = null;
       try {
         const r = await fetch(`${R2_BASE}/reports/${state.ticker}/latest.json`);
-        if (r.ok) { const j = await r.json(); t = j.technicalData || null; state._ivByExpiry = j.gammaData?.ivData?.ivByExpiry || null; }
+        if (r.ok) { const j = await r.json(); t = j.technicalData || null; state._ivByExpiry = j.gammaData?.ivData?.ivByExpiry || null; state._reportIv = j.gammaData?.ivData || null; }
       } catch (e) { console.warn('tech report fetch failed', e); }
       state._techData = t;
       return t;
