@@ -151,18 +151,42 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
     } catch (e: any) { console.warn(`[Recommend] reaction gate failed for ${tk}: ${e.message}`); }
 
     // Deterministic leg construction — replaces LLM strike picking
-    const builtLegsResult = buildLegs({
+    const gammaWallsForLegs = {
+      putWall: gammaData.analysis.put_wall ?? null,
+      callWall: gammaData.analysis.call_wall ?? null,
+    };
+    let builtLegsResult = buildLegs({
       strategy: effStrategy,
       contracts: enrichedContracts,
       spot: snapshot.price,
-      gammaWalls: {
-        putWall: gammaData.analysis.put_wall ?? null,
-        callWall: gammaData.analysis.call_wall ?? null,
-      },
+      gammaWalls: gammaWallsForLegs,
       direction: effDirection,
       dte,
       bwbStrikes: strategy.strikes,
     });
+
+    // Fallback: if the reaction overlay re-routed the pick (e.g. iron_condor → bull_call_spread)
+    // but that strategy can't be constructed for this chain, DON'T throw the whole trade away —
+    // fall back to the original gamma pick, which already passed its gates. Otherwise a valid
+    // structure is discarded and the user sees a misleading "can't build" NO_TRADE.
+    if (reactionChanged && builtLegsResult.legs.length < 2 && effStrategy !== strategy.code) {
+      console.log(`[Recommend] Reaction re-route ${effStrategy} failed to build for ${tk} — falling back to gamma pick ${strategy.code}`);
+      effStrategy = strategy.code;
+      effDirection = direction as any;
+      reactionChanged = false;
+      reactionApproaching = false;
+      reactionNote = null;
+      builtLegsResult = buildLegs({
+        strategy: effStrategy,
+        contracts: enrichedContracts,
+        spot: snapshot.price,
+        gammaWalls: gammaWallsForLegs,
+        direction: effDirection,
+        dte,
+        bwbStrikes: strategy.strikes,
+      });
+    }
+
     if (builtLegsResult.meta.warnings.length) {
       console.log(`[Recommend] Leg builder warnings for ${tk}: ${builtLegsResult.meta.warnings.join('; ')}`);
     }
