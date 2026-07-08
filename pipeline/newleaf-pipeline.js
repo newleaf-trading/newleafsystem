@@ -162,6 +162,64 @@ function calcDTE(isoDate) {
   const now = new Date();        now.setHours(0,0,0,0);
   return Math.round((exp - now) / 86400000);
 }
+
+// ── Black-Scholes implied volatility (from mid price) ────────────────────────
+// The Alpaca `indicative` feed used intraday returns no greeks/IV, so we solve IV
+// ourselves from the option's mid price. No data subscription needed.
+const RISK_FREE = 0.045;
+function _normCdf(x) {
+  const t = 1 / (1 + 0.2316419 * Math.abs(x));
+  const d = 0.3989422804014327 * Math.exp(-x * x / 2);
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  return x >= 0 ? 1 - p : p;
+}
+function _bsPrice(S, K, T, sigma, isCall) {
+  if (T <= 0 || sigma <= 0) return Math.max(0, isCall ? S - K : K - S);
+  const sq = sigma * Math.sqrt(T);
+  const d1 = (Math.log(S / K) + (RISK_FREE + sigma * sigma / 2) * T) / sq;
+  const d2 = d1 - sq;
+  return isCall
+    ? S * _normCdf(d1) - K * Math.exp(-RISK_FREE * T) * _normCdf(d2)
+    : K * Math.exp(-RISK_FREE * T) * _normCdf(-d2) - S * _normCdf(-d1);
+}
+/** Newton-Raphson (vega) with a bisection fallback. Returns σ (decimal) or null. */
+function bsImpliedVol(price, S, K, T, isCall) {
+  if (!(price > 0) || !(S > 0) || !(K > 0) || !(T > 0)) return null;
+  const intrinsic = Math.max(0, isCall ? S - K : K - S);
+  if (price <= intrinsic + 1e-6) return null; // no time value → unsolvable
+  let sigma = 0.5;
+  for (let i = 0; i < 40; i++) {
+    const p = _bsPrice(S, K, T, sigma, isCall);
+    const sq = sigma * Math.sqrt(T);
+    const d1 = (Math.log(S / K) + (RISK_FREE + sigma * sigma / 2) * T) / sq;
+    const vega = S * 0.3989422804014327 * Math.exp(-d1 * d1 / 2) * Math.sqrt(T);
+    const diff = p - price;
+    if (Math.abs(diff) < 1e-4) return (sigma > 0.01 && sigma < 5) ? sigma : null;
+    if (vega < 1e-8) break;
+    sigma -= diff / vega;
+    if (!(sigma > 0) || sigma > 5 || !isFinite(sigma)) { sigma = 0.5; break; }
+  }
+  // Bisection fallback
+  let lo = 0.01, hi = 5;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    (_bsPrice(S, K, T, mid, isCall) > price) ? (hi = mid) : (lo = mid);
+  }
+  const out = (lo + hi) / 2;
+  return (out > 0.011 && out < 4.99) ? out : null;
+}
+/** Fill c.iv (decimal) from the mid price for contracts the feed left blank. Returns count filled. */
+function enrichImpliedVol(contracts, spot) {
+  let filled = 0;
+  for (const c of contracts) {
+    if (c.iv != null && c.iv > 0) continue;
+    const mid = (c.bid > 0 && c.ask > 0) ? (c.bid + c.ask) / 2 : null;
+    if (!mid || !c.dte || c.dte <= 0) continue;
+    const iv = bsImpliedVol(mid, spot, c.strike, c.dte / 365, c.type === 'call');
+    if (iv != null) { c.iv = iv; filled++; }
+  }
+  return filled;
+}
 const sleep  = ms => new Promise(r => setTimeout(r, ms));
 const jitter = (base=150) => base + Math.random()*150;
 
@@ -679,6 +737,10 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
         process.stdout.write('.');
         await sleep(jitter(200)); // brief pause between expiries
       }
+      // Indicative feed returns no greeks/IV — solve IV from the mid price so intraday
+      // runs produce a real ATM IV + term structure (not just the daily-preserved value).
+      const _ivFilled = enrichImpliedVol(allContracts, spot);
+      if (_ivFilled) log(C.dim(`Computed IV from mid for ${_ivFilled}/${allContracts.length} contracts`));
       process.stdout.write('\n');
       contractCount = allContracts.length;
       log(`Intraday: ${contractCount} contracts (Alpaca, no OI)`);
