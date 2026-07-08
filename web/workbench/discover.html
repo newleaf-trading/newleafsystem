@@ -1566,6 +1566,11 @@
         else if (rsi != null) caveat = ` RSI ${rsi.toFixed(0)} — momentum has room to run.`;
         sub = `${parts.join(', ')}.${caveat}`;
       }
+      // Volatility squeeze + earnings proximity — both are critical context the tiles omit.
+      const sq = state._techData && state._techData.volatilityEngine && state._techData.volatilityEngine.squeeze;
+      if (sq) sub += ' Bollinger squeeze active — a volatility breakout is pending.';
+      const ed = state.earningsDaysOut;
+      if (typeof ed === 'number' && ed > 0 && ed <= 21) sub += ` <b style="color:#a5342a">Earnings in ~${ed}d</b> — binary event risk inside the window.`;
       return regimeBannerHTML('Trend &amp; momentum', label, sub, tone);
     }
 
@@ -1583,16 +1588,30 @@
         else if (slope > 0.05) { shapeWord = 'contango'; shapeSub = ` The term structure is in contango — later expiries price higher IV, the normal calm-market shape; longer-dated premium is richer.`; }
         else { shapeWord = 'flat'; shapeSub = ` The term structure is flat — IV is similar across expiries.`; }
       }
-      const rich = lvl === 'high', cheap = lvl === 'low';
-      const premSub = rich ? `ATM IV ${atm}% is high — premium is rich, favoring net sellers (condors, spreads, BWB).`
-        : cheap ? `ATM IV ${atm}% is low — premium is cheap, favoring net buyers / debit structures (calendars, long verticals).`
-        : `ATM IV ${atm}% is around fair value.`;
-      const label = `IV ${rich ? 'rich' : cheap ? 'cheap' : 'fair'}${shapeWord ? ` · ${shapeWord}` : ''}`;
-      const tone = cheap ? 'green' : 'amber';
+      // Premium richness — prefer IV/RV (implied vs realized) over the absolute IV level, because
+      // "high IV" can still be CHEAP if the stock moves even more (IV/RV < 1). Fall back to the
+      // categorical level only when realized vol isn't available.
+      const rv = (state._techData && typeof state._techData.realizedVol30d === 'number') ? state._techData.realizedVol30d * 100 : null;
+      const ivrv = (rv && rv > 0) ? iv.atmIv / rv : null;
+      let premWord, tone, premSub;
+      if (ivrv != null) {
+        if (ivrv >= 1.15) { premWord = 'rich'; tone = 'amber'; premSub = `ATM IV ${atm}% vs realized ${rv.toFixed(0)}% → IV/RV ${ivrv.toFixed(2)}: options are expensive relative to how much the stock actually moves — favors net sellers (condors, spreads, BWB).`; }
+        else if (ivrv <= 0.95) { premWord = 'cheap'; tone = 'green'; premSub = `ATM IV ${atm}% vs realized ${rv.toFixed(0)}% → IV/RV ${ivrv.toFixed(2)}: options are cheap relative to actual movement — selling premium is under-compensated; favors buyers / debit structures.`; }
+        else { premWord = 'fair'; tone = 'amber'; premSub = `ATM IV ${atm}% vs realized ${rv.toFixed(0)}% → IV/RV ${ivrv.toFixed(2)}: premium is roughly fair versus actual movement.`; }
+      } else {
+        const rich = lvl === 'high', cheap = lvl === 'low';
+        premWord = rich ? 'rich' : cheap ? 'cheap' : 'fair'; tone = cheap ? 'green' : 'amber';
+        premSub = rich ? `ATM IV ${atm}% is high — premium is rich, favoring net sellers.`
+          : cheap ? `ATM IV ${atm}% is low — premium is cheap, favoring buyers / debit structures.`
+          : `ATM IV ${atm}% is around fair value.`;
+      }
+      const label = `IV ${premWord}${shapeWord ? ` · ${shapeWord}` : ''}`;
       return regimeBannerHTML('Volatility regime', label, `${premSub}${shapeSub}`, tone);
     }
 
-    function renderTechnicalPanel() {
+    async function renderTechnicalPanel() {
+      await loadDeskTechData(); // pull the R2 report (sr levels, bollinger bands, squeeze, realized vol)
+      const td = state._techData || {};
       const ind = state.indicators || {};
       const item = (lbl, val, desc) => `<div style="background:var(--cream);border-radius:8px;padding:10px 12px">
         <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-muted);font-weight:600">${lbl}</div>
@@ -1609,6 +1628,14 @@
       const trendDesc = trend === 'bullish' ? 'SMAs in bullish order (20>50>100>200)' : trend === 'bearish' ? 'SMAs in bearish order' : 'Mixed SMA alignment';
       const bbw = ind.bollingerWidth;
       const bbwDesc = bbw > 6 ? 'Wide bands — high recent volatility' : bbw < 3 ? 'Tight squeeze — breakout likely' : 'Normal volatility range';
+      // Bollinger %B — where price sits within the bands (data from the R2 report)
+      const bb = td.bb || {};
+      let pctB = null;
+      if (bb.upper != null && bb.lower != null && bb.upper > bb.lower && state.spot) pctB = (state.spot - bb.lower) / (bb.upper - bb.lower);
+      const pctBDesc = pctB == null ? 'Bollinger band position' : pctB >= 1 ? 'At/above upper band — stretched' : pctB <= 0 ? 'At/below lower band — stretched' : pctB >= 0.8 ? 'Near upper band' : pctB <= 0.2 ? 'Near lower band' : 'Mid-band';
+      // Support / Resistance pivot levels
+      const sr = td.sr || {};
+      const srVal = (sr.support1 != null ? '$' + Math.round(sr.support1) : '--') + ' / ' + (sr.resistance1 != null ? '$' + Math.round(sr.resistance1) : '--');
 
       $('#technical-content').innerHTML =
         item('RSI (14)', rsi ? rsi.toFixed(1) : '---', rsiDesc) +
@@ -1616,7 +1643,9 @@
         item('MACD Line', macd != null ? macd.toFixed(3) : '---', macdDesc) +
         item('MACD Signal', ind.macdSignal != null ? ind.macdSignal.toFixed(3) : '---', 'Signal line (9-period EMA of MACD)') +
         item('SMA Trend', trend, trendDesc) +
-        item('Bollinger Width', bbw != null ? bbw.toFixed(2) + '%' : '---', bbwDesc);
+        item('Bollinger Width', bbw != null ? bbw.toFixed(2) + '%' : '---', bbwDesc) +
+        item('Bollinger %B', pctB != null ? (pctB * 100).toFixed(0) + '%' : '--', pctBDesc) +
+        item('Support / Resistance', srVal, 'Pivot levels (S1 / R1)');
       const tb = $('#techRegimeBanner'); if (tb) tb.innerHTML = technicalRegimeHTML();
       drawDDTechChart();
     }
@@ -1702,6 +1731,17 @@
       const atmIv = iv.atmIv;
       const ivLevel = iv.ivLevel || '---';
       const ivDesc = ivLevel === 'high' ? 'Options are expensive — good for sellers' : ivLevel === 'low' ? 'Options are cheap — good for buyers' : 'Options are fairly priced';
+      // IV/RV — richness vs actual movement (the read that "IV level" alone misses)
+      const rv = (state._techData && typeof state._techData.realizedVol30d === 'number') ? state._techData.realizedVol30d * 100 : null;
+      const ivrv = (rv && rv > 0 && atmIv != null) ? atmIv / rv : null;
+      const ivrvDesc = ivrv == null ? 'realized vol n/a' : ivrv >= 1.15 ? 'Rich — IV above realized' : ivrv <= 0.95 ? 'Cheap — IV below realized' : 'Fair vs realized';
+      // Expected move (±1SD) for the selected expiry
+      let emHtml = '';
+      if (atmIv != null && state.spot && state.selectedExpiry) {
+        const dte = Math.max(1, Math.round((new Date(state.selectedExpiry + 'T16:00:00').getTime() - Date.now()) / 86400000));
+        const em = state.spot * (atmIv / 100) * Math.sqrt(dte / 365);
+        emHtml = item('Expected move', '±$' + em.toFixed(1), `1SD by ${state.selectedExpiry} (${dte}d)`);
+      }
       const expiries = iv.ivByExpiry || {};
       const expiryHtml = Object.entries(expiries).slice(0, 3).map(([date, val]) =>
         item(date, val.toFixed(1) + '%', 'IV for this expiry')
@@ -1709,6 +1749,8 @@
 
       $('#iv-content').innerHTML =
         item('ATM IV', atmIv != null ? atmIv.toFixed(1) + '%' : '--', ivDesc) +
+        item('IV / RV', ivrv != null ? ivrv.toFixed(2) : '--', ivrvDesc) +
+        emHtml +
         item('IV Level', ivLevel, 'Relative to recent history') +
         item('Contracts', contracts, 'Options contracts analyzed') +
         expiryHtml;
@@ -1751,12 +1793,20 @@
         sub = `Spot $${spot.toFixed(0)} is below the gamma flip ($${flip.toFixed(0)}). Dealers sell dips / buy rips → volatility is amplified, expect stronger trends and momentum. Favors directional/momentum setups; keep stops tight.`;
         bg = '#fdecec'; border = '#c0392b'; color = '#a5342a';
       }
+      // Key levels strip: walls + flip with signed distance from spot.
+      const pw = analysis && analysis.put_wall, cw = analysis && analysis.call_wall;
+      const fmtPct = lvl => { const p = (lvl - spot) / spot * 100; return (p >= 0 ? '+' : '') + p.toFixed(1) + '%'; };
+      let levels = '';
+      if (pw != null && cw != null) {
+        levels = `<div style="font-size:11px;color:var(--ink-muted,#6b6b60);margin-top:6px">Put wall <b style="color:var(--ink,#0B0F14)">$${pw}</b> (${fmtPct(pw)}) · Gamma flip <b style="color:var(--ink,#0B0F14)">$${flip.toFixed(0)}</b> (${fmtPct(flip)}) · Call wall <b style="color:var(--ink,#0B0F14)">$${cw}</b> (${fmtPct(cw)})</div>`;
+      }
       return `<div style="margin:0 0 14px;padding:10px 14px;background:${bg};border:1px solid ${border};border-left:3px solid ${border};border-radius:8px">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-muted,#6b6b60)">Net gamma regime</span>
           <span style="font-size:13px;font-weight:800;color:${color}">${label}</span>
         </div>
         <div style="font-size:11.5px;color:var(--ink,#0B0F14);line-height:1.5;margin-top:4px">${sub}</div>
+        ${levels}
       </div>`;
     }
 
