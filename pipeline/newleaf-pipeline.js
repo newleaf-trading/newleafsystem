@@ -978,7 +978,14 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
       try {
         const daily = JSON.parse(fs.readFileSync(dailyPath, 'utf8'));
         if (daily.gammaData && daily.meta?.dataSource?.openInterest !== 'none') {
+          const computedIv = report.gammaData && report.gammaData.ivData; // BS-computed IV from this intraday run
           report.gammaData = daily.gammaData;
+          // The daily OI snapshot has no IV of its own — don't let it clobber the IV we just
+          // computed from mid price. Keep the fresh IV whenever the daily copy lacks it.
+          if (computedIv && typeof computedIv.atmIv === 'number'
+              && !(daily.gammaData.ivData && typeof daily.gammaData.ivData.atmIv === 'number')) {
+            report.gammaData.ivData = computedIv;
+          }
           report.meta.dataSource.openInterest = daily.meta.dataSource.openInterest;
           report.meta.oiConfidence = daily.meta.oiConfidence;
           report.meta.oiEnrichedAt = daily.meta.oiEnrichedAt;
