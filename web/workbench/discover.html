@@ -621,6 +621,7 @@
             <button onclick="hide($('#technical-deep-dive'))" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink-muted)">&times;</button>
           </div>
           <p style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:14px">Computed from 250 daily closing prices via the NewLeaf indicators engine. These are real values, not LLM-generated.</p>
+          <div id="techRegimeBanner"></div>
           <div id="ddTechChartWrap" style="margin-bottom:16px">
             <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-muted);font-weight:600;margin-bottom:6px">Price &amp; moving averages</div>
             <canvas id="ddTechChart" style="width:100%;height:220px;display:block"></canvas>
@@ -635,6 +636,7 @@
             <button onclick="hide($('#iv-deep-dive'))" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink-muted)">&times;</button>
           </div>
           <p style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:14px">Implied volatility from the options chain. Higher IV means richer premiums for sellers but more expected movement.</p>
+          <div id="ivRegimeBanner"></div>
           <div id="ddIvChartWrap" style="margin-bottom:16px">
             <div id="ddIvChartTitle" style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-muted);font-weight:600;margin-bottom:6px">IV term structure</div>
             <canvas id="ddIvChart" style="width:100%;height:180px;display:none"></canvas>
@@ -1520,6 +1522,76 @@
       }
     }
 
+    // Shared interpretive-banner styling (same look as the net-gamma regime banner).
+    function regimeBannerHTML(kicker, label, sub, tone) {
+      const T = ({
+        green: { bg: '#e9f5ee', border: '#2d7d4f', color: '#256b45' },
+        red:   { bg: '#fdecec', border: '#c0392b', color: '#a5342a' },
+        amber: { bg: 'var(--concern-bg,#fdf6e3)', border: 'var(--concern-border,#d9b25e)', color: '#8a6d1e' },
+      })[tone] || { bg: 'var(--concern-bg,#fdf6e3)', border: 'var(--concern-border,#d9b25e)', color: '#8a6d1e' };
+      return `<div style="margin:0 0 14px;padding:10px 14px;background:${T.bg};border:1px solid ${T.border};border-left:3px solid ${T.border};border-radius:8px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-muted,#6b6b60)">${kicker}</span><span style="font-size:13px;font-weight:800;color:${T.color}">${label}</span></div>
+        <div style="font-size:11.5px;color:var(--ink,#0B0F14);line-height:1.5;margin-top:4px">${sub}</div>
+      </div>`;
+    }
+
+    // Trend & momentum synthesis: combines ADX (strength), MACD/SMA (direction) and RSI
+    // (extension) into one read the individual tiles don't give.
+    function technicalRegimeHTML() {
+      const ind = state.indicators || {};
+      const rsi = state.rsi != null ? state.rsi : ind.rsi14;
+      const adx = state.adx != null ? state.adx : ind.adx14;
+      const macd = ind.macdLine, sig = ind.macdSignal;
+      const tr = String(state.trend || ind.smaTrend || '').toLowerCase();
+      if (rsi == null && adx == null) return '';
+      let dir = 0;
+      if (macd != null && sig != null) dir += macd > sig ? 1 : macd < sig ? -1 : 0;
+      if (/bull|up/.test(tr)) dir++; else if (/bear|down/.test(tr)) dir--;
+      if (rsi != null) { if (rsi >= 55) dir++; else if (rsi <= 45) dir--; }
+      const up = dir > 0, down = dir < 0;
+      const strong = adx != null && adx >= 25, veryStrong = adx != null && adx >= 40, weak = adx != null && adx < 20;
+      const parts = [];
+      if (adx != null) parts.push(`ADX ${adx.toFixed(0)} (${veryStrong ? 'very strong' : strong ? 'strong' : weak ? 'weak' : 'moderate'})`);
+      if (macd != null && sig != null) parts.push(`MACD ${macd > sig ? 'bullish' : 'bearish'}`);
+      let label, tone, sub;
+      if (weak || (!up && !down)) {
+        label = 'Range-bound · no clear trend'; tone = 'amber';
+        sub = `${parts.join(', ')}. Sideways / mean-reverting conditions — favors premium-selling structures (condors, spreads) over directional bets.`;
+      } else {
+        label = `${veryStrong ? 'Very strong' : strong ? 'Strong' : 'Developing'} ${up ? 'uptrend' : 'downtrend'}`;
+        tone = up ? 'green' : 'red';
+        let caveat = '';
+        if (down && rsi != null && rsi <= 30) caveat = ` RSI ${rsi.toFixed(0)} is ${rsi <= 15 ? 'extremely ' : ''}oversold — a mean-reversion bounce is likely, so don't chase new shorts; trend intact but stretched.`;
+        else if (up && rsi != null && rsi >= 70) caveat = ` RSI ${rsi.toFixed(0)} is ${rsi >= 85 ? 'extremely ' : ''}overbought — a pullback is likely, so don't chase longs; trend intact but stretched.`;
+        else if (rsi != null) caveat = ` RSI ${rsi.toFixed(0)} — momentum has room to run.`;
+        sub = `${parts.join(', ')}.${caveat}`;
+      }
+      return regimeBannerHTML('Trend &amp; momentum', label, sub, tone);
+    }
+
+    // Volatility regime: premium richness (IV level) + term-structure shape (backwardation vs contango).
+    function ivRegimeHTML(iv) {
+      if (!iv || iv.atmIv == null) return '';
+      const lvl = String(iv.ivLevel || '').toLowerCase();
+      const atm = iv.atmIv.toFixed(0);
+      const entries = Object.entries(iv.ivByExpiry || {}).sort((a, b) => new Date(a[0]) - new Date(b[0]));
+      let shapeWord = '', shapeSub = '';
+      if (entries.length >= 2) {
+        const front = entries[0][1], back = entries[entries.length - 1][1];
+        const slope = front > 0 ? (back - front) / front : 0;
+        if (slope < -0.05) { shapeWord = 'backwardated'; shapeSub = ` The term structure is backwardated — the front expiry (${front.toFixed(0)}%) sits well above later weeks, signaling near-term event/fear risk. The richest premium (and most risk) is in the front week.`; }
+        else if (slope > 0.05) { shapeWord = 'contango'; shapeSub = ` The term structure is in contango — later expiries price higher IV, the normal calm-market shape; longer-dated premium is richer.`; }
+        else { shapeWord = 'flat'; shapeSub = ` The term structure is flat — IV is similar across expiries.`; }
+      }
+      const rich = lvl === 'high', cheap = lvl === 'low';
+      const premSub = rich ? `ATM IV ${atm}% is high — premium is rich, favoring net sellers (condors, spreads, BWB).`
+        : cheap ? `ATM IV ${atm}% is low — premium is cheap, favoring net buyers / debit structures (calendars, long verticals).`
+        : `ATM IV ${atm}% is around fair value.`;
+      const label = `IV ${rich ? 'rich' : cheap ? 'cheap' : 'fair'}${shapeWord ? ` · ${shapeWord}` : ''}`;
+      const tone = cheap ? 'green' : 'amber';
+      return regimeBannerHTML('Volatility regime', label, `${premSub}${shapeSub}`, tone);
+    }
+
     function renderTechnicalPanel() {
       const ind = state.indicators || {};
       const item = (lbl, val, desc) => `<div style="background:var(--cream);border-radius:8px;padding:10px 12px">
@@ -1545,6 +1617,7 @@
         item('MACD Signal', ind.macdSignal != null ? ind.macdSignal.toFixed(3) : '---', 'Signal line (9-period EMA of MACD)') +
         item('SMA Trend', trend, trendDesc) +
         item('Bollinger Width', bbw != null ? bbw.toFixed(2) + '%' : '---', bbwDesc);
+      const tb = $('#techRegimeBanner'); if (tb) tb.innerHTML = technicalRegimeHTML();
       drawDDTechChart();
     }
 
@@ -1615,7 +1688,9 @@
       </div>`;
       const contracts = state.r2Data?.gammaData?.analysis?.contracts_analyzed || '---';
       const iv = bestIvData();
+      const ivb = $('#ivRegimeBanner');
       if (!iv) {
+        if (ivb) ivb.innerHTML = '';
         $('#iv-content').innerHTML =
           item('ATM IV', '--', 'IV data unavailable for this ticker') +
           item('IV Level', '--', 'No report IV available') +
@@ -1623,6 +1698,7 @@
         drawDDIvChart();
         return;
       }
+      if (ivb) ivb.innerHTML = ivRegimeHTML(iv);
       const atmIv = iv.atmIv;
       const ivLevel = iv.ivLevel || '---';
       const ivDesc = ivLevel === 'high' ? 'Options are expensive — good for sellers' : ivLevel === 'low' ? 'Options are cheap — good for buyers' : 'Options are fairly priced';
