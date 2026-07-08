@@ -1523,15 +1523,20 @@
     }
 
     // Shared interpretive-banner styling (same look as the net-gamma regime banner).
-    function regimeBannerHTML(kicker, label, sub, tone) {
+    // plain = optional plain-English TL;DR shown above the technical "mechanics" line.
+    function regimeBannerHTML(kicker, label, sub, tone, plain) {
       const T = ({
         green: { bg: '#e9f5ee', border: '#2d7d4f', color: '#256b45' },
         red:   { bg: '#fdecec', border: '#c0392b', color: '#a5342a' },
         amber: { bg: 'var(--concern-bg,#fdf6e3)', border: 'var(--concern-border,#d9b25e)', color: '#8a6d1e' },
       })[tone] || { bg: 'var(--concern-bg,#fdf6e3)', border: 'var(--concern-border,#d9b25e)', color: '#8a6d1e' };
+      const plainHtml = plain
+        ? `<div style="font-size:12.5px;font-weight:600;color:${T.color};line-height:1.5;margin-top:5px">In plain English: <span style="font-weight:500;color:var(--ink,#0B0F14)">${plain}</span></div>
+           <div style="font-size:11px;color:var(--ink-muted,#6b6b60);line-height:1.5;margin-top:6px"><b style="text-transform:uppercase;font-size:9px;letter-spacing:.06em">The mechanics</b> · ${sub}</div>`
+        : `<div style="font-size:11.5px;color:var(--ink,#0B0F14);line-height:1.5;margin-top:4px">${sub}</div>`;
       return `<div style="margin:0 0 14px;padding:10px 14px;background:${T.bg};border:1px solid ${T.border};border-left:3px solid ${T.border};border-radius:8px">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-muted,#6b6b60)">${kicker}</span><span style="font-size:13px;font-weight:800;color:${T.color}">${label}</span></div>
-        <div style="font-size:11.5px;color:var(--ink,#0B0F14);line-height:1.5;margin-top:4px">${sub}</div>
+        ${plainHtml}
       </div>`;
     }
 
@@ -1553,25 +1558,27 @@
       const parts = [];
       if (adx != null) parts.push(`ADX ${adx.toFixed(0)} (${veryStrong ? 'very strong' : strong ? 'strong' : weak ? 'weak' : 'moderate'})`);
       if (macd != null && sig != null) parts.push(`MACD ${macd > sig ? 'bullish' : 'bearish'}`);
-      let label, tone, sub;
+      let label, tone, sub, plain;
       if (weak || (!up && !down)) {
         label = 'Range-bound · no clear trend'; tone = 'amber';
+        plain = `This stock isn't going anywhere in particular right now — it's chopping sideways. Better for range/income trades than betting on a direction.`;
         sub = `${parts.join(', ')}. Sideways / mean-reverting conditions — favors premium-selling structures (condors, spreads) over directional bets.`;
       } else {
         label = `${veryStrong ? 'Very strong' : strong ? 'Strong' : 'Developing'} ${up ? 'uptrend' : 'downtrend'}`;
         tone = up ? 'green' : 'red';
+        const dirWord = up ? 'up' : 'down';
         let caveat = '';
-        if (down && rsi != null && rsi <= 30) caveat = ` RSI ${rsi.toFixed(0)} is ${rsi <= 15 ? 'extremely ' : ''}oversold — a mean-reversion bounce is likely, so don't chase new shorts; trend intact but stretched.`;
-        else if (up && rsi != null && rsi >= 70) caveat = ` RSI ${rsi.toFixed(0)} is ${rsi >= 85 ? 'extremely ' : ''}overbought — a pullback is likely, so don't chase longs; trend intact but stretched.`;
-        else if (rsi != null) caveat = ` RSI ${rsi.toFixed(0)} — momentum has room to run.`;
+        if (down && rsi != null && rsi <= 30) { caveat = ` RSI ${rsi.toFixed(0)} is ${rsi <= 15 ? 'extremely ' : ''}oversold — a mean-reversion bounce is likely, so don't chase new shorts; trend intact but stretched.`; plain = `The stock is falling hard, but it's been sold so heavily a short-term bounce is likely. The downtrend is intact — just a risky spot to jump in short right now.`; }
+        else if (up && rsi != null && rsi >= 70) { caveat = ` RSI ${rsi.toFixed(0)} is ${rsi >= 85 ? 'extremely ' : ''}overbought — a pullback is likely, so don't chase longs; trend intact but stretched.`; plain = `The stock is climbing strongly, but it's run up so far a short-term pullback is likely. The uptrend is intact — just a risky spot to chase longs right now.`; }
+        else { caveat = rsi != null ? ` RSI ${rsi.toFixed(0)} — momentum has room to run.` : ''; plain = `The stock is trending ${dirWord} with real strength and momentum still has room to run — trades that go ${up ? 'with the upside' : 'with the downside'} are favored over fading it.`; }
         sub = `${parts.join(', ')}.${caveat}`;
       }
       // Volatility squeeze + earnings proximity — both are critical context the tiles omit.
       const sq = state._techData && state._techData.volatilityEngine && state._techData.volatilityEngine.squeeze;
       if (sq) sub += ' Bollinger squeeze active — a volatility breakout is pending.';
       const ed = state.earningsDaysOut;
-      if (typeof ed === 'number' && ed > 0 && ed <= 21) sub += ` <b style="color:#a5342a">Earnings in ~${ed}d</b> — binary event risk inside the window.`;
-      return regimeBannerHTML('Trend &amp; momentum', label, sub, tone);
+      if (typeof ed === 'number' && ed > 0 && ed <= 21) { sub += ` <b style="color:#a5342a">Earnings in ~${ed}d</b> — binary event risk inside the window.`; plain += ` Heads up: earnings in ~${ed} days can move it sharply.`; }
+      return regimeBannerHTML('Trend &amp; momentum', label, sub, tone, plain);
     }
 
     // Volatility regime: premium richness (IV level) + term-structure shape (backwardation vs contango).
@@ -1606,7 +1613,13 @@
           : `ATM IV ${atm}% is around fair value.`;
       }
       const label = `IV ${premWord}${shapeWord ? ` · ${shapeWord}` : ''}`;
-      return regimeBannerHTML('Volatility regime', label, `${premSub}${shapeSub}`, tone);
+      const plainPrem = premWord === 'rich'
+        ? `Options are expensive compared with how much this stock actually moves — a good time to be a seller (collect premium), a poor time to buy options.`
+        : premWord === 'cheap'
+        ? `Options are cheap compared with how much this stock actually moves — a good time to buy options, a poor time to sell them.`
+        : `Options are priced about right for how much this stock moves — no strong edge to buying or selling premium.`;
+      const plainShape = shapeWord === 'backwardated' ? ` The nearest expiry is the most expensive, so something (often an event) is expected soon.` : '';
+      return regimeBannerHTML('Volatility regime', label, `${premSub}${shapeSub}`, tone, `${plainPrem}${plainShape}`);
     }
 
     async function renderTechnicalPanel() {
