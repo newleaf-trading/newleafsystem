@@ -1639,6 +1639,51 @@
       drawDDIvChart();
     }
 
+    // Net-gamma regime banner — the "positive = mean-reverting / negative = trending" read.
+    // Derived from spot vs the gamma flip (where callGex-putGex crosses zero): above the flip
+    // dealers are net long gamma (buy dips/sell rips → dampen vol, pin between walls); below it
+    // they're net short gamma (sell dips/buy rips → amplify vol, stronger trends).
+    // The gamma flip = the strike where net GEX (callGex-putGex) crosses zero. The gamma-analysis
+    // API doesn't return it, so compute it from topStrikes the same way the pipeline does.
+    function computeGammaFlip(analysis) {
+      if (analysis && typeof analysis.gamma_flip === 'number') return analysis.gamma_flip;
+      const ts = ((analysis && analysis.topStrikes) || []).slice().sort((a, b) => a.strike - b.strike);
+      for (let i = 1; i < ts.length; i++) {
+        const na = ts[i - 1].netGex != null && ts[i - 1].netGex !== 0 ? ts[i - 1].netGex : (ts[i - 1].callGex || 0) - (ts[i - 1].putGex || 0);
+        const nb = ts[i].netGex != null && ts[i].netGex !== 0 ? ts[i].netGex : (ts[i].callGex || 0) - (ts[i].putGex || 0);
+        if (na !== 0 && nb !== 0 && Math.sign(na) !== Math.sign(nb)) return (ts[i - 1].strike + ts[i].strike) / 2;
+      }
+      return null;
+    }
+
+    function netGammaRegimeHTML(analysis, spot) {
+      const flip = computeGammaFlip(analysis);
+      if (flip == null || !spot) return '';
+      const dist = spot - flip;
+      const atFlip = Math.abs(dist) / spot < 0.005; // within 0.5% of the flip → regime can tip
+      let label, sub, bg, border, color;
+      if (atFlip) {
+        label = 'Balanced · at the gamma flip';
+        sub = `Spot $${spot.toFixed(0)} is right at the gamma flip ($${flip.toFixed(0)}) — the regime can tip either way from here.`;
+        bg = 'var(--concern-bg,#fdf6e3)'; border = 'var(--concern-border,#d9b25e)'; color = '#8a6d1e';
+      } else if (dist > 0) {
+        label = 'Positive gamma · mean-reverting';
+        sub = `Spot $${spot.toFixed(0)} is above the gamma flip ($${flip.toFixed(0)}). Dealers buy dips / sell rips → volatility is dampened and price tends to pin between the walls. Favors range structures (condors, spreads); fade breakouts.`;
+        bg = '#e9f5ee'; border = '#2d7d4f'; color = '#256b45';
+      } else {
+        label = 'Negative gamma · trending';
+        sub = `Spot $${spot.toFixed(0)} is below the gamma flip ($${flip.toFixed(0)}). Dealers sell dips / buy rips → volatility is amplified, expect stronger trends and momentum. Favors directional/momentum setups; keep stops tight.`;
+        bg = '#fdecec'; border = '#c0392b'; color = '#a5342a';
+      }
+      return `<div style="margin:0 0 14px;padding:10px 14px;background:${bg};border:1px solid ${border};border-left:3px solid ${border};border-radius:8px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-muted,#6b6b60)">Net gamma regime</span>
+          <span style="font-size:13px;font-weight:800;color:${color}">${label}</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--ink,#0B0F14);line-height:1.5;margin-top:4px">${sub}</div>
+      </div>`;
+    }
+
     function renderGammaAnalysis(ga, r2, spot) {
       const el = document.getElementById('gamma-chart-content');
       if (!el) return;
@@ -1649,6 +1694,7 @@
 
       if (!topStrikes.length && (!ga.oiByStrike || !ga.oiByStrike.length)) {
         _renderGamma(el, ga, r2, spot); // fallback to canvas
+        el.insertAdjacentHTML('afterbegin', netGammaRegimeHTML(analysis, spot));
         return;
       }
 
@@ -1656,6 +1702,7 @@
       if (topStrikes.length && typeof Highcharts !== 'undefined') {
         // Build the info panels (walls, confidence, IV) using the shared renderer
         _renderGamma(el, ga, r2, spot);
+        el.insertAdjacentHTML('afterbegin', netGammaRegimeHTML(analysis, spot));
 
         // Replace the canvas with a Highcharts container
         const canvas = document.getElementById('gamma-canvas');
@@ -1719,6 +1766,7 @@
         }
       } else {
         _renderGamma(el, ga, r2, spot); // fallback to canvas
+        el.insertAdjacentHTML('afterbegin', netGammaRegimeHTML(analysis, spot));
       }
     }
     // (Inline renderGammaAnalysis / drawGexChart / drawOIChart deleted — now in shared/gammaChart.js)
