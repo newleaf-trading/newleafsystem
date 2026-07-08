@@ -941,6 +941,25 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
     }
   }
 
+  // Intraday IV preservation: the Alpaca `indicative` feed returns no greeks/IV (and none at all
+  // after hours), so intraday runs compute atmIv=null and would blank out the good daily IV. Carry
+  // forward the last known-good ivData (from the prior latest.json) rather than clobbering it —
+  // same principle as the OI preservation above. IV moves slowly, so a carried value is fine.
+  if (intradayMode && !(report.gammaData && report.gammaData.ivData && typeof report.gammaData.ivData.atmIv === 'number')) {
+    try {
+      const prevPath = path.join(symDir, 'latest.json');
+      if (fs.existsSync(prevPath)) {
+        const prev = JSON.parse(fs.readFileSync(prevPath, 'utf8'));
+        const pIv = prev.gammaData && prev.gammaData.ivData;
+        if (pIv && typeof pIv.atmIv === 'number') {
+          report.gammaData = report.gammaData || {};
+          report.gammaData.ivData = { ...pIv, _ivPreserved: true };
+          log(C.dim(`IV preserved from prior report (atmIv ${pIv.atmIv.toFixed(1)}%)`));
+        }
+      }
+    } catch (_) { /* no prior IV to preserve */ }
+  }
+
   attachTrend(report); // advisory trend verdict — added before any write/upload so R2 carries it
   fs.writeFileSync(path.join(symDir, 'latest.json'), JSON.stringify(report));
   fs.writeFileSync(path.join(symDir, tsKey),          JSON.stringify(report));
