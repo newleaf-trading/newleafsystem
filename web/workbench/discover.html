@@ -1779,17 +1779,20 @@
       if (flip == null || !spot) return '';
       const dist = spot - flip;
       const atFlip = Math.abs(dist) / spot < 0.005; // within 0.5% of the flip → regime can tip
-      let label, sub, bg, border, color;
+      let label, plain, sub, bg, border, color;
       if (atFlip) {
         label = 'Balanced · at the gamma flip';
+        plain = `This stock is on the fence between calm and volatile — no strong edge either way right now.`;
         sub = `Spot $${spot.toFixed(0)} is right at the gamma flip ($${flip.toFixed(0)}) — the regime can tip either way from here.`;
         bg = 'var(--concern-bg,#fdf6e3)'; border = 'var(--concern-border,#d9b25e)'; color = '#8a6d1e';
       } else if (dist > 0) {
         label = 'Positive gamma · mean-reverting';
+        plain = `This stock is likely to stay range-bound and drift back toward the middle of its walls. Good for income / range trades (like condors); a poor spot to bet on a big breakout.`;
         sub = `Spot $${spot.toFixed(0)} is above the gamma flip ($${flip.toFixed(0)}). Dealers buy dips / sell rips → volatility is dampened and price tends to pin between the walls. Favors range structures (condors, spreads); fade breakouts.`;
         bg = '#e9f5ee'; border = '#2d7d4f'; color = '#256b45';
       } else {
         label = 'Negative gamma · trending';
+        plain = `This stock's moves are likely to snowball into bigger swings. Good for riding the trend (directional trades); risky to bet on it stalling — use stops.`;
         sub = `Spot $${spot.toFixed(0)} is below the gamma flip ($${flip.toFixed(0)}). Dealers sell dips / buy rips → volatility is amplified, expect stronger trends and momentum. Favors directional/momentum setups; keep stops tight.`;
         bg = '#fdecec'; border = '#c0392b'; color = '#a5342a';
       }
@@ -1805,7 +1808,8 @@
           <span style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-muted,#6b6b60)">Net gamma regime</span>
           <span style="font-size:13px;font-weight:800;color:${color}">${label}</span>
         </div>
-        <div style="font-size:11.5px;color:var(--ink,#0B0F14);line-height:1.5;margin-top:4px">${sub}</div>
+        <div style="font-size:12.5px;font-weight:600;color:${color};line-height:1.5;margin-top:5px">In plain English: <span style="font-weight:500;color:var(--ink,#0B0F14)">${plain}</span></div>
+        <div style="font-size:11px;color:var(--ink-muted,#6b6b60);line-height:1.5;margin-top:6px"><b style="text-transform:uppercase;font-size:9px;letter-spacing:.06em">The mechanics</b> · ${sub}</div>
         ${levels}
       </div>`;
     }
