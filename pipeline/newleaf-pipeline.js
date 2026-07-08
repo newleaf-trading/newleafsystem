@@ -298,13 +298,17 @@ async function getNasdaqExpiries(symbol) {
   const todate   = new Date(fromdate.getTime() + 120 * 86400000);
   const iso = dt => dt.toISOString().slice(0, 10);
   const dateRange = `&fromdate=${iso(fromdate)}&todate=${iso(todate)}&money=all&type=all`;
-  const url = `${NASDAQ_BASE}/${symbol}/option-chain?assetclass=${assetclass}&limit=500${dateRange}`;
+  // limit must be large enough to span the expiry GROUP headers, not just contracts. Daily-expiry
+  // ETFs (QQQ, SPY) have ~150+ strikes per expiry, so limit=500 only surfaces ~3 dates; 3000 spans
+  // ~18 dates. Weekly names are unaffected (they already fit). Downstream DTE filter + slice(0,7) trim.
+  const EXPIRY_DISCOVERY_LIMIT = 3000;
+  const url = `${NASDAQ_BASE}/${symbol}/option-chain?assetclass=${assetclass}&limit=${EXPIRY_DISCOVERY_LIMIT}${dateRange}`;
   let d = await nasdaqGet(url);
 
   // Fallback: try other asset class if empty
   if (!d?.data?.table?.rows?.length) {
     const alt = assetclass === 'stocks' ? 'etf' : 'stocks';
-    d = await nasdaqGet(`${NASDAQ_BASE}/${symbol}/option-chain?assetclass=${alt}&limit=500${dateRange}`);
+    d = await nasdaqGet(`${NASDAQ_BASE}/${symbol}/option-chain?assetclass=${alt}&limit=${EXPIRY_DISCOVERY_LIMIT}${dateRange}`);
   }
 
   if (!d?.data?.table?.rows?.length) throw new Error(`No option data from Nasdaq for ${symbol}`);
