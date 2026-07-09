@@ -53,5 +53,15 @@ ok(!validateStrategy('iron_condor', [
 ok(classifyLegs([L('BUY','CALL',130), L('SELL','CALL',135,2), L('BUY','CALL',140)]) === 'butterfly',
   'equal-wing 1-2-1 classifies as symmetric butterfly');
 
+// --- Phase 3: ratio'd "defined-risk" structures rejected (naked-tail risk) ---
+ok(!validateStrategy('iron_condor', [
+  L('BUY','PUT',90), L('SELL','PUT',95), L('SELL','CALL',110,3), L('BUY','CALL',115)
+]).valid, "ratio'd iron_condor (qty-3 short call) is rejected");
+ok(validateStrategy('iron_condor', [
+  L('BUY','PUT',90), L('SELL','PUT',95), L('SELL','CALL',110), L('BUY','CALL',115)
+]).valid, 'uniform-qty iron_condor is valid');
+ok(!validateStrategy('bull_put_spread', [L('SELL','PUT',95,2), L('BUY','PUT',90)]).valid,
+  "ratio'd bull_put_spread is rejected");
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

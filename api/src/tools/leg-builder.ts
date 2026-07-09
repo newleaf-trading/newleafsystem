@@ -108,7 +108,12 @@ export function snapToChain(
   // Prefer liquid (bid > 0), then closest to target.
   const liquid = sided.filter(c => c.bid > 0);
   const pool = liquid.length > 0 ? liquid : sided;
-  return pool.slice().sort((a, b) => Math.abs(a.strike - target) - Math.abs(b.strike - target))[0] ?? null;
+  const best = pool.slice().sort((a, b) => Math.abs(a.strike - target) - Math.abs(b.strike - target))[0] ?? null;
+  // Hard distance cap: a snap that lands >15% of the target away isn't the strike we asked for —
+  // it silently relocates the anchor (thin/one-sided chain). Fail closed rather than mislabel the
+  // structure (the crossing guards only check relative order, not absolute displacement).
+  if (best && target > 0 && Math.abs(best.strike - target) > target * 0.15) return null;
+  return best;
 }
 
 /**
@@ -158,8 +163,10 @@ export function nearestATM(contracts: OptionContract[], spot: number): number | 
     if (hasCall && hasPut) return s;
   }
 
-  // Last resort: nearest strike of any kind
-  return strikes[0] ?? null;
+  // No strike has BOTH a call and a put. Do NOT fall back to a one-sided strike — a straddle /
+  // iron-butterfly body built there would emit a leg for a contract that isn't in the chain
+  // (passes validation, ships unpriced/unfillable). Fail closed; callers handle null.
+  return null;
 }
 
 // ── Strategy Builders ───────────────────────────────────────────────────────
