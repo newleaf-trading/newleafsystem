@@ -2115,7 +2115,7 @@
             for (const l of legsArr) {
               const chain = state.chainData.find(c => Math.abs(c.strike - l.strike) < 0.5);
               const mid = chain?.[l.type]?.mid || 0;
-              nc += l.side === 'short' ? mid : -mid;
+              nc += (l.side === 'short' ? mid : -mid) * (l.qty || 1); // honor ×2 body etc.
             }
             return { ...s, legs: legsStr, legDetails: legsArr.map(l => {
               const chain = state.chainData.find(c => Math.abs(c.strike - l.strike) < 0.5);

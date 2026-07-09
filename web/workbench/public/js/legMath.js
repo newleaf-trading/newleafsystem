@@ -3,7 +3,11 @@
  * Used by both discover.html and strategy-builder.html.
  *
  * All functions operate on a standard leg shape:
- *   { side: 'long'|'short', type: 'call'|'put', strike: number, mid: number }
+ *   { side: 'long'|'short', type: 'call'|'put', strike: number, mid: number, qty?: number }
+ *
+ * qty is the PER-LEG quantity (defaults to 1). Structures with uneven legs — e.g. a
+ * 1-2-1 broken-wing butterfly (short body ×2) or ratio spreads — depend on it; ignoring
+ * it turns a 1-2-1 fly into a 1-1-1 net-long position with the wrong payoff/credit.
  */
 
 /**
@@ -13,7 +17,8 @@
 export function computeNetCredit(legs) {
   let nc = 0;
   for (const l of legs) {
-    nc += l.side === 'short' ? (l.mid || 0) : -(l.mid || 0);
+    const q = l.qty || 1;
+    nc += (l.side === 'short' ? (l.mid || 0) : -(l.mid || 0)) * q;
   }
   return nc;
 }
@@ -30,10 +35,11 @@ export function pnlAt(price, legs, qty, netCredit) {
   const nc = netCredit ?? computeNetCredit(legs);
   let pnl = nc * 100 * qty;
   for (const l of legs) {
+    const q = l.qty || 1;
     const intrinsic = l.type === 'call'
       ? Math.max(0, price - l.strike)
       : Math.max(0, l.strike - price);
-    pnl += (l.side === 'long' ? intrinsic : -intrinsic) * 100 * qty;
+    pnl += (l.side === 'long' ? intrinsic : -intrinsic) * 100 * qty * q;
   }
   return pnl;
 }
