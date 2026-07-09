@@ -476,22 +476,13 @@ function buildLongStrangle(input: LegBuilderInput): LegBuilderResult {
   };
 }
 
-function buildCalendarSpread(input: LegBuilderInput): LegBuilderResult {
-  const { contracts, spot } = input;
-  const atm = nearestATM(contracts, spot);
-  if (atm === null) return empty('No ATM strike available for calendar');
-
-  return {
-    legs: [
-      { type: 'call', side: 'short', strike: atm, qty: 1 },
-      { type: 'call', side: 'long',  strike: atm, qty: 1 },
-    ],
-    meta: {
-      wingWidth: 0,
-      anchors: [{ strike: atm, level: 'spot' }],
-      warnings: ['Calendar spread: front/back expiry distinction must be handled by caller'],
-    },
-  };
+function buildCalendarSpread(_input: LegBuilderInput): LegBuilderResult {
+  // A calendar is short front-month + long back-month at the SAME strike — it REQUIRES two
+  // expiries. The /api/recommend path fetches a single expiry, so both legs would land on the
+  // identical contract → a self-cancelling null position that still passes `legs.length >= 2`.
+  // Fail closed until a back-month chain is plumbed through (BuiltLeg has no expiry field today).
+  // Better an honest NO_TRADE than a recommended trade with zero exposure.
+  return empty('Calendar spread needs a second (back-month) expiry — not available in this path');
 }
 
 // ── Main Entry ──────────────────────────────────────────────────────────────

@@ -11,7 +11,7 @@ const base: DecisionContext = {
   spot: 100, dte: 20, strategy: 'broken_wing_butterfly', direction: 'neutral',
   score: 70, passedGates: 1, adx: 22, rsi: 50, sma20: 100, sma50: 100,
   gammaReliable: true, spotInBand: true, ivRvRatio: 1.1, noVolData: false,
-  missingInputs: 0, legsBuilt: true, putWall: 90, callWall: 110,
+  missingInputs: 0, legsBuilt: true, netCredit: 1.5, putWall: 90, callWall: 110,
   gammaConfidencePct: 55, bandWidthPct: 10,
 };
 
@@ -86,6 +86,34 @@ const base: DecisionContext = {
   const d = buildDecision({ ...base, adx: 7, score: 70, strategy: 'iron_condor' });
   ok(d.riskPlan.target.includes('credit'), 'credit strategy → credit-based target');
   ok(d.riskPlan.kill.includes('gamma band'), 'risk plan kill references the gamma band');
+}
+
+// ── Phase 1: premium-economics gates (the ADBE-style fix) ──
+// A credit structure that prices as a net debit → NO_TRADE, not an APPROVED "credit" trade.
+{
+  const d = buildDecision({ ...base, adx: 7, score: 88, spotInBand: true, gammaReliable: true, strategy: 'broken_wing_butterfly', ivRvRatio: 0.91, netCredit: -3.20 });
+  ok(d.decision === 'NO_TRADE' && d.dataFlags.includes('prices_as_debit'), `debit BWB → NO_TRADE prices_as_debit (got ${d.decision})`);
+  ok(/net debit/i.test(d.rationale), 'debit rationale names the real cause (not "below the bar")');
+}
+// Thin premium (IV/RV < 0.85) on a credit structure → NO_TRADE regardless of score.
+{
+  const d = buildDecision({ ...base, adx: 7, score: 90, spotInBand: true, strategy: 'iron_condor', ivRvRatio: 0.7, netCredit: 2 });
+  ok(d.decision === 'NO_TRADE' && d.dataFlags.includes('premium_too_thin'), `thin premium → NO_TRADE (got ${d.decision})`);
+}
+// Marginally thin (0.85–1.0) with a real credit → tradeable but capped at WATCHLIST, not APPROVED.
+{
+  const d = buildDecision({ ...base, adx: 7, score: 88, spotInBand: true, gammaReliable: true, strategy: 'broken_wing_butterfly', ivRvRatio: 0.91, netCredit: 1.1 });
+  ok(d.decision === 'WATCHLIST_TRADE' && d.dataFlags.includes('thin_premium'), `IV/RV 0.91 credit → WATCHLIST thin_premium (got ${d.decision})`);
+}
+// Healthy premium + real credit → still APPROVED (no false negatives).
+{
+  const d = buildDecision({ ...base, adx: 7, score: 80, spotInBand: true, gammaReliable: true, strategy: 'iron_condor', ivRvRatio: 1.4, netCredit: 2 });
+  ok(d.decision === 'APPROVED_TRADE', `rich premium + credit → APPROVED (got ${d.decision})`);
+}
+// Unpriceable legs (netCredit null) must NOT trigger the debit gate.
+{
+  const d = buildDecision({ ...base, adx: 7, score: 80, spotInBand: true, gammaReliable: true, strategy: 'iron_condor', ivRvRatio: 1.4, netCredit: null });
+  ok(d.decision === 'APPROVED_TRADE', `null netCredit → not blocked by debit gate (got ${d.decision})`);
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

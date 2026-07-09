@@ -2197,6 +2197,8 @@
         no_gates_passed: `<b>No clean setup.</b> No strategy gate passed for this configuration.`,
         missing_vol_data: `<b>Missing volatility data.</b> We can't reliably price a premium-selling trade without it.`,
         legs_not_priced: `<b>Legs couldn't be priced.</b> The chain is missing quotes needed to value this structure.`,
+        prices_as_debit: `<b>Prices as a net debit.</b> This premium-selling structure would cost money to open instead of collecting a credit — capped upside for a debit is poor risk/reward, so we don't recommend it.`,
+        premium_too_thin: `<b>Premium too thin.</b> Implied volatility is below realized — you'd be paid too little to sell here. Not worth the risk.`,
       };
       const shown = flags.filter(f => map[f]).map(f => map[f]);
       if (shown.length) return shown;

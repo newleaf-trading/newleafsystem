@@ -219,7 +219,7 @@ function scoreBWB(gammaData, bwbStrikes, price) {
     if (bufferPct > 0.03) bonus += 3;
   }
   if (atmIv > 60) bonus -= 5;
-  return Math.max(0, bonus);
+  return bonus; // RAW (may be negative). Caller gates on a real threshold and clamps when scoring.
 }
 
 // ── Premium-adequacy penalty ──────────────────────────────────────────────────
@@ -254,8 +254,11 @@ function selectStrategy(gammaData, direction, snapshotPrice, technicalData) {
   const bw = gammaData.analysis.band_width_pct || 0;
   const conf = gammaData.analysis.confidence_score || 0;
   const atmIv = gammaData.ivData?.atmIv || 0;
-  const bwbEligible = (
-    (bw > 15 && bw <= 40 && conf >= 0.15) ||
+  const contractsOk = (gammaData.analysis.contracts_analyzed || 0) >= 50; // same liquidity bar as the condor gate
+  // Confidence floor is 0.30 (the analyzer's own "weak" cutoff / gammaReliable) — a BWB body anchored
+  // to a wall we grade "weak" is noise. Liquidity required so condor's liquidity-rejects don't leak in.
+  const bwbEligible = contractsOk && (
+    (bw > 15 && bw <= 40 && conf >= 0.30) ||
     (bw > 10 && bw <= 35 && conf >= 0.30 && atmIv >= 25)
   );
 
@@ -267,11 +270,14 @@ function selectStrategy(gammaData, direction, snapshotPrice, technicalData) {
     );
     const bwbBonus = scoreBWB(gammaData, bwbStrikes, snapshotPrice);
 
-    if (bwbBonus >= 0) {
+    // Real quality bar (was `>= 0`, which the old Math.max(0,…) made vacuously true): the BWB must
+    // earn at least one genuine quality signal (body at wall, IV 30-50, or buffer). Otherwise fall
+    // through to iron_butterfly/no-trade rather than forcing an asymmetric structure on weak walls.
+    if (bwbBonus >= 5) {
       const strat = { ...STRATEGIES.broken_wing_butterfly };
       strat.subtype = bwbStrikes.subtype;
       strat.strikes = bwbStrikes;
-      strat.bwbBonus = bwbBonus;
+      strat.bwbBonus = Math.max(0, bwbBonus); // clamp only when it ADDS to the composite score
       strat.characteristics = {
         entryType: 'credit',
         zeroRiskSide: bwbDir === 'put' ? 'above' : 'below',

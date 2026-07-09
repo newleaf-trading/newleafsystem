@@ -238,7 +238,8 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
     const sma50d = technicalData.sma50 ?? ind0.sma50 ?? null;
     const atrDollar = (technicalData as any).atr14 ?? ind0.atr14 ?? null;
     const ivRvRatioNum = (rvPct && rvPct > 0 && atmIvGate > 0) ? +(atmIvGate / rvPct).toFixed(2) : null;
-    const noVolData = ivRvRatioNum === null && atrDollar === null;
+    void atrDollar; // (retained for indicators; IV/RV absence — not ATR — is what gates premium selling)
+    const noVolData = ivRvRatioNum === null; // no implied-vol read → can't justify selling premium
     const gammaReliable = conf >= 0.30;
     const passedGates = gateTrace.filter(g => g.gate !== 'iron_butterfly (fallback)' && g.passed).length;
     const hasOI = enrichedContracts.some(c => ((c as any).openInterest ?? 0) > 0);
@@ -252,6 +253,20 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
       side: l.side, type: l.type, strike: l.strike, action: l.side === 'short' ? 'SELL' : 'BUY', qty: l.qty,
     }));
 
+    // Price the structure from chain mids so the DECISION ENGINE (not just the client) knows
+    // whether a credit structure actually collects a credit. Honors per-leg qty (e.g. a 1-2-1
+    // broken-wing butterfly's ×2 body). null if any leg has no usable quote.
+    let netCreditPriced: number | null = 0;
+    for (const l of builtLegsResult.legs) {
+      const c = enrichedContracts.find(ec => (ec as any).type === l.type && Math.abs((ec as any).strike - l.strike) < 0.5);
+      const bid = (c as any)?.bid, ask = (c as any)?.ask, midRaw = (c as any)?.mid;
+      const mid = (typeof bid === 'number' && typeof ask === 'number' && bid > 0 && ask > 0)
+        ? (bid + ask) / 2
+        : (typeof midRaw === 'number' && midRaw > 0 ? midRaw : null);
+      if (mid == null) { netCreditPriced = null; break; }
+      netCreditPriced += (l.side === 'short' ? mid : -mid) * (l.qty ?? 1);
+    }
+
     const det = buildDecision({
       spot: snapshot.price, dte,
       strategy: effStrategy, direction: effDirection,
@@ -259,6 +274,7 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
       adx: technicalData.adx14 ?? null, rsi: technicalData.rsi ?? null,
       sma20: sma20d, sma50: sma50d, gammaReliable, spotInBand,
       ivRvRatio: ivRvRatioNum, noVolData, missingInputs,
+      netCredit: netCreditPriced,
       legsBuilt: detLegs.length >= 2,
       putWall: pwall, callWall: cwall,
       gammaConfidencePct: Math.round(conf * 100), bandWidthPct: bw,
