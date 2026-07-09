@@ -190,29 +190,33 @@ function buildIronCondor(input: LegBuilderInput): LegBuilderResult {
   const longCall = snapToChain(shortCall.strike + ww, contracts, 'call', 'up');
   if (!longPut || !longCall) return empty('No contracts available for condor wing strikes');
 
-  // Ensure long strikes are actually outside shorts
+  // Ensure long strikes are actually outside shorts. Use LOCAL strike values — never mutate the
+  // snapped contract objects (they are references into the caller's shared `contracts` array, and
+  // the same array is reused within the request; mutating a contract corrupts its IV/OI/greeks).
+  let longPutStrike = longPut.strike;
+  let longCallStrike = longCall.strike;
   if (longPut.strike >= shortPut.strike) {
     // Try next strike down
     const inc = detectStrikeIncrement(contracts, 'put', spot);
     const retry = snapToChain(shortPut.strike - inc * 2, contracts, 'put', 'down');
     if (!retry || retry.strike >= shortPut.strike) return empty('Cannot place long put below short put');
     warnings.push(`Long put adjusted: $${longPut.strike} → $${retry.strike}`);
-    longPut.strike = retry.strike; longPut.bid = retry.bid; longPut.ask = retry.ask;
+    longPutStrike = retry.strike;
   }
   if (longCall.strike <= shortCall.strike) {
     const inc = detectStrikeIncrement(contracts, 'call', spot);
     const retry = snapToChain(shortCall.strike + inc * 2, contracts, 'call', 'up');
     if (!retry || retry.strike <= shortCall.strike) return empty('Cannot place long call above short call');
     warnings.push(`Long call adjusted: $${longCall.strike} → $${retry.strike}`);
-    longCall.strike = retry.strike; longCall.bid = retry.bid; longCall.ask = retry.ask;
+    longCallStrike = retry.strike;
   }
 
   return {
     legs: [
-      { type: 'put',  side: 'long',  strike: longPut.strike,   qty: 1 },
+      { type: 'put',  side: 'long',  strike: longPutStrike,    qty: 1 },
       { type: 'put',  side: 'short', strike: shortPut.strike,  qty: 1 },
       { type: 'call', side: 'short', strike: shortCall.strike, qty: 1 },
-      { type: 'call', side: 'long',  strike: longCall.strike,  qty: 1 },
+      { type: 'call', side: 'long',  strike: longCallStrike,   qty: 1 },
     ],
     meta: {
       wingWidth: ww,

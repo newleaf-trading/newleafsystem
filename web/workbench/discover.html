@@ -2205,6 +2205,32 @@
       return [`<b>Below the bar.</b> Engine score ${gv && gv.compositeScore != null ? gv.compositeScore : '--'}/100 with no gate passing cleanly — not enough edge for a defined-risk trade here.`];
     }
 
+    // When we stand aside, don't leave the user empty-handed: suggest a defined-risk idea they
+    // can shape manually, tailored to WHY we passed. This is exploration guidance, not a rec.
+    function noTradeSuggestion(ro, gv) {
+      const flags = (ro && Array.isArray(ro.dataFlags)) ? ro.dataFlags : [];
+      const ivrv = gv && typeof gv.ivRvRatio === 'number' ? gv.ivRvRatio : null;
+      const dir = (ro && ro.direction) || 'neutral';
+      if (flags.includes('premium_too_thin') || flags.includes('prices_as_debit') || flags.includes('thin_premium')) {
+        return `Selling premium here pays too little${ivrv != null ? ` (IV/RV ${ivrv.toFixed(2)})` : ''}. If you have a directional view, a <b>debit vertical</b> (buy a spread in your direction) risks less against IV; if you expect a big move, a <b>long straddle / strangle</b> buys the cheap volatility. Otherwise, wait for IV to rise before selling.`;
+      }
+      if (flags.includes('melt_up_into_resistance')) {
+        return `The stock is pushing up into resistance. Rather than sell premium into it, a <b>bull call debit spread</b> plays continuation with defined risk — or wait to see if it stalls at the wall.`;
+      }
+      if (flags.includes('falling_knife')) {
+        return `The stock is falling into support. Rather than sell puts into the drop, a <b>bear call spread</b> (fade a bounce) or simply waiting for the level to hold are cleaner — don't catch the knife.`;
+      }
+      if (flags.includes('legs_not_constructible')) {
+        return `We couldn't fit clean strikes for this expiry. Try a <b>different expiry</b> or nearer strikes in Build my own.`;
+      }
+      if (flags.includes('gamma_unreliable') || flags.includes('insufficient_data')) {
+        return `Options data here is too thin to trust the gamma walls — best to wait for better data than to force a trade.`;
+      }
+      if (dir === 'bullish') return `If you lean bullish, a <b>bull put spread</b> below support is the natural defined-risk expression to explore.`;
+      if (dir === 'bearish') return `If you lean bearish, a <b>bear call spread</b> below resistance is the natural defined-risk expression to explore.`;
+      return `No strong edge here — if you want exposure, use Build my own to shape a defined-risk trade to your own view.`;
+    }
+
     function renderNoTradePanel() {
       const ro = (state.enginePick && state.enginePick.reasoningOverride) || null;
       const gv = (state.engineSnapshot && state.engineSnapshot.gateValues) || {};
@@ -2226,8 +2252,13 @@
           <div style="display:flex;flex-direction:column;gap:8px">
             ${reasons.map(r => `<div style="display:flex;gap:8px;font-size:12.5px;line-height:1.5;color:var(--ink,#0B0F14)"><span style="color:var(--concern-border,#c98a2e);flex-shrink:0">&bull;</span><span>${r}</span></div>`).join('')}
           </div>
-          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border,#e0ddd2);font-size:12px;color:var(--ink-muted,#6b6b60);line-height:1.5">
-            ${isDataError ? 'Try a different expiry, or check back once data quality improves.' : 'This is a call to <b>wait</b> — not a bearish signal. If you have your own thesis, you can still'} ${isDataError ? '' : '<a onclick="setS2Mode(\'manual\')" style="color:var(--teal,#0f6d51);font-weight:700;cursor:pointer">build your own trade &rsaquo;</a>.'}
+          <div style="margin-top:14px;padding:12px 14px;background:var(--green-bg,#e9f5ee);border:1px solid #2d7d4f;border-left:3px solid #2d7d4f;border-radius:8px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#256b45;margin-bottom:5px">What you could explore instead</div>
+            <div style="font-size:12.5px;line-height:1.55;color:var(--ink,#0B0F14)">${noTradeSuggestion(ro, gv)}</div>
+            <div style="margin-top:8px;font-size:12px"><a onclick="setS2Mode('manual')" style="color:var(--teal,#0f6d51);font-weight:700;cursor:pointer">Build my own &rsaquo;</a> to shape it with defined risk.</div>
+          </div>
+          <div style="margin-top:12px;font-size:11.5px;color:var(--ink-muted,#6b6b60);line-height:1.5">
+            ${isDataError ? 'Or try a different expiry and check back once data quality improves.' : 'Standing aside is a call to <b>wait</b> for a better setup — not a bearish signal. The idea above is yours to size and adjust.'}
           </div>
         </div>`;
     }

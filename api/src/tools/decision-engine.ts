@@ -185,7 +185,7 @@ export function templateRationale(ctx: DecisionContext, decision: Decision, regi
 
 /** The core decision: tiers from score, then guardrails. */
 export function buildDecision(ctx: DecisionContext): DecisionResult {
-  const { regime } = classifyRegime(ctx);
+  const { regime, lean } = classifyRegime(ctx);
   const flags: string[] = [];
   if (!ctx.gammaReliable) flags.push('gamma_unreliable');
 
@@ -212,6 +212,9 @@ export function buildDecision(ctx: DecisionContext): DecisionResult {
   if (isCreditSell && ctx.netCredit != null && ctx.netCredit <= 0) return noTrade('NO_TRADE', ['prices_as_debit']);
   if (isCreditSell && ctx.ivRvRatio != null && ctx.ivRvRatio < 0.85) return noTrade('NO_TRADE', ['premium_too_thin']);
 
+  // No options data at all (no IV/RV, unreliable gamma, AND no OI) → the walls are meaningless;
+  // don't sell premium against them regardless of a trend regime read from price bars.
+  if (ctx.missingInputs >= 3) return noTrade('DATA_ERROR', ['insufficient_data']);
   if (ctx.missingInputs >= 2 && regime === 'No-trade / wait') return noTrade('DATA_ERROR', ['insufficient_data']);
   if (regime === 'No-trade / wait') return noTrade('NO_TRADE');
 
@@ -224,6 +227,11 @@ export function buildDecision(ctx: DecisionContext): DecisionResult {
   // Marginally-thin premium (0.85–1.0): tradeable but not "approved" — cap at watchlist.
   if (decision === 'APPROVED_TRADE' && isCreditSell && ctx.ivRvRatio != null && ctx.ivRvRatio < 1.0) { decision = 'WATCHLIST_TRADE'; flags.push('thin_premium'); }
   if (decision === 'APPROVED_TRADE' && regime.startsWith('Developing')) { decision = 'WATCHLIST_TRADE'; flags.push('moderate_adx'); }
+  // Direction conflict: the pick's direction opposes the regime's own lean (e.g. a bullish
+  // structure while the regime reads bearish trend continuation). Never approve a contradiction.
+  if (decision === 'APPROVED_TRADE' && ctx.direction !== 'neutral' && lean !== 'neutral' && ctx.direction !== lean) {
+    decision = 'WATCHLIST_TRADE'; flags.push('direction_conflict');
+  }
   // Reaction promoted to a directional rail the price is only APPROACHING (not testing yet) → watchlist.
   if (decision === 'APPROVED_TRADE' && ctx.reactionApproaching) { decision = 'WATCHLIST_TRADE'; flags.push('approaching_rail'); }
 
