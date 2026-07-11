@@ -22,7 +22,7 @@ const { mapBias } = require('./bias.cjs');
 
 /** Full S/R reaction analysis for one name. Mirrors movement-range exactly + fixes the veto. */
 function computeReactionGate(input) {
-  const { spot, candles, putWall, callWall, sma50, sma100, sma200, bbLower, bbUpper, atrPct, adx, ivRv, gammaConfidence } = input;
+  const { spot, candles, putWall, callWall, sma50, sma100, sma200, bbLower, bbUpper, atrPct, adx, ivRv, gammaConfidence, rsi, isQualityName } = input;
   if (!spot || !Array.isArray(candles) || candles.length < 20) return null;
 
   const levels = gatherLevels(spot, { putWall, callWall, sma50, sma100, sma200, bbLower, bbUpper, bars: candles });
@@ -51,10 +51,25 @@ function computeReactionGate(input) {
 
   const rail = z => (z && !z.untested) ? { level: (z.zone.hi + z.zone.lo) / 2, score: z.score, rate: z.smoothedRate, tested: true } : null;
 
+  // ── Quality mean-reversion exception input ───────────────────────────────────
+  // A mega-cap sitting oversold ABOVE a defended support wall is a bounce candidate,
+  // not a falling knife. We compute the flag here (it needs regime + bias + wall state);
+  // the decision to promote lives in applyReactionGate. Structural-break guard: spot must
+  // be ABOVE the put wall with a trustworthy wall reading — a broken/undefended wall IS the
+  // real structure change, so the exception voids and normal knife protection returns.
+  const oversold = typeof rsi === 'number' && rsi < 30;
+  const wallDefended = putWall != null && spot > putWall && (gammaConfidence || 0) >= 0.6;
+  const standAsideOrKnife =
+    (trendIntoZone && trendIntoZoneSide === 'support') ||  // falling-knife veto setup
+    biasResult.bias === 'no_trade' ||                       // engine standing aside
+    regime === 'testing_support';                           // sitting on support
+  const qualityBounce = !!(isQualityName && oversold && wallDefended && standAsideOrKnife);
+
   return {
     regime, regimeConfidence: confidence, trendIntoZone: !!trendIntoZone, trendIntoZoneSide: trendIntoZoneSide || null,
     bias: biasResult.bias, biasCategory: biasResult.category, posInRange: biasResult.posInRange,
     noTradeReason: biasResult.noTradeReason || null,
+    qualityBounce, rsi: (typeof rsi === 'number' ? rsi : null),
     support: rail(nearS), resistance: rail(nearR),
     // "Testing" uses the reaction engine's own regime (price within 0.5×ATR of the rail) →
     // a tested rail being tested = APPROVED-eligible; merely trending toward it = approaching → WATCHLIST.
@@ -78,6 +93,21 @@ const PROMOTABLE = {
  */
 function applyReactionGate(gammaStrategyCode, gate) {
   if (!gate) return null;
+
+  // Quality mean-reversion exception (mega-cap only; upstream-gated on oversold + a defended
+  // support wall still intact — see computeReactionGate). Reinterpret the falling-knife /
+  // stand-aside setup as a bounce: waive the veto and promote a NEUTRAL gamma pick to a
+  // defined-risk DEBIT vertical (bull call spread). A debit vertical fits cheap IV/RV, caps
+  // loss at the debit paid, and — being a debit — sidesteps the prices_as_debit NO_TRADE that
+  // rejects credit structures. Runs BEFORE the veto so the knife flag can't fire for these.
+  // Never flips an already-directional engine pick (only promotes NEUTRAL_PICKS).
+  if (gate.qualityBounce && NEUTRAL_PICKS.has(gammaStrategyCode)) {
+    return {
+      strategy: 'bull_call_spread', direction: 'bullish', testing: !!gate.testingSupport,
+      flag: 'quality_mean_reversion',
+      note: `quality mean-reversion — mega-cap oversold${gate.rsi != null ? ` (RSI ${Math.round(gate.rsi)})` : ''} above a defended support wall; falling-knife veto waived, defined-risk bull call spread`,
+    };
+  }
 
   // Trend-into-zone veto applies to ANY premium-selling pick (mapBias returns no_trade + trendIntoZone).
   // The flag is DIRECTION-AWARE: a downtrend into support is a falling knife; an uptrend into

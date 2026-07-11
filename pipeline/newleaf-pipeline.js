@@ -140,6 +140,25 @@ function getMarketCapData(symbol) {
   };
 }
 
+// ── Mega-cap "quality" set — source of truth for the reaction gate's mean-reversion ─────
+// exception. Read from company-metadata.json (marketCapTier === 'mega'); watchlist.json has
+// no marketCapMapping, so getMarketCapData can't supply this. Mirrors the API's quality-names.ts
+// (api/src/tools/quality-names.ts) — keep the two in sync so scanner and Discover agree on who
+// is eligible. Cached after first load.
+let _megaCapSet = null;
+function isMegaCap(symbol) {
+  if (_megaCapSet === null) {
+    _megaCapSet = new Set();
+    try {
+      const meta = JSON.parse(fs.readFileSync(path.join(__dirname, 'company-metadata.json'), 'utf8'));
+      for (const [sym, info] of Object.entries(meta)) {
+        if (info && info.marketCapTier === 'mega') _megaCapSet.add(sym);
+      }
+    } catch (_) { /* leave empty → exception simply never fires */ }
+  }
+  return _megaCapSet.has(symbol);
+}
+
 
 // ── Colours ───────────────────────────────────────────────────────────────────
 const C = {
@@ -856,7 +875,7 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
   if (!intradayMode) {
     try {
       const { computeReactionRails, applyReactionGate } = require('./reaction-gate.cjs');
-      const _g = applyReactionGate(strategy.code, computeReactionRails({ snapshot: { price: spot }, technicalData, gammaData }));
+      const _g = applyReactionGate(strategy.code, computeReactionRails({ snapshot: { price: spot }, technicalData, gammaData, isQualityName: isMegaCap(symbol) }));
       if (_g) {
         log(C.dim(`  Reaction gate: ${strategy.code} → ${_g.strategy} (${_g.note})`));
         strategy = { ...STRATEGIES[_g.strategy], reactionNote: _g.note, gammaCode: strategy.code };
@@ -997,7 +1016,7 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
           let oiDir = reconcileDirection(oiTrendDir, oiStrat.code);
           try {
             const { computeReactionRails, applyReactionGate } = require('./reaction-gate.cjs');
-            const _g = applyReactionGate(oiStrat.code, computeReactionRails({ snapshot: { price: spot }, technicalData, gammaData: report.gammaData }));
+            const _g = applyReactionGate(oiStrat.code, computeReactionRails({ snapshot: { price: spot }, technicalData, gammaData: report.gammaData, isQualityName: isMegaCap(symbol) }));
             if (_g) { oiStrat = { ...STRATEGIES[_g.strategy], reactionNote: _g.note, gammaCode: oiStrat.code }; oiDir = _g.direction; }
           } catch (_) { /* keep gamma pick */ }
           report.scoring = {

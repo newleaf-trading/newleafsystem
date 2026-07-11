@@ -29,6 +29,7 @@ function computeReactionRails(report) {
     atrPct: t.atrPct || 0.02, adx: t.adx14,
     ivRv: (rv > 0 && atmIv > 0) ? atmIv / rv : 0,
     gammaConfidence: g.analysis?.confidence_score || 0,
+    rsi: t.rsi, isQualityName: !!report.isQualityName,
   });
 }
 

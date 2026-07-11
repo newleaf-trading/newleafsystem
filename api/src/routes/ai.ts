@@ -8,6 +8,7 @@ import { analyzeTechnicals, calcScore, getDirection, selectStrategy, reconcileDi
 import { fetchNasdaqOI, fetchYahooContracts, findGammaWalls } from '../tools/nasdaq-oi.js';
 import { buildDecision } from '../tools/decision-engine.js';
 import { computeReactionGate, applyReactionGate, type ReactionGate } from '../tools/reaction-features.js';
+import { isMegaCap } from '../tools/quality-names.js';
 import { buildLegs } from '../tools/leg-builder.js';
 import { aiReadCache, recommendCache } from '../lib/cache.js';
 import { createHash } from 'crypto';
@@ -132,6 +133,7 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
         atrPct: (technicalData as any).atrPct ?? null, adx: technicalData.adx14 ?? null,
         ivRv: (rvR && rvR > 0 && atmIvR > 0) ? atmIvR / rvR : null,
         gammaConfidence: gammaData.analysis.confidence_score ?? 0,
+        rsi: technicalData.rsi ?? null, isQualityName: isMegaCap(tk),
       });
       const act = applyReactionGate(strategy.code, reactionGate);
       if (act) {
@@ -142,10 +144,11 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
           console.log(`[Recommend] Reaction VETO (${tk}) [${act.flag}]: ${act.note}`);
         } else if (act.strategy) {
           reactionChanged = true;
+          reactionFlag = act.flag || null;
           effStrategy = act.strategy;
           effDirection = act.direction as 'bullish' | 'bearish';
           reactionApproaching = !act.testing;
-          console.log(`[Recommend] Reaction gate (${tk}): ${strategy.code} → ${effStrategy} — ${act.note}`);
+          console.log(`[Recommend] Reaction gate (${tk}) [${act.flag}]: ${strategy.code} → ${effStrategy} — ${act.note}`);
         }
       }
     } catch (e: any) { console.warn(`[Recommend] reaction gate failed for ${tk}: ${e.message}`); }

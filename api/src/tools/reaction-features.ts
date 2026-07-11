@@ -24,6 +24,7 @@ export interface ReactionRail { level: number; score: number; rate: number; test
 export interface ReactionGate {
   regime: string; regimeConfidence: number; trendIntoZone: boolean;
   bias: string; biasCategory: string; posInRange: number | null; noTradeReason: string | null;
+  qualityBounce: boolean; rsi: number | null;
   support: ReactionRail | null; resistance: ReactionRail | null;
   testingSupport: boolean; testingResistance: boolean;
 }
@@ -39,6 +40,7 @@ export function computeReactionGate(opts: {
   sma50: number | null; sma100: number | null; sma200: number | null;
   bbLower: number | null; bbUpper: number | null;
   atrPct: number | null; adx: number | null; ivRv: number | null; gammaConfidence: number;
+  rsi?: number | null; isQualityName?: boolean;
 }): ReactionGate | null {
   const candles = (opts.bars || []).map(b => ({ date: b.t, open: b.o, high: b.h, low: b.l, close: b.c, volume: b.v }));
   return R.computeReactionGate({
@@ -48,6 +50,7 @@ export function computeReactionGate(opts: {
     bbLower: opts.bbLower ?? undefined, bbUpper: opts.bbUpper ?? undefined,
     atrPct: opts.atrPct ?? 0.02, adx: opts.adx ?? undefined,
     ivRv: opts.ivRv ?? 0, gammaConfidence: opts.gammaConfidence,
+    rsi: opts.rsi ?? undefined, isQualityName: !!opts.isQualityName,
   }) as ReactionGate | null;
 }
 
