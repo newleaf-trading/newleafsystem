@@ -27,6 +27,7 @@ const jobStatus = require('./lib/jobStatus.cjs');
 
 const ONCE = process.argv.includes('--once');
 const NEWLEAF_DIR = path.resolve(__dirname, '..');
+const WEB_DIR = path.join(NEWLEAF_DIR, 'web'); // server.cjs lives in web/, not the repo root
 const NODE_BIN = process.execPath;
 const SERVER_PORT = 3000;
 const DAILY_OI_STAMP = path.join(__dirname, '.daily-oi-stamp');
@@ -46,7 +47,7 @@ async function isServerRunning() {
 async function ensureServer() {
   if (await isServerRunning()) return true;
 
-  const serverFile = path.join(NEWLEAF_DIR, 'server.cjs');
+  const serverFile = path.join(WEB_DIR, 'server.cjs');
   if (!fs.existsSync(serverFile)) {
     console.error(`[${nowET()}] server.cjs not found at ${serverFile}`);
     return false;
@@ -54,7 +55,7 @@ async function ensureServer() {
 
   console.log(`[${nowET()}] Starting server.cjs on port ${SERVER_PORT}...`);
   serverProc = spawn(NODE_BIN, ['server.cjs'], {
-    cwd: NEWLEAF_DIR,
+    cwd: WEB_DIR,
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: false,
   });
