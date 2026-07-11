@@ -58,7 +58,11 @@ function computeReactionGate(input) {
   // be ABOVE the put wall with a trustworthy wall reading — a broken/undefended wall IS the
   // real structure change, so the exception voids and normal knife protection returns.
   const oversold = typeof rsi === 'number' && rsi < 30;
-  const wallDefended = putWall != null && spot > putWall && (gammaConfidence || 0) >= 0.6;
+  // Wall-intact floor is 0.45 (moderate), NOT the 0.60 condor "strongly defended" grade: a bounce
+  // doesn't need condor-strength walls, and confidence_score is depressed by the wide band that the
+  // selloff itself creates — gating on condor-grade would penalise the very volatility that made the
+  // setup oversold. Above the analyzer's 0.30 "weak" cutoff, so genuinely noisy walls still fail.
+  const wallDefended = putWall != null && spot > putWall && (gammaConfidence || 0) >= 0.45;
   const standAsideOrKnife =
     (trendIntoZone && trendIntoZoneSide === 'support') ||  // falling-knife veto setup
     biasResult.bias === 'no_trade' ||                       // engine standing aside

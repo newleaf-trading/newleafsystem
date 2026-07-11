@@ -589,9 +589,12 @@ console.log('\n--- Quality mean-reversion exception ---');
   // Not oversold → false.
   const gNotOS = computeReactionGate({ ...shared, spot: 151, putWall: 148, rsi: 55, isQualityName: true });
   assert(gNotOS && gNotOS.qualityBounce === false, 'not oversold → no bounce');
-  // Weak wall (low gamma confidence) → false.
+  // Weak wall (below the 0.45 moderate floor) → false.
   const gWeak = computeReactionGate({ ...shared, gammaConfidence: 0.3, spot: 151, putWall: 148, rsi: 12, isQualityName: true });
-  assert(gWeak && gWeak.qualityBounce === false, 'undefended wall (low conf) → no bounce');
+  assert(gWeak && gWeak.qualityBounce === false, 'undefended wall (conf<0.45) → no bounce');
+  // ORCL-like moderate confidence (0.551) clears the 0.45 floor → true (boundary lock).
+  const gMod = computeReactionGate({ ...shared, gammaConfidence: 0.551, spot: 151, putWall: 148, rsi: 12, isQualityName: true });
+  assert(gMod && gMod.qualityBounce === true, 'moderate conf 0.551 clears 0.45 floor → bounce');
 }
 
 // ── Events: parseEventCalendar, staleness, exclusions ──
