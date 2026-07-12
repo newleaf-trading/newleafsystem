@@ -64,8 +64,12 @@ function mapBias(input) {
   const rStrong = rT && rS >= STRONG_RAIL_MIN;
   const halfBlind = (sT && !rT) || (!sT && rT);
   const posInRange = calcPosInRange(spot, supportLo, resistanceHi);
-  const ivRich = ivRv >= 1.15;
-  const ivCheap = ivRv <= 0.95;
+  // IV/RV is coerced to 0 by callers when vol data is missing. 0 is NOT "cheap vol" — it's
+  // "no data". Treat only a positive ratio as a real reading, so a missing IV can't silently
+  // route a setup into a directional DEBIT spread (the `ivCheap` branches).
+  const hasIvRv = typeof ivRv === 'number' && ivRv > 0;
+  const ivRich = hasIvRv && ivRv >= 1.15;
+  const ivCheap = hasIvRv && ivRv <= 0.95;
 
   const out = (bias, category, skew, bodyAnchor, testedRail, noTradeReason) => ({
     bias, category, halfBlind,
@@ -79,14 +83,14 @@ function mapBias(input) {
     return out('no_trade', 'none', 'none', null, null, `breakdown/breakout risk — trend into zone, ADX ${Math.round(adx || 25)}`);
   }
 
-  // ── Breakout/breakdown ──
+  // ── Breakout/breakdown ── (debit spread only when vol is actually cheap, not merely missing)
   if (regime === 'breakout_up') {
-    if (ivRv <= 1.0) return out('bull_call_spread', 'directional', 'bullish', null, null);
+    if (hasIvRv && ivRv <= 1.0) return out('bull_call_spread', 'directional', 'bullish', null, null);
     if (sStrong) return out('bull_put_spread', 'income', 'bullish', 'support', 'support');
     return out('no_trade', 'none', 'none', null, null);
   }
   if (regime === 'breakout_down') {
-    if (ivRv <= 1.0) return out('bear_put_spread', 'directional', 'bearish', null, null);
+    if (hasIvRv && ivRv <= 1.0) return out('bear_put_spread', 'directional', 'bearish', null, null);
     if (rStrong) return out('bear_call_spread', 'income', 'bearish', 'resistance', 'resistance');
     return out('no_trade', 'none', 'none', null, null);
   }

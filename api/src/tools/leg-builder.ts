@@ -108,7 +108,12 @@ export function snapToChain(
   // Prefer liquid (bid > 0), then closest to target.
   const liquid = sided.filter(c => c.bid > 0);
   const pool = liquid.length > 0 ? liquid : sided;
-  return pool.slice().sort((a, b) => Math.abs(a.strike - target) - Math.abs(b.strike - target))[0] ?? null;
+  const best = pool.slice().sort((a, b) => Math.abs(a.strike - target) - Math.abs(b.strike - target))[0] ?? null;
+  // Hard distance cap: a snap that lands >15% of the target away isn't the strike we asked for —
+  // it silently relocates the anchor (thin/one-sided chain). Fail closed rather than mislabel the
+  // structure (the crossing guards only check relative order, not absolute displacement).
+  if (best && target > 0 && Math.abs(best.strike - target) > target * 0.15) return null;
+  return best;
 }
 
 /**
@@ -158,8 +163,10 @@ export function nearestATM(contracts: OptionContract[], spot: number): number | 
     if (hasCall && hasPut) return s;
   }
 
-  // Last resort: nearest strike of any kind
-  return strikes[0] ?? null;
+  // No strike has BOTH a call and a put. Do NOT fall back to a one-sided strike — a straddle /
+  // iron-butterfly body built there would emit a leg for a contract that isn't in the chain
+  // (passes validation, ships unpriced/unfillable). Fail closed; callers handle null.
+  return null;
 }
 
 // ── Strategy Builders ───────────────────────────────────────────────────────
@@ -190,29 +197,33 @@ function buildIronCondor(input: LegBuilderInput): LegBuilderResult {
   const longCall = snapToChain(shortCall.strike + ww, contracts, 'call', 'up');
   if (!longPut || !longCall) return empty('No contracts available for condor wing strikes');
 
-  // Ensure long strikes are actually outside shorts
+  // Ensure long strikes are actually outside shorts. Use LOCAL strike values — never mutate the
+  // snapped contract objects (they are references into the caller's shared `contracts` array, and
+  // the same array is reused within the request; mutating a contract corrupts its IV/OI/greeks).
+  let longPutStrike = longPut.strike;
+  let longCallStrike = longCall.strike;
   if (longPut.strike >= shortPut.strike) {
     // Try next strike down
     const inc = detectStrikeIncrement(contracts, 'put', spot);
     const retry = snapToChain(shortPut.strike - inc * 2, contracts, 'put', 'down');
     if (!retry || retry.strike >= shortPut.strike) return empty('Cannot place long put below short put');
     warnings.push(`Long put adjusted: $${longPut.strike} → $${retry.strike}`);
-    longPut.strike = retry.strike; longPut.bid = retry.bid; longPut.ask = retry.ask;
+    longPutStrike = retry.strike;
   }
   if (longCall.strike <= shortCall.strike) {
     const inc = detectStrikeIncrement(contracts, 'call', spot);
     const retry = snapToChain(shortCall.strike + inc * 2, contracts, 'call', 'up');
     if (!retry || retry.strike <= shortCall.strike) return empty('Cannot place long call above short call');
     warnings.push(`Long call adjusted: $${longCall.strike} → $${retry.strike}`);
-    longCall.strike = retry.strike; longCall.bid = retry.bid; longCall.ask = retry.ask;
+    longCallStrike = retry.strike;
   }
 
   return {
     legs: [
-      { type: 'put',  side: 'long',  strike: longPut.strike,   qty: 1 },
+      { type: 'put',  side: 'long',  strike: longPutStrike,    qty: 1 },
       { type: 'put',  side: 'short', strike: shortPut.strike,  qty: 1 },
       { type: 'call', side: 'short', strike: shortCall.strike, qty: 1 },
-      { type: 'call', side: 'long',  strike: longCall.strike,  qty: 1 },
+      { type: 'call', side: 'long',  strike: longCallStrike,   qty: 1 },
     ],
     meta: {
       wingWidth: ww,
@@ -476,22 +487,13 @@ function buildLongStrangle(input: LegBuilderInput): LegBuilderResult {
   };
 }
 
-function buildCalendarSpread(input: LegBuilderInput): LegBuilderResult {
-  const { contracts, spot } = input;
-  const atm = nearestATM(contracts, spot);
-  if (atm === null) return empty('No ATM strike available for calendar');
-
-  return {
-    legs: [
-      { type: 'call', side: 'short', strike: atm, qty: 1 },
-      { type: 'call', side: 'long',  strike: atm, qty: 1 },
-    ],
-    meta: {
-      wingWidth: 0,
-      anchors: [{ strike: atm, level: 'spot' }],
-      warnings: ['Calendar spread: front/back expiry distinction must be handled by caller'],
-    },
-  };
+function buildCalendarSpread(_input: LegBuilderInput): LegBuilderResult {
+  // A calendar is short front-month + long back-month at the SAME strike — it REQUIRES two
+  // expiries. The /api/recommend path fetches a single expiry, so both legs would land on the
+  // identical contract → a self-cancelling null position that still passes `legs.length >= 2`.
+  // Fail closed until a back-month chain is plumbed through (BuiltLeg has no expiry field today).
+  // Better an honest NO_TRADE than a recommended trade with zero exposure.
+  return empty('Calendar spread needs a second (back-month) expiry — not available in this path');
 }
 
 // ── Main Entry ──────────────────────────────────────────────────────────────

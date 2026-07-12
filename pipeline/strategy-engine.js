@@ -219,7 +219,29 @@ function scoreBWB(gammaData, bwbStrikes, price) {
     if (bufferPct > 0.03) bonus += 3;
   }
   if (atmIv > 60) bonus -= 5;
-  return Math.max(0, bonus);
+  return bonus; // RAW (may be negative). Caller gates on a real threshold and clamps when scoring.
+}
+
+// ── Premium-adequacy penalty ──────────────────────────────────────────────────
+// Structures that PROFIT by selling premium (credit) are down-scored when the
+// premium is thin — i.e. implied vol sits BELOW 30-day realized vol (IV/RV < 1),
+// meaning you're being paid too little for the risk. Heuristic, not outcome-
+// validated (consistent with the rest of the engine's scoring). atmIv is in
+// percentage form (e.g. 53.5), realizedVol30d is a decimal (e.g. 0.66).
+const CREDIT_STRATEGY_CODES = new Set([
+  'iron_condor', 'iron_butterfly', 'broken_wing_butterfly',
+  'bull_put_spread', 'bear_call_spread', 'short_strangle', 'short_straddle',
+]);
+
+function premiumRiskPenalty(strategyCode, gammaData, technicalData) {
+  if (!CREDIT_STRATEGY_CODES.has(strategyCode)) return { penalty: 0, reasons: [] };
+  const atmIv = gammaData?.ivData?.atmIv || 0; // percentage form
+  const rv = technicalData?.realizedVol30d ? technicalData.realizedVol30d * 100 : null;
+  const ivRvRatio = (rv && rv > 0 && atmIv > 0) ? atmIv / rv : null;
+  if (ivRvRatio === null || ivRvRatio >= 1.0) return { penalty: 0, reasons: [] };
+  // Thinner premium → larger penalty, capped at -20.
+  const penalty = -Math.min(20, Math.round((1.0 - ivRvRatio) * 50));
+  return { penalty, reasons: [`thin premium: IV/RV ${ivRvRatio.toFixed(2)} < 1.0 for a credit structure`] };
 }
 
 // ── Strategy Selection ───────────────────────────────────────────────────────
@@ -232,8 +254,11 @@ function selectStrategy(gammaData, direction, snapshotPrice, technicalData) {
   const bw = gammaData.analysis.band_width_pct || 0;
   const conf = gammaData.analysis.confidence_score || 0;
   const atmIv = gammaData.ivData?.atmIv || 0;
-  const bwbEligible = (
-    (bw > 15 && bw <= 40 && conf >= 0.15) ||
+  const contractsOk = (gammaData.analysis.contracts_analyzed || 0) >= 50; // same liquidity bar as the condor gate
+  // Confidence floor is 0.30 (the analyzer's own "weak" cutoff / gammaReliable) — a BWB body anchored
+  // to a wall we grade "weak" is noise. Liquidity required so condor's liquidity-rejects don't leak in.
+  const bwbEligible = contractsOk && (
+    (bw > 15 && bw <= 40 && conf >= 0.30) ||
     (bw > 10 && bw <= 35 && conf >= 0.30 && atmIv >= 25)
   );
 
@@ -245,11 +270,14 @@ function selectStrategy(gammaData, direction, snapshotPrice, technicalData) {
     );
     const bwbBonus = scoreBWB(gammaData, bwbStrikes, snapshotPrice);
 
-    if (bwbBonus >= 0) {
+    // Real quality bar (was `>= 0`, which the old Math.max(0,…) made vacuously true): the BWB must
+    // earn at least one genuine quality signal (body at wall, IV 30-50, or buffer). Otherwise fall
+    // through to iron_butterfly/no-trade rather than forcing an asymmetric structure on weak walls.
+    if (bwbBonus >= 5) {
       const strat = { ...STRATEGIES.broken_wing_butterfly };
       strat.subtype = bwbStrikes.subtype;
       strat.strikes = bwbStrikes;
-      strat.bwbBonus = bwbBonus;
+      strat.bwbBonus = Math.max(0, bwbBonus); // clamp only when it ADDS to the composite score
       strat.characteristics = {
         entryType: 'credit',
         zeroRiskSide: bwbDir === 'put' ? 'above' : 'below',
@@ -306,4 +334,6 @@ module.exports = {
   STRATEGIES,
   // BWB helpers (used by pipeline report assembly)
   roundToStrike, calculateBWBStrikes, scoreBWB,
+  // Premium-adequacy penalty (thin IV/RV for credit structures)
+  premiumRiskPenalty,
 };

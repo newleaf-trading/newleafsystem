@@ -199,6 +199,14 @@ function classifyLegs(legs) {
   return 'unknown';
 }
 
+// Strategies whose legs must ALL carry the same quantity — a ratio'd version (e.g. a condor with
+// a qty-3 short call) is a categorically different, often naked-tailed risk profile than the
+// "defined-risk" label promises. BWB is intentionally excluded: it is 1-2-1 by design.
+const UNIFORM_QTY = new Set([
+  'iron_condor', 'iron_butterfly', 'bull_put_spread', 'bear_call_spread',
+  'bull_call_spread', 'bear_put_spread', 'long_straddle', 'long_strangle',
+]);
+
 /**
  * Validate a declared strategy against its returned legs.
  * @returns {{valid:boolean, declared:string, actual:string, matchesLabel:boolean, errors:string[]}}
@@ -211,6 +219,9 @@ function validateStrategy(strategy, rawLegs) {
 
   if (!v) errors.push(`unknown strategy "${strategy}"`);
   else if (errors.length === 0) errors.push(...v(legs));
+
+  if (UNIFORM_QTY.has(strategy) && errors.length === 0 && new Set(legs.map(l => l.qty)).size > 1)
+    errors.push(`${strategy} legs must all have equal quantity — a ratio'd structure has a different (often naked-tail) risk profile`);
 
   const matchesLabel = actual === strategy;
   if (errors.length === 0 && !matchesLabel && actual !== 'unknown')

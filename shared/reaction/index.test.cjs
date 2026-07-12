@@ -557,6 +557,46 @@ console.log('\n--- Falling-knife: pending touch ---');
   assert(stats.pendingCount >= 1, `pendingCount >= 1 (got ${stats.pendingCount})`);
 }
 
+// ── Quality mean-reversion exception ──
+console.log('\n--- Quality mean-reversion exception ---');
+{
+  const { computeReactionGate, applyReactionGate } = require('./gate.cjs');
+  // applyReactionGate: qualityBounce overrides the knife veto and promotes a NEUTRAL pick.
+  const knifeGate = { qualityBounce: true, rsi: 12, trendIntoZone: true, trendIntoZoneSide: 'support',
+    bias: 'no_trade', testingSupport: true };
+  const a = applyReactionGate('broken_wing_butterfly', knifeGate);
+  assert(!!a && a.strategy === 'bull_call_spread' && a.direction === 'bullish' && a.flag === 'quality_mean_reversion',
+    `quality bounce → bull_call promotion (got ${JSON.stringify(a)})`);
+  // Only neutral picks are promoted — a directional pick is never given a quality promotion.
+  const b = applyReactionGate('bull_put_spread', knifeGate);
+  assert(!b || b.flag !== 'quality_mean_reversion', 'quality bounce does not promote a directional pick');
+
+  // computeReactionGate: the flag + its guards. Steep 6-bar decline into a defended put wall.
+  const candles = [];
+  for (let i = 0; i < 40; i++) candles.push(makeCandle(i, 180 - i * 0.8));
+  const shared = { candles, callWall: 200, sma50: 170, sma100: 175, sma200: 178,
+    bbLower: 145, bbUpper: 205, atrPct: 0.035, adx: 34, ivRv: 0.86, gammaConfidence: 0.7 };
+  // Mega + oversold + spot ABOVE a defended wall → qualityBounce true.
+  const gYes = computeReactionGate({ ...shared, spot: 151, putWall: 148, rsi: 12, isQualityName: true });
+  assert(gYes && gYes.qualityBounce === true, `mega oversold above defended wall → qualityBounce (got ${gYes && gYes.qualityBounce})`);
+  assert(gYes && gYes.rsi === 12, 'gate surfaces rsi');
+  // Structural-break guard: spot BELOW the put wall → wall broken → qualityBounce false.
+  const gBreak = computeReactionGate({ ...shared, spot: 145, putWall: 148, rsi: 12, isQualityName: true });
+  assert(gBreak && gBreak.qualityBounce === false, `spot below wall → no bounce (got ${gBreak && gBreak.qualityBounce})`);
+  // Not a quality name → false.
+  const gNotQ = computeReactionGate({ ...shared, spot: 151, putWall: 148, rsi: 12, isQualityName: false });
+  assert(gNotQ && gNotQ.qualityBounce === false, 'non-mega → no bounce');
+  // Not oversold → false.
+  const gNotOS = computeReactionGate({ ...shared, spot: 151, putWall: 148, rsi: 55, isQualityName: true });
+  assert(gNotOS && gNotOS.qualityBounce === false, 'not oversold → no bounce');
+  // Weak wall (below the 0.45 moderate floor) → false.
+  const gWeak = computeReactionGate({ ...shared, gammaConfidence: 0.3, spot: 151, putWall: 148, rsi: 12, isQualityName: true });
+  assert(gWeak && gWeak.qualityBounce === false, 'undefended wall (conf<0.45) → no bounce');
+  // ORCL-like moderate confidence (0.551) clears the 0.45 floor → true (boundary lock).
+  const gMod = computeReactionGate({ ...shared, gammaConfidence: 0.551, spot: 151, putWall: 148, rsi: 12, isQualityName: true });
+  assert(gMod && gMod.qualityBounce === true, 'moderate conf 0.551 clears 0.45 floor → bounce');
+}
+
 // ── Events: parseEventCalendar, staleness, exclusions ──
 console.log('\n--- Events: calendar parsing + exclusions ---');
 const { parseEventCalendar, stalenessLabel, checkEarningsExclusion, checkExDivExclusion } = require('./events.cjs');

@@ -29,6 +29,8 @@
       --chart-profit: #1a8c5e; --chart-loss: #c0392b;
       --green: #1a8c5e; --yellow: #d97706; --red: #c0392b;
       --green-bg: rgba(26,140,94,0.08); --yellow-bg: rgba(217,119,6,0.08); --red-bg: rgba(192,57,43,0.08);
+      /* aliases so the ported Gamma & Technical chart modal CSS works verbatim */
+      --muted: var(--ink-muted); --line: var(--border); --amber: var(--yellow);
     }
     body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; padding-top: 0; }
     header { display: none; }
@@ -78,8 +80,63 @@
     .vp-seat-tag .tag-supportive { background:var(--pass-bg);color:var(--pass-text); }
     .vp-seat-tag .tag-caution { background:var(--concern-bg);color:var(--concern-text); }
     .vp-seat-tag .tag-neutral { background:var(--cream-dark);color:var(--ink-muted); }
-    .vp-seat-transcript { font-size:11px;color:var(--ink-muted);line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);max-height:200px;overflow-y:auto; }
+    .vp-seat-transcript { font-size:11px;color:var(--ink-muted);line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);max-height:280px;overflow-y:auto; }
     .vp-seat-expand { font-size:10px;color:var(--teal);cursor:pointer;margin-top:4px;background:none;border:none;text-decoration:underline; }
+    /* Rich per-agent drawer (structured badges + full analysis) */
+    .vp-badges { display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px; }
+    .vp-badge { font-size:10px;padding:2px 7px;border-radius:4px;background:var(--cream-dark);color:var(--ink-muted);white-space:nowrap; }
+    .vp-badge b { color:var(--ink);font-weight:600; }
+    .vp-drawer-text { font-size:11px;color:var(--ink-mid);line-height:1.55; }
+    .vp-drawer-text ul { margin:4px 0 0;padding-left:16px; }
+    .vp-drawer-text li { margin-bottom:2px; }
+    .vp-round { margin-top:6px;padding-top:6px;border-top:1px dashed var(--border); }
+    .vp-round:first-child { margin-top:0;padding-top:0;border-top:none; }
+    .vp-round-h { font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-faint);font-weight:600;margin-bottom:2px; }
+    .vp-model { font-size:9px;color:var(--ink-faint);margin-top:6px;font-family:var(--mono); }
+    /* Raw model-call inspector */
+    .vp-traces { margin-top:10px;text-align:left; }
+    .vp-trace-sum { font-size:10px;color:var(--ink-muted);font-family:var(--mono);margin-bottom:8px;text-align:center; }
+    .vp-trace { border:1px solid var(--border);border-radius:6px;margin-bottom:6px;overflow:hidden;background:var(--white); }
+    .vp-trace-head { display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:11px; }
+    .vp-trace-head:hover { background:var(--cream); }
+    .vp-trace-model { font-size:9px;color:var(--ink-faint);font-family:var(--mono); }
+    .vp-trace-meta { font-size:9px;color:var(--ink-muted);font-family:var(--mono);white-space:nowrap; }
+    .vp-trace-body { display:none;padding:0 12px 10px; }
+    .vp-trace.open .vp-trace-body { display:block; }
+    .vp-trace-label { font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600;margin:8px 0 2px; }
+    .vp-trace-body pre { font-size:10px;line-height:1.5;color:var(--ink-mid);background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:8px;margin:0;max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-word; }
+    /* "View chart" trigger inside an agent drawer */
+    .vp-chart-btn { font-size:10px;color:var(--teal);cursor:pointer;background:none;border:1px solid var(--border);border-radius:5px;padding:3px 9px;margin-top:8px;font-weight:600; }
+    .vp-chart-btn:hover { background:var(--teal-bg);border-color:var(--teal); }
+    /* ===== Gamma & Technical chart modal (ported from movement-range.html) ===== */
+    .info-popup-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(11,15,20,.45);z-index:900;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+    .info-popup{background:#fff;border-radius:12px;width:1000px;max-width:96vw;max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+    .info-popup-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;border-bottom:1px solid var(--line)}
+    .info-popup-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--forest)}
+    .info-popup-close{background:none;border:none;font-size:24px;color:#999;cursor:pointer;padding:0 4px;line-height:1}
+    .info-popup-close:hover{color:#333}
+    .info-popup-body{padding:18px 20px 22px}
+    .ip-section{margin-bottom:16px}.ip-section:last-child{margin-bottom:0}
+    .ip-section-title{font-family:var(--mono),monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+    .ip-section-desc{font-size:11px;color:#999;line-height:1.45;margin-bottom:8px;font-style:italic}
+    .ip-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .ip-grid.cols-2{grid-template-columns:repeat(2,1fr)}.ip-grid.cols-4{grid-template-columns:repeat(4,1fr)}
+    .ip-cell{display:flex;flex-direction:column;gap:1px}
+    .ip-cell-lbl{font-family:var(--mono),monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+    .ip-cell-val{font-family:var(--mono),monospace;font-size:13px;font-weight:700;color:var(--ink)}
+    .ip-cell-val.green{color:var(--green)}.ip-cell-val.red{color:var(--red)}.ip-cell-val.gold{color:var(--amber)}
+    .ip-cell-sub{font-size:10px;color:var(--muted)}
+    .ip-bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:4px}
+    .ip-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+    .ip-strike-row{display:grid;grid-template-columns:60px 1fr 80px 80px;gap:8px;align-items:center;padding:4px 0;font-size:11px;border-bottom:1px solid var(--line)}
+    .ip-strike-row:last-child{border-bottom:none}
+    .ip-strike-lbl{font-family:var(--mono),monospace;font-weight:700}
+    .ip-strike-bar{height:5px;background:var(--line);border-radius:3px;overflow:hidden}
+    .ip-strike-fill{height:100%;border-radius:3px;background:var(--forest)}
+    .ip-tabs{display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:14px;flex-wrap:wrap}
+    .ip-tab{padding:7px 16px;font-family:var(--mono),monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none}
+    .ip-tab:hover{color:var(--ink)}.ip-tab.active{color:var(--forest);border-bottom-color:var(--forest);font-weight:700}
+    .ip-tab-content{display:none}.ip-tab-content.active{display:block}
 
     /* Verdict */
     .v5-banner { padding:24px;border-radius:10px;text-align:center;margin-bottom:14px; }
@@ -95,6 +152,9 @@
     .v5-scale div { flex:1; }
     .v5-desk-row { display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px; }
     .v5-desk-row:last-child { border-bottom:none; }
+    /* Inline "verify on chart" link at the end of a desk-row finding */
+    .v5-chart-link { font-size:11px;color:var(--teal);white-space:nowrap;margin-left:8px;cursor:pointer;font-weight:600; }
+    .v5-chart-link:hover { text-decoration:underline; }
     .panel { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(15,61,46,.04); }
     .panel-title { font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); margin-bottom: 16px; }
 
@@ -532,16 +592,16 @@
 
         <!-- Deep-dive analysis row -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px" id="deep-dive-row" class="hidden">
-          <div class="panel" style="padding:14px;cursor:pointer;transition:box-shadow 0.2s" onclick="openDeepDive('gamma')" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600;margin-bottom:4px">Gamma Walls</div>
+          <div class="panel" id="dd-card-gamma" style="padding:14px;cursor:pointer;transition:box-shadow 0.2s;border-left:3px solid transparent" onclick="openDeepDive('gamma')" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600">Gamma Walls</div><span id="dd-verdict-gamma"></span></div>
             <div style="font-size:12px;color:var(--ink-muted)">GEX by strike, OI breakdown, top gamma strikes</div>
           </div>
-          <div class="panel" style="padding:14px;cursor:pointer;transition:box-shadow 0.2s" onclick="openDeepDive('technical')" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600;margin-bottom:4px">Technical</div>
+          <div class="panel" id="dd-card-technical" style="padding:14px;cursor:pointer;transition:box-shadow 0.2s;border-left:3px solid transparent" onclick="openDeepDive('technical')" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600">Technical</div><span id="dd-verdict-technical"></span></div>
             <div style="font-size:12px;color:var(--ink-muted)">RSI, MACD, Bollinger Bands, SMA trend</div>
           </div>
-          <div class="panel" style="padding:14px;cursor:pointer;transition:box-shadow 0.2s" onclick="openDeepDive('iv')" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600;margin-bottom:4px">IV &amp; Skew</div>
+          <div class="panel" id="dd-card-iv" style="padding:14px;cursor:pointer;transition:box-shadow 0.2s;border-left:3px solid transparent" onclick="openDeepDive('iv')" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--teal);font-weight:600">IV &amp; Skew</div><span id="dd-verdict-iv"></span></div>
             <div style="font-size:12px;color:var(--ink-muted)">ATM IV, IV level, term structure</div>
           </div>
         </div>
@@ -561,6 +621,12 @@
             <button onclick="hide($('#technical-deep-dive'))" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink-muted)">&times;</button>
           </div>
           <p style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:14px">Computed from 250 daily closing prices via the NewLeaf indicators engine. These are real values, not LLM-generated.</p>
+          <div id="techRegimeBanner"></div>
+          <div id="ddTechChartWrap" style="margin-bottom:16px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-muted);font-weight:600;margin-bottom:6px">Price &amp; moving averages</div>
+            <canvas id="ddTechChart" style="width:100%;height:220px;display:block"></canvas>
+            <div style="display:flex;gap:16px;justify-content:center;margin-top:6px;font-size:10px;color:var(--ink-muted)"><span><span style="display:inline-block;width:12px;height:2px;background:#0B2D23;vertical-align:middle"></span> Price</span><span><span style="display:inline-block;width:12px;height:2px;background:#2d7d4f;vertical-align:middle"></span> SMA20</span><span><span style="display:inline-block;width:12px;height:2px;background:#c0392b;vertical-align:middle"></span> SMA50</span></div>
+          </div>
           <div id="technical-content" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
         </div>
 
@@ -570,6 +636,12 @@
             <button onclick="hide($('#iv-deep-dive'))" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink-muted)">&times;</button>
           </div>
           <p style="font-size:12px;color:var(--ink-muted);font-style:italic;margin-bottom:14px">Implied volatility from the options chain. Higher IV means richer premiums for sellers but more expected movement.</p>
+          <div id="ivRegimeBanner"></div>
+          <div id="ddIvChartWrap" style="margin-bottom:16px">
+            <div id="ddIvChartTitle" style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-muted);font-weight:600;margin-bottom:6px">IV term structure</div>
+            <canvas id="ddIvChart" style="width:100%;height:180px;display:none"></canvas>
+            <div id="ddIvGauge"></div>
+          </div>
           <div id="iv-content" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px"></div>
         </div>
 
@@ -676,7 +748,7 @@
       </div>
 
       <!-- Outcome metrics with unit captions -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px" id="drill-metrics"></div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px" id="drill-metrics"></div>
 
       <!-- Payoff chart -->
       <div class="panel" style="padding:14px;margin-top:10px">
@@ -765,8 +837,21 @@
         </div>
       </div>
 
-      <div style="text-align:center;margin-top:10px">
+      <div style="text-align:center;margin-top:10px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
         <button onclick="toggleAllTranscripts()" style="background:none;border:none;color:var(--teal);font-size:11px;cursor:pointer;text-decoration:underline" id="vp-expand-all">Expand all transcripts</button>
+        <button onclick="toggleTraceInspector()" style="background:none;border:none;color:var(--teal);font-size:11px;cursor:pointer;text-decoration:underline" id="vp-trace-btn">Inspect model calls</button>
+      </div>
+      <div id="vp-trace-inspector" class="vp-traces hidden"></div>
+    </div>
+
+    <!-- ===== Gamma & Technical chart modal (opened from agent drawers / verdict) ===== -->
+    <div class="info-popup-overlay" id="deskChartOverlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+      <div class="info-popup">
+        <div class="info-popup-hdr">
+          <div class="info-popup-title" id="deskChartTitle">Gamma &amp; Technical Analysis</div>
+          <button class="info-popup-close" onclick="document.getElementById('deskChartOverlay').style.display='none'">&times;</button>
+        </div>
+        <div class="info-popup-body" id="deskChartBody">Loading...</div>
       </div>
     </div>
 
@@ -785,7 +870,7 @@
     /* ================================================================
        DISCOVER.HTML — Guided "ticker to verified trade" journey
        ================================================================ */
-    import { computeNetCredit as _computeNC, computeMaxLoss as _computeML, computeBreakevens as _computeBE, pnlAt as _pnlAt } from './public/js/legMath.js';
+    import { computeNetCredit as _computeNC, computeMaxLoss as _computeML, computeMaxProfit as _computeMP, computeBreakevens as _computeBE, pnlAt as _pnlAt, estimatePoP as _estimatePoP, computeRewardRisk as _computeRR } from './public/js/legMath.js';
     import { drawPayoffChart as _drawPayoff } from './public/js/payoffChart.js';
     import { renderGammaAnalysis as _renderGamma } from './public/js/gammaChart.js';
     const $ = s => document.querySelector(s);
@@ -1054,6 +1139,24 @@
       if (!ticker) return;
 
       // Snapshot is free — no rate limit check here (metering on verify/recommend only)
+      // New ticker → wipe EVERYTHING derived from the previous one so no stale data
+      // (strategies, drill-in, verify, verdict, charts, gamma cards) can linger on screen.
+      if (state.ticker !== ticker) {
+        state._techData = undefined; state._ivByExpiry = undefined; state._reportIv = undefined;
+        state.strategies = []; state.selectedStrategy = null; state.selectedStrategyIndex = -1;
+        state.legs = []; state.chainData = []; state.qty = 10;
+        state.verdict = null; state.mutations = []; state.debate = null; state.debateRounds = [];
+        state.evidence = {}; state.riskReport = {}; state.verifyData = null;
+        state.enginePick = null; state.r2Data = null; state.gammaData = null; state.selectedExpiry = '';
+        state.confScore = null; state.oiConf = null; state.volConf = null; state.deltaConf = null;
+        state.gexPutWall = null; state.gexCallWall = null; state.atmIv = null;
+        // Clear rendered panels so a forward-nav can never flash previous-ticker content.
+        ['#strategy-cards', '#drill-metrics', '#technical-content', '#iv-content'].forEach(function (id) { var el = document.querySelector(id); if (el) el.innerHTML = ''; });
+        ['#technical-deep-dive', '#iv-deep-dive', '#gamma-deep-dive', '#deep-dive-row', '#gamma-confidence-panel'].forEach(function (id) { var el = document.querySelector(id); if (el) el.classList.add('hidden'); });
+        var findBtn = document.getElementById('find-strategies-btn'); if (findBtn) findBtn.disabled = true;
+        // Return to the snapshot step and lock stages 2–6 until the new ticker is re-run.
+        maxStage = 1; currentStage = 1; goToStage(1, true);
+      }
       state.ticker = ticker;
       const btn = $('#load-btn');
       btn.textContent = '...'; btn.disabled = true;
@@ -1297,7 +1400,9 @@
       $('#gex-put-wall').textContent = state.gexPutWall ? `$${state.gexPutWall}` : (state.putWall ? `$${state.putWall}` : '---');
       $('#gex-call-wall').textContent = state.gexCallWall ? `$${state.gexCallWall}` : (state.callWall ? `$${state.callWall}` : '---');
       // ATM IV
-      if (state.atmIv) $('#stat-iv').textContent = state.atmIv.toFixed(1) + '%';
+      // ATM IV tile is filled from the trustworthy R2 report once it loads (renderDeepDiveVerdicts);
+      // show a pending dash rather than the unreliable gamma-analysis value.
+      $('#stat-iv').textContent = '--';
       // Confidence
       if (state.confScore != null) {
         const pct = Math.round(state.confScore * 100);
@@ -1312,8 +1417,91 @@
         $('#conf-sub-bars').innerHTML = bar(state.oiConf, 'Open Interest') + bar(state.volConf, 'Volume') + bar(state.deltaConf, 'Delta');
         show($('#gamma-confidence-panel'));
       }
-      // Show deep-dive row
+      // Show deep-dive row + tint each card with its at-a-glance verdict
       show($('#deep-dive-row'));
+      renderDeepDiveVerdicts();
+    }
+
+    // ── Snapshot card verdicts: tint each deep-dive card so the user gets an at-a-glance read.
+    //    light green = bullish, light pink = bearish, light yellow = neutral.
+    //    Technical + Gamma are directional; IV & Skew shows premium richness (no bull/bear at
+    //    snapshot — no skew data), so it's green=cheap / yellow=fair / amber=rich.
+    const DD_TONES = {
+      bull:    { bg: '#e9f5ee', border: '#2d7d4f', text: '#256b45', label: 'Bullish' },
+      bear:    { bg: '#fdecec', border: '#c0392b', text: '#a5342a', label: 'Bearish' },
+      neutral: { bg: '#fbf4dd', border: '#c99a2e', text: '#8a6d1e', label: 'Neutral' },
+      cheap:   { bg: '#e9f5ee', border: '#2d7d4f', text: '#256b45', label: 'Cheap' },
+      fair:    { bg: '#fbf4dd', border: '#c99a2e', text: '#8a6d1e', label: 'Fair' },
+      rich:    { bg: '#f7edd6', border: '#b07f2e', text: '#8a6320', label: 'Rich' },
+    };
+
+    function ddTechnicalVerdict() {
+      const tr = String(state.trend || '').toLowerCase();
+      let s = 0;
+      if (/bull|up/.test(tr)) s++; else if (/bear|down/.test(tr)) s--;
+      if (typeof state.rsi === 'number') { if (state.rsi >= 55) s++; else if (state.rsi <= 45) s--; }
+      const detail = `trend ${state.trend || '?'}, RSI ${state.rsi != null ? state.rsi.toFixed(0) : '?'}`;
+      if (s > 0) return { tone: 'bull', title: detail };
+      if (s < 0) return { tone: 'bear', title: detail };
+      return { tone: 'neutral', title: detail };
+    }
+
+    function ddGammaVerdict() {
+      const ts = (state.r2Data && state.r2Data.gammaData && state.r2Data.gammaData.analysis && state.r2Data.gammaData.analysis.topStrikes) || [];
+      if (!ts.length) return null;
+      let call = 0, put = 0;
+      for (const s of ts) { call += Math.abs(s.callGex || 0); put += Math.abs(s.putGex || 0); }
+      const tot = call + put;
+      if (tot <= 0) return { tone: 'neutral', title: 'No GEX data' };
+      const ratio = (call - put) / tot;
+      const nums = `call GEX ${(call / 1e6).toFixed(1)}M vs put GEX ${(put / 1e6).toFixed(1)}M`;
+      if (ratio > 0.15) return { tone: 'bull', title: 'call-dominant · ' + nums };
+      if (ratio < -0.15) return { tone: 'bear', title: 'put-dominant · ' + nums };
+      return { tone: 'neutral', title: 'balanced · ' + nums };
+    }
+
+    // Trustworthy IV data = the R2 nightly report (state._reportIv). The live gamma-analysis
+    // ivData is on a broken scale (e.g. SHOP shows 1.6% when real ATM IV is 66%), so we DON'T
+    // fall back to it — a ticker with no report IV honestly shows "unavailable".
+    function bestIvData() {
+      const rep = state._reportIv;
+      if (rep && typeof rep.atmIv === 'number') return rep;
+      return null;
+    }
+
+    function ddIvVerdict() {
+      const iv = bestIvData();
+      if (!iv) return null; // no trustworthy IV data → no tint
+      const lvl = String(iv.ivLevel || '').toLowerCase();
+      const atm = iv.atmIv != null ? iv.atmIv.toFixed(1) + '%' : '';
+      if (lvl === 'high') return { tone: 'rich', title: `IV ${atm} — expensive, good for sellers` };
+      if (lvl === 'low') return { tone: 'cheap', title: `IV ${atm} — cheap, good for buyers` };
+      if (lvl) return { tone: 'fair', title: `IV ${atm} — fairly priced` };
+      return null;
+    }
+
+    function setDDVerdict(cardEl, spanEl, v) {
+      if (!cardEl || !spanEl) return;
+      if (!v) { cardEl.style.background = ''; cardEl.style.borderLeftColor = 'transparent'; spanEl.innerHTML = ''; return; }
+      const t = DD_TONES[v.tone] || DD_TONES.neutral;
+      cardEl.style.background = t.bg;
+      cardEl.style.borderLeftColor = t.border;
+      spanEl.innerHTML = `<span title="${(v.title || '').replace(/"/g, '&quot;')}" style="font-size:10px;font-weight:700;letter-spacing:.03em;color:${t.text};white-space:nowrap">${t.label}</span>`;
+    }
+
+    function renderDeepDiveVerdicts() {
+      setDDVerdict($('#dd-card-technical'), $('#dd-verdict-technical'), ddTechnicalVerdict());
+      setDDVerdict($('#dd-card-gamma'), $('#dd-verdict-gamma'), ddGammaVerdict());
+      setDDVerdict($('#dd-card-iv'), $('#dd-verdict-iv'), ddIvVerdict());
+      // The trustworthy IV numbers come from the R2 report (loaded async). Once it's in,
+      // re-tint the IV card and correct the ATM IV tile so they agree with the term chart.
+      const tickerAtLoad = state.ticker;
+      loadDeskTechData().then(() => {
+        if (state.ticker !== tickerAtLoad) return; // ticker changed mid-flight — drop stale update
+        setDDVerdict($('#dd-card-iv'), $('#dd-verdict-iv'), ddIvVerdict());
+        const iv = bestIvData();
+        const el = $('#stat-iv'); if (el) el.textContent = (iv && typeof iv.atmIv === 'number') ? iv.atmIv.toFixed(1) + '%' : '--';
+      }).catch(() => {});
     }
 
     function openDeepDive(type) {
@@ -1334,7 +1522,109 @@
       }
     }
 
-    function renderTechnicalPanel() {
+    // Shared interpretive-banner styling (same look as the net-gamma regime banner).
+    // plain = optional plain-English TL;DR shown above the technical "mechanics" line.
+    function regimeBannerHTML(kicker, label, sub, tone, plain) {
+      const T = ({
+        green: { bg: '#e9f5ee', border: '#2d7d4f', color: '#256b45' },
+        red:   { bg: '#fdecec', border: '#c0392b', color: '#a5342a' },
+        amber: { bg: 'var(--concern-bg,#fdf6e3)', border: 'var(--concern-border,#d9b25e)', color: '#8a6d1e' },
+      })[tone] || { bg: 'var(--concern-bg,#fdf6e3)', border: 'var(--concern-border,#d9b25e)', color: '#8a6d1e' };
+      const plainHtml = plain
+        ? `<div style="font-size:12.5px;font-weight:600;color:${T.color};line-height:1.5;margin-top:5px">In plain English: <span style="font-weight:500;color:var(--ink,#0B0F14)">${plain}</span></div>
+           <div style="font-size:11px;color:var(--ink-muted,#6b6b60);line-height:1.5;margin-top:6px"><b style="text-transform:uppercase;font-size:9px;letter-spacing:.06em">The mechanics</b> · ${sub}</div>`
+        : `<div style="font-size:11.5px;color:var(--ink,#0B0F14);line-height:1.5;margin-top:4px">${sub}</div>`;
+      return `<div style="margin:0 0 14px;padding:10px 14px;background:${T.bg};border:1px solid ${T.border};border-left:3px solid ${T.border};border-radius:8px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-muted,#6b6b60)">${kicker}</span><span style="font-size:13px;font-weight:800;color:${T.color}">${label}</span></div>
+        ${plainHtml}
+      </div>`;
+    }
+
+    // Trend & momentum synthesis: combines ADX (strength), MACD/SMA (direction) and RSI
+    // (extension) into one read the individual tiles don't give.
+    function technicalRegimeHTML() {
+      const ind = state.indicators || {};
+      const rsi = state.rsi != null ? state.rsi : ind.rsi14;
+      const adx = state.adx != null ? state.adx : ind.adx14;
+      const macd = ind.macdLine, sig = ind.macdSignal;
+      const tr = String(state.trend || ind.smaTrend || '').toLowerCase();
+      if (rsi == null && adx == null) return '';
+      let dir = 0;
+      if (macd != null && sig != null) dir += macd > sig ? 1 : macd < sig ? -1 : 0;
+      if (/bull|up/.test(tr)) dir++; else if (/bear|down/.test(tr)) dir--;
+      if (rsi != null) { if (rsi >= 55) dir++; else if (rsi <= 45) dir--; }
+      const up = dir > 0, down = dir < 0;
+      const strong = adx != null && adx >= 25, veryStrong = adx != null && adx >= 40, weak = adx != null && adx < 20;
+      const parts = [];
+      if (adx != null) parts.push(`ADX ${adx.toFixed(0)} (${veryStrong ? 'very strong' : strong ? 'strong' : weak ? 'weak' : 'moderate'})`);
+      if (macd != null && sig != null) parts.push(`MACD ${macd > sig ? 'bullish' : 'bearish'}`);
+      let label, tone, sub, plain;
+      if (weak || (!up && !down)) {
+        label = 'Range-bound · no clear trend'; tone = 'amber';
+        plain = `This stock isn't going anywhere in particular right now — it's chopping sideways. Better for range/income trades than betting on a direction.`;
+        sub = `${parts.join(', ')}. Sideways / mean-reverting conditions — favors premium-selling structures (condors, spreads) over directional bets.`;
+      } else {
+        label = `${veryStrong ? 'Very strong' : strong ? 'Strong' : 'Developing'} ${up ? 'uptrend' : 'downtrend'}`;
+        tone = up ? 'green' : 'red';
+        const dirWord = up ? 'up' : 'down';
+        let caveat = '';
+        if (down && rsi != null && rsi <= 30) { caveat = ` RSI ${rsi.toFixed(0)} is ${rsi <= 15 ? 'extremely ' : ''}oversold — a mean-reversion bounce is likely, so don't chase new shorts; trend intact but stretched.`; plain = `The stock is falling hard, but it's been sold so heavily a short-term bounce is likely. The downtrend is intact — just a risky spot to jump in short right now.`; }
+        else if (up && rsi != null && rsi >= 70) { caveat = ` RSI ${rsi.toFixed(0)} is ${rsi >= 85 ? 'extremely ' : ''}overbought — a pullback is likely, so don't chase longs; trend intact but stretched.`; plain = `The stock is climbing strongly, but it's run up so far a short-term pullback is likely. The uptrend is intact — just a risky spot to chase longs right now.`; }
+        else { caveat = rsi != null ? ` RSI ${rsi.toFixed(0)} — momentum has room to run.` : ''; plain = `The stock is trending ${dirWord} with real strength and momentum still has room to run — trades that go ${up ? 'with the upside' : 'with the downside'} are favored over fading it.`; }
+        sub = `${parts.join(', ')}.${caveat}`;
+      }
+      // Volatility squeeze + earnings proximity — both are critical context the tiles omit.
+      const sq = state._techData && state._techData.volatilityEngine && state._techData.volatilityEngine.squeeze;
+      if (sq) sub += ' Bollinger squeeze active — a volatility breakout is pending.';
+      const ed = state.earningsDaysOut;
+      if (typeof ed === 'number' && ed > 0 && ed <= 21) { sub += ` <b style="color:#a5342a">Earnings in ~${ed}d</b> — binary event risk inside the window.`; plain += ` Heads up: earnings in ~${ed} days can move it sharply.`; }
+      return regimeBannerHTML('Trend &amp; momentum', label, sub, tone, plain);
+    }
+
+    // Volatility regime: premium richness (IV level) + term-structure shape (backwardation vs contango).
+    function ivRegimeHTML(iv) {
+      if (!iv || iv.atmIv == null) return '';
+      const lvl = String(iv.ivLevel || '').toLowerCase();
+      const atm = iv.atmIv.toFixed(0);
+      const entries = Object.entries(iv.ivByExpiry || {}).sort((a, b) => new Date(a[0]) - new Date(b[0]));
+      let shapeWord = '', shapeSub = '';
+      if (entries.length >= 2) {
+        const front = entries[0][1], back = entries[entries.length - 1][1];
+        const slope = front > 0 ? (back - front) / front : 0;
+        if (slope < -0.05) { shapeWord = 'backwardated'; shapeSub = ` The term structure is backwardated — the front expiry (${front.toFixed(0)}%) sits well above later weeks, signaling near-term event/fear risk. The richest premium (and most risk) is in the front week.`; }
+        else if (slope > 0.05) { shapeWord = 'contango'; shapeSub = ` The term structure is in contango — later expiries price higher IV, the normal calm-market shape; longer-dated premium is richer.`; }
+        else { shapeWord = 'flat'; shapeSub = ` The term structure is flat — IV is similar across expiries.`; }
+      }
+      // Premium richness — prefer IV/RV (implied vs realized) over the absolute IV level, because
+      // "high IV" can still be CHEAP if the stock moves even more (IV/RV < 1). Fall back to the
+      // categorical level only when realized vol isn't available.
+      const rv = (state._techData && typeof state._techData.realizedVol30d === 'number') ? state._techData.realizedVol30d * 100 : null;
+      const ivrv = (rv && rv > 0) ? iv.atmIv / rv : null;
+      let premWord, tone, premSub;
+      if (ivrv != null) {
+        if (ivrv >= 1.15) { premWord = 'rich'; tone = 'amber'; premSub = `ATM IV ${atm}% vs realized ${rv.toFixed(0)}% → IV/RV ${ivrv.toFixed(2)}: options are expensive relative to how much the stock actually moves — favors net sellers (condors, spreads, BWB).`; }
+        else if (ivrv <= 0.95) { premWord = 'cheap'; tone = 'green'; premSub = `ATM IV ${atm}% vs realized ${rv.toFixed(0)}% → IV/RV ${ivrv.toFixed(2)}: options are cheap relative to actual movement — selling premium is under-compensated; favors buyers / debit structures.`; }
+        else { premWord = 'fair'; tone = 'amber'; premSub = `ATM IV ${atm}% vs realized ${rv.toFixed(0)}% → IV/RV ${ivrv.toFixed(2)}: premium is roughly fair versus actual movement.`; }
+      } else {
+        const rich = lvl === 'high', cheap = lvl === 'low';
+        premWord = rich ? 'rich' : cheap ? 'cheap' : 'fair'; tone = cheap ? 'green' : 'amber';
+        premSub = rich ? `ATM IV ${atm}% is high — premium is rich, favoring net sellers.`
+          : cheap ? `ATM IV ${atm}% is low — premium is cheap, favoring buyers / debit structures.`
+          : `ATM IV ${atm}% is around fair value.`;
+      }
+      const label = `IV ${premWord}${shapeWord ? ` · ${shapeWord}` : ''}`;
+      const plainPrem = premWord === 'rich'
+        ? `Options are expensive compared with how much this stock actually moves — a good time to be a seller (collect premium), a poor time to buy options.`
+        : premWord === 'cheap'
+        ? `Options are cheap compared with how much this stock actually moves — a good time to buy options, a poor time to sell them.`
+        : `Options are priced about right for how much this stock moves — no strong edge to buying or selling premium.`;
+      const plainShape = shapeWord === 'backwardated' ? ` The nearest expiry is the most expensive, so something (often an event) is expected soon.` : '';
+      return regimeBannerHTML('Volatility regime', label, `${premSub}${shapeSub}`, tone, `${plainPrem}${plainShape}`);
+    }
+
+    async function renderTechnicalPanel() {
+      await loadDeskTechData(); // pull the R2 report (sr levels, bollinger bands, squeeze, realized vol)
+      const td = state._techData || {};
       const ind = state.indicators || {};
       const item = (lbl, val, desc) => `<div style="background:var(--cream);border-radius:8px;padding:10px 12px">
         <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-muted);font-weight:600">${lbl}</div>
@@ -1351,6 +1641,14 @@
       const trendDesc = trend === 'bullish' ? 'SMAs in bullish order (20>50>100>200)' : trend === 'bearish' ? 'SMAs in bearish order' : 'Mixed SMA alignment';
       const bbw = ind.bollingerWidth;
       const bbwDesc = bbw > 6 ? 'Wide bands — high recent volatility' : bbw < 3 ? 'Tight squeeze — breakout likely' : 'Normal volatility range';
+      // Bollinger %B — where price sits within the bands (data from the R2 report)
+      const bb = td.bb || {};
+      let pctB = null;
+      if (bb.upper != null && bb.lower != null && bb.upper > bb.lower && state.spot) pctB = (state.spot - bb.lower) / (bb.upper - bb.lower);
+      const pctBDesc = pctB == null ? 'Bollinger band position' : pctB >= 1 ? 'At/above upper band — stretched' : pctB <= 0 ? 'At/below lower band — stretched' : pctB >= 0.8 ? 'Near upper band' : pctB <= 0.2 ? 'Near lower band' : 'Mid-band';
+      // Support / Resistance pivot levels
+      const sr = td.sr || {};
+      const srVal = (sr.support1 != null ? '$' + Math.round(sr.support1) : '--') + ' / ' + (sr.resistance1 != null ? '$' + Math.round(sr.resistance1) : '--');
 
       $('#technical-content').innerHTML =
         item('RSI (14)', rsi ? rsi.toFixed(1) : '---', rsiDesc) +
@@ -1358,29 +1656,175 @@
         item('MACD Line', macd != null ? macd.toFixed(3) : '---', macdDesc) +
         item('MACD Signal', ind.macdSignal != null ? ind.macdSignal.toFixed(3) : '---', 'Signal line (9-period EMA of MACD)') +
         item('SMA Trend', trend, trendDesc) +
-        item('Bollinger Width', bbw != null ? bbw.toFixed(2) + '%' : '---', bbwDesc);
+        item('Bollinger Width', bbw != null ? bbw.toFixed(2) + '%' : '---', bbwDesc) +
+        item('Bollinger %B', pctB != null ? (pctB * 100).toFixed(0) + '%' : '--', pctBDesc) +
+        item('Support / Resistance', srVal, 'Pivot levels (S1 / R1)');
+      const tb = $('#techRegimeBanner'); if (tb) tb.innerHTML = technicalRegimeHTML();
+      drawDDTechChart();
     }
 
-    function renderIVPanel() {
-      const iv = state.r2Data?.gammaData?.ivData || {};
+    // Price + SMA20/SMA50 trend chart for the Technical deep-dive. Uses the R2 daily-bar
+    // report; hides gracefully (tiles remain) if the series isn't available.
+    async function drawDDTechChart() {
+      const wrap = document.getElementById('ddTechChartWrap');
+      try {
+        const td = await loadDeskTechData();
+        const ph = (td && td.priceHistory) ? td.priceHistory : [];
+        if (ph.length < 30) { if (wrap) wrap.style.display = 'none'; return; }
+        if (wrap) wrap.style.display = '';
+        const prices = ph.map(p => p.c);
+        const dates = ph.map(p => { const d = new Date(p.t); return (d.getMonth() + 1) + '/' + d.getDate(); });
+        const sma = n => prices.map((_, i) => i >= n - 1 ? prices.slice(i - n + 1, i + 1).reduce((a, b) => a + b, 0) / n : null);
+        drawLineChartMR('ddTechChart', { labels: dates, series: [
+          { data: prices, color: '#0B2D23', width: 2, label: 'Price' },
+          { data: sma(20), color: '#2d7d4f', width: 1.5, label: 'SMA20' },
+          { data: sma(50), color: '#c0392b', width: 1.5, label: 'SMA50' },
+        ] });
+      } catch (e) { if (wrap) wrap.style.display = 'none'; }
+    }
+
+    // IV term-structure line (ATM IV across expiries). Falls back to a low/fair/rich gauge
+    // when only a single expiry is available so the IV panel always shows a visual.
+    async function drawDDIvChart() {
+      const wrap = document.getElementById('ddIvChartWrap');
+      const canvas = document.getElementById('ddIvChart');
+      const gauge = document.getElementById('ddIvGauge');
+      const title = document.getElementById('ddIvChartTitle');
+      try {
+        await loadDeskTechData(); // populates state._ivByExpiry
+        const ivMap = state._ivByExpiry || (state.r2Data && state.r2Data.gammaData && state.r2Data.gammaData.ivData && state.r2Data.gammaData.ivData.ivByExpiry) || {};
+        const entries = Object.entries(ivMap).sort((a, b) => new Date(a[0]) - new Date(b[0]));
+        if (wrap) wrap.style.display = '';
+        if (entries.length >= 2) {
+          if (title) title.textContent = 'IV term structure';
+          if (gauge) gauge.innerHTML = '';
+          if (canvas) canvas.style.display = 'block';
+          const labels = entries.map(([d]) => { const dt = new Date(d); return (dt.getMonth() + 1) + '/' + dt.getDate(); });
+          const vals = entries.map(([, v]) => v);
+          drawLineChartMR('ddIvChart', { labels, series: [{ data: vals, color: '#0B2D23', width: 2, label: 'ATM IV' }], yFmt: v => v.toFixed(0) + '%' });
+        } else {
+          // Fallback: single-expiry gauge, or an honest "unavailable" when there's no report IV.
+          if (canvas) canvas.style.display = 'none';
+          const iv = bestIvData();
+          if (!iv) {
+            if (title) title.textContent = 'IV & skew';
+            if (gauge) gauge.innerHTML = `<div style="text-align:center;padding:6px 0;font-size:12px;color:var(--ink-muted);font-style:italic">IV data unavailable for this ticker.</div>`;
+            return;
+          }
+          if (title) title.textContent = 'IV level — where premium sits';
+          const lvl = String(iv.ivLevel || '').toLowerCase();
+          const atm = iv.atmIv != null ? iv.atmIv.toFixed(1) + '%' : '--';
+          const pos = lvl === 'high' ? 83 : lvl === 'low' ? 17 : 50;
+          const color = lvl === 'high' ? '#b07f2e' : lvl === 'low' ? '#2d7d4f' : '#c99a2e';
+          if (gauge) gauge.innerHTML = `<div style="position:relative;height:10px;border-radius:5px;background:linear-gradient(90deg,#e9f5ee,#fbf4dd,#f7edd6)"><div style="position:absolute;left:calc(${pos}% - 1px);top:-3px;bottom:-3px;width:2px;background:#0B0F14;border-radius:1px"></div></div><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--ink-muted);margin-top:4px"><span>Cheap</span><span>Fair</span><span>Rich</span></div><div style="text-align:center;margin-top:8px;font-size:12px;color:var(--ink-muted)"><b style="color:${color};text-transform:capitalize">${lvl || '—'}</b> · ATM IV ${atm}<div style="font-size:10px;font-style:italic;margin-top:2px">Single expiry — term structure needs 2+ dates.</div></div>`;
+        }
+      } catch (e) { if (wrap) wrap.style.display = 'none'; }
+    }
+
+    async function renderIVPanel() {
+      await loadDeskTechData(); // ensure the trustworthy R2 report IV is loaded before rendering tiles
       const item = (lbl, val, desc) => `<div style="background:var(--cream);border-radius:8px;padding:10px 12px">
         <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-muted);font-weight:600">${lbl}</div>
         <div style="font-size:18px;font-weight:700;font-family:var(--mono);margin:4px 0">${val}</div>
         <div style="font-size:11px;color:var(--ink-muted);font-style:italic">${desc}</div>
       </div>`;
+      const contracts = state.r2Data?.gammaData?.analysis?.contracts_analyzed || '---';
+      const iv = bestIvData();
+      const ivb = $('#ivRegimeBanner');
+      if (!iv) {
+        if (ivb) ivb.innerHTML = '';
+        $('#iv-content').innerHTML =
+          item('ATM IV', '--', 'IV data unavailable for this ticker') +
+          item('IV Level', '--', 'No report IV available') +
+          item('Contracts', contracts, 'Options contracts analyzed');
+        drawDDIvChart();
+        return;
+      }
+      if (ivb) ivb.innerHTML = ivRegimeHTML(iv);
       const atmIv = iv.atmIv;
       const ivLevel = iv.ivLevel || '---';
       const ivDesc = ivLevel === 'high' ? 'Options are expensive — good for sellers' : ivLevel === 'low' ? 'Options are cheap — good for buyers' : 'Options are fairly priced';
+      // IV/RV — richness vs actual movement (the read that "IV level" alone misses)
+      const rv = (state._techData && typeof state._techData.realizedVol30d === 'number') ? state._techData.realizedVol30d * 100 : null;
+      const ivrv = (rv && rv > 0 && atmIv != null) ? atmIv / rv : null;
+      const ivrvDesc = ivrv == null ? 'realized vol n/a' : ivrv >= 1.15 ? 'Rich — IV above realized' : ivrv <= 0.95 ? 'Cheap — IV below realized' : 'Fair vs realized';
+      // Expected move (±1SD) for the selected expiry
+      let emHtml = '';
+      if (atmIv != null && state.spot && state.selectedExpiry) {
+        const dte = Math.max(1, Math.round((new Date(state.selectedExpiry + 'T16:00:00').getTime() - Date.now()) / 86400000));
+        const em = state.spot * (atmIv / 100) * Math.sqrt(dte / 365);
+        emHtml = item('Expected move', '±$' + em.toFixed(1), `1SD by ${state.selectedExpiry} (${dte}d)`);
+      }
       const expiries = iv.ivByExpiry || {};
       const expiryHtml = Object.entries(expiries).slice(0, 3).map(([date, val]) =>
         item(date, val.toFixed(1) + '%', 'IV for this expiry')
       ).join('');
 
       $('#iv-content').innerHTML =
-        item('ATM IV', atmIv ? atmIv.toFixed(1) + '%' : '---', ivDesc) +
+        item('ATM IV', atmIv != null ? atmIv.toFixed(1) + '%' : '--', ivDesc) +
+        item('IV / RV', ivrv != null ? ivrv.toFixed(2) : '--', ivrvDesc) +
+        emHtml +
         item('IV Level', ivLevel, 'Relative to recent history') +
-        item('Contracts', state.r2Data?.gammaData?.analysis?.contracts_analyzed || '---', 'Options contracts analyzed') +
+        item('Contracts', contracts, 'Options contracts analyzed') +
         expiryHtml;
+      drawDDIvChart();
+    }
+
+    // Net-gamma regime banner — the "positive = mean-reverting / negative = trending" read.
+    // Derived from spot vs the gamma flip (where callGex-putGex crosses zero): above the flip
+    // dealers are net long gamma (buy dips/sell rips → dampen vol, pin between walls); below it
+    // they're net short gamma (sell dips/buy rips → amplify vol, stronger trends).
+    // The gamma flip = the strike where net GEX (callGex-putGex) crosses zero. The gamma-analysis
+    // API doesn't return it, so compute it from topStrikes the same way the pipeline does.
+    function computeGammaFlip(analysis) {
+      if (analysis && typeof analysis.gamma_flip === 'number') return analysis.gamma_flip;
+      const ts = ((analysis && analysis.topStrikes) || []).slice().sort((a, b) => a.strike - b.strike);
+      for (let i = 1; i < ts.length; i++) {
+        const na = ts[i - 1].netGex != null && ts[i - 1].netGex !== 0 ? ts[i - 1].netGex : (ts[i - 1].callGex || 0) - (ts[i - 1].putGex || 0);
+        const nb = ts[i].netGex != null && ts[i].netGex !== 0 ? ts[i].netGex : (ts[i].callGex || 0) - (ts[i].putGex || 0);
+        if (na !== 0 && nb !== 0 && Math.sign(na) !== Math.sign(nb)) return (ts[i - 1].strike + ts[i].strike) / 2;
+      }
+      return null;
+    }
+
+    function netGammaRegimeHTML(analysis, spot) {
+      const flip = computeGammaFlip(analysis);
+      if (flip == null || !spot) return '';
+      const dist = spot - flip;
+      const atFlip = Math.abs(dist) / spot < 0.005; // within 0.5% of the flip → regime can tip
+      let label, plain, sub, bg, border, color;
+      if (atFlip) {
+        label = 'Balanced · at the gamma flip';
+        plain = `This stock is on the fence between calm and volatile — no strong edge either way right now.`;
+        sub = `Spot $${spot.toFixed(0)} is right at the gamma flip ($${flip.toFixed(0)}) — the regime can tip either way from here.`;
+        bg = 'var(--concern-bg,#fdf6e3)'; border = 'var(--concern-border,#d9b25e)'; color = '#8a6d1e';
+      } else if (dist > 0) {
+        label = 'Positive gamma · mean-reverting';
+        plain = `This stock is likely to stay range-bound and drift back toward the middle of its walls. Good for income / range trades (like condors); a poor spot to bet on a big breakout.`;
+        sub = `Spot $${spot.toFixed(0)} is above the gamma flip ($${flip.toFixed(0)}). Dealers buy dips / sell rips → volatility is dampened and price tends to pin between the walls. Favors range structures (condors, spreads); fade breakouts.`;
+        bg = '#e9f5ee'; border = '#2d7d4f'; color = '#256b45';
+      } else {
+        label = 'Negative gamma · trending';
+        plain = `This stock's moves are likely to snowball into bigger swings. Good for riding the trend (directional trades); risky to bet on it stalling — use stops.`;
+        sub = `Spot $${spot.toFixed(0)} is below the gamma flip ($${flip.toFixed(0)}). Dealers sell dips / buy rips → volatility is amplified, expect stronger trends and momentum. Favors directional/momentum setups; keep stops tight.`;
+        bg = '#fdecec'; border = '#c0392b'; color = '#a5342a';
+      }
+      // Key levels strip: walls + flip with signed distance from spot.
+      const pw = analysis && analysis.put_wall, cw = analysis && analysis.call_wall;
+      const fmtPct = lvl => { const p = (lvl - spot) / spot * 100; return (p >= 0 ? '+' : '') + p.toFixed(1) + '%'; };
+      let levels = '';
+      if (pw != null && cw != null) {
+        levels = `<div style="font-size:11px;color:var(--ink-muted,#6b6b60);margin-top:6px">Put wall <b style="color:var(--ink,#0B0F14)">$${pw}</b> (${fmtPct(pw)}) · Gamma flip <b style="color:var(--ink,#0B0F14)">$${flip.toFixed(0)}</b> (${fmtPct(flip)}) · Call wall <b style="color:var(--ink,#0B0F14)">$${cw}</b> (${fmtPct(cw)})</div>`;
+      }
+      return `<div style="margin:0 0 14px;padding:10px 14px;background:${bg};border:1px solid ${border};border-left:3px solid ${border};border-radius:8px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-muted,#6b6b60)">Net gamma regime</span>
+          <span style="font-size:13px;font-weight:800;color:${color}">${label}</span>
+        </div>
+        <div style="font-size:12.5px;font-weight:600;color:${color};line-height:1.5;margin-top:5px">In plain English: <span style="font-weight:500;color:var(--ink,#0B0F14)">${plain}</span></div>
+        <div style="font-size:11px;color:var(--ink-muted,#6b6b60);line-height:1.5;margin-top:6px"><b style="text-transform:uppercase;font-size:9px;letter-spacing:.06em">The mechanics</b> · ${sub}</div>
+        ${levels}
+      </div>`;
     }
 
     function renderGammaAnalysis(ga, r2, spot) {
@@ -1393,6 +1837,7 @@
 
       if (!topStrikes.length && (!ga.oiByStrike || !ga.oiByStrike.length)) {
         _renderGamma(el, ga, r2, spot); // fallback to canvas
+        el.insertAdjacentHTML('afterbegin', netGammaRegimeHTML(analysis, spot));
         return;
       }
 
@@ -1400,6 +1845,7 @@
       if (topStrikes.length && typeof Highcharts !== 'undefined') {
         // Build the info panels (walls, confidence, IV) using the shared renderer
         _renderGamma(el, ga, r2, spot);
+        el.insertAdjacentHTML('afterbegin', netGammaRegimeHTML(analysis, spot));
 
         // Replace the canvas with a Highcharts container
         const canvas = document.getElementById('gamma-canvas');
@@ -1463,6 +1909,7 @@
         }
       } else {
         _renderGamma(el, ga, r2, spot); // fallback to canvas
+        el.insertAdjacentHTML('afterbegin', netGammaRegimeHTML(analysis, spot));
       }
     }
     // (Inline renderGammaAnalysis / drawGexChart / drawOIChart deleted — now in shared/gammaChart.js)
@@ -1620,6 +2067,7 @@
           const demo = DEMO[state.ticker] || DEMO.SHOP;
           await new Promise(r => setTimeout(r, 600));
           strategies = demo.strategies;
+          state.enginePick = null;
         } else {
           // Fetch chain data + recommendations in parallel
           const [chainRes, recRes] = await Promise.all([
@@ -1633,6 +2081,32 @@
           const chainJson = await chainRes.json();
           state.chainData = chainJson.strikes || [];
           const data = await recRes.json();
+          // ── Debug: surface WHY the engine did/didn't return a trade (e.g. BA NO_TRADE) ──
+          try {
+            const rec = data.recommendation || {};
+            const snap = data.engineSnapshot || {};
+            const trace = snap.gateTrace || [];
+            const stratCount = (rec.strategies || []).length;
+            const decision = trace.find(g => /deterministic_decision/i.test(g.gate || ''));
+            const knife = trace.find(g => /falling_knife/i.test(g.reason || '') || /falling_knife/i.test(g.flag || ''));
+            console.groupCollapsed(`[discover:recommend] ${state.ticker} → ${stratCount} strateg${stratCount === 1 ? 'y' : 'ies'}${stratCount ? '' : '  ⚠️ NO TRADE'}`);
+            console.log('ticker/expiry:', state.ticker, state.selectedExpiry, '| modelMode:', window.USER_MODEL_MODE || 'budget-qwq');
+            console.log('recommendation:', rec);
+            console.log('gateValues:', snap.gateValues);
+            // reactionFeatures = the shared S/R reaction gate result — holds the ACTUAL veto inputs
+            // (regime, bias, trendIntoZone, biasCategory, noTradeReason) that gateValues omits.
+            console.log('reactionFeatures (S/R gate — veto inputs):', data.reactionFeatures);
+            if (trace.length) console.table(trace.map(g => ({ gate: g.gate, passed: g.passed, reason: g.reason })));
+            if (decision) console.log('deterministic_decision:', decision.passed ? '✓' : '✗', decision.reason);
+            if (!stratCount) {
+              const rf = data.reactionFeatures || {};
+              console.warn('NO_TRADE reason →', knife?.reason || decision?.reason || '(no deterministic_decision in gateTrace)');
+              console.warn(`Reaction gate: regime=${rf.regime}, bias=${rf.bias}, trendIntoZone=${rf.trendIntoZone}, biasCategory=${rf.biasCategory}`);
+              console.warn('Falling-knife veto (shared/reaction/gate.cjs:83) fires on ANY trendIntoZone+no_trade — it does NOT check trend direction, so an uptrend-into-resistance is mislabeled "falling_knife" (see regime.cjs:81-83).');
+            }
+            console.log('raw response:', data);
+            console.groupEnd();
+          } catch (dbgErr) { console.warn('[discover:recommend] debug logging failed', dbgErr); }
           strategies = (data.recommendation?.strategies || []).map(s => {
             // Format legs for display and compute netCredit from chain
             const legsArr = s.legs || [];
@@ -1641,7 +2115,7 @@
             for (const l of legsArr) {
               const chain = state.chainData.find(c => Math.abs(c.strike - l.strike) < 0.5);
               const mid = chain?.[l.type]?.mid || 0;
-              nc += l.side === 'short' ? mid : -mid;
+              nc += (l.side === 'short' ? mid : -mid) * (l.qty || 1); // honor ×2 body etc.
             }
             return { ...s, legs: legsStr, legDetails: legsArr.map(l => {
               const chain = state.chainData.find(c => Math.abs(c.strike - l.strike) < 0.5);
@@ -1656,6 +2130,8 @@
           }
           // Store engine snapshot for Invest position logging (gate values)
           if (data.engineSnapshot) state.engineSnapshot = data.engineSnapshot;
+          // Store the deterministic pick so a NO_TRADE can explain itself (reasoningOverride: decision, dataFlags, regime)
+          state.enginePick = data.enginePick || null;
           addCost(data.cost);
           // Track recommend usage (metered)
           if (!isDemo && window.trackUsage) window.trackUsage('recommend', state.ticker, {
@@ -1674,12 +2150,135 @@
       }
     }
 
+    // Structures that are supposed to COLLECT premium (credit). A net debit on
+    // one of these is a structural red flag — the whole point is to get paid.
+    const CREDIT_STRUCTURES = /broken_wing_butterfly|iron_condor|iron_butterfly|bull_put|bear_call|short_strangle|short_straddle|credit/i;
+
+    function dteForExpiry(expiry) {
+      if (!expiry) return null;
+      const d = Math.round((new Date(expiry).getTime() - Date.now()) / 86400000);
+      return Number.isFinite(d) ? d : null;
+    }
+
+    // Deterministic pre-flight red flags — computed BEFORE the 8-agent run so a
+    // structurally-doomed pick is caught in Phase 2, not only after Verify.
+    function preflightWarnings(s) {
+      const w = [];
+      const gv = state.engineSnapshot?.gateValues || {};
+      const name = (s.id || s.strategy || '').toLowerCase();
+      const isCreditStructure = CREDIT_STRUCTURES.test(name);
+
+      if (isCreditStructure && typeof s.netCredit === 'number' && s.netCredit < 0) {
+        w.push(`Prices as a $${Math.abs(s.netCredit).toFixed(2)} <b>net debit</b> — a premium-selling structure should collect a credit. Capped upside for a debit is poor risk/reward.`);
+      }
+      if (isCreditStructure && typeof gv.ivRvRatio === 'number' && gv.ivRvRatio > 0 && gv.ivRvRatio < 1.0) {
+        w.push(`IV/RV ${gv.ivRvRatio.toFixed(2)} — <b>thin premium</b> (implied below realized vol); you're paid too little to sell here.`);
+      }
+      const dte = dteForExpiry(state.selectedExpiry);
+      const eDays = state.earningsDaysOut;
+      if (typeof eDays === 'number' && eDays > 0 && dte != null && eDays <= dte) {
+        w.push(`<b>Earnings in ~${eDays}d</b> — inside your ${dte}-day window. Binary event risk before expiry.`);
+      }
+      return w;
+    }
+
+    // Plain-English translations of the engine's NO_TRADE dataFlags. Each returns a sentence
+    // that explains the reason a human can act on — not the raw flag token.
+    function noTradeReasonList(ro, gv) {
+      const flags = ro && Array.isArray(ro.dataFlags) ? ro.dataFlags : [];
+      const band = (gv && gv.putWall != null && gv.callWall != null) ? `$${Math.round(gv.putWall)}–$${Math.round(gv.callWall)}` : null;
+      const conf = gv && gv.blendedConfidence != null ? Math.round(gv.blendedConfidence * 100) : null;
+      const map = {
+        melt_up_into_resistance: `<b>Uptrend into resistance.</b> The stock is trending up into ${band ? `the ${band} wall zone` : 'a resistance zone'} — selling premium here risks a breakout straight through your short strike. This is <i>not</i> a falling knife; it's an uptrend we don't want to fade.`,
+        falling_knife: `<b>Falling knife.</b> Price is dropping into ${band ? `the ${band} support zone` : 'support'} — selling premium into a downtrend risks the level breaking.`,
+        gamma_unreliable: `<b>Gamma data unreliable.</b> Options-positioning confidence is only ${conf != null ? conf + '%' : 'low'}, so the wall levels we'd build the trade around aren't trustworthy.`,
+        legs_not_constructible: `<b>Can't build a clean structure.</b> The current option chain doesn't support a valid defined-risk trade for this setup.`,
+        insufficient_data: `<b>Not enough data.</b> Key inputs (volatility, gamma, or open interest) are missing, so we can't evaluate a trade with confidence.`,
+        no_gates_passed: `<b>No clean setup.</b> No strategy gate passed for this configuration.`,
+        missing_vol_data: `<b>Missing volatility data.</b> We can't reliably price a premium-selling trade without it.`,
+        legs_not_priced: `<b>Legs couldn't be priced.</b> The chain is missing quotes needed to value this structure.`,
+        prices_as_debit: `<b>Prices as a net debit.</b> This premium-selling structure would cost money to open instead of collecting a credit — capped upside for a debit is poor risk/reward, so we don't recommend it.`,
+        premium_too_thin: `<b>Premium too thin.</b> Implied volatility is below realized — you'd be paid too little to sell here. Not worth the risk.`,
+      };
+      const shown = flags.filter(f => map[f]).map(f => map[f]);
+      if (shown.length) return shown;
+      return [`<b>Below the bar.</b> Engine score ${gv && gv.compositeScore != null ? gv.compositeScore : '--'}/100 with no gate passing cleanly — not enough edge for a defined-risk trade here.`];
+    }
+
+    // When we stand aside, don't leave the user empty-handed: suggest a defined-risk idea they
+    // can shape manually, tailored to WHY we passed. This is exploration guidance, not a rec.
+    function noTradeSuggestion(ro, gv) {
+      const flags = (ro && Array.isArray(ro.dataFlags)) ? ro.dataFlags : [];
+      const ivrv = gv && typeof gv.ivRvRatio === 'number' ? gv.ivRvRatio : null;
+      const dir = (ro && ro.direction) || 'neutral';
+      if (flags.includes('premium_too_thin') || flags.includes('prices_as_debit') || flags.includes('thin_premium')) {
+        return `Selling premium here pays too little${ivrv != null ? ` (IV/RV ${ivrv.toFixed(2)})` : ''}. If you have a directional view, a <b>debit vertical</b> (buy a spread in your direction) risks less against IV; if you expect a big move, a <b>long straddle / strangle</b> buys the cheap volatility. Otherwise, wait for IV to rise before selling.`;
+      }
+      if (flags.includes('melt_up_into_resistance')) {
+        return `The stock is pushing up into resistance. Rather than sell premium into it, a <b>bull call debit spread</b> plays continuation with defined risk — or wait to see if it stalls at the wall.`;
+      }
+      if (flags.includes('falling_knife')) {
+        return `The stock is falling into support. Rather than sell puts into the drop, a <b>bear call spread</b> (fade a bounce) or simply waiting for the level to hold are cleaner — don't catch the knife.`;
+      }
+      if (flags.includes('legs_not_constructible')) {
+        return `We couldn't fit clean strikes for this expiry. Try a <b>different expiry</b> or nearer strikes in Build my own.`;
+      }
+      if (flags.includes('gamma_unreliable') || flags.includes('insufficient_data')) {
+        return `Options data here is too thin to trust the gamma walls — best to wait for better data than to force a trade.`;
+      }
+      if (dir === 'bullish') return `If you lean bullish, a <b>bull put spread</b> below support is the natural defined-risk expression to explore.`;
+      if (dir === 'bearish') return `If you lean bearish, a <b>bear call spread</b> below resistance is the natural defined-risk expression to explore.`;
+      return `No strong edge here — if you want exposure, use Build my own to shape a defined-risk trade to your own view.`;
+    }
+
+    function renderNoTradePanel() {
+      const ro = (state.enginePick && state.enginePick.reasoningOverride) || null;
+      const gv = (state.engineSnapshot && state.engineSnapshot.gateValues) || {};
+      const isDataError = ro && ro.decision === 'DATA_ERROR';
+      const title = isDataError ? "Can't evaluate this setup" : 'No trade recommended';
+      const regime = ro && ro.regime ? ro.regime : null;
+      const score = gv.compositeScore != null ? gv.compositeScore : null;
+      const reasons = ro ? noTradeReasonList(ro, gv) : ['No tradeable setup was found for this ticker and expiry.'];
+      const sub = [state.ticker, regime, score != null ? `score ${score}/100` : null].filter(Boolean).join(' · ');
+      return `
+        <div class="panel" style="padding:18px 20px;border:1.5px solid var(--concern-border,#d9b25e);background:var(--concern-bg,#fdf6e3)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+            <span style="font-size:20px;line-height:1">&#8856;</span>
+            <span style="font-size:16px;font-weight:800;color:var(--ink,#0B0F14)">${title}</span>
+            <span style="margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-muted,#6b6b60);border:1px solid var(--border,#e0ddd2);border-radius:4px;padding:2px 7px">Engine verdict</span>
+          </div>
+          ${sub ? `<div style="font-size:12px;color:var(--ink-muted,#6b6b60);margin-bottom:12px">${sub}</div>` : ''}
+          <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-muted,#6b6b60);margin-bottom:8px">Why we're standing aside</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            ${reasons.map(r => `<div style="display:flex;gap:8px;font-size:12.5px;line-height:1.5;color:var(--ink,#0B0F14)"><span style="color:var(--concern-border,#c98a2e);flex-shrink:0">&bull;</span><span>${r}</span></div>`).join('')}
+          </div>
+          <div style="margin-top:14px;padding:12px 14px;background:var(--green-bg,#e9f5ee);border:1px solid #2d7d4f;border-left:3px solid #2d7d4f;border-radius:8px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#256b45;margin-bottom:5px">What you could explore instead</div>
+            <div style="font-size:12.5px;line-height:1.55;color:var(--ink,#0B0F14)">${noTradeSuggestion(ro, gv)}</div>
+            <div style="margin-top:8px;font-size:12px"><a onclick="setS2Mode('manual')" style="color:var(--teal,#0f6d51);font-weight:700;cursor:pointer">Build my own &rsaquo;</a> to shape it with defined risk.</div>
+          </div>
+          <div style="margin-top:12px;font-size:11.5px;color:var(--ink-muted,#6b6b60);line-height:1.5">
+            ${isDataError ? 'Or try a different expiry and check back once data quality improves.' : 'Standing aside is a call to <b>wait</b> for a better setup — not a bearish signal. The idea above is yours to size and adjust.'}
+          </div>
+        </div>`;
+    }
+
     function renderStrategyCards(strategies) {
       const container = $('#strategy-cards');
+      if (!strategies || !strategies.length) {
+        container.innerHTML = renderNoTradePanel();
+        renderEngineAnalysis();
+        return;
+      }
       container.innerHTML = strategies.map((s, i) => {
         const scoreColor = s.score >= 75 ? 'var(--green)' : s.score >= 60 ? 'var(--yellow)' : 'var(--red)';
         const isTop = i === 0;
         const creditLabel = typeof s.netCredit === 'number' && s.netCredit >= 0 ? 'Credit $' + s.netCredit.toFixed(2) : 'Debit $' + Math.abs(s.netCredit).toFixed(2);
+        const warnings = preflightWarnings(s);
+        const warnHtml = warnings.length ? `<div style="margin-top:10px;padding:8px 10px;background:var(--concern-bg);border:1px solid var(--concern-border);border-radius:6px">
+          <div style="font-size:9px;font-weight:700;color:var(--concern-text);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">&#9888; Pre-flight flags — the desk will likely fail this</div>
+          ${warnings.map(x => `<div style="font-size:11px;color:var(--concern-text);line-height:1.45">&bull; ${x}</div>`).join('')}
+        </div>` : '';
         return `
           <div class="panel" style="padding:14px 18px;margin-bottom:10px;cursor:pointer;transition:all 0.15s;border:${isTop ? '1.5px solid var(--teal)' : '1px solid var(--border)'}" onclick="selectStrategy(${i})" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow=''">
             <div style="display:flex;align-items:center;gap:14px">
@@ -1696,6 +2295,7 @@
                 <div style="font-size:10px;color:var(--ink-muted);margin-top:2px">${s.legs}</div>
               </div>
             </div>
+            ${warnHtml}
           </div>
         `;
       }).join('');
@@ -1925,16 +2525,23 @@
       // Compute metrics via shared legMath.js
       const nc = computeNetCredit();
       const ml = computeMaxLoss(nc);
+      const mp = computeMaxProfit(nc);       // real max profit from the payoff curve (not just net premium)
       const breakevens = computeBreakevens();
       const beStr = breakevens.length ? breakevens.map(b => '$' + b.toFixed(0)).join(' / ') : 'N/A';
       const perShare = nc;
       const perContract = nc * 100;
       const totalCredit = nc * 100 * state.qty;
-      const rr = typeof ml === 'number' && ml > 0 ? (Math.abs(totalCredit) / ml).toFixed(2) : 'N/A';
-      // Estimate PoP from breakeven range vs spot
-      const estimatedPop = breakevens.length >= 2
-        ? Math.round(Math.min(95, Math.max(30, 100 * (breakevens[1] - breakevens[0]) / (state.spot * 0.4))))
-        : (nc > 0 ? '~' + Math.round(Math.min(90, 50 + nc * 20)) : '---');
+      const rr = typeof ml === 'number' && ml > 0 && typeof mp === 'number' ? _computeRR(mp, ml).toFixed(2) : 'N/A';
+      // Probability of profit — integrate the payoff over a lognormal terminal distribution using
+      // ATM IV + DTE. Works for single-breakeven debit verticals (bull/bear call/put spreads), not
+      // just 2-breakeven ranges. Falls back to the old breakeven/credit heuristic if IV/DTE missing.
+      const _dte = Math.max(1, Math.round((new Date(state.selectedExpiry + 'T16:00:00').getTime() - Date.now()) / 86400000));
+      const popVal = _estimatePoP(state.legs, state.qty, nc, state.spot, state.atmIv, _dte);
+      const estimatedPop = (popVal !== null && popVal !== undefined)
+        ? popVal
+        : (breakevens.length >= 2
+            ? Math.round(Math.min(95, Math.max(30, 100 * (breakevens[1] - breakevens[0]) / (state.spot * 0.4))))
+            : (nc > 0 ? '~' + Math.round(Math.min(90, 50 + nc * 20)) : '---'));
 
       // Valid setup status
       const valid = nc > 0 && state.legs.length >= 2;
@@ -1960,11 +2567,13 @@
         </div>`;
 
       $('#drill-metrics').innerHTML =
-        metric('Max Profit', (totalCredit >= 0 ? '+' : '') + '$' + Math.abs(totalCredit).toLocaleString('en-US', {maximumFractionDigits:0}),
-          `$${Math.abs(perShare).toFixed(2)}/share \u00d7 ${state.qty} contracts`, totalCredit >= 0 ? 'var(--green)' : 'var(--red)') +
+        metric('Max Profit', typeof mp === 'number' ? '+$' + mp.toLocaleString('en-US', {maximumFractionDigits:0}) : 'N/A',
+          `best case at expiration \u00b7 ${state.qty} contracts`, 'var(--green)') +
         metric('Max Loss', typeof ml === 'number' ? '-$' + ml.toLocaleString('en-US', {maximumFractionDigits:0}) : 'N/A',
           'defined risk', 'var(--red)') +
         metric('PoP', estimatedPop + '%', 'probability of profit', '') +
+        metric('Reward : Risk', rr === 'N/A' ? 'N/A' : rr + ' : 1', 'max profit \u00f7 max loss',
+          (rr !== 'N/A' && parseFloat(rr) >= 1) ? 'var(--green)' : 'var(--ink)') +
         metric('Breakevens', beStr, 'at expiration', '');
 
       // Build strike options from chain
@@ -2113,6 +2722,7 @@
     // Delegated to shared/legMath.js
     function computeNetCredit() { return _computeNC(state.legs); }
     function computeMaxLoss(netCredit) { return _computeML(state.legs, state.qty, netCredit); }
+    function computeMaxProfit(netCredit) { return _computeMP(state.legs, state.qty, netCredit); }
     function computeBreakevens() { return _computeBE(state.legs, state.qty); }
 
     function updateQty(input) {
@@ -2186,10 +2796,445 @@
         tagEl.innerHTML = `<span class="${cls}">${tag}</span>`;
       }
       if (transcript && txEl) {
-        txEl.textContent = transcript;
-        txEl.innerHTML += '<br><button class="vp-seat-expand" onclick="this.parentElement.classList.toggle(\'hidden\')">collapse</button>';
+        // `transcript` is trusted HTML built by populateRealSeats (all model-derived
+        // text is escaped there). Render it, then append a collapse control.
+        txEl.innerHTML = transcript + '<button class="vp-seat-expand" onclick="this.parentElement.classList.toggle(\'hidden\')">collapse</button>';
       }
     }
+
+    // ---- Rich drawer helpers -------------------------------------------------
+    // Escape any model-derived string before it goes into innerHTML.
+    function escHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+      ));
+    }
+    // A label:value chip. Value is escaped; label is a trusted literal.
+    function bdg(label, val) {
+      if (val === undefined || val === null || val === '') return '';
+      return `<span class="vp-badge">${label}: <b>${escHtml(String(val))}</b></span>`;
+    }
+    // Assemble a drawer: badge row + optional body HTML + optional model meta line.
+    function drawer(badges, opts) {
+      opts = opts || {};
+      const chips = (badges || []).filter(Boolean).join('');
+      let html = chips ? `<div class="vp-badges">${chips}</div>` : '';
+      if (opts.body) html += `<div class="vp-drawer-text">${opts.body}</div>`;
+      if (opts.chartTabs && opts.chartTabs.length) {
+        html += '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'
+          + opts.chartTabs.map(c => `<button class="vp-chart-btn" onclick="event.stopPropagation();window.showDeskChart('${c.tab}')">📈 ${escHtml(c.label)}</button>`).join('')
+          + '</div>';
+      }
+      if (opts.meta) html += `<div class="vp-model">${opts.meta}</div>`;
+      return html;
+    }
+
+    // Pick the chart(s) actually relevant to what an agent's finding discusses,
+    // so "Visualize on chart" lands on the right view (e.g. a technical note
+    // about Bollinger + SMA opens those, not RSI). Keyword-driven off the summary.
+    function chartTabsFor(key, data) {
+      if (key === 'gamma') return [{ label: 'Gamma walls', tab: 'gamma' }];
+      if (key === 'iv') return [{ label: 'IV term structure', tab: 'ivterm' }];
+      if (key !== 'technical') return [];
+      const s = (data.summary || '').toLowerCase();
+      const tabs = [];
+      const add = (t, label) => { if (!tabs.some(x => x.tab === t)) tabs.push({ tab: t, label }); };
+      if (/bollinger|\bband|atr|volatil|gap|squeeze/.test(s)) add('bollinger', 'Bollinger');
+      if (/\bsma\b|moving average|\bma stack|alignment|golden cross|death cross|\badx\b|\btrend/.test(s)) add('sma', 'Moving Avg');
+      if (/macd|signal line|momentum shift/.test(s)) add('macd', 'MACD');
+      if (/\brsi\b|overbought|oversold|divergence/.test(s)) add('rsi', 'RSI');
+      if (!tabs.length) add('rsi', 'RSI'); // sensible default
+      return tabs.slice(0, 3);
+    }
+    // Map raw LLM traces to their agent role via the "You are the {Role}" opener.
+    const TRACE_ROLE_KEY = {
+      'technical analyst': 'technical', 'gamma/flow analyst': 'gamma',
+      'iv/skew analyst': 'iv', 'sentiment/catalyst analyst': 'sentiment',
+      'bull researcher': 'bull', 'bear researcher': 'bear',
+      'risk manager': 'risk', 'judge': 'judge', 'trade fixer': 'fixer'
+    };
+    function traceRoleLabel(system) {
+      const m = /You are the ([\w/ ]+?) on the/i.exec(system || '');
+      return m ? m[1].trim() : '';
+    }
+    function mapTraces(traces) {
+      const byRole = {};
+      (traces || []).forEach(t => {
+        const key = TRACE_ROLE_KEY[traceRoleLabel(t.system).toLowerCase()] || 'other';
+        (byRole[key] = byRole[key] || []).push(t);
+      });
+      return byRole;
+    }
+    // A one-line "model · tokens · latency" meta for a seat, summed over its calls
+    // (bull/bear run twice). Returns '' when no trace is available (e.g. demo).
+    function seatMeta(byRole, key) {
+      const ts = byRole[key];
+      if (!ts || !ts.length) return '';
+      const inTok = ts.reduce((s, t) => s + (t.inputTokens || 0), 0);
+      const outTok = ts.reduce((s, t) => s + (t.outputTokens || 0), 0);
+      const ms = ts.reduce((s, t) => s + (t.durationMs || 0), 0);
+      return `${escHtml(ts[0].model || 'model')} · ${(inTok + outTok).toLocaleString()} tok · ${(ms / 1000).toFixed(1)}s`;
+    }
+    // Both debate rounds for one side, thesis + evidence bullets each.
+    function debateBody(role, rounds) {
+      return (rounds || []).map((r, i) => {
+        const side = r && r[role];
+        if (!side) return '';
+        const evs = (side.evidence || []).filter(Boolean)
+          .map(e => `<li>${escHtml(e)}</li>`).join('');
+        return `<div class="vp-round"><div class="vp-round-h">Round ${side.round || i + 1}</div>`
+          + `<div>${escHtml(side.thesis || '')}</div>`
+          + (evs ? `<ul>${evs}</ul>` : '') + `</div>`;
+      }).join('');
+    }
+
+    // Replace the scripted seat text with what the agents ACTUALLY returned,
+    // so Step 4 reflects the real desk run (findings + tag + full expandable analysis).
+    function populateRealSeats(vData) {
+      const ev = vData.evidence || {};
+      const rounds = vData.debate?.rounds || [];
+      const lastR = rounds[rounds.length - 1] || {};
+      const risk = vData.riskReport || {};
+      const verdict = vData.verdict || {};
+      const byRole = mapTraces(vData.traces);
+
+      const seat = (agent, finding, stance, transcript) => {
+        if (!finding) return;
+        setSeatState(agent, 'done', finding, stance, transcript);
+      };
+
+      if (ev.technical) seat('technical', ev.technical.summary, agentStance('technical', ev.technical, ev.technical.summary),
+        drawer([
+          bdg('Trend', ev.technical.trend),
+          bdg('RSI', ev.technical.rsi),
+          bdg('Breakout risk', ev.technical.breakoutRisk)
+        ], { body: escHtml(ev.technical.summary || ''), chartTabs: chartTabsFor('technical', ev.technical), meta: seatMeta(byRole, 'technical') }));
+
+      if (ev.gamma) seat('gamma', ev.gamma.summary, agentStance('gamma', ev.gamma, ev.gamma.summary),
+        drawer([
+          bdg('Wall integrity', ev.gamma.wallIntegrity),
+          bdg('Flip distance', ev.gamma.flipDistance),
+          bdg('Spot', ev.gamma.insideBand ? 'inside band' : 'outside band')
+        ], { body: escHtml(ev.gamma.summary || ''), chartTabs: chartTabsFor('gamma', ev.gamma), meta: seatMeta(byRole, 'gamma') }));
+
+      if (ev.iv) seat('iv', ev.iv.summary, agentStance('iv', ev.iv, ev.iv.summary),
+        drawer([
+          bdg('IV rank', ev.iv.ivRank ?? 'n/a'),
+          bdg('Term', ev.iv.termStructure),
+          bdg('Premium', ev.iv.premiumFairness)
+        ], { body: escHtml(ev.iv.summary || ''), chartTabs: chartTabsFor('iv', ev.iv), meta: seatMeta(byRole, 'iv') }));
+
+      if (ev.sentiment) {
+        const cats = (ev.sentiment.catalystsInWindow || []).filter(Boolean);
+        const pol = ev.sentiment.polarity;
+        seat('sentiment', ev.sentiment.summary, agentStance('sentiment', ev.sentiment, ev.sentiment.summary),
+          drawer([
+            bdg('Polarity', typeof pol === 'number' ? (pol > 0 ? '+' : '') + pol : pol),
+            bdg('Catalysts in window', cats.length ? cats.join(', ') : 'none')
+          ], { body: escHtml(ev.sentiment.summary || ''), meta: seatMeta(byRole, 'sentiment') }));
+      }
+
+      if (lastR.bull) seat('bull', lastR.bull.thesis, 'supportive',
+        drawer([], { body: debateBody('bull', rounds), meta: seatMeta(byRole, 'bull') }));
+      if (lastR.bear) seat('bear', lastR.bear.thesis, 'caution',
+        drawer([], { body: debateBody('bear', rounds), meta: seatMeta(byRole, 'bear') }));
+
+      if (risk.rationale) seat('risk', risk.rationale, risk.portfolioFit === 'cleared' ? 'supportive' : 'caution',
+        drawer([
+          bdg('Portfolio fit', risk.portfolioFit),
+          bdg('Theta', risk.thetaImpact),
+          bdg('Vega', risk.vegaImpact)
+        ], { body: escHtml(risk.rationale || ''), meta: seatMeta(byRole, 'risk') }));
+
+      if (verdict.rationale) {
+        const flips = (verdict.flipConditions || []).filter(Boolean);
+        seat('judge', verdict.rationale, 'neutral',
+          drawer([
+            bdg('Call', verdict.call),
+            bdg('Confidence', verdict.confidence != null ? verdict.confidence : undefined)
+          ], {
+            body: escHtml(verdict.rationale || '')
+              + (flips.length ? `<div class="vp-round"><div class="vp-round-h">Flip conditions</div><ul>${flips.map(f => `<li>${escHtml(f)}</li>`).join('')}</ul></div>` : ''),
+            meta: seatMeta(byRole, 'judge')
+          }));
+      }
+
+      renderTraceInspector(vData);
+    }
+
+    // Raw model-call inspector: every LLM call in the run with its prompts,
+    // response, tokens and latency — the full "show the work" view.
+    function renderTraceInspector(vData) {
+      const el = $('#vp-trace-inspector');
+      if (!el) return;
+      const traces = (vData && vData.traces) || [];
+      const cost = (vData && vData.cost) || {};
+      if (!traces.length) {
+        el.innerHTML = '<div class="vp-trace-sum">No raw model traces were returned for this run.</div>';
+        return;
+      }
+      const totalTok = (cost.totalInputTokens || 0) + (cost.totalOutputTokens || 0);
+      const parts = [`${traces.length} model calls`];
+      if (totalTok) parts.push(`${totalTok.toLocaleString()} tokens`);
+      if (cost.totalCost != null) parts.push(`$${Number(cost.totalCost).toFixed(3)}`);
+      if (vData.durationMs) parts.push(`${(vData.durationMs / 1000).toFixed(1)}s`);
+      const header = `<div class="vp-trace-sum">${escHtml(parts.join(' · '))}</div>`;
+      el.innerHTML = header + traces.map((t, i) => {
+        const label = traceRoleLabel(t.system) || `Call ${i + 1}`;
+        const tok = (t.inputTokens || 0) + (t.outputTokens || 0);
+        const meta = [tok ? `${tok.toLocaleString()} tok` : '', t.durationMs ? `${(t.durationMs / 1000).toFixed(1)}s` : '', t.cost != null ? `$${Number(t.cost).toFixed(4)}` : ''].filter(Boolean).join(' · ');
+        return `<div class="vp-trace">
+          <div class="vp-trace-head" onclick="this.parentElement.classList.toggle('open')">
+            <span><b>${escHtml(label)}</b> <span class="vp-trace-model">${escHtml(t.model || '')}</span></span>
+            <span class="vp-trace-meta">${escHtml(meta)}</span>
+          </div>
+          <div class="vp-trace-body">
+            <div class="vp-trace-label">System prompt</div><pre>${escHtml(t.system || '')}</pre>
+            <div class="vp-trace-label">User prompt</div><pre>${escHtml(t.user || '')}</pre>
+            <div class="vp-trace-label">Response</div><pre>${escHtml(t.response || '')}</pre>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function toggleTraceInspector() {
+      const el = $('#vp-trace-inspector');
+      const btn = $('#vp-trace-btn');
+      if (!el) return;
+      const willShow = el.classList.contains('hidden');
+      // If the inspector was never populated (demo run, or no traces returned),
+      // fill it from the stored response so the toggle never opens to nothing.
+      if (willShow && !el.innerHTML.trim()) renderTraceInspector(state.verifyData || {});
+      el.classList.toggle('hidden');
+      if (btn) btn.textContent = willShow ? 'Hide model calls' : 'Inspect model calls';
+    }
+
+    /* ================================================================
+       GAMMA & TECHNICAL CHART MODAL — visualize an agent's finding.
+       Ported from movement-range.html; gamma data comes from
+       state.r2Data.gammaData (already built by loadGammaChart), technical
+       time-series from the same R2 report movement-range reads.
+       ================================================================ */
+    function computeEMAMR(data, period) { const k = 2 / (period + 1); const ema = [data[0]]; for (let i = 1; i < data.length; i++) ema.push(data[i] * k + ema[i - 1] * (1 - k)); return ema; }
+
+    function drawLineChartMR(canvasId, config) {
+      const canvas = document.getElementById(canvasId); if (!canvas) return;
+      const DPR = window.devicePixelRatio || 1, W = canvas.offsetWidth || 880, H = parseInt(canvas.style.height) || 260;
+      canvas.width = W * DPR; canvas.height = H * DPR; canvas.style.height = H + 'px';
+      const ctx = canvas.getContext('2d'); ctx.scale(DPR, DPR); ctx.clearRect(0, 0, W, H);
+      const P = { l: 55, r: 14, t: 14, b: 30 }, cW = W - P.l - P.r, cH = H - P.t - P.b, n = config.labels.length;
+      if (n < 2) return;
+      let yMin = Infinity, yMax = -Infinity;
+      config.series.forEach(s => s.data.forEach(v => { if (v != null) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; } }));
+      if (config.yZones) config.yZones.forEach(z => { yMin = Math.min(yMin, z.y); yMax = Math.max(yMax, z.y); });
+      const yPad = (yMax - yMin) * 0.08 || 1; yMin -= yPad; yMax += yPad;
+      const xPos = i => P.l + (i / (n - 1)) * cW, yPos = v => P.t + (1 - (v - yMin) / (yMax - yMin)) * cH;
+      ctx.strokeStyle = '#f0ece0'; ctx.lineWidth = 0.5;
+      for (let i = 0; i <= 4; i++) { const y = P.t + (cH / 4) * i; ctx.beginPath(); ctx.moveTo(P.l, y); ctx.lineTo(W - P.r, y); ctx.stroke(); ctx.fillStyle = '#999'; ctx.font = '500 9px sans-serif'; ctx.textAlign = 'right'; const val = yMax - ((yMax - yMin) / 4) * i; ctx.fillText(config.yFmt ? config.yFmt(val) : val.toFixed(1), P.l - 6, y + 3); }
+      if (config.yZones) config.yZones.forEach(z => { ctx.strokeStyle = z.color || '#ccc'; ctx.lineWidth = 1; ctx.setLineDash(z.dash || [4, 3]); ctx.beginPath(); ctx.moveTo(P.l, yPos(z.y)); ctx.lineTo(W - P.r, yPos(z.y)); ctx.stroke(); ctx.setLineDash([]); if (z.label) { ctx.fillStyle = z.color || '#999'; ctx.font = '600 9px sans-serif'; ctx.textAlign = 'left'; ctx.fillText(z.label, P.l + 4, yPos(z.y) - 4); } });
+      (config.fills || []).forEach(f => { const d1 = config.series.find(s => s.id === f.upper)?.data, d2 = config.series.find(s => s.id === f.lower)?.data; if (!d1 || !d2) return; ctx.fillStyle = f.color || 'rgba(0,0,0,.05)'; ctx.beginPath(); for (let i = 0; i < n; i++) { const y = d1[i] != null ? yPos(d1[i]) : null; if (y != null) { i === 0 ? ctx.moveTo(xPos(i), y) : ctx.lineTo(xPos(i), y); } } for (let i = n - 1; i >= 0; i--) { const y = d2[i] != null ? yPos(d2[i]) : null; if (y != null) ctx.lineTo(xPos(i), y); } ctx.closePath(); ctx.fill(); });
+      (config.histograms || []).forEach(h => { const barW = Math.max(1, cW / n * 0.6), zeroY = yPos(0); h.data.forEach((v, i) => { if (v == null) return; ctx.fillStyle = v >= 0 ? (h.posColor || '#2d7d4f') : (h.negColor || '#c0392b'); const y = yPos(v); ctx.fillRect(xPos(i) - barW / 2, Math.min(y, zeroY), barW, Math.abs(y - zeroY)); }); });
+      config.series.forEach(s => { if (s.hidden) return; ctx.strokeStyle = s.color || '#0B2D23'; ctx.lineWidth = s.width || 1.5; ctx.setLineDash(s.dash || []); ctx.beginPath(); let started = false; s.data.forEach((v, i) => { if (v == null) return; const x = xPos(i), y = yPos(v); started ? ctx.lineTo(x, y) : (ctx.moveTo(x, y), started = true); }); ctx.stroke(); ctx.setLineDash([]); });
+      ctx.fillStyle = '#999'; ctx.font = '500 9px sans-serif'; ctx.textAlign = 'center';
+      const step = Math.max(1, Math.floor(n / 8));
+      for (let i = 0; i < n; i += step) { if (config.labels[i]) ctx.fillText(config.labels[i], xPos(i), P.t + cH + 16); }
+    }
+
+    function drawGammaChartMR(analysis, spot) {
+      const canvas = document.getElementById('gammaChartMR');
+      if (!canvas || !analysis?.topStrikes?.length) return;
+      const DPR = window.devicePixelRatio || 1;
+      const W = canvas.offsetWidth || 500, H = 220;
+      canvas.width = W * DPR; canvas.height = H * DPR; canvas.style.height = H + 'px';
+      const ctx = canvas.getContext('2d'); ctx.scale(DPR, DPR); ctx.clearRect(0, 0, W, H);
+      const strikes = [...analysis.topStrikes].sort((a, b) => a.strike - b.strike);
+      if (!strikes.length) return;
+      const PL = 50, PR = 16, PT = 16, PB = 36, cW = W - PL - PR, cH = H - PT - PB;
+      const maxGex = Math.max(...strikes.map(s => Math.abs(s.gamma_exposure || 0)), 1);
+      const minS = strikes[0].strike, maxS = strikes[strikes.length - 1].strike, sR = maxS - minS || 1;
+      const barW = Math.max(4, Math.min(18, (cW / strikes.length) * 0.7));
+      const xP = s => PL + ((s - minS) / sR) * cW;
+      ctx.strokeStyle = '#f0ece0'; ctx.lineWidth = 0.5;
+      for (let i = 0; i <= 4; i++) { const y = PT + (cH / 4) * i; ctx.beginPath(); ctx.moveTo(PL, y); ctx.lineTo(W - PR, y); ctx.stroke(); }
+      ctx.fillStyle = '#999'; ctx.font = '500 9px sans-serif'; ctx.textAlign = 'right';
+      for (let i = 0; i <= 4; i++) { const v = maxGex * (1 - i / 4); ctx.fillText(v >= 1e6 ? (v / 1e6).toFixed(0) + 'M' : v >= 1e3 ? (v / 1e3).toFixed(0) + 'K' : v.toFixed(0), PL - 6, PT + (cH / 4) * i + 3); }
+      strikes.forEach(s => { const x = xP(s.strike), bH = (Math.abs(s.gamma_exposure || 0) / maxGex) * cH; ctx.fillStyle = (s.call_oi || 0) >= (s.put_oi || 0) ? 'rgba(45,125,79,0.75)' : 'rgba(192,57,43,0.75)'; ctx.fillRect(x - barW / 2, PT + cH - bH, barW, bH); ctx.fillStyle = '#666'; ctx.font = '600 9px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('$' + s.strike, x, PT + cH + 14); });
+      if (analysis.put_wall) { const x = xP(analysis.put_wall); if (x >= PL && x <= W - PR) { ctx.strokeStyle = '#0d6e56'; ctx.lineWidth = 2; ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(x, PT); ctx.lineTo(x, PT + cH); ctx.stroke(); ctx.fillStyle = '#0d6e56'; ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('PUT $' + analysis.put_wall, x, PT + cH + 28); } }
+      if (analysis.call_wall) { const x = xP(analysis.call_wall); if (x >= PL && x <= W - PR) { ctx.strokeStyle = '#b03030'; ctx.lineWidth = 2; ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(x, PT); ctx.lineTo(x, PT + cH); ctx.stroke(); ctx.fillStyle = '#b03030'; ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('CALL $' + analysis.call_wall, x, PT + cH + 28); } }
+      if (spot && spot >= minS && spot <= maxS) { const x = xP(spot); ctx.strokeStyle = '#C9A96E'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.moveTo(x, PT); ctx.lineTo(x, PT + cH); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#C9A96E'; ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('$' + spot.toFixed(0), x, PT - 4); }
+    }
+
+    function drawTechChartMR(tabId, td) {
+      const prices = (td.priceHistory || []).map(p => p.c), dates = (td.priceHistory || []).map(p => { const d = new Date(p.t); return (d.getMonth()+1)+'/'+d.getDate(); });
+      const rsiData = td.rsiSeries || [], bbData = td.bbSeries || [];
+      if (tabId === 'rsi' && rsiData.length > 10) {
+        drawLineChartMR('techChartRSI_MR', { labels: rsiData.map(r => { const d = new Date(r.t); return (d.getMonth()+1)+'/'+d.getDate(); }), series: [{ data: rsiData.map(r => r.rsi), color: '#0B2D23', width: 2, label: 'RSI(14)' }], yZones: [{ y: 70, color: '#c0392b', dash: [4, 3], label: 'Overbought 70' }, { y: 30, color: '#2d7d4f', dash: [4, 3], label: 'Oversold 30' }] });
+      }
+      if (tabId === 'bollinger' && bbData.length > 10) {
+        const bbDates = bbData.map(b => { const d = new Date(b.t); return (d.getMonth()+1)+'/'+d.getDate(); });
+        const priceSlice = prices.slice(prices.length - bbData.length);
+        drawLineChartMR('techChartBB_MR', { labels: bbDates, series: [{ id: 'upper', data: bbData.map(b => b.upper), color: '#c0392b', width: 1, dash: [3, 2], label: 'Upper' }, { id: 'middle', data: bbData.map(b => b.middle), color: '#999', width: 1, label: 'SMA20' }, { id: 'lower', data: bbData.map(b => b.lower), color: '#2d7d4f', width: 1, dash: [3, 2], label: 'Lower' }, { data: priceSlice, color: '#0B2D23', width: 2, label: 'Price' }], fills: [{ upper: 'upper', lower: 'lower', color: 'rgba(201,169,110,0.08)' }] });
+      }
+      if (tabId === 'macd' && prices.length > 30) {
+        const ema12 = computeEMAMR(prices, 12), ema26 = computeEMAMR(prices, 26);
+        const macdLine = ema12.map((v, i) => v - ema26[i]), signal = computeEMAMR(macdLine, 9);
+        const hist = macdLine.map((v, i) => v - signal[i]);
+        drawLineChartMR('techChartMACD_MR', { labels: dates, series: [{ data: macdLine, color: '#0B2D23', width: 2, label: 'MACD' }, { data: signal, color: '#c0392b', width: 1.5, label: 'Signal' }], histograms: [{ data: hist, posColor: 'rgba(45,125,79,0.6)', negColor: 'rgba(192,57,43,0.6)', label: 'Histogram' }], yZones: [{ y: 0, color: '#999', dash: [2, 2] }] });
+      }
+      if (tabId === 'sma' && prices.length > 50) {
+        const sma20arr = prices.map((_, i) => i >= 19 ? prices.slice(i - 19, i + 1).reduce((a, b) => a + b, 0) / 20 : null);
+        const sma50arr = prices.map((_, i) => i >= 49 ? prices.slice(i - 49, i + 1).reduce((a, b) => a + b, 0) / 50 : null);
+        drawLineChartMR('techChartSMA_MR', { labels: dates, series: [{ data: prices, color: '#0B2D23', width: 2, label: 'Price' }, { data: sma20arr, color: '#2d7d4f', width: 1.5, label: 'SMA20' }, { data: sma50arr, color: '#c0392b', width: 1.5, label: 'SMA50' }] });
+      }
+    }
+
+    // Fetch (and cache) the R2 technical report for the current ticker.
+    // Also captures the IV term structure (ATM IV by expiry) for the IV tab.
+    async function loadDeskTechData() {
+      if (state._techData !== undefined) return state._techData;
+      let t = null;
+      try {
+        const r = await fetch(`${R2_BASE}/reports/${state.ticker}/latest.json`);
+        if (r.ok) { const j = await r.json(); t = j.technicalData || null; state._ivByExpiry = j.gammaData?.ivData?.ivByExpiry || null; state._reportIv = j.gammaData?.ivData || null; }
+      } catch (e) { console.warn('tech report fetch failed', e); }
+      state._techData = t;
+      return t;
+    }
+
+    // IV term structure: ATM IV plotted across expiries. Downward slope =
+    // backwardation (near-term fear), upward = contango/normal.
+    function drawIVTermMR(ivByExpiry) {
+      const entries = Object.entries(ivByExpiry || {}).sort((a, b) => new Date(a[0]) - new Date(b[0]));
+      if (entries.length < 2) return;
+      const labels = entries.map(([d]) => { const dt = new Date(d); return (dt.getMonth() + 1) + '/' + dt.getDate(); });
+      const vals = entries.map(([, v]) => v);
+      drawLineChartMR('techChartIVTerm_MR', { labels, series: [{ data: vals, color: '#0B2D23', width: 2, label: 'ATM IV' }], yFmt: v => v.toFixed(0) + '%' });
+    }
+
+    // Open the modal; defaultTab is 'gamma' | 'overview' | 'rsi' | 'bollinger' | 'macd' | 'sma'.
+    window.showDeskChart = async function(defaultTab) {
+      defaultTab = defaultTab || 'gamma';
+      const overlay = document.getElementById('deskChartOverlay');
+      const titleEl = document.getElementById('deskChartTitle');
+      const bodyEl = document.getElementById('deskChartBody');
+      if (!overlay) return;
+      titleEl.textContent = (state.ticker || '') + ' — Gamma & Technical Analysis';
+      bodyEl.innerHTML = '<p style="color:#999;padding:24px 0">Loading charts…</p>';
+      overlay.style.display = 'flex';
+
+      const t = await loadDeskTechData();
+      const g = state.r2Data?.gammaData, a = g?.analysis, iv = g?.ivData;
+      const spot = state.spot;
+      const ivByExpiry = state._ivByExpiry;
+      const hasIvTerm = ivByExpiry && Object.keys(ivByExpiry).length >= 2;
+
+      const conf = (v, lbl) => `<div class="ip-cell"><span class="ip-cell-lbl">${lbl}</span><span class="ip-cell-val">${Math.round((v||0)*100)}%</span><div class="ip-bar"><div class="ip-bar-fill" style="width:${Math.round((v||0)*100)}%;background:${v>=0.6?'var(--green)':v>=0.3?'var(--amber)':'var(--red)'}"></div></div></div>`;
+      const topStrikes = (a?.topStrikes || []).slice(0, 8);
+      const maxGex = Math.max(...topStrikes.map(s => Math.abs(s.gamma_exposure || 0)), 1);
+      const rsiColor = t ? ((t.rsi||50)>70?'red':(t.rsi||50)<30?'green':'') : '';
+      const trendColor = t ? (t.trendEngine?.state==='Bullish'?'green':t.trendEngine?.state==='Bearish'?'red':'') : '';
+      const bb = t?.bb||{}, sr = t?.sr||{};
+      const closes = (t?.priceHistory||[]).map(p=>p.c);
+      const sma20 = closes.length>=20?closes.slice(-20).reduce((x,y)=>x+y,0)/20:null;
+      const sma50v = closes.length>=50?closes.slice(-50).reduce((x,y)=>x+y,0)/50:null;
+      const sma200 = closes.length>=200?closes.slice(-200).reduce((x,y)=>x+y,0)/200:null;
+      // Event-based crossover: only call it a Golden/Death Cross when the lines ACTUALLY
+      // crossed within the last N bars. Otherwise it's just a persistent state (short above/
+      // below long) and we show that without the bearish/bullish alarm styling — so a rising
+      // stock whose SMA20 sits just under SMA50 isn't mislabeled a "Death Cross".
+      const CROSS_LOOKBACK = 10;
+      const smaSeries = (arr, n) => arr.map((_, i) => i >= n - 1 ? arr.slice(i - n + 1, i + 1).reduce((x, y) => x + y, 0) / n : null);
+      const recentCross = (shortA, longA) => {
+        const n = shortA.length;
+        for (let i = n - 1; i > 0; i--) {
+          const a = shortA[i], b = longA[i], pa = shortA[i - 1], pb = longA[i - 1];
+          if (a == null || b == null || pa == null || pb == null) continue;
+          const now = a - b, prev = pa - pb;
+          if (prev <= 0 && now > 0) return (n - 1 - i) <= CROSS_LOOKBACK ? 'golden' : null;
+          if (prev >= 0 && now < 0) return (n - 1 - i) <= CROSS_LOOKBACK ? 'death' : null;
+        }
+        return null;
+      };
+      const sma20arr = closes.length >= 20 ? smaSeries(closes, 20) : [];
+      const sma50arr = closes.length >= 50 ? smaSeries(closes, 50) : [];
+      const sma200arr = closes.length >= 200 ? smaSeries(closes, 200) : [];
+      const cross20_50 = (sma20 && sma50v) ? { evt: recentCross(sma20arr, sma50arr), above: sma20 > sma50v } : null;
+      const cross50_200 = (sma50v && sma200) ? { evt: recentCross(sma50arr, sma200arr), above: sma50v > sma200 } : null;
+      const crossBadge = (label, info, shortName, longName, short, long) => {
+        if (info.evt) {
+          const isG = info.evt === 'golden', bg = isG ? 'var(--green-bg)' : 'var(--red-bg)', color = isG ? 'var(--green)' : 'var(--red)';
+          return `<div style="background:${bg};border-radius:6px;padding:8px 12px"><div style="font-family:var(--mono),monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px">${label}</div><div style="font-size:14px;font-weight:700;color:${color}">${isG ? 'Golden Cross' : 'Death Cross'} <span style="font-weight:500;font-size:10px">· last ${CROSS_LOOKBACK} bars</span></div><div style="font-size:10px;color:var(--muted);margin-top:2px">Short ${short} vs Long ${long}</div></div>`;
+        }
+        return `<div style="background:rgba(0,0,0,.04);border-radius:6px;padding:8px 12px"><div style="font-family:var(--mono),monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px">${label}</div><div style="font-size:14px;font-weight:700;color:var(--ink,#0B0F14)">${shortName} ${info.above ? 'above' : 'below'} ${longName}</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Short ${short} vs Long ${long} · no recent cross</div></div>`;
+      };
+
+      bodyEl.innerHTML = `
+        <div class="ip-tabs">
+          <button class="ip-tab" data-at="gamma">Gamma</button>
+          <button class="ip-tab" data-at="overview">Overview</button>
+          <button class="ip-tab" data-at="rsi">RSI</button>
+          ${hasIvTerm ? '<button class="ip-tab" data-at="ivterm">IV Term</button>' : ''}
+          <button class="ip-tab" data-at="bollinger">Bollinger</button>
+          <button class="ip-tab" data-at="macd">MACD</button>
+          <button class="ip-tab" data-at="sma">Moving Avg</button>
+        </div>
+        <div class="ip-tab-content" id="atGamma">
+          ${!a || a.contracts_analyzed===0 ? '<p style="color:#999">No gamma data available.</p>' : `
+          <div class="ip-section"><div class="ip-section-title">Gamma Walls</div>
+            <div class="ip-section-desc">Where market makers hold their largest hedging positions. The stock tends to stay between these walls.</div>
+            <div class="ip-grid cols-4">
+              <div class="ip-cell"><span class="ip-cell-lbl">Put Wall</span><span class="ip-cell-val green">$${a.put_wall!=null?Number(a.put_wall).toFixed(2):'--'}</span></div>
+              <div class="ip-cell"><span class="ip-cell-lbl">Call Wall</span><span class="ip-cell-val red">$${a.call_wall!=null?Number(a.call_wall).toFixed(2):'--'}</span></div>
+              <div class="ip-cell"><span class="ip-cell-lbl">Band Width</span><span class="ip-cell-val">${(a.band_width_pct||0).toFixed(1)}%</span></div>
+              <div class="ip-cell"><span class="ip-cell-lbl">Position in Band</span><span class="ip-cell-val">${a.position_in_band_pct??'--'}%</span></div>
+            </div></div>
+          <div class="ip-section"><div class="ip-section-title">Confidence Breakdown</div>
+            <div class="ip-section-desc">How reliable is this gamma wall reading?</div>
+            <div class="ip-grid cols-4">${conf(a.confidence_score,'Overall')}${conf(a.oi_confidence,'Open Interest')}${conf(a.delta_confidence,'Delta')}${conf(a.volume_confidence,'Volume')}</div></div>
+          <div class="ip-section"><div class="ip-section-title">IV Data</div>
+            <div class="ip-grid"><div class="ip-cell"><span class="ip-cell-lbl">ATM IV</span><span class="ip-cell-val gold">${iv?.atmIv!=null?iv.atmIv.toFixed(1)+'%':'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">IV Level</span><span class="ip-cell-val">${iv?.ivLevel||'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Contracts</span><span class="ip-cell-val">${a.contracts_analyzed??'--'}</span></div></div></div>
+          <div class="ip-section"><div class="ip-section-title">Gamma Exposure by Strike</div>
+            <div class="ip-section-desc">Green = call-dominant, Red = put-dominant. Short strikes ideally sit between the walls.</div>
+            <canvas id="gammaChartMR" style="width:100%;height:220px;display:block"></canvas>
+            <div style="display:flex;gap:16px;margin-top:8px;justify-content:center"><span style="font-size:10px;color:var(--green)">&#9632; Call-dom</span><span style="font-size:10px;color:var(--red)">&#9632; Put-dom</span><span style="font-size:10px;color:var(--gold)">&#9482; Spot</span></div></div>
+          ${topStrikes.length?`<div class="ip-section"><div class="ip-section-title">Top Gamma Strikes</div>${topStrikes.map(s=>`<div class="ip-strike-row"><span class="ip-strike-lbl">$${s.strike}</span><div class="ip-strike-bar"><div class="ip-strike-fill" style="width:${Math.round(Math.abs(s.gamma_exposure)/maxGex*100)}%"></div></div><span style="font-size:10px;color:#666">C:${((s.call_oi||0)/1000).toFixed(0)}k</span><span style="font-size:10px;color:#666">P:${((s.put_oi||0)/1000).toFixed(0)}k</span></div>`).join('')}</div>`:''}`}
+        </div>
+        <div class="ip-tab-content" id="atOverview">
+          ${!t ? '<p style="color:#999">No technical data available for this ticker.</p>' : `
+          <div class="ip-section"><div class="ip-section-title">Momentum</div>
+            <div class="ip-section-desc">RSI above 70 = overbought, below 30 = oversold.</div>
+            <div class="ip-grid"><div class="ip-cell"><span class="ip-cell-lbl">RSI (14)</span><span class="ip-cell-val ${rsiColor}">${t.rsi!=null?t.rsi.toFixed(1):'--'}</span><span class="ip-cell-sub">${t.rsiEngine?.state||'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Trend</span><span class="ip-cell-val ${trendColor}">${t.trendEngine?.state||'--'}</span><span class="ip-cell-sub">Score ${t.trendEngine?.score!=null?t.trendEngine.score.toFixed(2):'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Volatility</span><span class="ip-cell-val">${t.volatilityEngine?.state||'--'}</span><span class="ip-cell-sub">${t.volatilityEngine?.squeeze?'Squeeze active':'No squeeze'}</span></div></div></div>
+          <div class="ip-section"><div class="ip-section-title">Bollinger Bands (20, 2)</div>
+            <div class="ip-grid cols-4"><div class="ip-cell"><span class="ip-cell-lbl">Upper</span><span class="ip-cell-val red">$${bb.upper?.toFixed(2)||'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Middle</span><span class="ip-cell-val">$${bb.middle?.toFixed(2)||'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Lower</span><span class="ip-cell-val green">$${bb.lower?.toFixed(2)||'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Width</span><span class="ip-cell-val">${bb.width?.toFixed(1)||'--'}%</span></div></div></div>
+          <div class="ip-section"><div class="ip-section-title">Moving Averages & Volatility</div>
+            <div class="ip-grid cols-4"><div class="ip-cell"><span class="ip-cell-lbl">SMA 50</span><span class="ip-cell-val ${t.aboveSMA50?'green':'red'}">$${t.sma50?.toFixed(2)||'--'}</span><span class="ip-cell-sub">${t.aboveSMA50?'Above':'Below'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">SMA 100</span><span class="ip-cell-val ${t.aboveSMA100?'green':'red'}">$${t.sma100?.toFixed(2)||'--'}</span><span class="ip-cell-sub">${t.aboveSMA100?'Above':'Below'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Realized Vol 30d</span><span class="ip-cell-val">${t.realizedVol30d!=null?(t.realizedVol30d*100).toFixed(1)+'%':'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">ATR %</span><span class="ip-cell-val">${t.atrPct!=null?(t.atrPct*100).toFixed(2)+'%':'--'}</span></div></div></div>
+          <div class="ip-section"><div class="ip-section-title">Support & Resistance</div>
+            <div class="ip-grid cols-2"><div class="ip-cell"><span class="ip-cell-lbl">Support 1</span><span class="ip-cell-val green">$${sr.support1?.toFixed(2)||'--'}</span></div><div class="ip-cell"><span class="ip-cell-lbl">Resistance 1</span><span class="ip-cell-val red">$${sr.resistance1?.toFixed(2)||'--'}</span></div></div></div>
+          ${cross20_50||cross50_200?`<div class="ip-section"><div class="ip-section-title">Crossover Status</div><div class="ip-grid cols-2">${cross20_50?crossBadge('SMA 20/50',cross20_50,'SMA20','SMA50','$'+sma20.toFixed(2),'$'+sma50v.toFixed(2)):''}${cross50_200?crossBadge('SMA 50/200',cross50_200,'SMA50','SMA200','$'+sma50v.toFixed(2),'$'+sma200.toFixed(2)):''}</div></div>`:''}`}
+        </div>
+        <div class="ip-tab-content" id="atRsi"><div class="ip-section-desc" style="margin-bottom:12px">RSI measures momentum 0-100. Above 70 = overbought, below 30 = oversold.</div><canvas id="techChartRSI_MR" style="width:100%;height:280px;display:block"></canvas></div>
+        <div class="ip-tab-content" id="atIvterm"><div class="ip-section-desc" style="margin-bottom:12px">ATM implied volatility across expiries. Downward slope = backwardation (near-term stress / event risk); upward = normal/contango.</div><canvas id="techChartIVTerm_MR" style="width:100%;height:280px;display:block"></canvas></div>
+        <div class="ip-tab-content" id="atBollinger"><div class="ip-section-desc" style="margin-bottom:12px">Bollinger Bands: 2 std devs around 20-day SMA. Squeeze = big move coming.</div><canvas id="techChartBB_MR" style="width:100%;height:280px;display:block"></canvas></div>
+        <div class="ip-tab-content" id="atMacd"><div class="ip-section-desc" style="margin-bottom:12px">MACD (12, 26, 9): green histogram = bullish momentum, red = bearish.</div><canvas id="techChartMACD_MR" style="width:100%;height:280px;display:block"></canvas></div>
+        <div class="ip-tab-content" id="atSma"><div class="ip-section-desc" style="margin-bottom:12px">Golden Cross = short SMA above long SMA (uptrend). Death Cross = opposite.</div><canvas id="techChartSMA_MR" style="width:100%;height:280px;display:block"></canvas></div>
+      `;
+
+      const tabMap = { gamma:'atGamma', overview:'atOverview', rsi:'atRsi', ivterm:'atIvterm', bollinger:'atBollinger', macd:'atMacd', sma:'atSma' };
+      const activate = (at) => {
+        bodyEl.querySelectorAll('.ip-tab').forEach(x => x.classList.toggle('active', x.dataset.at === at));
+        bodyEl.querySelectorAll('.ip-tab-content').forEach(c => c.classList.remove('active'));
+        const panel = document.getElementById(tabMap[at]); if (panel) panel.classList.add('active');
+        if (at === 'gamma') { if (a && a.contracts_analyzed > 0) requestAnimationFrame(() => drawGammaChartMR(a, spot)); }
+        else if (at === 'ivterm') { if (hasIvTerm) requestAnimationFrame(() => drawIVTermMR(ivByExpiry)); }
+        else if (t) requestAnimationFrame(() => drawTechChartMR(at, t));
+      };
+      bodyEl.querySelectorAll('.ip-tab').forEach(tab => tab.addEventListener('click', () => activate(tab.dataset.at)));
+      // Resolve the requested tab to one that actually has data, else fall back to gamma.
+      let openTab = defaultTab;
+      if (openTab === 'ivterm' && !hasIvTerm) openTab = t ? 'bollinger' : 'gamma';
+      else if (openTab !== 'gamma' && openTab !== 'ivterm' && !t) openTab = 'gamma';
+      activate(openTab);
+    };
 
     function setPhaseActive(phase) {
       const label = $('#vp-phase-label');
@@ -2211,6 +3256,11 @@
         const txEl = $(`#vp-tx-${a}`);
         if (txEl) { txEl.textContent = ''; txEl.classList.add('hidden'); }
       });
+      // Reset the raw-trace inspector so a prior run's calls don't linger.
+      const insp = $('#vp-trace-inspector');
+      if (insp) { insp.innerHTML = ''; insp.classList.add('hidden'); }
+      const inspBtn = $('#vp-trace-btn');
+      if (inspBtn) inspBtn.textContent = 'Inspect model calls';
       setPhaseActive(1);
       $('#elapsed-timer').textContent = '0.0s';
 
@@ -2238,18 +3288,7 @@
       // Fire the /verify API call immediately (runs in parallel with the animation)
       let verifyPromise;
       if (!isDemo) {
-        const verifyLegs = state.legs.map(l => ({ type: l.type, side: l.side, strike: l.strike, expiry: state.selectedExpiry }));
-        verifyPromise = apiCall('/verify', {
-          method: 'POST',
-          body: {
-            ticker: state.ticker,
-            structure: state.selectedStrategy.strategy || state.selectedStrategy.id,
-            legs: verifyLegs,
-            netCredit: state.legs.reduce((s, l) => s + (l.side === 'short' ? l.mid : -l.mid), 0),
-            source: 'investor_draft',
-            modelMode: window.USER_MODEL_MODE || 'budget-qwq'
-          }
-        }).then(r => r.json());
+        verifyPromise = callVerify(state.legs);
       }
 
       const AGENT_TAGS = { technical: 'supportive', gamma: 'supportive', iv: 'caution', sentiment: 'neutral', bull: 'supportive', bear: 'caution', risk: 'caution', judge: 'neutral' };
@@ -2320,35 +3359,17 @@
         try {
           const vData = await verifyPromise;
           state.verifyData = vData; // store full response for stage 5
-          const v = vData.verdict || {};
-          const conf = v.confidence || 50;
-          const vCall = v.call || 'marginal';
-          const vClass = vCall === 'pass' ? 'pass' : vCall === 'fail' ? 'fail' : 'concern';
-          const verdictWords = { pass: 'Take it', marginal: 'Take it smaller', fail: 'Skip it' };
-          state.verdict = { verdictWord: verdictWords[vCall] || 'Take it smaller', confidence: conf, verdictClass: vClass, summary: v.rationale || '' };
-          // Evidence
-          state.evidence = vData.evidence || {};
-          // Risk
-          state.riskReport = vData.riskReport || {};
-          // Debate
-          state.debateRounds = vData.debate?.rounds || [];
-          if (state.debateRounds.length) {
-            const lastRound = state.debateRounds[state.debateRounds.length - 1];
-            state.debate = { bullWonOn: lastRound?.bull?.thesis?.slice(0, 80) || 'Premium richness', bearWonOn: lastRound?.bear?.thesis?.slice(0, 80) || 'Risk factors' };
-          } else {
-            state.debate = { bullWonOn: 'Evidence cited', bearWonOn: 'Risk factors identified' };
-          }
-          // Mutations from suggestedFix
-          if (vData.suggestedFix) {
-            state.mutations = [{ label: vData.suggestedFix.rationale?.slice(0, 40) || 'Suggested adjustment', from: conf, to: Math.min(100, conf + 15) }];
-          } else {
-            state.mutations = [{ label: 'Reduce size 50%', from: conf, to: Math.min(100, conf + 12) }, { label: 'Widen strikes $5', from: conf, to: Math.min(100, conf + 8) }];
-          }
+          state.verifyError = null;
+          applyVerifyResult(vData);
+          populateRealSeats(vData); // show what the agents actually found in Step 4
           state.totalTokens = (vData.cost?.totalInputTokens || 0) + (vData.cost?.totalOutputTokens || 0);
           state.totalTime = (vData.durationMs || 0) / 1000;
           addCost(vData.cost);
         } catch (err) {
-          state.verdict = { verdictWord: 'Error', confidence: 0, verdictClass: 'fail', summary: 'Verification failed: ' + err.message };
+          // Surface the failure — do NOT fall through to canned desk text.
+          state.verifyError = err.message;
+          state.evidence = {}; state.debateRounds = []; state.riskReport = {}; state.mutations = [];
+          state.verdict = { verdictWord: 'Verification unavailable', confidence: 0, verdictClass: 'fail', summary: 'The desk could not complete this run: ' + err.message, flipConditions: [] };
         }
       }
 
@@ -2373,12 +3394,181 @@
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
     /* ================================================================
+       VERIFY PLUMBING — single source of truth for the verdict shape
+       ================================================================ */
+    const VERDICT_WORDS = { pass: 'Take it', marginal: 'Take it smaller', fail: 'Skip it' };
+    function deriveVerdictClass(call) {
+      return call === 'pass' ? 'pass' : call === 'fail' ? 'fail' : 'concern';
+    }
+
+    // Run the 8-agent desk against a given set of legs. Returns raw /verify JSON.
+    async function callVerify(legs) {
+      const verifyLegs = legs.map(l => ({ type: l.type, side: l.side, strike: l.strike, expiry: state.selectedExpiry }));
+      // Attach the user's real Invest portfolio so the Risk Manager assesses
+      // actual concentration instead of guessing. Empty [] = not connected.
+      const portfolio = window.getInvestPortfolio ? await window.getInvestPortfolio().catch(() => []) : [];
+      return apiCall('/verify', {
+        method: 'POST',
+        body: {
+          ticker: state.ticker,
+          structure: state.selectedStrategy.strategy || state.selectedStrategy.id,
+          legs: verifyLegs,
+          netCredit: legs.reduce((s, l) => s + (l.side === 'short' ? l.mid : -l.mid), 0),
+          source: 'investor_draft',
+          portfolio,
+          modelMode: window.USER_MODEL_MODE || 'budget-qwq'
+        }
+      }).then(async r => {
+        const data = await r.json().catch(() => ({}));
+        // Never silently render a fake verdict on a failed call — surface it.
+        if (!r.ok || data.error || !data.verdict) {
+          const msg = data.error
+            ? (typeof data.error === 'string' ? data.error : JSON.stringify(data.error))
+            : `Verify returned HTTP ${r.status}`;
+          throw new Error(msg);
+        }
+        return data;
+      });
+    }
+
+    // Map a raw /verify response into state. Used by the initial run AND by any
+    // re-verify after a mutation, so the verdict word/class is always derived
+    // the same way — never from client-invented thresholds.
+    function applyVerifyResult(vData) {
+      const v = vData.verdict || {};
+      const conf = v.confidence || 50;
+      const vCall = v.call || 'marginal';
+      state.verdict = {
+        verdictWord: VERDICT_WORDS[vCall] || 'Take it smaller',
+        confidence: conf,
+        verdictClass: deriveVerdictClass(vCall),
+        summary: v.rationale || '',
+        flipConditions: Array.isArray(v.flipConditions) ? v.flipConditions.filter(Boolean) : []
+      };
+      state.evidence = vData.evidence || {};
+      state.riskReport = vData.riskReport || {};
+      state.debateRounds = vData.debate?.rounds || [];
+      if (state.debateRounds.length) {
+        const lastRound = state.debateRounds[state.debateRounds.length - 1];
+        state.debate = { bullWonOn: lastRound?.bull?.thesis?.slice(0, 80) || 'Premium richness', bearWonOn: lastRound?.bear?.thesis?.slice(0, 80) || 'Risk factors' };
+      } else {
+        state.debate = { bullWonOn: 'Evidence cited', bearWonOn: 'Risk factors identified' };
+      }
+      state.mutations = buildMutations(vData);
+    }
+
+    // Price a set of proposed legs against the live chain to verify (deterministically)
+    // whether the desk's alternative actually collects a credit. Returns null if we
+    // can't price every leg (so we never assert a credit we didn't compute).
+    function priceProposedLegs(legs) {
+      let nc = 0;
+      for (const l of legs) {
+        const ch = (state.chainData || []).find(c => Math.abs(c.strike - l.strike) < 0.5);
+        const mid = ch?.[l.type]?.mid;
+        if (mid == null) return null; // missing a leg price — can't verify
+        nc += l.side === 'short' ? mid : -mid;
+      }
+      return { netCredit: nc, isCredit: nc >= 0 };
+    }
+
+    // Surface what the desk says to do instead — including "wait" (informational)
+    // and, for a concrete alternative, a deterministic check that it nets a credit.
+    function buildMutations(vData) {
+      const muts = [];
+      const sf = vData.suggestedFix;
+      if (sf) {
+        if (sf.action === 'wait') {
+          muts.push({
+            kind: 'wait',
+            label: 'Desk recommends: wait',
+            rationale: sf.waitCondition || sf.rationale || 'Conditions unfavorable — wait before entering.'
+          });
+        } else {
+          const legs = Array.isArray(sf.legs) && sf.legs.length ? sf.legs : null;
+          muts.push({
+            kind: 'suggestedFix',
+            label: sf.action === 'switch' ? `Use instead: ${sf.strategy}` : `Adjust to ${sf.strategy || 'a better structure'}`,
+            strategy: sf.strategy || '',
+            rationale: sf.rationale || '',
+            legs,
+            priced: legs ? priceProposedLegs(legs) : null
+          });
+        }
+      }
+      if (vData.riskReport?.portfolioFit === 'reduce_size') {
+        muts.push({
+          kind: 'reduce_size',
+          label: 'Reduce size 50%',
+          rationale: vData.riskReport.rationale || 'Risk desk flagged sizing — halving contracts cuts max loss in proportion.'
+        });
+      }
+      return muts;
+    }
+
+    // Apply a mutation's structural change to the live trade (legs / qty).
+    function applyMutationToTrade(m) {
+      if (m.kind === 'reduce_size') {
+        state.qty = Math.max(1, Math.round(state.qty * 0.5));
+      } else if (m.kind === 'suggestedFix' && Array.isArray(m.legs) && m.legs.length) {
+        state.legs = m.legs.map(pl => {
+          const ch = (state.chainData || []).find(c => Math.abs(c.strike - pl.strike) < 0.5);
+          const ct = ch ? ch[pl.type] : null;
+          return { type: pl.type, side: pl.side, strike: pl.strike, mid: (ct && ct.mid) || 0, iv: (ct && ct.iv) || 0 };
+        });
+      }
+    }
+
+    // Structured stance for a desk agent — uses the real report fields the API
+    // returns rather than keyword-matching the prose summary.
+    function agentStance(key, data, summary) {
+      if (key === 'technical' && data && data.trend) {
+        return data.trend === 'bullish' ? 'supportive' : data.trend === 'bearish' ? 'caution' : 'neutral';
+      }
+      if (key === 'gamma' && data && typeof data.insideBand === 'boolean') {
+        return data.insideBand ? 'supportive' : 'caution';
+      }
+      if (key === 'iv' && data && data.premiumFairness) {
+        return data.premiumFairness === 'rich' ? 'supportive' : data.premiumFairness === 'thin' ? 'caution' : 'neutral';
+      }
+      if (key === 'sentiment' && data) {
+        // A binary event in the window is the real risk for a premium seller —
+        // and the desk treats crowded (extreme) polarity as risky in EITHER
+        // direction, so both flag caution regardless of sign.
+        const cats = Array.isArray(data.catalystsInWindow) ? data.catalystsInWindow.filter(Boolean) : [];
+        if (cats.length) return 'caution';
+        if (typeof data.polarity === 'number') {
+          return Math.abs(data.polarity) > 0.6 ? 'caution' : 'supportive';
+        }
+      }
+      // Fallback heuristic when structured fields are absent (e.g. demo)
+      const s = (summary || '').toLowerCase();
+      if (/bullish|support|favorable|rich|contained/.test(s)) return 'supportive';
+      if (/bearish|caution|risk|thin|breach|reversal/.test(s)) return 'caution';
+      return 'neutral';
+    }
+
+    /* ================================================================
        STAGE 5: VERDICT & MUTATE
        ================================================================ */
     function renderStage5() {
       const v = state.verdict;
       if (!v) {
         $('#verdict-content').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">No verdict data available.</div>';
+        return;
+      }
+      // Failed desk run — show the real error, not a fabricated verdict.
+      if (state.verifyError) {
+        $('#verdict-content').innerHTML = `
+          <div class="v5-banner fail" style="text-align:left">
+            <span class="v5-pill fail">Verification failed</span>
+            <div style="font-size:18px;font-weight:800;margin:8px 0">The desk couldn't complete this run</div>
+            <div style="font-size:13px;color:var(--ink-mid);line-height:1.5">${state.verifyError}</div>
+            <div style="font-size:12px;color:var(--ink-muted);margin-top:10px">No verdict is shown because the agents did not return a result — retrying re-runs the full desk.</div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:14px">
+            <button class="btn-primary" onclick="goToStage(4)" style="padding:10px 20px">Retry verification</button>
+            <button class="btn-primary" onclick="goToStage(3)" style="padding:10px 20px;background:var(--white);color:var(--ink);border:1px solid var(--border)">Back to strikes</button>
+          </div>`;
         return;
       }
 
@@ -2389,22 +3579,43 @@
       const totalCredit = nc * 100 * state.qty;
       const legsStr = state.legs.map(l => `${l.side === 'short' ? 'S' : 'L'} ${l.strike}${l.type[0].toUpperCase()}`).join(' / ');
 
-      // Desk summary: tally supportive vs caution
+      // Desk summary: classify each agent by its structured report field.
+      // Sentiment also gets a catalyst line so the read is more than a polarity word.
+      const sentData = ev.sentiment;
+      const catalysts = Array.isArray(sentData?.catalystsInWindow) ? sentData.catalystsInWindow.filter(Boolean) : [];
+      const sentExtra = typeof sentData?.polarity === 'number'
+        ? ` · polarity ${sentData.polarity > 0 ? '+' : ''}${sentData.polarity.toFixed(2)} · ${catalysts.length ? 'catalysts: ' + catalysts.join(', ') : 'no catalysts in window'}`
+        : '';
       const agents = [
-        { name: 'Technical', data: ev.technical, summary: ev.technical?.summary || AGENT_RESULTS.technical },
-        { name: 'Gamma', data: ev.gamma, summary: ev.gamma?.summary || AGENT_RESULTS.gamma },
-        { name: 'IV/Skew', data: ev.iv, summary: ev.iv?.summary || AGENT_RESULTS.iv },
-        { name: 'Sentiment', data: ev.sentiment, summary: ev.sentiment?.summary || AGENT_RESULTS.sentiment },
+        { key: 'technical', name: 'Technical', data: ev.technical, summary: ev.technical?.summary || AGENT_RESULTS.technical },
+        { key: 'gamma', name: 'Gamma', data: ev.gamma, summary: ev.gamma?.summary || AGENT_RESULTS.gamma },
+        { key: 'iv', name: 'IV/Skew', data: ev.iv, summary: ev.iv?.summary || AGENT_RESULTS.iv },
+        { key: 'sentiment', name: 'Sentiment', data: ev.sentiment, summary: (ev.sentiment?.summary || AGENT_RESULTS.sentiment) + sentExtra },
       ];
-      const supportive = agents.filter(a => {
-        const s = (a.summary || '').toLowerCase();
-        return s.includes('bullish') || s.includes('support') || s.includes('favorable') || s.includes('rich') || s.includes('contained');
-      }).length;
-      const cautious = agents.length - supportive;
+      agents.forEach(a => { a.stance = agentStance(a.key, a.data, a.summary); });
+      const supportive = agents.filter(a => a.stance === 'supportive').length;
+      const cautious = agents.filter(a => a.stance === 'caution').length;
+      const neutralCount = agents.filter(a => a.stance === 'neutral').length;
 
       const ringColor = v.verdictClass === 'pass' ? 'var(--green)' : v.verdictClass === 'fail' ? 'var(--red)' : 'var(--yellow)';
       const confPct = v.confidence || 0;
       const scalePos = Math.max(0, Math.min(100, confPct));
+
+      // "What would change this verdict" — real flip conditions from the judge,
+      // falling back to the risk desk's reasoning. No longer a repeat of the summary.
+      const flips = v.flipConditions || [];
+      const flipInner = flips.length
+        ? `<strong>What would change this verdict:</strong><ul style="margin:6px 0 0;padding-left:18px">${flips.map(f => `<li style="margin-bottom:3px">${f}</li>`).join('')}</ul>`
+        : (state.riskReport?.rationale
+            ? `<strong>What drove the score:</strong> ${state.riskReport.rationale}`
+            : `<strong>What drove the score:</strong> The desk weighed analyst evidence, debate arguments, and risk factors.`);
+
+      // One-line read on how the debate resolved, tied to the verdict class.
+      const debateSummary = v.verdictClass === 'pass'
+        ? 'The desk judged the bull case stronger — evidence supports entry.'
+        : v.verdictClass === 'fail'
+          ? 'The desk judged the bear case stronger — risks outweigh the edge.'
+          : 'The desk found the case balanced — proceed smaller and watch the flip conditions.';
       $('#verdict-content').innerHTML = `
         <!-- Verdict banner -->
         <div class="v5-banner ${v.verdictClass}">
@@ -2440,61 +3651,90 @@
         <!-- What the desk found -->
         <div class="panel" style="padding:14px 18px;margin-top:12px">
           <div style="font-size:14px;font-weight:700;margin-bottom:10px">What the desk found</div>
-          <div style="display:flex;gap:12px;margin-bottom:12px">
+          <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap">
             <span style="font-size:12px;padding:4px 10px;border-radius:6px;background:var(--pass-bg);color:var(--pass-text);font-weight:600">${supportive} supportive</span>
             <span style="font-size:12px;padding:4px 10px;border-radius:6px;background:var(--concern-bg);color:var(--concern-text);font-weight:600">${cautious} caution</span>
+            ${neutralCount ? `<span style="font-size:12px;padding:4px 10px;border-radius:6px;background:var(--cream-dark);color:var(--ink-muted);font-weight:600">${neutralCount} neutral</span>` : ''}
           </div>
           ${agents.map(a => {
-            const isSupportive = (a.summary || '').toLowerCase().match(/bullish|support|favorable|rich|contained/);
-            const tagCls = isSupportive ? 'tag-supportive' : 'tag-caution';
-            const tagWord = isSupportive ? 'supportive' : 'caution';
+            const tagCls = a.stance === 'supportive' ? 'tag-supportive' : a.stance === 'caution' ? 'tag-caution' : 'tag-neutral';
+            // Chart link(s) for this specific finding, right after the text.
+            const chips = chartTabsFor(a.key, a.data)
+              .map(c => `<a class="v5-chart-link" onclick="event.stopPropagation();window.showDeskChart('${c.tab}')">📈 ${escHtml(c.label)}</a>`)
+              .join('');
             return `<div class="v5-desk-row">
               <span style="font-weight:600;min-width:80px">${a.name}</span>
-              <span style="flex:1;color:var(--ink-muted)">${a.summary}</span>
-              <span class="vp-seat-tag"><span class="${tagCls}">${tagWord}</span></span>
+              <span style="flex:1;color:var(--ink-muted)">${a.summary}${chips}</span>
+              <span class="vp-seat-tag"><span class="${tagCls}">${a.stance}</span></span>
             </div>`;
           }).join('')}
           <div style="font-size:12px;color:var(--ink-muted);margin-top:12px;line-height:1.6;padding:10px;background:var(--cream);border-radius:6px">
-            <strong>How the ${confPct} was reached:</strong> ${v.summary || 'The desk weighed analyst evidence, debate arguments, and risk factors to produce the confidence score.'}
+            ${flipInner}
           </div>
           <div style="margin-top:8px;text-align:center">
             <button onclick="goToStage(4)" style="background:none;border:none;color:var(--teal);font-size:11px;cursor:pointer;text-decoration:underline">View full transcripts in Step 4</button>
           </div>
         </div>
 
-        <!-- Mutations -->
+        <!-- Suggested adjustments -->
         ${state.mutations?.length ? `<div class="panel" style="padding:14px 18px;margin-top:12px">
-          <div style="font-size:14px;font-weight:700;margin-bottom:10px">One-click mutations</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px">Suggested adjustments</div>
+          <div style="font-size:11px;color:var(--ink-muted);margin-bottom:10px">Applying re-runs the desk on the new structure for a fresh score &mdash; no number is assumed.</div>
           <div style="display:grid;grid-template-columns:repeat(${Math.min(state.mutations.length,3)},1fr);gap:8px">
-            ${state.mutations.map((m, i) => `
-              <div class="panel" style="padding:12px;cursor:pointer;text-align:center;transition:all 0.15s;${i===0?'border-color:var(--teal);':''}${m.applied?'opacity:0.5;':''}" id="mutation-${i}" onclick="handleMutation(${i})">
-                ${i===0?'<div style="font-size:8px;background:var(--teal);color:white;padding:1px 6px;border-radius:3px;display:inline-block;margin-bottom:4px;font-weight:700">BEST</div>':''}
-                <div style="font-size:12px;font-weight:600">${m.label}</div>
-                <div style="font-size:14px;font-family:var(--mono);margin-top:4px">
-                  <span style="color:var(--ink-muted)">${m.from}</span>
-                  <span style="color:var(--green)"> \u2192 ${m.to}</span>
-                  <span style="font-size:10px;color:var(--green);font-weight:700"> \u25B2 +${m.to - m.from}</span>
-                </div>
-              </div>
-            `).join('')}
+            ${state.mutations.map((m, i) => {
+              const isWait = m.kind === 'wait';
+              const change = m.kind === 'reduce_size'
+                ? `${state.qty} \u2192 ${Math.max(1, Math.round(state.qty * 0.5))} contracts`
+                : (m.legs ? m.legs.map(l => `${l.side === 'short' ? 'S' : 'L'} ${l.strike}${l.type[0].toUpperCase()}`).join(' / ') : '');
+              // Deterministic check: does the desk's proposed alternative actually net a credit?
+              const pricedHtml = m.priced
+                ? `<div style="font-size:10px;margin-top:5px;font-weight:700;color:${m.priced.isCredit ? 'var(--green)' : 'var(--red)'}">${m.priced.isCredit ? '\u2713 nets a credit' : '\u26a0 still a net debit'} $${Math.abs(m.priced.netCredit).toFixed(2)}</div>`
+                : (m.kind === 'suggestedFix' && m.legs ? `<div style="font-size:10px;margin-top:5px;color:var(--ink-muted)">credit not verifiable (missing chain price)</div>` : '');
+              return `
+              <div class="panel" style="padding:12px;${isWait ? '' : 'cursor:pointer;'}transition:all 0.15s;${i===0 && !isWait ? 'border-color:var(--teal);' : ''}" id="mutation-${i}" ${isWait ? '' : `onclick="handleMutation(${i})"`}>
+                ${i===0 && !isWait ? '<div style="font-size:8px;background:var(--teal);color:white;padding:1px 6px;border-radius:3px;display:inline-block;margin-bottom:4px;font-weight:700">SUGGESTED</div>' : ''}
+                ${isWait ? '<div style="font-size:8px;background:var(--concern-border);color:white;padding:1px 6px;border-radius:3px;display:inline-block;margin-bottom:4px;font-weight:700">DESK VERDICT</div>' : ''}
+                <div style="font-size:12px;font-weight:600;margin-bottom:2px">${m.label}</div>
+                ${m.rationale ? `<div style="font-size:10px;color:var(--ink-muted);line-height:1.4;margin-bottom:6px">${m.rationale}</div>` : ''}
+                ${change ? `<div style="font-size:11px;font-family:var(--mono);color:var(--ink)">${change}</div>` : ''}
+                ${pricedHtml}
+                ${isWait ? '' : `<div style="font-size:10px;color:var(--teal);font-weight:600;margin-top:6px">Apply &amp; re-verify \u2192</div>`}
+              </div>`;
+            }).join('')}
           </div>
         </div>` : ''}
 
-        <!-- Bull/Bear debate -->
+        <!-- Bull vs Bear debate -->
         ${state.debateRounds?.length || state.debate ? `<div class="panel" style="padding:14px 18px;margin-top:12px">
-          <details>
-            <summary style="font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">Bull vs Bear debate</summary>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-              <div style="padding:10px;background:rgba(26,140,94,0.06);border-radius:8px;border-left:3px solid var(--green)">
-                <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:4px">Bull Researcher</div>
-                <div style="font-size:11px;color:var(--ink-muted);line-height:1.5">${state.debate?.bullWonOn || state.debate?.bull?.wonOn || 'Premium richness supports the structure'}</div>
-              </div>
-              <div style="padding:10px;background:rgba(192,57,43,0.06);border-radius:8px;border-left:3px solid var(--red)">
-                <div style="font-size:11px;font-weight:600;color:var(--red);margin-bottom:4px">Bear Researcher</div>
-                <div style="font-size:11px;color:var(--ink-muted);line-height:1.5">${state.debate?.bearWonOn || state.debate?.bear?.wonOn || 'Risk factors require attention'}</div>
-              </div>
-            </div>
-          </details>
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px">Bull vs Bear debate</div>
+          <div style="font-size:11px;color:var(--ink-muted);margin-bottom:10px">${debateSummary}</div>
+          ${state.debateRounds?.length
+            ? state.debateRounds.map((r, i) => `
+              <div style="margin-bottom:10px">
+                ${state.debateRounds.length > 1 ? `<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink-faint);margin-bottom:4px">Round ${i + 1}</div>` : ''}
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                  <div style="padding:10px;background:rgba(26,140,94,0.06);border-radius:8px;border-left:3px solid var(--green)">
+                    <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:4px">💪 Bull Researcher</div>
+                    <div style="font-size:11px;color:var(--ink);line-height:1.5">${r.bull?.thesis || '—'}</div>
+                    ${(r.bull?.evidence || []).length ? `<ul style="margin:6px 0 0;padding-left:16px;font-size:10px;color:var(--ink-muted);line-height:1.5">${r.bull.evidence.map(e => `<li>${e}</li>`).join('')}</ul>` : ''}
+                  </div>
+                  <div style="padding:10px;background:rgba(192,57,43,0.06);border-radius:8px;border-left:3px solid var(--red)">
+                    <div style="font-size:11px;font-weight:600;color:var(--red);margin-bottom:4px">⚠ Bear Researcher</div>
+                    <div style="font-size:11px;color:var(--ink);line-height:1.5">${r.bear?.thesis || '—'}</div>
+                    ${(r.bear?.evidence || []).length ? `<ul style="margin:6px 0 0;padding-left:16px;font-size:10px;color:var(--ink-muted);line-height:1.5">${r.bear.evidence.map(e => `<li>${e}</li>`).join('')}</ul>` : ''}
+                  </div>
+                </div>
+              </div>`).join('')
+            : `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div style="padding:10px;background:rgba(26,140,94,0.06);border-radius:8px;border-left:3px solid var(--green)">
+                  <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:4px">💪 Bull Researcher</div>
+                  <div style="font-size:11px;color:var(--ink-muted);line-height:1.5">${state.debate?.bullWonOn || state.debate?.bull?.wonOn || 'Premium richness supports the structure'}</div>
+                </div>
+                <div style="padding:10px;background:rgba(192,57,43,0.06);border-radius:8px;border-left:3px solid var(--red)">
+                  <div style="font-size:11px;font-weight:600;color:var(--red);margin-bottom:4px">⚠ Bear Researcher</div>
+                  <div style="font-size:11px;color:var(--ink-muted);line-height:1.5">${state.debate?.bearWonOn || state.debate?.bear?.wonOn || 'Risk factors require attention'}</div>
+                </div>
+              </div>`}
         </div>` : ''}
 
         <!-- Actions -->
@@ -2519,58 +3759,39 @@
     async function handleMutation(index) {
       var card = document.getElementById('mutation-' + index);
       if (!card) return;
-      card.classList.add('reverifying');
-      card.innerHTML = '<div style="text-align:center;padding:8px;color:var(--text-muted)"><span class="mini-spinner"></span> Applying mutation...</div>';
-
       var m = state.mutations[index];
-      var label = (m.label || '').toLowerCase();
+      if (!m) return;
+      card.classList.add('reverifying');
+      card.innerHTML = '<div style="text-align:center;padding:8px;color:var(--text-muted)"><span class="mini-spinner"></span> Applying &amp; re-verifying...</div>';
 
-      await sleep(800);
-
-      // Apply the mutation to the actual trade
-      if (label.indexOf('reduce size') >= 0 || label.indexOf('cut size') >= 0) {
-        // Reduce qty by ~50%
-        state.qty = Math.max(1, Math.round(state.qty * 0.5));
-      } else if (label.indexOf('widen') >= 0) {
-        // Widen outer strikes by $5
-        var strikes = state.legs.map(function(l) { return l.strike; });
-        var minS = Math.min.apply(null, strikes);
-        var maxS = Math.max.apply(null, strikes);
-        state.legs.forEach(function(l) {
-          if (l.strike === minS) { l.strike -= 5; }
-          else if (l.strike === maxS) { l.strike += 5; }
-          // Re-enrich from chain
-          var ch = (state.chainData || []).find(function(c) { return Math.abs(c.strike - l.strike) < 0.5; });
-          var ct = ch ? ch[l.type] : null;
-          l.mid = (ct && ct.mid) || l.mid;
-          l.iv = (ct && ct.iv) || l.iv;
-        });
-      } else if (label.indexOf('roll puts') >= 0) {
-        // Move put strikes down by $5
-        state.legs.forEach(function(l) {
-          if (l.type === 'put') {
-            l.strike -= 5;
-            var ch = (state.chainData || []).find(function(c) { return Math.abs(c.strike - l.strike) < 0.5; });
-            var ct = ch ? ch[l.type] : null;
-            l.mid = (ct && ct.mid) || l.mid;
-            l.iv = (ct && ct.iv) || l.iv;
-          }
-        });
+      // Demo mode has no live desk to re-score against — keep it illustrative.
+      if (isDemo) {
+        await sleep(700);
+        if (typeof m.to === 'number') {
+          state.verdict.confidence = m.to;
+          var dc = m.to >= 70 ? 'pass' : m.to >= 50 ? 'concern' : 'fail';
+          state.verdict.verdictClass = dc;
+          state.verdict.verdictWord = VERDICT_WORDS[dc === 'concern' ? 'marginal' : dc] || state.verdict.verdictWord;
+        }
+        renderStage5();
+        return;
       }
 
-      // Update confidence
-      state.verdict.confidence = m.to;
-
-      // Update the verdict class based on new confidence
-      var conf = m.to;
-      state.verdict.verdictClass = conf >= 70 ? 'pass' : conf >= 50 ? 'concern' : 'fail';
-      var verdictWords = { pass: 'Take it', concern: 'Take it smaller', fail: 'Skip it' };
-      state.verdict.verdictWord = verdictWords[state.verdict.verdictClass] || state.verdict.verdictWord;
-
-      // Mark this mutation as applied
-      m.applied = true;
-
-      // Re-render with updated legs + confidence
+      // Real path: mutate the trade, then re-run the desk for a REAL score.
+      // We never assert a client-invented number — the confidence that shows is
+      // whatever the desk returns for the new structure.
+      applyMutationToTrade(m);
+      try {
+        var vData = await callVerify(state.legs);
+        state.verifyData = vData;
+        applyVerifyResult(vData);
+        state.totalTokens = (vData.cost?.totalInputTokens || 0) + (vData.cost?.totalOutputTokens || 0);
+        state.totalTime = (vData.durationMs || 0) / 1000;
+        addCost(vData.cost);
+      } catch (err) {
+        // Surface the failure honestly rather than faking an improvement.
+        state.verdict.summary = 'Re-verification failed: ' + err.message + ' — score unchanged.';
+      }
       renderStage5();
     }
 
@@ -2591,7 +3812,7 @@
         var nc = computeNetCredit();
         var ml = computeMaxLoss(nc);
         var bk = computeBreakevens();
-        var maxProfit = Math.abs(nc * 100 * state.qty);
+        var maxProfit = computeMaxProfit(nc);   // payoff-based, not just net premium
         var rr = ml > 0 ? maxProfit / ml : 0;
         var dte = Math.round((new Date(state.selectedExpiry + 'T16:00:00').getTime() - Date.now()) / 86400000);
         var stratName = state.selectedStrategy?.strategy || state.selectedStrategy?.name || 'Unknown';
@@ -2808,9 +4029,9 @@
           legs: state.legs.map(l => ({ action: l.side === 'short' ? 'SELL' : 'BUY', type: l.type.toUpperCase(), strike: l.strike, premium: l.mid, delta: l.delta || 0 })),
           greeks: {},
           netCredit: nc,
-          maxProfit: Math.abs(nc * 100 * state.qty),
+          maxProfit: computeMaxProfit(nc),
           maxLoss: ml,
-          rewardRisk: ml > 0 ? Math.abs(nc * 100 * state.qty) / ml : 0,
+          rewardRisk: ml > 0 ? computeMaxProfit(nc) / ml : 0,
           pop: state.legs.length ? 50 + Math.round(nc * 10) : 0,
           breakevens: bk,
           gammaData: { put_wall: state.gexPutWall || state.putWall, call_wall: state.gexCallWall || state.callWall },
@@ -2896,7 +4117,7 @@
      ═══════════════════════════════════════════════════════════════ -->
 <script type="module">
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-import { getFirestore, collection, doc, getDoc, setDoc, addDoc, updateDoc, serverTimestamp, increment }
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, serverTimestamp, increment }
   from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 import { getAuth, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
@@ -2961,6 +4182,34 @@ function todayKey() {
 function userDocId(email) {
   return email.replace(/[^a-zA-Z0-9]/g, '_');
 }
+
+// Read the signed-in user's active Invest positions (users/{uid}/positions in
+// newleafdb — the same collection the Invest app writes) and return a compact
+// snapshot for the Risk Manager. Capital-at-risk = maxLoss × contracts.
+// Returns [] when signed out or on any error — the desk then treats it as
+// "no portfolio connected" rather than failing.
+window.getInvestPortfolio = async function() {
+  try {
+    if (!auth.currentUser) return [];
+    const snap = await getDocs(collection(db, 'users', auth.currentUser.uid, 'positions'));
+    const out = [];
+    snap.forEach(d => {
+      const p = d.data() || {};
+      if (p.status && p.status !== 'active') return; // active positions only
+      if (!p.symbol) return;
+      const qty = Number(p.quantity) || 0;
+      const maxLoss = Number(p.maxLoss) || 0;
+      out.push({
+        symbol: String(p.symbol).toUpperCase(),
+        strategyType: p.strategyType || '',
+        quantity: qty,
+        capitalAtRisk: Math.round(maxLoss * qty),
+        shortPremium: Number(p.entryNetCredit) > 0,
+      });
+    });
+    return out;
+  } catch (e) { console.warn('getInvestPortfolio failed', e); return []; }
+};
 
 // Check if user has remaining requests today. Returns { allowed, used, limit }.
 window.checkUsageLimit = async function() {

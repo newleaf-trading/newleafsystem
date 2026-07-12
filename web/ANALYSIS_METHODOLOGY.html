@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf — Analysis Methodology & Design</title>
+<style>
+  :root{
+    --forest:#0F3D2E; --forest-deep:#0B2D23; --gold:#C8A85A; --cream:#F7F4EE;
+    --ink:#16241F; --muted:#6B7A72; --line:#E4DED2; --card:#FFFFFF;
+    --green:#2E7D5B; --green-bg:#E7F2EC; --red:#B5483A; --red-bg:#F7E8E5;
+    --amber:#B07F2E; --amber-bg:#F6EEDC; --mono:'SF Mono',ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;line-height:1.6;font-size:15px}
+  .wrap{max-width:940px;margin:0 auto;padding:0 24px 80px}
+  header{background:var(--forest);color:var(--cream);padding:40px 0 34px;margin-bottom:36px}
+  header .wrap{padding-bottom:0}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+  h1{font-size:30px;margin:0 0 8px;font-weight:800}
+  header p{margin:0;color:#c9d6ce;font-size:15px;max-width:640px}
+  h2{font-size:22px;margin:44px 0 6px;padding-top:14px;border-top:2px solid var(--line);font-weight:800;color:var(--forest)}
+  h2 .num{font-family:var(--mono);color:var(--gold);font-size:15px;margin-right:8px}
+  h3{font-size:16px;margin:26px 0 6px;color:var(--forest-deep)}
+  .lead{color:var(--muted);font-size:14px;margin-top:2px}
+  p{margin:10px 0}
+  code{font-family:var(--mono);font-size:.86em;background:#eee7d8;padding:1px 5px;border-radius:4px;color:var(--forest-deep)}
+  .formula{font-family:var(--mono);font-size:13px;background:var(--forest-deep);color:#e8f0ea;padding:12px 16px;border-radius:8px;margin:12px 0;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;background:var(--card);border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  th{background:var(--forest);color:var(--cream);text-align:left;padding:9px 12px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;font-weight:700}
+  td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:top}
+  tr:nth-child(even) td{background:#faf8f2}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px}
+  .pill.g{background:var(--green-bg);color:var(--green)} .pill.r{background:var(--red-bg);color:var(--red)} .pill.a{background:var(--amber-bg);color:var(--amber)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:16px 0}
+  .banner{border-radius:8px;border-left:3px solid;padding:11px 15px;margin:12px 0}
+  .banner.g{background:var(--green-bg);border-color:var(--green)} .banner.r{background:var(--red-bg);border-color:var(--red)} .banner.a{background:var(--amber-bg);border-color:var(--amber)}
+  .banner .lbl{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .banner .verdict{font-weight:800;font-size:14px} .banner.g .verdict{color:var(--green)} .banner.r .verdict{color:var(--red)} .banner.a .verdict{color:var(--amber)}
+  .banner .body{font-size:12.5px;margin-top:3px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+  .new{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.05em;background:var(--gold);color:var(--forest-deep);padding:1px 6px;border-radius:4px;vertical-align:middle;margin-left:8px}
+  ul{margin:10px 0;padding-left:22px} li{margin:5px 0}
+  .toc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 22px;margin-bottom:8px}
+  .toc a{color:var(--forest);text-decoration:none;font-size:14px;display:block;padding:3px 0}
+  .toc a:hover{color:var(--gold)}
+  .foot{margin-top:50px;padding-top:18px;border-top:2px solid var(--line);color:var(--muted);font-size:12.5px}
+  @media(max-width:640px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="kicker">NewLeaf System · Design Doc</div>
+    <h1>Analysis Methodology</h1>
+    <p>How the Verification Desk reads a stock before you trade options — the three analysis pillars, the data behind each, and the plain-English regime reads added in this release.</p>
+  </div>
+</header>
+<div class="wrap">
+
+  <div class="toc">
+    <a href="#overview">0 · Overview — the three pillars</a>
+    <a href="#gamma">1 · Gamma Walls &amp; net-gamma regime <span class="new">UPDATED</span></a>
+    <a href="#technical">2 · Technical analysis &amp; trend regime <span class="new">UPDATED</span></a>
+    <a href="#iv">3 · IV &amp; Skew, volatility regime <span class="new">UPDATED</span></a>
+    <a href="#data">4 · Data pipeline &amp; how IV is computed</a>
+    <a href="#changes">5 · What changed in this release</a>
+  </div>
+
+  <h2 id="overview"><span class="num">0</span>Overview — the three pillars</h2>
+  <p class="lead">Every ticker is read through three independent lenses. Each is <b>deterministic</b> — computed from market data, not generated by a language model — and each now carries a one-line <b>regime banner</b> that synthesises the raw numbers into an actionable read.</p>
+  <table>
+    <tr><th>Pillar</th><th>Question it answers</th><th>Drives</th></tr>
+    <tr><td><b>Gamma Walls</b></td><td>Where will dealer hedging pin or accelerate price? Is the market <i>mean-reverting</i> or <i>trending</i>?</td><td>Range vs directional; strike selection against the walls</td></tr>
+    <tr><td><b>Technical</b></td><td>What is the trend, how strong, and is momentum stretched?</td><td>Direction &amp; whether to fade or follow</td></tr>
+    <tr><td><b>IV &amp; Skew</b></td><td>Is option premium rich or cheap, and how is it distributed across expiries?</td><td>Sell vs buy premium; which expiry</td></tr>
+  </table>
+
+  <!-- ─────────────────────────── GAMMA ─────────────────────────── -->
+  <h2 id="gamma"><span class="num">1</span>Gamma Walls &amp; net-gamma regime</h2>
+  <p class="lead">Gamma measures how fast an option's delta changes per $1 move. Market-maker (dealer) hedging of that gamma is what creates support/resistance "walls" — and its <i>sign</i> determines whether the market chops or trends.</p>
+
+  <h3>What we compute</h3>
+  <table>
+    <tr><th>Metric</th><th>How</th><th>Meaning</th></tr>
+    <tr><td>Put wall / Call wall</td><td>Strikes with the largest gamma exposure (GEX) below / above spot</td><td>Levels the stock tends to stay between; price is "pinned" by dealer hedging</td></tr>
+    <tr><td>GEX by strike</td><td>Per-strike <code>callGex − putGex</code></td><td>Green = call-dominant, red = put-dominant</td></tr>
+    <tr><td>Gamma flip</td><td>The strike where <code>callGex − putGex</code> crosses zero</td><td>The boundary between the positive- and negative-gamma regimes</td></tr>
+    <tr><td>Band width / position-in-band</td><td>Wall spread as % of spot; where spot sits between the walls</td><td>How much room to move; proximity to a wall</td></tr>
+    <tr><td>Confidence (OI · delta · volume)</td><td>Blended score — do open interest, positioning and volume confirm the walls?</td><td>How much to trust the reading</td></tr>
+  </table>
+
+  <h3>Net-gamma regime <span class="new">NEW</span> — the "Positive gamma · mean-reverting" banner</h3>
+  <p>This is the headline addition. It answers the question from the gamma primer: <b>is net gamma exposure positive or negative, and what does that imply?</b> We derive it from <b>spot vs the gamma flip</b>:</p>
+  <div class="formula">regime = spot &gt; gamma_flip  ?  POSITIVE (mean-reverting)  :  NEGATIVE (trending)</div>
+
+  <div class="banner g">
+    <div class="lbl">Net gamma regime</div>
+    <div class="verdict">Positive gamma · mean-reverting</div>
+    <div class="body">Spot is <b>above</b> the gamma flip. Dealers are net <b>long</b> gamma → they <b>buy dips / sell rips</b> to stay hedged → volatility is dampened and price pins between the walls. <b>Favors range structures</b> (condors, spreads); fade breakouts.</div>
+  </div>
+  <div class="banner r">
+    <div class="lbl">Net gamma regime</div>
+    <div class="verdict">Negative gamma · trending</div>
+    <div class="body">Spot is <b>below</b> the gamma flip. Dealers are net <b>short</b> gamma → they <b>sell dips / buy rips</b> → volatility is amplified, expect stronger trends and momentum. <b>Favors directional / momentum</b> setups; keep stops tight.</div>
+  </div>
+  <div class="banner a">
+    <div class="lbl">Net gamma regime</div>
+    <div class="verdict">Balanced · at the gamma flip</div>
+    <div class="body">Spot sits right on the flip — the regime can tip either way from here.</div>
+  </div>
+
+  <p>The banner also prints a <b>key-levels strip</b>: <code>Put wall $140 (−0.7%) · Gamma flip $148 (+5.0%) · Call wall $150 (+6.4%)</code> — each level with its signed distance from spot.</p>
+  <div class="card" style="font-size:13px">
+    <b>Why "positive = mean-reverting"?</b> When dealers are long gamma, hedging <i>opposes</i> the move (they sell as price rises, buy as it falls), which suppresses volatility — price gravitates back toward pinned levels. When they're short gamma, hedging <i>amplifies</i> the move (buy higher, sell lower), which fuels trends and breakouts. This mirrors the classic gamma-exposure framework used by desks.
+  </div>
+
+  <!-- ─────────────────────────── TECHNICAL ─────────────────────────── -->
+  <h2 id="technical"><span class="num">2</span>Technical analysis &amp; trend regime</h2>
+  <p class="lead">Computed from 250 daily closing prices via the NewLeaf indicators engine — real values, not LLM-generated.</p>
+
+  <h3>What we compute</h3>
+  <table>
+    <tr><th>Indicator</th><th>How</th><th>Reads</th></tr>
+    <tr><td>RSI (14)</td><td>Wilder's relative strength index</td><td>&gt;70 overbought · &lt;30 oversold · momentum extension</td></tr>
+    <tr><td>ADX (14)</td><td>Average directional index</td><td>&gt;25 strong trend · &gt;40 very strong · &lt;20 range-bound</td></tr>
+    <tr><td>MACD (line / signal)</td><td>12/26 EMA difference vs its 9-EMA signal</td><td>Line above signal = bullish momentum</td></tr>
+    <tr><td>SMA trend</td><td>Alignment of the 20 / 50 / 100 / 200-day SMAs</td><td>Stacked order = clean trend; mixed = no trend</td></tr>
+    <tr><td>Bollinger width / %B <span class="new">NEW</span></td><td>Band width; %B = where spot sits within the bands</td><td>Squeeze (tight) → breakout pending; %B≈0/1 → stretched</td></tr>
+    <tr><td>Support / Resistance <span class="new">NEW</span></td><td>Pivot levels (S1 / R1)</td><td>Levels to trade against</td></tr>
+  </table>
+
+  <h3>Trend &amp; momentum regime <span class="new">NEW</span></h3>
+  <p>A single synthesis the individual tiles don't give — it combines <b>ADX (strength) + MACD/SMA (direction) + RSI (extension)</b>, and appends a <b>volatility-squeeze</b> and <b>earnings-proximity</b> flag when relevant:</p>
+  <div class="banner r">
+    <div class="lbl">Trend &amp; momentum</div>
+    <div class="verdict">Very strong downtrend</div>
+    <div class="body">ADX 48 (very strong), MACD bearish. RSI 7 is extremely oversold — a mean-reversion bounce is likely, so don't chase new shorts; trend intact but stretched. <b>Earnings in ~5d</b> — binary event risk inside the window.</div>
+  </div>
+  <div class="banner a">
+    <div class="lbl">Trend &amp; momentum</div>
+    <div class="verdict">Range-bound · no clear trend</div>
+    <div class="body">ADX 14 (weak). Sideways / mean-reverting conditions — favors premium-selling structures (condors, spreads) over directional bets.</div>
+  </div>
+
+  <!-- ─────────────────────────── IV ─────────────────────────── -->
+  <h2 id="iv"><span class="num">3</span>IV &amp; Skew, volatility regime</h2>
+  <p class="lead">Implied volatility from the options chain — how expensive options are, and how that premium is distributed across expiries.</p>
+
+  <h3>What we compute</h3>
+  <table>
+    <tr><th>Metric</th><th>How</th><th>Meaning</th></tr>
+    <tr><td>ATM IV</td><td>Average implied vol of near-the-money contracts (within 5% of spot)</td><td>Absolute option "expensiveness"</td></tr>
+    <tr><td>IV / RV <span class="new">NEW</span></td><td>ATM IV ÷ 30-day realized vol</td><td>Rich vs cheap <i>relative to how much the stock actually moves</i></td></tr>
+    <tr><td>Expected move (±1SD) <span class="new">NEW</span></td><td><code>spot × IV × √(DTE/365)</code></td><td>The 1-standard-deviation range by expiry — drives strike selection</td></tr>
+    <tr><td>Term structure</td><td>ATM IV plotted across expiries</td><td>Backwardation (near-term fear) vs contango (normal)</td></tr>
+  </table>
+
+  <h3>Volatility regime <span class="new">NEW</span> — the IV/RV correctness fix</h3>
+  <p>"IV level: high" alone is misleading — a stock with high IV can still be <b>cheap</b> if it moves even more. The banner now judges premium by <b>IV/RV</b>, and reads the term-structure shape:</p>
+  <div class="banner g">
+    <div class="lbl">Volatility regime</div>
+    <div class="verdict">IV cheap · backwardated</div>
+    <div class="body">ATM IV 63% vs realized 72% → IV/RV 0.87: options are <b>cheap relative to actual movement</b> — selling premium is under-compensated; favors buyers / debit structures. Term structure is backwardated — the front expiry sits above later weeks, signaling near-term event/fear risk.</div>
+  </div>
+  <div class="banner a">
+    <div class="lbl">Volatility regime</div>
+    <div class="verdict">IV rich · contango</div>
+    <div class="body">ATM IV vs realized → IV/RV &gt; 1.15: options are expensive relative to how much the stock moves — favors net sellers (condors, spreads, BWB).</div>
+  </div>
+
+  <!-- ─────────────────────────── DATA ─────────────────────────── -->
+  <h2 id="data"><span class="num">4</span>Data pipeline &amp; how IV is computed</h2>
+  <table>
+    <tr><th>Source</th><th>Provides</th><th>Cadence</th></tr>
+    <tr><td>Alpaca</td><td>Prices, daily bars, option chains (bid/ask)</td><td>Fast pipeline every 15 min (market hours)</td></tr>
+    <tr><td>Nasdaq API</td><td>Open interest, expiry dates</td><td>Daily OI enrichment 9:32am ET</td></tr>
+    <tr><td>Yahoo (Cloud Fn)</td><td>OI / IV fallback</td><td>On demand when Nasdaq is empty</td></tr>
+  </table>
+  <h3>Computing IV without a greeks subscription <span class="new">NEW</span></h3>
+  <p>The intraday Alpaca feed (<code>indicative</code>) returns no greeks/IV. Rather than depend on a paid feed, we <b>solve implied volatility ourselves from each option's mid price</b> using Black–Scholes (Newton–Raphson with a bisection fallback):</p>
+  <div class="formula">σ solved from:  mid = BS_price(S, K, T, σ, type)      // via Newton–Raphson on vega</div>
+  <p>ATM IV, the term structure, IV/RV and expected move all flow from this. If a contract has no two-sided quote, the last known-good IV is carried forward. Results refresh every 15 minutes and persist automatically.</p>
+
+  <!-- ─────────────────────────── CHANGES ─────────────────────────── -->
+  <h2 id="changes"><span class="num">5</span>What changed in this release</h2>
+  <ul>
+    <li><b>Net-gamma regime banner</b> on Gamma Walls — Positive (mean-reverting) / Negative (trending) from spot vs the gamma flip, plus a walls/flip key-levels strip.</li>
+    <li><b>Trend &amp; momentum banner</b> on Technical — ADX + MACD/SMA + RSI synthesis, with squeeze and earnings flags. New Bollinger %B and Support/Resistance tiles.</li>
+    <li><b>Volatility regime banner</b> on IV &amp; Skew — IV/RV-based richness (fixes "high IV but actually cheap"), term-structure shape. New IV/RV and Expected-move tiles.</li>
+    <li><b>Real intraday IV</b> — Black–Scholes implied vol computed from mid price, so IV is populated every 15 minutes for the whole watchlist (no greeks subscription).</li>
+    <li>Colour-coded at-a-glance verdicts on the three snapshot cards (light green = bullish, pink = bearish, yellow = neutral).</li>
+  </ul>
+
+  <div class="foot">
+    <b>Honesty note.</b> These reads describe market structure and options pricing deterministically; they are decision <i>support</i>, not proven edge. The recommendation engine discriminates across strategies but is not yet outcome-validated — no win-rate or accuracy claims are made.
+    <br><br>NewLeaf System · Analysis Methodology · generated for internal design reference.
+  </div>
+
+</div>
+</body>
+</html>

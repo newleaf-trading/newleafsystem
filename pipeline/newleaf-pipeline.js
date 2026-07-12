@@ -40,7 +40,7 @@ const { analyzeGammaEnhanced } = require('./gamma-analyzer-enhanced');
 // ── Shared Strategy Engine (single source of truth for scanner + discover) ───
 const {
   analyzeTechnicals, calcScore, getDirection, selectStrategy, reconcileDirection, STRATEGIES,
-  calcRealizedVol, calcATRPct, calcSMA, calcBB, calcRSI,
+  calcRealizedVol, calcATRPct, calcSMA, calcBB, calcRSI, premiumRiskPenalty,
 } = require('./strategy-engine');
 
 // ── ATM Contracts for Strategy Builder ───────────────────────────────────────
@@ -140,6 +140,29 @@ function getMarketCapData(symbol) {
   };
 }
 
+// ── "Mean-reversion eligible" set — source of truth for the reaction gate's exception. ─────
+// Two groups earn the "oversold dip is a bounce, not a knife" assumption:
+//   1. Mega-cap stocks — read from company-metadata.json (marketCapTier === 'mega'). watchlist.json
+//      has no marketCapMapping, so getMarketCapData can't supply this.
+//   2. Blue-chip ETFs — SPY/QQQ (equity indices) + GLD/SLV (commodities), which structurally
+//      mean-revert. Hardcoded here (they carry no marketCapTier).
+// Mirrors the API's quality-names.ts (MEGA_CAPS + MEAN_REVERT_ETFS) — keep the two in sync so
+// scanner and Discover agree on who is eligible. Cached after first load.
+const MEAN_REVERT_ETFS = new Set(['SPY', 'QQQ', 'GLD', 'SLV']);
+let _megaCapSet = null;
+function isMeanReversionEligible(symbol) {
+  if (_megaCapSet === null) {
+    _megaCapSet = new Set();
+    try {
+      const meta = JSON.parse(fs.readFileSync(path.join(__dirname, 'company-metadata.json'), 'utf8'));
+      for (const [sym, info] of Object.entries(meta)) {
+        if (info && info.marketCapTier === 'mega') _megaCapSet.add(sym);
+      }
+    } catch (_) { /* leave empty → exception simply never fires for mega-caps */ }
+  }
+  return _megaCapSet.has(symbol) || MEAN_REVERT_ETFS.has(symbol);
+}
+
 
 // ── Colours ───────────────────────────────────────────────────────────────────
 const C = {
@@ -161,6 +184,64 @@ function calcDTE(isoDate) {
   const exp = new Date(isoDate); exp.setHours(0,0,0,0);
   const now = new Date();        now.setHours(0,0,0,0);
   return Math.round((exp - now) / 86400000);
+}
+
+// ── Black-Scholes implied volatility (from mid price) ────────────────────────
+// The Alpaca `indicative` feed used intraday returns no greeks/IV, so we solve IV
+// ourselves from the option's mid price. No data subscription needed.
+const RISK_FREE = 0.045;
+function _normCdf(x) {
+  const t = 1 / (1 + 0.2316419 * Math.abs(x));
+  const d = 0.3989422804014327 * Math.exp(-x * x / 2);
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  return x >= 0 ? 1 - p : p;
+}
+function _bsPrice(S, K, T, sigma, isCall) {
+  if (T <= 0 || sigma <= 0) return Math.max(0, isCall ? S - K : K - S);
+  const sq = sigma * Math.sqrt(T);
+  const d1 = (Math.log(S / K) + (RISK_FREE + sigma * sigma / 2) * T) / sq;
+  const d2 = d1 - sq;
+  return isCall
+    ? S * _normCdf(d1) - K * Math.exp(-RISK_FREE * T) * _normCdf(d2)
+    : K * Math.exp(-RISK_FREE * T) * _normCdf(-d2) - S * _normCdf(-d1);
+}
+/** Newton-Raphson (vega) with a bisection fallback. Returns σ (decimal) or null. */
+function bsImpliedVol(price, S, K, T, isCall) {
+  if (!(price > 0) || !(S > 0) || !(K > 0) || !(T > 0)) return null;
+  const intrinsic = Math.max(0, isCall ? S - K : K - S);
+  if (price <= intrinsic + 1e-6) return null; // no time value → unsolvable
+  let sigma = 0.5;
+  for (let i = 0; i < 40; i++) {
+    const p = _bsPrice(S, K, T, sigma, isCall);
+    const sq = sigma * Math.sqrt(T);
+    const d1 = (Math.log(S / K) + (RISK_FREE + sigma * sigma / 2) * T) / sq;
+    const vega = S * 0.3989422804014327 * Math.exp(-d1 * d1 / 2) * Math.sqrt(T);
+    const diff = p - price;
+    if (Math.abs(diff) < 1e-4) return (sigma > 0.01 && sigma < 5) ? sigma : null;
+    if (vega < 1e-8) break;
+    sigma -= diff / vega;
+    if (!(sigma > 0) || sigma > 5 || !isFinite(sigma)) { sigma = 0.5; break; }
+  }
+  // Bisection fallback
+  let lo = 0.01, hi = 5;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    (_bsPrice(S, K, T, mid, isCall) > price) ? (hi = mid) : (lo = mid);
+  }
+  const out = (lo + hi) / 2;
+  return (out > 0.011 && out < 4.99) ? out : null;
+}
+/** Fill c.iv (decimal) from the mid price for contracts the feed left blank. Returns count filled. */
+function enrichImpliedVol(contracts, spot) {
+  let filled = 0;
+  for (const c of contracts) {
+    if (c.iv != null && c.iv > 0) continue;
+    const mid = (c.bid > 0 && c.ask > 0) ? (c.bid + c.ask) / 2 : null;
+    if (!mid || !c.dte || c.dte <= 0) continue;
+    const iv = bsImpliedVol(mid, spot, c.strike, c.dte / 365, c.type === 'call');
+    if (iv != null) { c.iv = iv; filled++; }
+  }
+  return filled;
 }
 const sleep  = ms => new Promise(r => setTimeout(r, ms));
 const jitter = (base=150) => base + Math.random()*150;
@@ -298,13 +379,17 @@ async function getNasdaqExpiries(symbol) {
   const todate   = new Date(fromdate.getTime() + 120 * 86400000);
   const iso = dt => dt.toISOString().slice(0, 10);
   const dateRange = `&fromdate=${iso(fromdate)}&todate=${iso(todate)}&money=all&type=all`;
-  const url = `${NASDAQ_BASE}/${symbol}/option-chain?assetclass=${assetclass}&limit=500${dateRange}`;
+  // limit must be large enough to span the expiry GROUP headers, not just contracts. Daily-expiry
+  // ETFs (QQQ, SPY) have ~150+ strikes per expiry, so limit=500 only surfaces ~3 dates; 3000 spans
+  // ~18 dates. Weekly names are unaffected (they already fit). Downstream DTE filter + slice(0,7) trim.
+  const EXPIRY_DISCOVERY_LIMIT = 3000;
+  const url = `${NASDAQ_BASE}/${symbol}/option-chain?assetclass=${assetclass}&limit=${EXPIRY_DISCOVERY_LIMIT}${dateRange}`;
   let d = await nasdaqGet(url);
 
   // Fallback: try other asset class if empty
   if (!d?.data?.table?.rows?.length) {
     const alt = assetclass === 'stocks' ? 'etf' : 'stocks';
-    d = await nasdaqGet(`${NASDAQ_BASE}/${symbol}/option-chain?assetclass=${alt}&limit=500${dateRange}`);
+    d = await nasdaqGet(`${NASDAQ_BASE}/${symbol}/option-chain?assetclass=${alt}&limit=${EXPIRY_DISCOVERY_LIMIT}${dateRange}`);
   }
 
   if (!d?.data?.table?.rows?.length) throw new Error(`No option data from Nasdaq for ${symbol}`);
@@ -675,6 +760,10 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
         process.stdout.write('.');
         await sleep(jitter(200)); // brief pause between expiries
       }
+      // Indicative feed returns no greeks/IV — solve IV from the mid price so intraday
+      // runs produce a real ATM IV + term structure (not just the daily-preserved value).
+      const _ivFilled = enrichImpliedVol(allContracts, spot);
+      if (_ivFilled) log(C.dim(`Computed IV from mid for ${_ivFilled}/${allContracts.length} contracts`));
       process.stdout.write('\n');
       contractCount = allContracts.length;
       log(`Intraday: ${contractCount} contracts (Alpaca, no OI)`);
@@ -790,7 +879,7 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
   if (!intradayMode) {
     try {
       const { computeReactionRails, applyReactionGate } = require('./reaction-gate.cjs');
-      const _g = applyReactionGate(strategy.code, computeReactionRails({ snapshot: { price: spot }, technicalData, gammaData }));
+      const _g = applyReactionGate(strategy.code, computeReactionRails({ snapshot: { price: spot }, technicalData, gammaData, isQualityName: isMegaCap(symbol) }));
       if (_g) {
         log(C.dim(`  Reaction gate: ${strategy.code} → ${_g.strategy} (${_g.note})`));
         strategy = { ...STRATEGIES[_g.strategy], reactionNote: _g.note, gammaCode: strategy.code };
@@ -847,7 +936,7 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
       realizedVol30d:technicalData.realizedVol30d, atrPct:technicalData.atrPct },
     gammaData,
     scoring: {
-      opportunityScore: strategy.bwbBonus ? opportunityScore + strategy.bwbBonus : opportunityScore,
+      opportunityScore: Math.max(0, (strategy.bwbBonus ? opportunityScore + strategy.bwbBonus : opportunityScore) + premiumRiskPenalty(strategy.code, gammaData, technicalData).penalty),
       pillars, direction, strategy, hasOptions,
       ...(strategy.code === 'broken_wing_butterfly' ? { bwbBonus: strategy.bwbBonus } : {})
     },
@@ -912,7 +1001,14 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
       try {
         const daily = JSON.parse(fs.readFileSync(dailyPath, 'utf8'));
         if (daily.gammaData && daily.meta?.dataSource?.openInterest !== 'none') {
+          const computedIv = report.gammaData && report.gammaData.ivData; // BS-computed IV from this intraday run
           report.gammaData = daily.gammaData;
+          // The daily OI snapshot has no IV of its own — don't let it clobber the IV we just
+          // computed from mid price. Keep the fresh IV whenever the daily copy lacks it.
+          if (computedIv && typeof computedIv.atmIv === 'number'
+              && !(daily.gammaData.ivData && typeof daily.gammaData.ivData.atmIv === 'number')) {
+            report.gammaData.ivData = computedIv;
+          }
           report.meta.dataSource.openInterest = daily.meta.dataSource.openInterest;
           report.meta.oiConfidence = daily.meta.oiConfidence;
           report.meta.oiEnrichedAt = daily.meta.oiEnrichedAt;
@@ -924,17 +1020,36 @@ async function processSymbol(symbol, cfg, date, dteMin, dteMax) {
           let oiDir = reconcileDirection(oiTrendDir, oiStrat.code);
           try {
             const { computeReactionRails, applyReactionGate } = require('./reaction-gate.cjs');
-            const _g = applyReactionGate(oiStrat.code, computeReactionRails({ snapshot: { price: spot }, technicalData, gammaData: report.gammaData }));
+            const _g = applyReactionGate(oiStrat.code, computeReactionRails({ snapshot: { price: spot }, technicalData, gammaData: report.gammaData, isQualityName: isMegaCap(symbol) }));
             if (_g) { oiStrat = { ...STRATEGIES[_g.strategy], reactionNote: _g.note, gammaCode: oiStrat.code }; oiDir = _g.direction; }
           } catch (_) { /* keep gamma pick */ }
           report.scoring = {
-            opportunityScore: oiStrat.bwbBonus ? oiScore + oiStrat.bwbBonus : oiScore,
+            opportunityScore: Math.max(0, (oiStrat.bwbBonus ? oiScore + oiStrat.bwbBonus : oiScore) + premiumRiskPenalty(oiStrat.code, report.gammaData, technicalData).penalty),
             pillars: oiPillars, direction: oiDir, strategy: oiStrat, hasOptions: oiHasOpts,
             ...(oiStrat.code === 'broken_wing_butterfly' ? { bwbBonus: oiStrat.bwbBonus } : {})
           };
         }
       } catch(_) {}
     }
+  }
+
+  // Intraday IV preservation: the Alpaca `indicative` feed returns no greeks/IV (and none at all
+  // after hours), so intraday runs compute atmIv=null and would blank out the good daily IV. Carry
+  // forward the last known-good ivData (from the prior latest.json) rather than clobbering it —
+  // same principle as the OI preservation above. IV moves slowly, so a carried value is fine.
+  if (intradayMode && !(report.gammaData && report.gammaData.ivData && typeof report.gammaData.ivData.atmIv === 'number')) {
+    try {
+      const prevPath = path.join(symDir, 'latest.json');
+      if (fs.existsSync(prevPath)) {
+        const prev = JSON.parse(fs.readFileSync(prevPath, 'utf8'));
+        const pIv = prev.gammaData && prev.gammaData.ivData;
+        if (pIv && typeof pIv.atmIv === 'number') {
+          report.gammaData = report.gammaData || {};
+          report.gammaData.ivData = { ...pIv, _ivPreserved: true };
+          log(C.dim(`IV preserved from prior report (atmIv ${pIv.atmIv.toFixed(1)}%)`));
+        }
+      }
+    } catch (_) { /* no prior IV to preserve */ }
   }
 
   attachTrend(report); // advisory trend verdict — added before any write/upload so R2 carries it

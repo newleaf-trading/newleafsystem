@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+// Tolerant enum: if a model returns an out-of-set value (e.g. abstaining with
+// "unable_to_assess"), coerce it to a safe fallback instead of failing the
+// entire /verify run on one agent's off-enum output.
+function tolerant<T extends z.ZodEnum<[string, ...string[]]>>(enumSchema: T, fallback: z.infer<T>) {
+  const opts = enumSchema.options as readonly string[];
+  return z.preprocess((v) => (typeof v === 'string' && opts.includes(v)) ? v : fallback, enumSchema);
+}
+
 export const TradeIdeaSchema = z.object({
   ticker: z.string(),
   structure: z.enum(['iron_condor', 'iron_butterfly', 'broken_wing_butterfly', 'calendar', 'calendar_spread', 'diagonal', 'vertical_spread', 'bull_put_spread', 'bear_call_spread', 'short_strangle']),
@@ -12,15 +20,25 @@ export const TradeIdeaSchema = z.object({
   netCredit: z.number().optional(),
   bpRequired: z.number().optional(),
   source: z.enum(['picks', 'investor_draft']),
+  // Optional snapshot of the user's active Invest positions, passed by the
+  // client so the Risk Manager can assess real concentration instead of
+  // guessing. Compact by design — capital-at-risk is the exposure proxy.
+  portfolio: z.array(z.object({
+    symbol: z.string(),
+    strategyType: z.string().optional(),
+    quantity: z.number().optional(),
+    capitalAtRisk: z.number().optional(),
+    shortPremium: z.boolean().optional(),
+  })).optional(),
 });
 export type TradeIdea = z.infer<typeof TradeIdeaSchema>;
 
 export type AgentStatus = 'pending' | 'running' | 'complete' | 'failed';
 
 export const TechnicalReportSchema = z.object({
-  trend: z.enum(['bullish', 'bearish', 'neutral']),
+  trend: tolerant(z.enum(['bullish', 'bearish', 'neutral']), 'neutral'),
   rsi: z.number(),
-  breakoutRisk: z.enum(['low', 'medium', 'high']),
+  breakoutRisk: tolerant(z.enum(['low', 'medium', 'high']), 'medium'),
   summary: z.string(),
 });
 export type TechnicalReport = z.infer<typeof TechnicalReportSchema>;
@@ -35,8 +53,8 @@ export type GammaReport = z.infer<typeof GammaReportSchema>;
 
 export const IVReportSchema = z.object({
   ivRank: z.number().nullable(),
-  termStructure: z.enum(['normal', 'flat', 'backwardated', 'indeterminate']),
-  premiumFairness: z.enum(['rich', 'fair', 'thin']),
+  termStructure: tolerant(z.enum(['normal', 'flat', 'backwardated', 'indeterminate']), 'indeterminate'),
+  premiumFairness: tolerant(z.enum(['rich', 'fair', 'thin']), 'fair'),
   summary: z.string(),
 });
 export type IVReport = z.infer<typeof IVReportSchema>;
@@ -56,7 +74,7 @@ export const ResearcherArgumentSchema = z.object({
 export type ResearcherArgument = z.infer<typeof ResearcherArgumentSchema>;
 
 export const RiskReportSchema = z.object({
-  portfolioFit: z.enum(['cleared', 'reduce_size', 'blocked']),
+  portfolioFit: tolerant(z.enum(['cleared', 'reduce_size', 'blocked']), 'reduce_size'),
   rationale: z.string(),
   thetaImpact: z.number(),
   vegaImpact: z.number(),
@@ -77,7 +95,7 @@ export const SuggestedFixSchema = z.object({
 export type SuggestedFix = z.infer<typeof SuggestedFixSchema>;
 
 export const VerdictSchema = z.object({
-  call: z.enum(['pass', 'marginal', 'fail']),
+  call: tolerant(z.enum(['pass', 'marginal', 'fail']), 'marginal'),
   confidence: z.number(),
   rationale: z.string(),
   flipConditions: z.array(z.string()),

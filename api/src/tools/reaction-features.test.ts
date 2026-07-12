@@ -10,6 +10,7 @@ const ok = (c: boolean, m: string) => { if (c) passed++; else { failed++; consol
 const base: ReactionGate = {
   regime: 'testing_support', regimeConfidence: 70, trendIntoZone: false,
   bias: 'bull_put_spread', biasCategory: 'income', posInRange: 0.2, noTradeReason: null,
+  qualityBounce: false, rsi: 45,
   support: { level: 400, score: 82, rate: 0.8, tested: true },
   resistance: { level: 450, score: 40, rate: 0.2, tested: false },
   testingSupport: true, testingResistance: false,
@@ -42,6 +43,23 @@ const base: ReactionGate = {
   const g: ReactionGate = { ...base, regime: 'trending', trendIntoZone: true, bias: 'no_trade', noTradeReason: 'trend into zone' };
   const a = applyReactionGate('broken_wing_butterfly', g);
   ok(!!a && a.veto === true && a.flag === 'falling_knife', `falling-knife veto (got ${JSON.stringify(a)})`);
+}
+
+// Quality mean-reversion exception: a mega-cap oversold above a defended wall (qualityBounce=true)
+// promotes a NEUTRAL pick to a defined-risk bull call spread — even when the knife veto would fire.
+{
+  const g: ReactionGate = { ...base, regime: 'trending', trendIntoZone: true, trendIntoZoneSide: 'support',
+    bias: 'no_trade', noTradeReason: 'trend into support', qualityBounce: true, rsi: 12 } as any;
+  const a = applyReactionGate('broken_wing_butterfly', g);
+  ok(!!a && a.strategy === 'bull_call_spread' && a.direction === 'bullish' && a.flag === 'quality_mean_reversion',
+    `quality bounce waives knife → bull_call (got ${JSON.stringify(a)})`);
+  ok(!!a && /RSI 12/.test(a.note), `quality bounce note cites RSI (got ${a?.note})`);
+}
+// Quality bounce only promotes NEUTRAL picks — it never emits a quality promotion for an
+// already-directional engine pick (a bear_call in a knife setup still vetoes as before).
+{
+  const a = applyReactionGate('bear_call_spread', { ...base, qualityBounce: true, bias: 'no_trade', trendIntoZone: true } as any);
+  ok(!a || a.flag !== 'quality_mean_reversion', 'quality bounce does not promote a directional pick');
 }
 
 // Directional gamma pick is never re-routed.

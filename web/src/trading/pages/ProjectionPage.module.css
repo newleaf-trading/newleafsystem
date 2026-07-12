@@ -346,6 +346,15 @@ input[type="range"]:focus-visible { outline: 2px solid var(--nl-green); outline-
 .publishBtn:hover { filter: brightness(1.12); }
 .publishBtn:focus-visible { outline: 2px solid var(--nl-green); outline-offset: 2px; }
 
+/* secondary CTA → operational layer (/workbench/plan); carries horizon + capital across */
+.planLink {
+  margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: transparent; color: var(--nl-green); border: 1px solid var(--nl-green); border-radius: 12px;
+  padding: 12px; font-family: var(--pj-sans); font-weight: 700; font-size: 12.5px; text-decoration: none; transition: 0.15s;
+}
+.planLink:hover { background: var(--nl-green); color: var(--nl-gold); }
+.planLink:focus-visible { outline: 2px solid var(--nl-green); outline-offset: 2px; }
+
 /* operator template manager (thin) */
 .manager { flex: 0 0 auto; background: var(--nl-card); border: 1px solid var(--pj-line); border-radius: var(--nl-radius); padding: 10px 16px; }
 .managerHead { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }

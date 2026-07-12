@@ -15,8 +15,13 @@ export function registerVerifyRoutes(fastify: FastifyInstance, orchestrator: Ver
     const parsed = TradeIdeaSchema.safeParse(body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
 
-    // Cache key: hash of ticker + sorted legs + model mode
-    const legsKey = JSON.stringify({ t: parsed.data.ticker, l: (parsed.data.legs || []).sort((a: any, b: any) => a.strike - b.strike), m: modelMode });
+    // Cache key: hash of ticker + sorted legs + model mode + portfolio fingerprint.
+    // Portfolio is included because it now changes the Risk Manager's verdict —
+    // same legs with different exposure must not share a cached result.
+    const pf = (parsed.data.portfolio || [])
+      .map((x) => `${x.symbol}:${x.capitalAtRisk ?? 0}:${x.shortPremium ? 1 : 0}`)
+      .sort();
+    const legsKey = JSON.stringify({ t: parsed.data.ticker, l: (parsed.data.legs || []).sort((a: any, b: any) => a.strike - b.strike), m: modelMode, p: pf });
     const cacheKey = createHash('sha256').update(legsKey).digest('hex').slice(0, 16);
     const cached = verifyCache.get(cacheKey);
     if (cached) {

@@ -4,10 +4,11 @@ import { requireTier } from '../middleware/rbac.js';
 import { LLMRouter, type ModelTier } from '../llm/router.js';
 import { getStockSnapshot, getOptionsSnapshot, getHistoricalBars } from '../tools/alpaca.js';
 import { computeIndicators } from '../tools/indicators.js';
-import { analyzeTechnicals, calcScore, getDirection, selectStrategy, reconcileDirection, analyzeGammaEnhanced } from '../tools/strategy-engine.js';
+import { analyzeTechnicals, calcScore, getDirection, selectStrategy, reconcileDirection, analyzeGammaEnhanced, premiumRiskPenalty } from '../tools/strategy-engine.js';
 import { fetchNasdaqOI, fetchYahooContracts, findGammaWalls } from '../tools/nasdaq-oi.js';
 import { buildDecision } from '../tools/decision-engine.js';
 import { computeReactionGate, applyReactionGate, type ReactionGate } from '../tools/reaction-features.js';
+import { isMeanReversionEligible } from '../tools/quality-names.js';
 import { buildLegs } from '../tools/leg-builder.js';
 import { aiReadCache, recommendCache } from '../lib/cache.js';
 import { createHash } from 'crypto';
@@ -117,6 +118,7 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
     let effDirection: 'bullish' | 'bearish' | 'neutral' = direction as any;
     let reactionGate: ReactionGate | null = null;
     let reactionNote: string | null = null;
+    let reactionFlag: string | null = null;
     let reactionChanged = false;
     let reactionVeto = false;
     let reactionApproaching = false;
@@ -131,48 +133,81 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
         atrPct: (technicalData as any).atrPct ?? null, adx: technicalData.adx14 ?? null,
         ivRv: (rvR && rvR > 0 && atmIvR > 0) ? atmIvR / rvR : null,
         gammaConfidence: gammaData.analysis.confidence_score ?? 0,
+        rsi: technicalData.rsi ?? null, isQualityName: isMeanReversionEligible(tk),
       });
       const act = applyReactionGate(strategy.code, reactionGate);
       if (act) {
         reactionNote = act.note;
         if (act.veto) {
           reactionVeto = true;
-          console.log(`[Recommend] Reaction VETO (${tk}): ${act.note}`);
+          reactionFlag = act.flag || null;
+          console.log(`[Recommend] Reaction VETO (${tk}) [${act.flag}]: ${act.note}`);
         } else if (act.strategy) {
           reactionChanged = true;
+          reactionFlag = act.flag || null;
           effStrategy = act.strategy;
           effDirection = act.direction as 'bullish' | 'bearish';
           reactionApproaching = !act.testing;
-          console.log(`[Recommend] Reaction gate (${tk}): ${strategy.code} → ${effStrategy} — ${act.note}`);
+          console.log(`[Recommend] Reaction gate (${tk}) [${act.flag}]: ${strategy.code} → ${effStrategy} — ${act.note}`);
         }
       }
     } catch (e: any) { console.warn(`[Recommend] reaction gate failed for ${tk}: ${e.message}`); }
 
     // Deterministic leg construction — replaces LLM strike picking
-    const builtLegsResult = buildLegs({
+    const gammaWallsForLegs = {
+      putWall: gammaData.analysis.put_wall ?? null,
+      callWall: gammaData.analysis.call_wall ?? null,
+    };
+    let builtLegsResult = buildLegs({
       strategy: effStrategy,
       contracts: enrichedContracts,
       spot: snapshot.price,
-      gammaWalls: {
-        putWall: gammaData.analysis.put_wall ?? null,
-        callWall: gammaData.analysis.call_wall ?? null,
-      },
+      gammaWalls: gammaWallsForLegs,
       direction: effDirection,
       dte,
       bwbStrikes: strategy.strikes,
     });
+
+    // Fallback: if the reaction overlay re-routed the pick (e.g. iron_condor → bull_call_spread)
+    // but that strategy can't be constructed for this chain, DON'T throw the whole trade away —
+    // fall back to the original gamma pick, which already passed its gates. Otherwise a valid
+    // structure is discarded and the user sees a misleading "can't build" NO_TRADE.
+    if (reactionChanged && builtLegsResult.legs.length < 2 && effStrategy !== strategy.code) {
+      console.log(`[Recommend] Reaction re-route ${effStrategy} failed to build for ${tk} — falling back to gamma pick ${strategy.code}`);
+      effStrategy = strategy.code;
+      effDirection = direction as any;
+      reactionChanged = false;
+      reactionApproaching = false;
+      reactionNote = null;
+      builtLegsResult = buildLegs({
+        strategy: effStrategy,
+        contracts: enrichedContracts,
+        spot: snapshot.price,
+        gammaWalls: gammaWallsForLegs,
+        direction: effDirection,
+        dte,
+        bwbStrikes: strategy.strikes,
+      });
+    }
+
     if (builtLegsResult.meta.warnings.length) {
       console.log(`[Recommend] Leg builder warnings for ${tk}: ${builtLegsResult.meta.warnings.join('; ')}`);
     }
 
+    // Down-score a credit structure when premium is thin (IV/RV < 1) — same
+    // penalty the scanner applies, so discover and scanner agree on the number.
+    const { penalty: premPenalty, reasons: premReasons } = premiumRiskPenalty(effStrategy, gammaData, technicalData);
+    const baseScore = (!reactionChanged && strategy.bwbBonus) ? score + strategy.bwbBonus : score;
     let enginePick: {
       strategy: string; direction: string; score: number;
-      pillars: typeof pillars; reasoningOverride?: any;
+      pillars: typeof pillars; reasoningOverride?: any; premiumPenalty?: number; premiumReasons?: string[];
     } = {
       strategy: effStrategy,
       direction: effDirection,
-      score: (!reactionChanged && strategy.bwbBonus) ? score + strategy.bwbBonus : score,
+      score: Math.max(0, baseScore + premPenalty),
       pillars,
+      premiumPenalty: premPenalty,
+      premiumReasons: premReasons,
     };
 
     // Gate trace: show exactly why each gate passed/failed (for debugging)
@@ -206,7 +241,8 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
     const sma50d = technicalData.sma50 ?? ind0.sma50 ?? null;
     const atrDollar = (technicalData as any).atr14 ?? ind0.atr14 ?? null;
     const ivRvRatioNum = (rvPct && rvPct > 0 && atmIvGate > 0) ? +(atmIvGate / rvPct).toFixed(2) : null;
-    const noVolData = ivRvRatioNum === null && atrDollar === null;
+    void atrDollar; // (retained for indicators; IV/RV absence — not ATR — is what gates premium selling)
+    const noVolData = ivRvRatioNum === null; // no implied-vol read → can't justify selling premium
     const gammaReliable = conf >= 0.30;
     const passedGates = gateTrace.filter(g => g.gate !== 'iron_butterfly (fallback)' && g.passed).length;
     const hasOI = enrichedContracts.some(c => ((c as any).openInterest ?? 0) > 0);
@@ -220,6 +256,20 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
       side: l.side, type: l.type, strike: l.strike, action: l.side === 'short' ? 'SELL' : 'BUY', qty: l.qty,
     }));
 
+    // Price the structure from chain mids so the DECISION ENGINE (not just the client) knows
+    // whether a credit structure actually collects a credit. Honors per-leg qty (e.g. a 1-2-1
+    // broken-wing butterfly's ×2 body). null if any leg has no usable quote.
+    let netCreditPriced: number | null = 0;
+    for (const l of builtLegsResult.legs) {
+      const c = enrichedContracts.find(ec => (ec as any).type === l.type && Math.abs((ec as any).strike - l.strike) < 0.5);
+      const bid = (c as any)?.bid, ask = (c as any)?.ask, midRaw = (c as any)?.mid;
+      const mid = (typeof bid === 'number' && typeof ask === 'number' && bid > 0 && ask > 0)
+        ? (bid + ask) / 2
+        : (typeof midRaw === 'number' && midRaw > 0 ? midRaw : null);
+      if (mid == null) { netCreditPriced = null; break; }
+      netCreditPriced += (l.side === 'short' ? mid : -mid) * (l.qty ?? 1);
+    }
+
     const det = buildDecision({
       spot: snapshot.price, dte,
       strategy: effStrategy, direction: effDirection,
@@ -227,10 +277,11 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
       adx: technicalData.adx14 ?? null, rsi: technicalData.rsi ?? null,
       sma20: sma20d, sma50: sma50d, gammaReliable, spotInBand,
       ivRvRatio: ivRvRatioNum, noVolData, missingInputs,
+      netCredit: netCreditPriced,
       legsBuilt: detLegs.length >= 2,
       putWall: pwall, callWall: cwall,
       gammaConfidencePct: Math.round(conf * 100), bandWidthPct: bw,
-      reactionVeto, reactionApproaching, reactionNote,
+      reactionVeto, reactionApproaching, reactionNote, reactionFlag,
     });
     const detNoTrade = det.decision === 'NO_TRADE' || det.decision === 'DATA_ERROR';
     if (reactionChanged && !detNoTrade) det.dataFlags.push('reaction_promoted');

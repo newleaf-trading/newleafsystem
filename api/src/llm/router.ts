@@ -92,7 +92,7 @@ export class LLMRouter {
     try {
       let result: string;
       switch (model) {
-        case 'claude-sonnet': result = await this.callClaude('claude-sonnet-4-20250514', model, opts); break;
+        case 'claude-sonnet': result = await this.callClaude('claude-sonnet-4-6', model, opts); break;
         case 'claude-haiku':  result = await this.callClaude('claude-haiku-4-5-20251001', model, opts); break;
         case 'gpt-4':         result = await this.callOpenAI('gpt-4o', model, opts); break;
         case 'gpt-5.5':       result = await this.callOpenAI('gpt-5.5', model, opts); break;

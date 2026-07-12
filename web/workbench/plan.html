@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="commit-sha" content="dev" />
+<title>NewLeaf System — Detail Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..700&family=DM+Sans:ital,opsz,wght@0,9..40,300..800;1,9..40,400..600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<!-- Shared Workbench nav (single source of truth) -->
+<script src="load-nav.js" defer></script>
+<!-- Deterministic model: generated from shared/plan/index.js (window.PlanModel) -->
+<script src="public/js/planModel.js"></script>
+<style>
+  :root{
+    --forest:#16271C; --forest2:#1E3326; --forest3:#27412F;
+    --gold:#B68F3E; --gold-soft:#E7D9AE;
+    --cream:#F2ECDD; --card:#FBF8F0;
+    --terracotta:#BC5B43; --teal:#3E7C6A;
+    --ink:#16271C; --muted:#6E7A6B; --hair:rgba(22,39,28,.12);
+    --go:#3E7C6A; --go-bg:rgba(62,124,106,.12);
+    --watch:#B68F3E; --watch-bg:rgba(182,143,62,.14);
+    --act:#BC5B43; --act-bg:rgba(188,91,67,.13);
+    --serif:"Fraunces",Georgia,serif;
+    --sans:"DM Sans",system-ui,sans-serif;
+    --mono:"Space Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    font-family:var(--sans); color:var(--ink); background:var(--cream);
+    -webkit-font-smoothing:antialiased; line-height:1.45;
+  }
+  .mono{font-family:var(--mono);}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--gold); font-weight:700;}
+  a{color:inherit;}
+
+  .wrap{max-width:1480px;margin:0 auto;padding:24px 26px 60px;}
+
+  /* ---------- intro ---------- */
+  .intro{padding:6px 2px 20px;border-bottom:1px solid var(--hair);margin-bottom:22px;}
+  .intro p{margin:8px 0 0;max-width:880px;color:#3c4b3f;font-size:14.5px;}
+  .intro strong{color:var(--ink);}
+  .intro .xlink{font-family:var(--mono);font-size:11px;color:var(--teal);text-decoration:none;border-bottom:1px solid rgba(62,124,106,.4);}
+
+  /* ---------- controls bar ---------- */
+  .topbar{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:18px;}
+  .panel{background:var(--card);border:1px solid var(--hair);border-radius:16px;}
+  .pad{padding:18px;}
+  .row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .seg{display:inline-flex;background:#fff;border:1px solid var(--hair);border-radius:11px;padding:4px;gap:4px;}
+  .seg button{border:0;background:transparent;font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:8px 13px;border-radius:8px;cursor:pointer;font-weight:700;}
+  .seg button.on{background:var(--forest);color:var(--cream);}
+  .ctl-label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;}
+
+  .presets{display:flex;gap:8px;flex-wrap:wrap;}
+  .chip{border:1px solid var(--hair);background:#fff;border-radius:99px;padding:8px 14px;cursor:pointer;font-family:var(--sans);font-weight:600;font-size:13px;color:var(--ink);display:flex;gap:8px;align-items:center;}
+  .chip small{font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.04em;}
+  .chip.on{background:var(--forest);color:var(--cream);border-color:var(--forest);}
+  .chip.on small{color:var(--gold-soft);}
+
+  /* ---------- KPI strip ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px;}
+  @media (max-width:1100px){.kpis{grid-template-columns:repeat(2,1fr);}}
+  .kpi{border-radius:16px;padding:16px 18px;min-height:96px;display:flex;flex-direction:column;justify-content:space-between;}
+  .kpi.dark{background:var(--forest);color:var(--cream);}
+  .kpi.gold{background:var(--gold-soft);color:var(--forest);}
+  .kpi .k-label{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;opacity:.8;font-weight:700;}
+  .kpi .k-val{font-family:var(--serif);font-size:30px;font-weight:600;letter-spacing:-.02em;line-height:1;}
+  .kpi .k-sub{font-size:11.5px;opacity:.78;}
+
+  /* ---------- tabs ---------- */
+  .tabs{display:inline-flex;gap:4px;background:#fff;border:1px solid var(--hair);border-radius:12px;padding:4px;margin-bottom:18px;flex-wrap:wrap;}
+  .tabs button{border:0;background:transparent;font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:9px 16px;border-radius:8px;cursor:pointer;font-weight:700;}
+  .tabs button.on{background:var(--forest);color:var(--cream);}
+
+  /* ---------- layout ---------- */
+  .layout{display:grid;grid-template-columns:312px 1fr;gap:18px;align-items:start;}
+  @media (max-width:1100px){.layout{grid-template-columns:1fr;}}
+
+  .sec-head{padding:16px 18px 0;}
+  .sec-head h2{font-family:var(--serif);font-size:19px;font-weight:600;margin:0 0 3px;letter-spacing:-.01em;}
+  .sec-head p{margin:0;color:var(--muted);font-size:12.5px;}
+
+  /* ---------- cadence builder (left rail) ---------- */
+  .lane{border:1px solid var(--hair);border-radius:13px;padding:13px;margin-top:12px;background:#fff;}
+  .lane h3{margin:0 0 2px;font-family:var(--serif);font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .swatch{width:10px;height:10px;border-radius:3px;display:inline-block;}
+  .lane .led{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-bottom:8px;}
+  .field{display:grid;grid-template-columns:1fr 64px;align-items:center;gap:8px;margin-top:7px;}
+  .field label{font-size:12px;color:#41513f;}
+  .field input{width:100%;border:1px solid var(--hair);background:#fff;border-radius:8px;padding:7px 8px;font-family:var(--mono);font-weight:700;font-size:13px;color:var(--ink);text-align:right;}
+  .field input:focus{outline:2px solid var(--gold);outline-offset:0;}
+  .lane.off{opacity:.45;}
+  .lane-toggle{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--hair);background:#fff;border-radius:7px;padding:4px 8px;cursor:pointer;color:var(--muted);font-weight:700;}
+  .lane-toggle.on{background:var(--teal);color:#fff;border-color:var(--teal);}
+
+  .ladder-note{margin-top:14px;padding:12px;border-radius:11px;background:var(--forest);color:var(--gold-soft);font-size:12px;line-height:1.5;}
+  .ladder-note b{color:var(--cream);}
+
+  /* ---------- this week board ---------- */
+  .weekbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--hair);}
+  .stepper{display:inline-flex;align-items:center;gap:0;border:1px solid var(--hair);border-radius:9px;overflow:hidden;background:#fff;}
+  .stepper button{border:0;background:#fff;padding:7px 11px;cursor:pointer;font-size:15px;color:var(--forest);}
+  .stepper button:hover{background:var(--cream);}
+  .stepper .wk{padding:7px 14px;font-family:var(--mono);font-size:12px;font-weight:700;border-left:1px solid var(--hair);border-right:1px solid var(--hair);}
+  .wk-date{font-family:var(--mono);font-size:11.5px;color:var(--muted);}
+  .mode-toggle{display:inline-flex;background:#fff;border:1px solid var(--hair);border-radius:9px;padding:3px;gap:3px;}
+  .mode-toggle button{border:0;background:transparent;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:6px 11px;border-radius:7px;cursor:pointer;font-weight:700;}
+  .mode-toggle button.on{background:var(--teal);color:#fff;}
+  .mode-toggle button.on.live{background:var(--terracotta);}
+  .live-banner{font-family:var(--mono);font-size:11px;padding:9px 18px;border-bottom:1px solid var(--hair);color:#8f3d2a;background:var(--act-bg);}
+  .live-banner.ok{color:#2c5a4c;background:var(--go-bg);}
+
+  table{width:100%;border-collapse:collapse;}
+  thead th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:11px 12px;border-bottom:1px solid var(--hair);font-weight:700;}
+  tbody td{padding:10px 12px;border-bottom:1px solid var(--hair);font-size:13px;vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:0;}
+  .pos-name{font-weight:600;}
+  .pos-meta{font-family:var(--mono);font-size:10.5px;color:var(--muted);}
+  .cell-in{width:78px;border:1px solid var(--hair);border-radius:7px;padding:6px 7px;font-family:var(--mono);font-weight:700;font-size:12.5px;text-align:right;background:#fff;color:var(--ink);}
+  .cell-in:focus{outline:2px solid var(--gold);}
+  .cell-in:disabled{background:var(--cream);color:var(--muted);cursor:not-allowed;}
+
+  .dot{width:11px;height:11px;border-radius:99px;display:inline-block;vertical-align:middle;box-shadow:0 0 0 3px rgba(0,0,0,.04);}
+  .dot.go{background:var(--go);} .dot.watch{background:var(--watch);} .dot.act{background:var(--act);}
+  .stat{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;font-weight:700;padding:4px 9px;border-radius:99px;letter-spacing:.03em;}
+  .stat.go{background:var(--go-bg);color:#2c5a4c;}
+  .stat.watch{background:var(--watch-bg);color:#7c5e1f;}
+  .stat.act{background:var(--act-bg);color:#8f3d2a;}
+  .action-txt{font-size:11.5px;color:#41513f;}
+
+  .legend{display:flex;gap:18px;flex-wrap:wrap;padding:14px 18px;border-top:1px solid var(--hair);font-size:12px;color:#41513f;}
+  .legend b{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;}
+
+  /* ---------- compliance ---------- */
+  .check-list{padding:6px 18px 18px;}
+  .check{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--hair);}
+  .check:last-child{border-bottom:0;}
+  .check input[type=checkbox]{width:20px;height:20px;margin-top:1px;accent-color:var(--teal);cursor:pointer;flex:none;}
+  .check .c-body{flex:1;}
+  .check .c-title{font-weight:600;font-size:13.5px;}
+  .check .c-sub{font-size:12px;color:var(--muted);}
+  .check.done .c-title{color:var(--muted);text-decoration:line-through;}
+  .compliance-meter{padding:16px 18px;border-bottom:1px solid var(--hair);}
+  .bar{height:10px;border-radius:99px;background:var(--cream);overflow:hidden;border:1px solid var(--hair);}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--gold));transition:width .3s;}
+
+  /* ---------- rolling calendar ---------- */
+  .year-block{border:1px solid var(--hair);border-radius:14px;margin-top:14px;overflow:hidden;background:var(--card);}
+  .year-head{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;background:var(--forest);color:var(--cream);}
+  .year-head h3{margin:0;font-family:var(--serif);font-size:17px;font-weight:600;}
+  .year-head .y-sub{font-family:var(--mono);font-size:11px;color:var(--gold-soft);margin-left:auto;letter-spacing:.05em;}
+  .year-head .caret{transition:transform .2s;color:var(--gold);}
+  .year-block.closed .caret{transform:rotate(-90deg);}
+  .year-block.closed .weeks{display:none;}
+  .weeks{padding:4px 0;}
+  .wkrow{display:grid;grid-template-columns:74px 1fr 1fr 30px;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--hair);}
+  .wkrow:last-child{border-bottom:0;}
+  .wkrow .w-idx{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--forest);}
+  .wkrow .w-idx small{display:block;color:var(--muted);font-weight:400;}
+  .wkrow .w-open,.wkrow .w-manage{font-size:12.5px;}
+  .wkrow .w-open b,.wkrow .w-manage b{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:2px;font-weight:700;}
+  .pill{display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;margin:2px 3px 0 0;}
+  .pill.bcs{background:rgba(62,124,106,.14);color:#2c5a4c;}
+  .pill.ic{background:rgba(182,143,62,.18);color:#7c5e1f;}
+  .pill.bfly{background:rgba(188,91,67,.14);color:#8f3d2a;}
+  .pill.none{background:#eee;color:#999;}
+  .wkrow .w-flag{justify-self:center;}
+
+  .hidden{display:none;}
+
+  /* ---------- proportional cycle timeline ---------- */
+  .tl-wrap{overflow-x:auto;padding-bottom:6px;}
+  .tl-head{display:flex;align-items:flex-end;}
+  .tl-corner{width:152px;flex:none;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;padding-bottom:5px;}
+  .tl-axis{position:relative;height:16px;flex:none;}
+  .tl-tick{position:absolute;bottom:0;font-family:var(--mono);font-size:9.5px;color:var(--muted);transform:translateX(-50%);white-space:nowrap;}
+  .tl-tick.q{color:var(--forest);font-weight:700;}
+  .tl-row{display:flex;align-items:center;margin-top:7px;}
+  .tl-name{width:152px;flex:none;display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;}
+  .tl-name .tl-nm{line-height:1.05;}
+  .tl-name small{display:block;font-family:var(--mono);font-size:8.5px;color:var(--muted);font-weight:400;margin-top:2px;letter-spacing:.02em;}
+  .tl-track{position:relative;height:30px;flex:none;background:#fff;border:1px solid var(--hair);border-radius:8px;}
+  .tl-block{position:absolute;top:4px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.10);}
+  .tl-cap{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:9px;}
+
+  /* ---------- month checkpoint cards ---------- */
+  .month-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  @media (max-width:900px){.month-grid{grid-template-columns:repeat(2,1fr);}}
+  .mcard{border:1px solid var(--hair);border-radius:12px;padding:13px;background:#fff;}
+  .mcard h4{margin:0 0 8px;font-family:var(--serif);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:space-between;}
+  .mcard .mprofit{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--forest);}
+  .mcard .mmeta{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.5;}
+  .mcard .mmeta b{color:var(--ink);font-family:var(--mono);}
+  .yr-divider{grid-column:1/-1;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-weight:700;padding:10px 0 2px;border-bottom:1px solid var(--hair);margin-top:6px;}
+
+  /* ---------- yearly ---------- */
+  .ybar-row{display:grid;grid-template-columns:64px 1fr 96px;gap:14px;align-items:center;margin-top:12px;}
+  .ybar-row .yl{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--forest);}
+  .ytrack{height:34px;border-radius:9px;background:var(--cream);border:1px solid var(--hair);display:flex;overflow:hidden;}
+  .yseg{height:100%;}
+  .yseg.bcs{background:var(--teal);} .yseg.ic{background:var(--gold);} .yseg.bfly{background:var(--terracotta);}
+  .ybar-row .yv{font-family:var(--mono);font-size:14px;font-weight:700;text-align:right;color:var(--forest);}
+  .ybar-row .yv .ybar-sub{display:block;font-size:9.5px;font-weight:400;color:var(--muted);letter-spacing:.02em;margin-top:2px;}
+  .ylegend{display:flex;gap:16px;margin-top:14px;font-size:12px;color:#41513f;}
+  .ylegend span{display:flex;align-items:center;gap:7px;}
+  .year-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  @media (max-width:900px){.year-grid{grid-template-columns:1fr;}}
+  .ycard{border:1px solid var(--hair);border-radius:14px;overflow:hidden;background:#fff;}
+  .ycard .yhead{background:var(--forest);color:var(--cream);padding:12px 15px;display:flex;justify-content:space-between;align-items:baseline;}
+  .ycard .yhead h4{margin:0;font-family:var(--serif);font-size:17px;font-weight:600;}
+  .ycard .yhead .yp{font-family:var(--mono);font-size:14px;color:var(--gold-soft);font-weight:700;}
+  .ycard .ybody{padding:13px 15px;}
+  .ycard table{width:100%;}
+  .ycard td{padding:6px 0;border-bottom:1px solid var(--hair);font-size:12.5px;}
+  .ycard tr:last-child td{border-bottom:0;}
+  .ycard td.num{text-align:right;font-family:var(--mono);font-weight:700;}
+
+  /* ---------- odds (POP / risk-reward) ---------- */
+  .odds-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
+  @media (max-width:900px){.odds-cards{grid-template-columns:1fr;}}
+  .ocard{border-radius:14px;padding:16px 18px;background:var(--forest);color:var(--cream);display:flex;flex-direction:column;gap:6px;}
+  .ocard.gold{background:var(--gold-soft);color:var(--forest);}
+  .ocard .o-label{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;opacity:.82;font-weight:700;}
+  .ocard .o-val{font-family:var(--serif);font-size:34px;font-weight:600;line-height:1;letter-spacing:-.02em;}
+  .ocard .o-sub{font-size:11.5px;opacity:.8;}
+  .odds-table th, .odds-table td{padding:9px 10px;}
+  .odds-table .oin{width:62px;border:1px solid var(--hair);border-radius:7px;padding:5px 7px;font-family:var(--mono);font-weight:700;font-size:12px;text-align:right;background:#fff;color:var(--ink);}
+  .odds-table .oin:focus{outline:2px solid var(--gold);}
+  .odds-table .num{font-family:var(--mono);font-weight:700;text-align:right;}
+  .odds-foot{font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.5;}
+
+  /* ---------- save bar ---------- */
+  .savebar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;}
+  .btn{border:1px solid var(--hair);background:#fff;border-radius:10px;padding:10px 18px;font-family:var(--sans);font-weight:600;font-size:13.5px;cursor:pointer;color:var(--ink);}
+  .btn.primary{background:var(--forest);color:var(--cream);border-color:var(--forest);}
+  .btn.primary:hover{background:var(--forest2);}
+  .save-status{font-family:var(--mono);font-size:11px;color:var(--muted);}
+
+  .foot{margin-top:26px;padding:14px 16px;border-radius:12px;background:#fff;border:1px solid var(--hair);font-size:12px;color:var(--muted);line-height:1.55;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="intro">
+    <div class="eyebrow">Detail plan · what you'll actually do every week</div>
+    <p>You set a horizon and a cadence; this turns it into a <strong>week-by-week operating plan</strong> across the whole period —
+    which structures to open, when each expires, and what to review every Friday. Edit any position's
+    <strong>P&amp;L, P&amp;L %, or days-to-expiry</strong> and the traffic lights recolour live, so you always know what needs managing.
+    Horizon stays in sync with the <a class="xlink" href="/workbench/projection">projection curve →</a></p>
+  </div>
+
+  <!-- horizon + cadence presets -->
+  <section class="panel pad topbar">
+    <div class="row">
+      <span class="ctl-label">Horizon</span>
+      <div class="seg" id="horizonSeg">
+        <button data-yrs="1">1 yr</button>
+        <button data-yrs="3" class="on">3 yrs</button>
+        <button data-yrs="5">5 yrs</button>
+      </div>
+      <span class="ctl-label" style="margin-left:16px;">Cadence preset</span>
+      <div class="presets" id="presets">
+        <button class="chip on" data-preset="base">Base ladder <small>1·BCS / 2·IC / 2·BFLY</small></button>
+        <button class="chip" data-preset="spreads">2 bull call spreads <small>3-week expiry</small></button>
+        <button class="chip" data-preset="condors3">3 iron condors <small>2-week expiry</small></button>
+        <button class="chip" data-preset="condor1">1 iron condor <small>1-week expiry</small></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- KPI strip -->
+  <section class="kpis" id="kpis"></section>
+
+  <!-- tabs -->
+  <div class="tabs" id="tabs">
+    <button data-tab="week" class="on">This week</button>
+    <button data-tab="monthly">Monthly</button>
+    <button data-tab="yearly">Yearly</button>
+    <button data-tab="calendar">Rolling calendar</button>
+    <button data-tab="compliance">Weekly compliance</button>
+  </div>
+
+  <!-- THIS WEEK + cadence builder -->
+  <section class="layout" id="tab-week">
+    <aside class="panel">
+      <div class="sec-head"><h2>Target cadence</h2><p>The repeatable shape of the book. Edit a lane or pick a preset above.</p></div>
+      <div class="pad" style="padding-top:4px;" id="laneBuilder"></div>
+    </aside>
+
+    <div class="panel">
+      <div class="sec-head"><h2>This week's book</h2><p>Positions live in the selected week. In Sandbox, change any value to rehearse a management decision; Live reads the broker + journal feed read-only.</p></div>
+      <div class="weekbar">
+        <div class="stepper">
+          <button id="wkPrev">‹</button>
+          <span class="wk" id="wkLabel">Week 1</span>
+          <button id="wkNext">›</button>
+        </div>
+        <span class="wk-date" id="wkDate"></span>
+        <div class="mode-toggle" id="modeToggle" style="margin-left:auto;">
+          <button data-mode="sandbox" class="on">Sandbox</button>
+          <button data-mode="live" class="live">Live</button>
+        </div>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--muted);" id="wkCount"></span>
+      </div>
+      <div class="live-banner hidden" id="liveBanner"></div>
+      <div style="overflow-x:auto;">
+        <table id="posTable">
+          <thead>
+            <tr><th>Position</th><th>Target $</th><th>P&amp;L $</th><th>P&amp;L %</th><th>DTE</th><th>Status</th><th>What to do</th></tr>
+          </thead>
+          <tbody id="posBody"></tbody>
+        </table>
+      </div>
+      <div class="legend">
+        <span><span class="dot go"></span> <b>ON TRACK</b> — P&amp;L −25%…+50%, DTE &gt; 21</span>
+        <span><span class="dot watch"></span> <b>MANAGE</b> — hit +50% target, or P&amp;L ≤ −25%, or DTE 8–21</span>
+        <span><span class="dot act"></span> <b>ACT NOW</b> — P&amp;L ≤ −100% (2× credit), DTE ≤ 7, or trade missing</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROLLING CALENDAR -->
+  <section class="panel hidden" id="tab-calendar">
+    <div class="sec-head"><h2>Rolling calendar</h2><p>Every week of the horizon — what to open, what expires and needs managing. Click a year to collapse it.</p></div>
+    <div class="pad" id="calendar" style="padding-top:6px;"></div>
+  </section>
+
+  <!-- MONTHLY -->
+  <section class="hidden" id="tab-monthly">
+    <div class="panel" style="margin-bottom:18px;">
+      <div class="sec-head"><h2>Strategy timeline</h2><p>Project-plan view — one block per cycle, block width = weeks held. Within any 3-week span, one Bull Call Spread aligns with three Butterflies.</p></div>
+      <div class="pad" style="padding-top:8px;"><div id="timeline"></div></div>
+    </div>
+    <div class="panel">
+      <div class="sec-head"><h2>Monthly checkpoints</h2><p>One review block per month — opens, expiries and planned realised profit. Profit banks when a structure expires.</p></div>
+      <div class="pad" id="monthGrid" style="padding-top:8px;"></div>
+    </div>
+  </section>
+
+  <!-- YEARLY -->
+  <section class="hidden" id="tab-yearly">
+    <div class="panel" style="margin-bottom:18px;">
+      <div class="sec-head"><h2>Probability of profit &amp; risk / reward</h2><p>How the selected strategy mix blends into a portfolio win rate and reward:risk. Edit any assumption to see the blend move.</p></div>
+      <div class="pad" id="oddsPanel" style="padding-top:12px;"></div>
+    </div>
+    <div class="panel" style="margin-bottom:18px;">
+      <div class="sec-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;">
+        <div><h2>Planned profit by year</h2><p id="yearLede">Realized gains reinvested — each year's positions scale with the capital it starts on. Planning figure, not a forecast of returns.</p></div>
+        <div class="mode-toggle" id="yearMode" style="flex:none;margin-top:4px;">
+          <button data-ym="compound" class="on">Compounding</button>
+          <button data-ym="flat">Fixed size</button>
+        </div>
+      </div>
+      <div class="pad" id="yearBars" style="padding-top:10px;"></div>
+    </div>
+    <div class="panel">
+      <div class="sec-head"><h2>Yearly summary</h2><p>The big picture: total trades, expiries and contribution per engine, year by year.</p></div>
+      <div class="pad" id="yearGrid" style="padding-top:8px;"></div>
+    </div>
+  </section>
+
+  <!-- COMPLIANCE -->
+  <section class="layout hidden" id="tab-compliance">
+    <aside class="panel">
+      <div class="compliance-meter">
+        <div class="ctl-label" style="margin-bottom:8px;">This week's compliance</div>
+        <div class="bar"><i id="compFill" style="width:0%"></i></div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;font-family:var(--mono);font-size:12px;">
+          <span id="compPct" style="font-weight:700;">0%</span>
+          <span id="compState" class="mono" style="color:var(--muted);">—</span>
+        </div>
+      </div>
+      <div class="sec-head" style="padding-top:14px;"><h2>Why it matters</h2><p style="margin-top:4px;">Compliance isn't admin — a skipped open breaks the ladder and an unmanaged 21-DTE position is where the edge leaks out. Run the list every Friday.</p></div>
+      <div class="pad ladder-note" style="margin:14px 18px 18px;">The plan only works if it's followed. <b>Tick each item once you've checked it</b> against your live broker book.</div>
+    </aside>
+    <div class="panel">
+      <div class="sec-head"><h2>Weekly compliance checklist</h2><p>The standing routine that keeps the live book matched to the plan. A missing scheduled open flags this week red on the calendar.</p></div>
+      <div class="check-list" id="checkList"></div>
+    </div>
+  </section>
+
+  <!-- SAVE -->
+  <div class="savebar">
+    <button class="btn primary" id="savePlan">Save plan template</button>
+    <span class="save-status" id="saveStatus"></span>
+  </div>
+
+  <div class="foot">
+    <strong style="color:var(--ink);">Planning &amp; tracking tool — not trading advice.</strong>
+    Every number here is computed deterministically by <span class="mono">shared/plan</span> — no model sits in the compute path.
+    In <b>Sandbox</b> the P&amp;L / DTE values are seeded what-ifs so you can rehearse management decisions; in <b>Live</b> they come from the
+    broker/API feed and the closed-trade journal, read-only. Management defaults (close at 50% profit, review inside 21 DTE, hard stop at 2× credit)
+    are editable per book. Saved templates are stamped with full provenance (model, prompt version, verify verdict, timestamp, commit SHA).
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+ * Detail Plan — view layer ONLY. All numbers come from window.PlanModel (PM),
+ * the deterministic model generated from shared/plan/index.js. This file renders;
+ * it never computes a plan figure itself.
+ * ========================================================================== */
+const PM = window.PlanModel;
+const $ = (s) => document.querySelector(s);
+
+/* shared state with the projection page (/workbench/projection) */
+const SHARED_KEY = 'newleaf:projection:shared';
+function readShared(){ try { return JSON.parse(localStorage.getItem(SHARED_KEY)) || {}; } catch(e){ return {}; } }
+function writeShared(patch){ localStorage.setItem(SHARED_KEY, JSON.stringify(Object.assign(readShared(), patch))); }
+
+const shared = readShared();
+const cfg = PM.defaultConfig();
+cfg.horizonYears = [1,3,5].includes(shared.yrs) ? shared.yrs : 3;
+if (typeof shared.cap === 'number') cfg.capital = shared.cap;             // carried over from projection
+if (typeof shared.capPct === 'number') cfg.riskPerTrade = Math.round(shared.cap * shared.capPct) || cfg.riskPerTrade;
+if (typeof shared.ev === 'number') cfg.edgePerTrade = shared.ev;          // per-trade edge → reconciled compounding
+if (typeof shared.tpy === 'number') cfg.projectionTpy = shared.tpy;       // projection trades/yr → closes the count gap
+
+const state = {
+  cfg,
+  currentWeek: 1,
+  mode: 'sandbox',          // 'sandbox' | 'live'
+  yearMode: 'compound',     // 'compound' | 'flat' (reinvest gains vs constant size)
+  posEdits: {},             // id -> {pnl,pnlPct,dte}  (sandbox what-if overrides)
+  live: {},                 // id -> {pnl,pnlPct,dte}  (broker/journal feed)
+  liveLoaded: false,
+  checks: {},
+  todayISO: new Date().toISOString().slice(0,10),
+};
+function opts(){ return { todayISO: state.todayISO }; }
+
+/* ---------- formatting (presentation only) ---------- */
+const money = (v) => (v<0?'-':'')+'$'+Math.abs(Math.round(v)).toLocaleString();
+function fmt(iso){ return new Date(iso+'T00:00:00Z').toLocaleDateString(undefined,{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'}); }
+function fmtShort(iso){ return new Date(iso+'T00:00:00Z').toLocaleDateString(undefined,{day:'2-digit',month:'short',timeZone:'UTC'}); }
+function monthLong(iso){ return new Date(iso+'T00:00:00Z').toLocaleDateString(undefined,{month:'long',timeZone:'UTC'}); }
+
+/* ---------- KPIs ---------- */
+function renderKpis(){
+  const weeks = PM.buildCalendar(state.cfg, opts());
+  const W = weeks.length;
+  let trades=0; weeks.forEach(w=>Object.values(w.opens).forEach(n=>trades+=n));
+  const pos = livePositions(state.currentWeek);
+  const onTrack = pos.filter(p=>PM.statusOf(p.pnlPct,p.dte,false,state.cfg).level==='go').length;
+  const onTrackPct = pos.length?Math.round(onTrack/pos.length*100):0;
+  const comp = PM.compliancePct(state.checks);
+  const items = [
+    {cls:'dark', label:'Horizon',          val:state.cfg.horizonYears+(state.cfg.horizonYears>1?' yrs':' yr'), sub:W+' weeks planned'},
+    {cls:'gold', label:'Positions / week', val:(trades/W).toFixed(1),                  sub:trades.toLocaleString()+' opens over horizon'},
+    {cls:'dark', label:'Live this week',   val:pos.length,                             sub:'open contracts to manage'},
+    {cls:'gold', label:'On track',         val:onTrackPct+'%',                         sub:onTrack+' of '+pos.length+' green'},
+    {cls:'dark', label:'Compliance',       val:comp+'%',                               sub:'weekly checklist'},
+  ];
+  $('#kpis').innerHTML = items.map(k=>`
+    <div class="kpi ${k.cls}"><div class="k-label">${k.label}</div>
+      <div><div class="k-val">${k.val}</div><div class="k-sub">${k.sub}</div></div></div>`).join('');
+}
+
+/* ---------- cadence builder ---------- */
+function renderLanes(){
+  $('#laneBuilder').innerHTML = PM.STRAT_ORDER.map(key=>{
+    const s = PM.STRATS[key], l = PM.laneOf(state.cfg, key);
+    return `
+    <div class="lane ${l.on?'':'off'}" data-key="${key}">
+      <h3><span class="swatch" style="background:${s.cssVar}"></span>${s.name}
+        <button class="lane-toggle ${l.on?'on':''}" data-toggle="${key}">${l.on?'On':'Off'}</button></h3>
+      <div class="led">${s.short} · ${l.expiry}-week expiry ladder</div>
+      <div class="field"><label>Contracts per cycle</label><input type="number" min="0" data-f="qty" data-key="${key}" value="${l.qty}"></div>
+      <div class="field"><label>Expiry (weeks)</label><input type="number" min="1" data-f="expiry" data-key="${key}" value="${l.expiry}"></div>
+      <div class="field"><label>Open every (weeks)</label><input type="number" min="1" data-f="every" data-key="${key}" value="${l.every}"></div>
+    </div>`;
+  }).join('') + `<div class="ladder-note" id="rhythm"></div>`;
+  renderRhythm();
+}
+function renderRhythm(){
+  const parts = PM.STRAT_ORDER.filter(k=>{const l=PM.laneOf(state.cfg,k);return l.on&&l.qty>0;}).map(k=>{
+    const s=PM.STRATS[k], l=PM.laneOf(state.cfg,k);
+    const cad = l.every===1?'every week':`every ${l.every} weeks`;
+    return `<b>${l.qty}× ${s.name}</b> ${cad} (${l.expiry}-wk expiry)`;
+  });
+  $('#rhythm').innerHTML = parts.length
+    ? 'Operating rhythm: '+parts.join(' · ')+'. Every Friday, confirm the live book matches this before adding anything new.'
+    : 'No active lanes — turn one on to build a ladder.';
+}
+
+/* ---------- this-week board ---------- */
+function livePositions(w){
+  const o = Object.assign(opts(), state.mode==='live' ? { live: state.live } : { sandbox:true, live: state.posEdits });
+  return PM.positionsForWeek(state.cfg, w, o);
+}
+function renderWeekBoard(){
+  const weeks = PM.buildCalendar(state.cfg, opts());
+  const wk = weeks[state.currentWeek-1];
+  $('#wkLabel').textContent = 'Week '+state.currentWeek;
+  $('#wkDate').textContent = fmt(wk.date)+' → '+(weeks[state.currentWeek]?fmtShort(weeks[state.currentWeek].date):'horizon end');
+  const pos = livePositions(state.currentWeek);
+  $('#wkCount').textContent = pos.length+' position'+(pos.length===1?'':'s')+' live';
+
+  const banner = $('#liveBanner');
+  if(state.mode==='live'){
+    banner.classList.remove('hidden');
+    if(!state.liveLoaded){ banner.className='live-banner'; banner.textContent='Connecting to broker / journal feed…'; }
+    else if(Object.keys(state.live).length){ banner.className='live-banner ok'; banner.textContent='Live broker + journal feed — read-only. '+Object.keys(state.live).length+' positions matched.'; }
+    else { banner.className='live-banner'; banner.textContent='No live broker feed connected — showing the scheduled book with zeroed P&L. Wire the broker API to populate.'; }
+  } else { banner.classList.add('hidden'); }
+
+  const readonly = state.mode==='live';
+  if(!pos.length){
+    $('#posBody').innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:26px;">No positions live in this week. Step forward, or turn on a lane.</td></tr>`;
+    return;
+  }
+  $('#posBody').innerHTML = pos.map(p=>{
+    const st = PM.statusOf(p.pnlPct,p.dte,false,state.cfg);
+    const dis = readonly?'disabled':'';
+    return `<tr data-id="${p.id}">
+      <td><div class="pos-name" style="display:flex;align-items:center;gap:7px;"><span class="swatch" style="background:${p.strat.cssVar}"></span>${p.strat.name}</div>
+        <div class="pos-meta">opened wk ${p.open} · expires wk ${p.end}</div></td>
+      <td class="mono">${money(p.target)}</td>
+      <td><input class="cell-in" data-id="${p.id}" data-field="pnl" type="number" value="${p.pnl}" ${dis}></td>
+      <td><input class="cell-in" data-id="${p.id}" data-field="pnlPct" type="number" value="${p.pnlPct}" ${dis}></td>
+      <td><input class="cell-in" data-id="${p.id}" data-field="dte" type="number" value="${p.dte}" style="width:58px;" ${dis}></td>
+      <td><span class="stat ${st.level}"><span class="dot ${st.level}"></span>${st.label}</span></td>
+      <td class="action-txt">${st.action}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ---------- rolling calendar ---------- */
+function pills(obj){
+  const keys = Object.keys(obj);
+  if(!keys.length) return `<span class="pill none">—</span>`;
+  return keys.map(k=>`<span class="pill ${PM.STRATS[k].pillCls}">${obj[k]}× ${PM.STRATS[k].short}</span>`).join('');
+}
+function renderCalendar(){
+  const weeks = PM.buildCalendar(state.cfg, opts());
+  const byYear = {};
+  weeks.forEach(w=>{ const y=Math.ceil(w.week/PM.WEEKS_PER_YEAR); (byYear[y]=byYear[y]||[]).push(w); });
+  $('#calendar').innerHTML = Object.keys(byYear).map(y=>{
+    const ws = byYear[y];
+    let opensN=0,closesN=0; ws.forEach(w=>{Object.values(w.opens).forEach(n=>opensN+=n);Object.values(w.closes).forEach(n=>closesN+=n);});
+    return `
+    <div class="year-block ${y==='1'?'':'closed'}" data-year="${y}">
+      <div class="year-head" data-yhead="${y}">
+        <span class="caret">▾</span><h3>Year ${y}</h3>
+        <span class="y-sub">${opensN} opens · ${closesN} expiries · weeks ${ws[0].week}–${ws[ws.length-1].week}</span>
+      </div>
+      <div class="weeks">
+        ${ws.map(w=>{
+          const hasOpen=Object.keys(w.opens).length, hasClose=Object.keys(w.closes).length;
+          const missing = w.week===state.currentWeek && PM.missingScheduledOpen(state.cfg, w.week, state.checks, opts());
+          const flag = missing?'act':(hasClose?(hasOpen?'watch':'act'):'go');
+          return `<div class="wkrow">
+            <div class="w-idx">Wk ${w.week}<small>${fmtShort(w.date)}</small></div>
+            <div class="w-open"><b>Open</b>${pills(w.opens)}</div>
+            <div class="w-manage"><b>Manage / close</b>${pills(w.closes)}</div>
+            <div class="w-flag"><span class="dot ${flag}"></span></div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- proportional cycle timeline (Gantt) ----------
+ * One block per CYCLE (from PM.cyclesForLane), width = weeks held × pxPerWeek, left =
+ * (openWeek−1) × pxPerWeek. pxPerWeek auto-scales with the horizon so 1-week blocks never
+ * vanish (min 3px). Adjacent cycles alternate opacity so contiguous blocks stay countable.
+ * TODO(contract-load): to show qty as load, stack `qty` mini-bars inside each cycle block. */
+function renderTimeline(){
+  const months = PM.monthBuckets(state.cfg, opts());
+  const active = PM.STRAT_ORDER.filter(k=>{const l=PM.laneOf(state.cfg,k);return l.on&&l.qty>0;});
+  const W = PM.totalWeeks(state.cfg);
+  const pxW = W>220?7 : W>120?9 : W>60?12 : 18;   // ≈18px @1yr → 7px @5yr
+  const LBL=152, trackW=W*pxW;
+
+  const ticks = months.filter(m=>m.month%3===0).map(m=>
+    `<div class="tl-tick q" style="left:${(m.firstWeek-1)*pxW}px">'${String(m.year).slice(2)}</div>`).join('');
+  const axis = `<div class="tl-axis" style="width:${trackW}px">${ticks}</div>`;
+
+  const rows = active.map(key=>{
+    const s = PM.STRATS[key], l = PM.laneOf(state.cfg, key);
+    const blocks = PM.cyclesForLane(state.cfg, key).map((c,ci)=>{
+      const left=(c.openWeek-1)*pxW+1, w=Math.max(3,(c.endWeek-c.openWeek+1)*pxW-2);
+      const op = ci%2 ? 0.80 : 1;
+      const lab = (w>=20 && l.qty>1) ? `×${l.qty}` : '';
+      return `<div class="tl-block" style="left:${left}px;width:${w}px;background:${s.cssVar};opacity:${op};color:${s.textOnBlock}" title="${s.name} ×${l.qty} · weeks ${c.openWeek}–${c.endWeek} (${l.expiry}w held)">${lab}</div>`;
+    }).join('');
+    return `<div class="tl-row">
+      <div class="tl-name"><span class="swatch" style="background:${s.cssVar}"></span>
+        <div><div class="tl-nm">${s.name}</div><small>${l.qty}× · every ${l.every}w · ${l.expiry}w hold</small></div></div>
+      <div class="tl-track" style="width:${trackW}px">${blocks}</div></div>`;
+  }).join('');
+
+  const cap = `<div class="tl-cap" style="margin-left:${LBL}px;width:${trackW}px">
+    <span>${fmtShort(months[0].date)}</span><span>1 block = one cycle · width = weeks held</span><span>${fmtShort(months[months.length-1].date)}</span></div>`;
+  $('#timeline').innerHTML = `<div class="tl-wrap"><div style="width:${LBL+trackW}px">
+    <div class="tl-head"><div class="tl-corner">Engine · cycle</div>${axis}</div>
+    ${rows||'<div style="padding:20px;color:var(--muted)">No active engines.</div>'}
+    ${cap}</div></div>`;
+}
+
+/* ---------- monthly checkpoints ---------- */
+function describeMix(obj){
+  const parts = PM.STRAT_ORDER.filter(k=>obj[k]>0).map(k=>`${obj[k]} ${PM.STRATS[k].short}`);
+  return parts.length?parts.join(' · '):'—';
+}
+function renderMonthly(){
+  renderTimeline();
+  const months = PM.monthBuckets(state.cfg, opts());
+  const byYear = {};
+  months.forEach(m=>{(byYear[m.hYear]=byYear[m.hYear]||[]).push(m);});
+  let html='';
+  Object.keys(byYear).forEach(y=>{
+    html += `<div class="yr-divider">Year ${y}</div>`;
+    byYear[y].forEach(m=>{
+      const status = m.closeTotal>0?'go':(m.openTotal>0?'watch':'act');
+      html += `<div class="mcard">
+        <h4>${monthLong(m.date)} <span class="dot ${status}"></span></h4>
+        <div class="mprofit">${money(m.planned)}</div>
+        <div class="mmeta">Opened <b>${m.openTotal}</b> · Expired <b>${m.closeTotal}</b><br>Banks: ${describeMix(m.closes)}</div></div>`;
+    });
+  });
+  $('#monthGrid').innerHTML = `<div class="month-grid">${html}</div>`;
+}
+
+/* ---------- probability of profit / risk-reward ---------- */
+const oPct = (x) => Math.round(x*100)+'%';
+const oRR = (x) => '1 : '+x.toFixed(2);
+/* full build — rebuilds rows + inputs (use on mix/horizon change, not per keystroke) */
+function renderOdds(){
+  const po = PM.portfolioOdds(state.cfg, opts());
+  if(!po.rows.length){ $('#oddsPanel').innerHTML = `<div style="color:var(--muted)">No active engines — turn one on to project odds.</div>`; return; }
+  const cards = `<div class="odds-cards">
+    <div class="ocard"><div class="o-label">Blended win rate (POP)</div><div class="o-val" id="oc-pop">${oPct(po.blendedPop)}</div><div class="o-sub">trade-weighted across the mix</div></div>
+    <div class="ocard gold"><div class="o-label">Blended reward : risk</div><div class="o-val" id="oc-rr">${oRR(po.blendedRewardToRisk)}</div><div class="o-sub" id="oc-rr-sub">${money(po.totalReward)} reward vs ${money(po.totalRisk)} risk</div></div>
+    <div class="ocard"><div class="o-label">Expectancy / trade</div><div class="o-val" id="oc-ev">${money(po.expectancyPerTrade)}</div><div class="o-sub" id="oc-ev-sub">${money(po.expectancyPerYear)} / yr at this cadence</div></div>
+  </div>`;
+  const rows = po.rows.map(r=>{
+    const s = PM.STRATS[r.key];
+    return `<tr data-row="${r.key}">
+      <td><div class="pos-name" style="display:flex;align-items:center;gap:7px;"><span class="swatch" style="background:${s.cssVar}"></span>${s.name}</div></td>
+      <td class="num">${Math.round(r.tradesPerYear)}</td>
+      <td><input class="oin" data-odd="pop" data-key="${r.key}" type="number" min="0" max="100" step="1" value="${Math.round(r.pop*100)}"></td>
+      <td style="white-space:nowrap;">1 : <input class="oin" data-odd="rewardToRisk" data-key="${r.key}" type="number" min="0.1" step="0.1" value="${r.rewardToRisk}" style="width:54px;"></td>
+      <td class="num o-rk" data-key="${r.key}">${money(r.reward)} / ${money(r.risk)}</td>
+      <td class="num o-share" data-key="${r.key}">${oPct(r.riskShare)}</td>
+      <td class="num o-ev" data-key="${r.key}">${money(r.ev)}</td>
+    </tr>`;
+  }).join('');
+  $('#oddsPanel').innerHTML = cards + `
+    <table class="odds-table">
+      <thead><tr><th>Structure</th><th style="text-align:right;">Trades / yr</th><th>POP %</th><th>Reward : risk</th><th style="text-align:right;">Reward / risk $</th><th style="text-align:right;">Risk share</th><th style="text-align:right;">EV / trade</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="odds-foot">POP and reward:risk are editable planning assumptions per structure — risk $ is derived as target credit ÷ reward:risk. The blend re-weights automatically as you turn engines on/off or change contracts, so you can see how the strategy selection moves overall odds.</div>`;
+}
+/* light update — recompute blend + derived cells WITHOUT re-rendering inputs (keeps focus) */
+function updateOddsDerived(){
+  const po = PM.portfolioOdds(state.cfg, opts());
+  if(!po.rows.length) return;
+  const set = (id,v)=>{ const el=$(id); if(el) el.textContent=v; };
+  set('#oc-pop', oPct(po.blendedPop));
+  set('#oc-rr', oRR(po.blendedRewardToRisk));
+  set('#oc-rr-sub', money(po.totalReward)+' reward vs '+money(po.totalRisk)+' risk');
+  set('#oc-ev', money(po.expectancyPerTrade));
+  set('#oc-ev-sub', money(po.expectancyPerYear)+' / yr at this cadence');
+  po.rows.forEach(r=>{
+    const rk=document.querySelector(`.o-rk[data-key="${r.key}"]`); if(rk) rk.textContent=money(r.reward)+' / '+money(r.risk);
+    const sh=document.querySelector(`.o-share[data-key="${r.key}"]`); if(sh) sh.textContent=oPct(r.riskShare);
+    const ev=document.querySelector(`.o-ev[data-key="${r.key}"]`); if(ev) ev.textContent=money(r.ev);
+  });
+}
+
+/* ---------- yearly ---------- */
+function yearRows(){
+  // 'compound' reinvests realized gains into next year's position size; 'flat' is constant size.
+  if(state.yearMode==='flat'){
+    return PM.yearBuckets(state.cfg, opts()).map(y=>Object.assign({}, y, { plannedBase:y.planned, capitalStart:null, returnPct:null }));
+  }
+  return PM.compoundYears(state.cfg, opts());
+}
+function renderYearly(){
+  renderOdds();
+  const compounding = state.yearMode!=='flat';
+  const years = yearRows();
+  const edged = compounding && years[0] && years[0].basis==='edge';
+  $('#yearLede').textContent = !compounding
+    ? 'Constant position size every year — the raw cadence output before reinvesting gains. Planning figure, not a forecast of returns.'
+    : edged
+      ? (years[0].tpyMatched
+          ? `Matched to the projection — compounding at its ${(years[0].edgePerTrade*100).toFixed(2)}%/trade edge over its ${years[0].trades} trades/yr (this cadence schedules ${years[0].scheduledTrades}/yr). Same curve as /workbench/projection.`
+          : `Reconciled with the projection — compounding at its ${(years[0].edgePerTrade*100).toFixed(2)}%/trade edge over this cadence's ~${years[0].trades} trades/yr, gains reinvested.`)
+      : 'Realized gains reinvested at the plan’s own rate. Open the projection page to compound at its per-trade edge instead.';
+  const maxP = Math.max(1,...years.map(y=>y.planned));
+  $('#yearBars').innerHTML = years.map(y=>{
+    const segs = PM.STRAT_ORDER.map(k=>{
+      const w=(y.plannedBy[k]/maxP)*100;
+      return w>0?`<div class="yseg ${k}" style="width:${w}%" title="${PM.STRATS[k].name}: ${money(y.plannedBy[k])}"></div>`:'';
+    }).join('');
+    const sub = compounding ? `<span class="ybar-sub">on ${money(y.capitalStart)} · +${Math.round(y.returnPct*100)}%</span>` : '';
+    return `<div class="ybar-row"><div class="yl">Yr ${y.year}</div><div class="ytrack">${segs}</div><div class="yv">${money(y.planned)}${sub}</div></div>`;
+  }).join('') + `<div class="ylegend">
+    <span><span class="swatch" style="background:var(--teal)"></span>Bull Call Spread</span>
+    <span><span class="swatch" style="background:var(--gold)"></span>Iron Condor</span>
+    <span><span class="swatch" style="background:var(--terracotta)"></span>Butterfly</span>
+    ${compounding && years.length>1 ? `<span style="margin-left:auto;color:var(--forest);font-weight:600;">${money(years[0].capitalStart)} → ${money(years[years.length-1].capitalEnd)} capital · ${money(years.reduce((a,y)=>a+y.planned,0))} total</span>` : ''}</div>`;
+
+  $('#yearGrid').innerHTML = `<div class="year-grid">${years.map(y=>`
+    <div class="ycard"><div class="yhead"><h4>Year ${y.year}</h4><span class="yp">${money(y.planned)}</span></div>
+      <div class="ybody"><table>
+        ${compounding ? `<tr><td>Capital base</td><td class="num">${money(y.capitalStart)} → ${money(y.capitalEnd)}</td></tr>
+        <tr><td>Return on capital</td><td class="num">+${Math.round(y.returnPct*100)}%</td></tr>` : ''}
+        <tr><td>Total opened</td><td class="num">${y.openTotal}</td></tr>
+        <tr><td>Total expired</td><td class="num">${y.closeTotal}</td></tr>
+        ${PM.STRAT_ORDER.filter(k=>y.closes[k]>0).map(k=>`<tr><td><span class="swatch" style="background:${PM.STRATS[k].hex};margin-right:6px;display:inline-block;"></span>${PM.STRATS[k].name}</td><td class="num">${money(y.plannedBy[k])}</td></tr>`).join('')}
+      </table></div></div>`).join('')}</div>`;
+}
+
+/* ---------- compliance ---------- */
+function renderCompliance(){
+  $('#checkList').innerHTML = PM.CHECK_ITEMS.map(i=>`
+    <label class="check ${state.checks[i.id]?'done':''}">
+      <input type="checkbox" data-check="${i.id}" ${state.checks[i.id]?'checked':''}>
+      <span class="c-body"><span class="c-title">${i.title}</span><br><span class="c-sub">${i.sub}</span></span></label>`).join('');
+  const pct = PM.compliancePct(state.checks);
+  $('#compFill').style.width = pct+'%';
+  $('#compPct').textContent = pct+'%';
+  $('#compState').textContent = pct===100?'Plan followed':pct>=70?'Minor gaps':'Off plan';
+  $('#compState').style.color = pct===100?'var(--go)':pct>=70?'var(--watch)':'var(--act)';
+}
+
+/* ---------- orchestration ---------- */
+function renderAll(){ renderKpis(); renderLanes(); renderWeekBoard(); renderMonthly(); renderYearly(); renderCalendar(); renderCompliance(); }
+
+function setPreset(p){
+  state.cfg.lanes = JSON.parse(JSON.stringify(PM.PRESETS[p]));
+  state.posEdits = {};
+  syncPresetChips();
+  renderAll();
+}
+function syncPresetChips(){
+  const p = PM.presetOf(state.cfg);
+  document.querySelectorAll('#presets .chip').forEach(c=>c.classList.toggle('on', c.dataset.preset===p));
+}
+
+/* ---------- live feed ---------- */
+async function loadLive(){
+  state.liveLoaded = false;
+  renderWeekBoard();
+  try {
+    const res = await fetch('/api/plan/live-book', { headers:{ 'accept':'application/json' } });
+    if(res.ok){
+      const data = await res.json();
+      const map = {};
+      (data.positions||[]).forEach(p=>{ if(p.id) map[p.id]={pnl:p.pnl,pnlPct:p.pnlPct,dte:p.dte}; });
+      state.live = map;
+    } else { state.live = {}; }
+  } catch(e){ state.live = {}; }
+  state.liveLoaded = true;
+  renderKpis(); renderWeekBoard();
+}
+
+/* ---------- provenance-stamped save ---------- */
+function buildPlanTemplate(){
+  // The plan is fully deterministic — no LLM in the compute path — so the model/prompt
+  // provenance fields are explicitly null while the deterministic verdict, commit SHA and
+  // timestamp are stamped, matching the monorepo's Firestore write contract.
+  const commitSha = (document.querySelector('meta[name="commit-sha"]')||{}).content || 'dev';
+  return {
+    kind: 'detail-plan-template',
+    horizonYears: state.cfg.horizonYears,
+    capital: state.cfg.capital,
+    riskPerTrade: state.cfg.riskPerTrade,
+    edgePerTrade: typeof state.cfg.edgePerTrade === 'number' ? state.cfg.edgePerTrade : null,
+    projectionTpy: typeof state.cfg.projectionTpy === 'number' ? state.cfg.projectionTpy : null,
+    preset: PM.presetOf(state.cfg),
+    lanes: state.cfg.lanes,
+    thresholds: state.cfg.thresholds,
+    targets: state.cfg.targets,
+    odds: state.cfg.odds,
+    portfolioOdds: (()=>{ const po=PM.portfolioOdds(state.cfg, opts()); return { blendedPop: po.blendedPop, blendedRewardToRisk: po.blendedRewardToRisk, expectancyPerTrade: po.expectancyPerTrade }; })(),
+    yearMode: state.yearMode,
+    yearly: PM.compoundYears(state.cfg, opts()).map(y=>({ year:y.year, plannedBase:y.plannedBase, planned:y.planned, capitalStart:y.capitalStart, capitalEnd:y.capitalEnd, returnPct:y.returnPct })),
+    provenance: {
+      model_used: null,
+      prompt_version: null,
+      verify_verdict: 'deterministic',
+      analysis_source: 'shared/plan',
+      generation_timestamp: new Date().toISOString(),
+      code_commit_sha: commitSha,
+    },
+  };
+}
+async function savePlanTemplate(){
+  const docOut = buildPlanTemplate();
+  const status = $('#saveStatus');
+  status.textContent = 'Saving…';
+  try {
+    const res = await fetch('/api/plan/templates', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(docOut) });
+    if(res.ok){
+      const out = await res.json().catch(()=>({}));
+      status.textContent = 'Saved'+(out.id?(' · '+out.id):'')+' · commit '+docOut.provenance.code_commit_sha.slice(0,7);
+      return;
+    }
+    throw new Error('HTTP '+res.status);
+  } catch(e){
+    localStorage.setItem('newleaf:plan:draft', JSON.stringify(docOut));
+    status.textContent = 'Saved local draft (write API not reachable) · provenance stamped · commit '+docOut.provenance.code_commit_sha.slice(0,7);
+    console.info('Detail-plan template (provenance-stamped):', docOut);
+  }
+}
+
+/* ============================== wiring ============================== */
+$('#horizonSeg').addEventListener('click', (e)=>{
+  const b = e.target.closest('button'); if(!b) return;
+  state.cfg.horizonYears = +b.dataset.yrs;
+  document.querySelectorAll('#horizonSeg button').forEach(x=>x.classList.toggle('on', x===b));
+  if(state.currentWeek>PM.totalWeeks(state.cfg)) state.currentWeek=1;
+  writeShared({ yrs: state.cfg.horizonYears });
+  renderAll();
+});
+$('#presets').addEventListener('click', (e)=>{ const b=e.target.closest('.chip'); if(b) setPreset(b.dataset.preset); });
+
+$('#laneBuilder').addEventListener('input', (e)=>{
+  const inp = e.target.closest('input[data-f]'); if(!inp) return;
+  const f=inp.dataset.f, key=inp.dataset.key, min=f==='qty'?0:1;
+  state.cfg.lanes[key][f] = Math.max(min, parseInt(inp.value||'0',10)||min);
+  state.posEdits={};
+  syncPresetChips();       // editing any lane → preset becomes "custom"
+  renderKpis(); renderRhythm(); renderWeekBoard(); renderMonthly(); renderYearly(); renderCalendar();
+});
+$('#laneBuilder').addEventListener('click', (e)=>{
+  const t = e.target.closest('[data-toggle]'); if(!t) return;
+  state.cfg.lanes[t.dataset.toggle].on = !state.cfg.lanes[t.dataset.toggle].on;
+  state.posEdits={};
+  syncPresetChips();
+  renderAll();
+});
+
+$('#wkPrev').addEventListener('click', ()=>{ if(state.currentWeek>1){state.currentWeek--; renderKpis(); renderWeekBoard(); renderCalendar();}});
+$('#wkNext').addEventListener('click', ()=>{ if(state.currentWeek<PM.totalWeeks(state.cfg)){state.currentWeek++; renderKpis(); renderWeekBoard(); renderCalendar();}});
+
+$('#modeToggle').addEventListener('click', (e)=>{
+  const b = e.target.closest('button'); if(!b) return;
+  state.mode = b.dataset.mode;
+  document.querySelectorAll('#modeToggle button').forEach(x=>x.classList.toggle('on', x===b));
+  if(state.mode==='live'){ loadLive(); } else { renderKpis(); renderWeekBoard(); }
+});
+
+$('#posBody').addEventListener('input', (e)=>{
+  const inp = e.target.closest('.cell-in'); if(!inp || state.mode==='live') return;
+  const id=inp.dataset.id, field=inp.dataset.field;
+  const pos = livePositions(state.currentWeek).find(p=>p.id===id); if(!pos) return;
+  const cur = state.posEdits[id] || {pnl:pos.pnl, pnlPct:pos.pnlPct, dte:pos.dte};
+  cur[field] = parseFloat(inp.value)||0;
+  state.posEdits[id] = cur;
+  const st = PM.statusOf(cur.pnlPct, cur.dte, false, state.cfg);
+  const tr = inp.closest('tr');
+  tr.querySelector('.stat').className = 'stat '+st.level;
+  tr.querySelector('.stat').innerHTML = `<span class="dot ${st.level}"></span>${st.label}`;
+  tr.querySelector('.action-txt').textContent = st.action;
+  renderKpis();
+});
+
+$('#checkList').addEventListener('change', (e)=>{
+  const c = e.target.closest('[data-check]'); if(!c) return;
+  state.checks[c.dataset.check] = c.checked;
+  renderCompliance(); renderKpis(); renderCalendar();
+});
+
+$('#calendar').addEventListener('click', (e)=>{
+  const h = e.target.closest('[data-yhead]'); if(!h) return;
+  h.closest('.year-block').classList.toggle('closed');
+});
+
+$('#tabs').addEventListener('click', (e)=>{
+  const b = e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on', x===b));
+  const t = b.dataset.tab;
+  ['week','monthly','yearly','calendar','compliance'].forEach(name=>$('#tab-'+name).classList.toggle('hidden', name!==t));
+});
+
+// editable POP / reward:risk assumptions → re-blend
+$('#oddsPanel').addEventListener('input', (e)=>{
+  const inp = e.target.closest('input[data-odd]'); if(!inp) return;
+  const odd=inp.dataset.odd, key=inp.dataset.key;
+  state.cfg.odds = state.cfg.odds || {};
+  state.cfg.odds[key] = Object.assign({}, PM.oddsOf(state.cfg, key), state.cfg.odds[key]);
+  let v = parseFloat(inp.value)||0;
+  if(odd==='pop') v = Math.max(0, Math.min(1, v/100));
+  else v = Math.max(0.1, v);
+  state.cfg.odds[key][odd] = v;
+  updateOddsDerived();   // re-blend in place — the edited input keeps focus
+});
+
+// compounding / fixed-size toggle for the yearly view
+$('#yearMode').addEventListener('click', (e)=>{
+  const b = e.target.closest('button'); if(!b) return;
+  state.yearMode = b.dataset.ym;
+  document.querySelectorAll('#yearMode button').forEach(x=>x.classList.toggle('on', x===b));
+  renderYearly();
+});
+
+$('#savePlan').addEventListener('click', savePlanTemplate);
+
+// react to projection-page horizon changes from another tab
+window.addEventListener('storage', (e)=>{
+  if(e.key!==SHARED_KEY) return;
+  const s = readShared();
+  if([1,3,5].includes(s.yrs) && s.yrs!==state.cfg.horizonYears){
+    state.cfg.horizonYears = s.yrs;
+    document.querySelectorAll('#horizonSeg button').forEach(x=>x.classList.toggle('on', +x.dataset.yrs===s.yrs));
+    if(state.currentWeek>PM.totalWeeks(state.cfg)) state.currentWeek=1;
+  }
+  if(typeof s.cap==='number') state.cfg.capital = s.cap;
+  if(typeof s.cap==='number' && typeof s.capPct==='number') state.cfg.riskPerTrade = Math.round(s.cap*s.capPct);
+  if(typeof s.ev==='number') state.cfg.edgePerTrade = s.ev;   // projection edge → reconciled growth
+  if(typeof s.tpy==='number') state.cfg.projectionTpy = s.tpy; // projection tpy → closes the count gap
+  renderAll();
+});
+
+/* ---------- boot ---------- */
+(function init(){
+  document.querySelectorAll('#horizonSeg button').forEach(x=>x.classList.toggle('on', +x.dataset.yrs===state.cfg.horizonYears));
+  syncPresetChips();
+  renderAll();
+})();
+</script>
+</body>
+</html>

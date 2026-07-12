@@ -48,3 +48,7 @@ ai-architecture-v4.html
 # Local Claude Code settings (not repo content)
 .claude/
 **/.claude/
+
+# === Presentation binaries & Office temp locks (keep out of git history) ===
+*.pptx
+~$*
