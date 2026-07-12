@@ -140,13 +140,17 @@ function getMarketCapData(symbol) {
   };
 }
 
-// ── Mega-cap "quality" set — source of truth for the reaction gate's mean-reversion ─────
-// exception. Read from company-metadata.json (marketCapTier === 'mega'); watchlist.json has
-// no marketCapMapping, so getMarketCapData can't supply this. Mirrors the API's quality-names.ts
-// (api/src/tools/quality-names.ts) — keep the two in sync so scanner and Discover agree on who
-// is eligible. Cached after first load.
+// ── "Mean-reversion eligible" set — source of truth for the reaction gate's exception. ─────
+// Two groups earn the "oversold dip is a bounce, not a knife" assumption:
+//   1. Mega-cap stocks — read from company-metadata.json (marketCapTier === 'mega'). watchlist.json
+//      has no marketCapMapping, so getMarketCapData can't supply this.
+//   2. Blue-chip ETFs — SPY/QQQ (equity indices) + GLD/SLV (commodities), which structurally
+//      mean-revert. Hardcoded here (they carry no marketCapTier).
+// Mirrors the API's quality-names.ts (MEGA_CAPS + MEAN_REVERT_ETFS) — keep the two in sync so
+// scanner and Discover agree on who is eligible. Cached after first load.
+const MEAN_REVERT_ETFS = new Set(['SPY', 'QQQ', 'GLD', 'SLV']);
 let _megaCapSet = null;
-function isMegaCap(symbol) {
+function isMeanReversionEligible(symbol) {
   if (_megaCapSet === null) {
     _megaCapSet = new Set();
     try {
@@ -154,9 +158,9 @@ function isMegaCap(symbol) {
       for (const [sym, info] of Object.entries(meta)) {
         if (info && info.marketCapTier === 'mega') _megaCapSet.add(sym);
       }
-    } catch (_) { /* leave empty → exception simply never fires */ }
+    } catch (_) { /* leave empty → exception simply never fires for mega-caps */ }
   }
-  return _megaCapSet.has(symbol);
+  return _megaCapSet.has(symbol) || MEAN_REVERT_ETFS.has(symbol);
 }
 
 

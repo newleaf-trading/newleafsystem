@@ -748,7 +748,7 @@
       </div>
 
       <!-- Outcome metrics with unit captions -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px" id="drill-metrics"></div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px" id="drill-metrics"></div>
 
       <!-- Payoff chart -->
       <div class="panel" style="padding:14px;margin-top:10px">
@@ -870,7 +870,7 @@
     /* ================================================================
        DISCOVER.HTML — Guided "ticker to verified trade" journey
        ================================================================ */
-    import { computeNetCredit as _computeNC, computeMaxLoss as _computeML, computeMaxProfit as _computeMP, computeBreakevens as _computeBE, pnlAt as _pnlAt } from './public/js/legMath.js';
+    import { computeNetCredit as _computeNC, computeMaxLoss as _computeML, computeMaxProfit as _computeMP, computeBreakevens as _computeBE, pnlAt as _pnlAt, estimatePoP as _estimatePoP, computeRewardRisk as _computeRR } from './public/js/legMath.js';
     import { drawPayoffChart as _drawPayoff } from './public/js/payoffChart.js';
     import { renderGammaAnalysis as _renderGamma } from './public/js/gammaChart.js';
     const $ = s => document.querySelector(s);
@@ -2531,11 +2531,17 @@
       const perShare = nc;
       const perContract = nc * 100;
       const totalCredit = nc * 100 * state.qty;
-      const rr = typeof ml === 'number' && ml > 0 && typeof mp === 'number' ? (mp / ml).toFixed(2) : 'N/A';
-      // Estimate PoP from breakeven range vs spot
-      const estimatedPop = breakevens.length >= 2
-        ? Math.round(Math.min(95, Math.max(30, 100 * (breakevens[1] - breakevens[0]) / (state.spot * 0.4))))
-        : (nc > 0 ? '~' + Math.round(Math.min(90, 50 + nc * 20)) : '---');
+      const rr = typeof ml === 'number' && ml > 0 && typeof mp === 'number' ? _computeRR(mp, ml).toFixed(2) : 'N/A';
+      // Probability of profit — integrate the payoff over a lognormal terminal distribution using
+      // ATM IV + DTE. Works for single-breakeven debit verticals (bull/bear call/put spreads), not
+      // just 2-breakeven ranges. Falls back to the old breakeven/credit heuristic if IV/DTE missing.
+      const _dte = Math.max(1, Math.round((new Date(state.selectedExpiry + 'T16:00:00').getTime() - Date.now()) / 86400000));
+      const popVal = _estimatePoP(state.legs, state.qty, nc, state.spot, state.atmIv, _dte);
+      const estimatedPop = (popVal !== null && popVal !== undefined)
+        ? popVal
+        : (breakevens.length >= 2
+            ? Math.round(Math.min(95, Math.max(30, 100 * (breakevens[1] - breakevens[0]) / (state.spot * 0.4))))
+            : (nc > 0 ? '~' + Math.round(Math.min(90, 50 + nc * 20)) : '---'));
 
       // Valid setup status
       const valid = nc > 0 && state.legs.length >= 2;
@@ -2566,6 +2572,8 @@
         metric('Max Loss', typeof ml === 'number' ? '-$' + ml.toLocaleString('en-US', {maximumFractionDigits:0}) : 'N/A',
           'defined risk', 'var(--red)') +
         metric('PoP', estimatedPop + '%', 'probability of profit', '') +
+        metric('Reward : Risk', rr === 'N/A' ? 'N/A' : rr + ' : 1', 'max profit \u00f7 max loss',
+          (rr !== 'N/A' && parseFloat(rr) >= 1) ? 'var(--green)' : 'var(--ink)') +
         metric('Breakevens', beStr, 'at expiration', '');
 
       // Build strike options from chain

@@ -8,7 +8,7 @@ import { analyzeTechnicals, calcScore, getDirection, selectStrategy, reconcileDi
 import { fetchNasdaqOI, fetchYahooContracts, findGammaWalls } from '../tools/nasdaq-oi.js';
 import { buildDecision } from '../tools/decision-engine.js';
 import { computeReactionGate, applyReactionGate, type ReactionGate } from '../tools/reaction-features.js';
-import { isMegaCap } from '../tools/quality-names.js';
+import { isMeanReversionEligible } from '../tools/quality-names.js';
 import { buildLegs } from '../tools/leg-builder.js';
 import { aiReadCache, recommendCache } from '../lib/cache.js';
 import { createHash } from 'crypto';
@@ -133,7 +133,7 @@ export function registerAIRoutes(fastify: FastifyInstance, llm: LLMRouter) {
         atrPct: (technicalData as any).atrPct ?? null, adx: technicalData.adx14 ?? null,
         ivRv: (rvR && rvR > 0 && atmIvR > 0) ? atmIvR / rvR : null,
         gammaConfidence: gammaData.analysis.confidence_score ?? 0,
-        rsi: technicalData.rsi ?? null, isQualityName: isMegaCap(tk),
+        rsi: technicalData.rsi ?? null, isQualityName: isMeanReversionEligible(tk),
       });
       const act = applyReactionGate(strategy.code, reactionGate);
       if (act) {

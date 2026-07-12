@@ -125,3 +125,37 @@ export function computeRewardRisk(maxProfit, maxLoss) {
   if (maxLoss === 0) return 0;
   return maxProfit / maxLoss;
 }
+
+/**
+ * Estimate probability of profit (PoP) by integrating the payoff over a lognormal
+ * terminal-price distribution. General — works for ANY defined-risk structure, including
+ * single-breakeven debit verticals (bull/bear call/put spreads) where a breakeven-range
+ * heuristic returns nothing. Risk-neutral drift (no directional assumption).
+ * @param {Array}  legs
+ * @param {number} qty
+ * @param {number} netCredit  net premium (>0 credit, <0 debit); recomputed if omitted
+ * @param {number} spot       current underlying price
+ * @param {number} ivPct      ATM implied vol in PERCENT (e.g. 58.1)
+ * @param {number} dte        days to expiration
+ * @returns {number|null} PoP in percent (0–100), or null if inputs are insufficient
+ */
+export function estimatePoP(legs, qty, netCredit, spot, ivPct, dte) {
+  if (!legs || !legs.length || !(spot > 0) || !(ivPct > 0) || !(dte > 0)) return null;
+  const T = dte / 365;
+  const sigma = (ivPct / 100) * Math.sqrt(T);
+  if (!(sigma > 0)) return null;
+  const nc = (typeof netCredit === 'number') ? netCredit : computeNetCredit(legs);
+  // Terminal price is lognormal: ln(S_T/spot) ~ N(-½σ², σ²). Integrate the standard-normal
+  // density in z, mapping each z to a terminal price, and sum the probability mass where P&L > 0.
+  const mu = -0.5 * sigma * sigma;
+  const N = 800, zMin = -5, zMax = 5, dz = (zMax - zMin) / N;
+  let probProfit = 0, probTotal = 0;
+  for (let i = 0; i < N; i++) {
+    const z = zMin + (zMax - zMin) * (i + 0.5) / N;
+    const w = Math.exp(-0.5 * z * z) * dz;            // ∝ standard-normal density
+    const price = spot * Math.exp(mu + sigma * z);    // lognormal terminal price
+    probTotal += w;
+    if (pnlAt(price, legs, qty, nc) > 0) probProfit += w;
+  }
+  return probTotal > 0 ? Math.round(100 * probProfit / probTotal) : null;
+}

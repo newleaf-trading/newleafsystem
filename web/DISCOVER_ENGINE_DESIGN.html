@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf — How Discover Works · Design Doc</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --forest: #0B2D23; --gold: #C9A96E; --cream: #F7F5F0; --cream-dark: #EDE8DC;
+    --ink: #0B0F14; --ink-muted: #6b6b60; --ink-faint: #9b9b8e; --white: #fff;
+    --border: rgba(15,61,46,.12); --teal: #0d6e56; --teal-bg: #e0f2ec; --teal-text: #07473a;
+    --green: #1a8c5e; --yellow: #d97706; --red: #c0392b; --blue: #2563eb; --blue-bg:#eef2ff;
+    --mono: 'Space Mono', monospace; --radius: 10px;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', sans-serif; background: var(--cream); color: var(--ink); line-height: 1.65; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; display: grid; grid-template-columns: 250px 1fr; gap: 40px; }
+  header { background: var(--forest); color: var(--cream); padding: 48px 0 40px; }
+  header .wrap { display: block; }
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+  header h1 { font-family: 'Playfair Display', serif; font-size: 40px; font-weight: 800; line-height: 1.12; margin-bottom: 14px; }
+  header p { font-size: 16px; color: rgba(247,245,240,.82); max-width: 780px; }
+  .meta-row { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 22px; font-family: var(--mono); font-size: 11px; color: rgba(247,245,240,.6); }
+  .meta-row b { color: var(--gold); }
+  main { padding: 44px 0 100px; }
+  nav.toc { position: sticky; top: 24px; align-self: start; font-size: 13px; }
+  nav.toc .toc-title { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 12px; }
+  nav.toc a { display: block; color: var(--ink-muted); text-decoration: none; padding: 5px 0 5px 12px; border-left: 2px solid transparent; transition: all .15s; }
+  nav.toc a:hover { color: var(--forest); border-left-color: var(--gold); }
+  section { margin-bottom: 50px; scroll-margin-top: 24px; }
+  h2 { font-family: 'Playfair Display', serif; font-size: 25px; font-weight: 700; color: var(--forest); margin-bottom: 6px; }
+  h2 .num { font-family: var(--mono); font-size: 14px; color: var(--gold); margin-right: 10px; }
+  h3 { font-size: 15px; font-weight: 700; color: var(--forest); margin: 22px 0 8px; }
+  .lead { color: var(--ink-muted); font-size: 15px; margin-bottom: 18px; max-width: 800px; }
+  p { margin-bottom: 12px; max-width: 830px; }
+  .rule { height: 2px; width: 44px; background: var(--gold); margin: 10px 0 20px; }
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 22px; margin: 16px 0; box-shadow: 0 1px 3px rgba(15,61,46,.04); }
+  .card.tinted { background: var(--teal-bg); border-color: rgba(13,110,86,.22); }
+  .card.warn { background: #fff8ec; border-color: #f1d9a8; }
+  .card.blue { background: var(--blue-bg); border-color: #c7d2fe; }
+  .card.red { background: #fdf0ee; border-color: #f0c8c0; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+  th { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-muted); text-align: left; padding: 9px 11px; border-bottom: 2px solid var(--border); }
+  td { padding: 9px 11px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:hover td { background: var(--cream); }
+  code { font-family: var(--mono); font-size: 12px; background: var(--cream-dark); padding: 1px 6px; border-radius: 4px; color: var(--teal-text); }
+  pre { font-family: var(--mono); font-size: 12px; line-height: 1.7; background: var(--forest); color: #d9e8e0; padding: 18px 20px; border-radius: var(--radius); overflow-x: auto; margin: 14px 0; }
+  pre .c { color: #7fa593; } pre .k { color: var(--gold); } pre .s { color: #e3c08a; } pre .g { color: #6fd0a6; } pre .r { color: #e39a8a; }
+  .badge { display: inline-block; font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: 10px; text-transform: uppercase; letter-spacing: .05em; }
+  .b-a { background: var(--teal-bg); color: var(--teal-text); }
+  .b-b { background: #f3e8d6; color: #8a6d3b; }
+  .b-code { background: var(--forest); color: var(--gold); }
+  .b-red { background: #fbe3de; color: #a5382a; }
+  .b-green { background: #dcf0e5; color: #1a6b47; }
+  .b-blue { background: #e2e8ff; color: #34449b; }
+  ul, ol { margin: 8px 0 14px 22px; } li { margin-bottom: 6px; max-width: 810px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .vs { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 16px 0; }
+  .vs > div { padding: 18px 20px; }
+  .vs > div:first-child { background: #fdf0ee; border-right: 1px solid var(--border); }
+  .vs > div:last-child { background: #f4faf7; }
+  .vs h4 { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+  .flow { display: flex; flex-direction: column; gap: 0; margin: 18px 0; }
+  .step { display: grid; grid-template-columns: 34px 1fr; gap: 14px; }
+  .step .dot { display: flex; flex-direction: column; align-items: center; }
+  .step .dot b { width: 30px; height: 30px; border-radius: 50%; background: var(--forest); color: var(--gold); font-family: var(--mono); font-size: 13px; display: flex; align-items: center; justify-content: center; flex: none; }
+  .step .dot i { width: 2px; flex: 1; background: var(--border); margin: 4px 0; }
+  .step:last-child .dot i { display: none; }
+  .step .body { padding-bottom: 22px; }
+  .step .body h4 { font-size: 14px; color: var(--forest); margin-bottom: 3px; }
+  .step .body p { font-size: 13.5px; color: var(--ink-muted); margin: 0; }
+  .filepath { font-family: var(--mono); font-size: 11px; color: var(--teal); }
+  .callout { border-left: 3px solid var(--gold); padding: 4px 0 4px 16px; margin: 14px 0; color: var(--ink-muted); font-size: 14px; }
+  .pillbar { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 }
+  .pill { font-family:var(--mono); font-size:11px; padding:4px 10px; border-radius:20px; background:var(--cream-dark); color:var(--ink-muted) }
+  @media (max-width: 860px){ .wrap{ grid-template-columns:1fr } nav.toc{ display:none } .two,.three,.vs{ grid-template-columns:1fr } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="eyebrow">NewLeaf · Verification Desk · Design Doc</div>
+    <h1>How Discover Works</h1>
+    <p>The end-to-end approach behind <code>/api/recommend</code> — what Discover analyses, how it decides, why it says "no trade" honestly, and how a narrow exception lets a few high-quality stocks trade against a falling-knife veto.</p>
+    <div class="meta-row">
+      <span>ENGINE <b>Deterministic — no LLM decides</b></span>
+      <span>SURFACES <b>Discover · Scanner · Movement-Range (shared code)</b></span>
+      <span>STATE <b>Post-bugfix · live</b></span>
+      <span>UPDATED <b>2026-07-11</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+<nav class="toc">
+  <div class="toc-title">Contents</div>
+  <a href="#what">0 · What Discover is</a>
+  <a href="#principles">1 · Design principles</a>
+  <a href="#pipeline">2 · The pipeline</a>
+  <a href="#checks">2✓ · Checks per discovery</a>
+  <a href="#snapshot">3 · Step 1 — Snapshot</a>
+  <a href="#cascade">4 · Step 2 — Gate cascade</a>
+  <a href="#confidence">5 · Blended confidence</a>
+  <a href="#reaction">6 · Step 3 — Reaction gate</a>
+  <a href="#exception">7 · The falling-knife exception</a>
+  <a href="#decision">8 · Steps 4–5 — Legs & decision</a>
+  <a href="#fixed">9 · What the bugfixes changed</a>
+  <a href="#orcl">10 · Worked example</a>
+  <a href="#next">11 · Next steps</a>
+</nav>
+
+<main>
+
+<!-- 0 -->
+<section id="what">
+  <h2><span class="num">0</span>What Discover is</h2>
+  <div class="rule"></div>
+  <p class="lead">Discover takes a ticker, builds a real-time snapshot (price, RSI/MACD/ADX, gamma walls, IV term structure), scores the setup, and recommends a specific options structure — or honestly stands aside — all before the user places a trade. The recommendation is produced by a <b>deterministic engine</b>; an LLM is used only to narrate, never to decide.</p>
+  <div class="pillbar">
+    <span class="pill">Real-time data</span><span class="pill">Gamma-wall analysis</span><span class="pill">6-strategy selection</span>
+    <span class="pill">Deterministic legs</span><span class="pill">Pass/fail decision</span><span class="pill">8-agent verify (optional)</span>
+  </div>
+  <p>The same decision code runs on three surfaces — the Discover page (<code>/api/recommend</code>), the batch Scanner (report pipeline), and Movement-&amp;-Range — so they can never disagree about the same name.</p>
+</section>
+
+<!-- 1 -->
+<section id="principles">
+  <h2><span class="num">1</span>Design principles</h2>
+  <div class="rule"></div>
+  <div class="three">
+    <div class="card"><h3 style="margin-top:0">Deterministic</h3><p style="font-size:13.5px;margin:0">Gates, thresholds and legs are pure functions of the data. Reproducible, testable, and identical across surfaces. The LLM narrates the "why", it does not pick the trade.</p></div>
+    <div class="card"><h3 style="margin-top:0">Honest NO_TRADE</h3><p style="font-size:13.5px;margin:0">Standing aside is a first-class outcome that <i>explains itself</i> and suggests an alternative. Better an honest "wait" than a recommended trade with a mislabelled risk profile.</p></div>
+    <div class="card"><h3 style="margin-top:0">Defined risk</h3><p style="font-size:13.5px;margin:0">Every structure the engine ships has a capped, known loss. Exceptions to conservative rules are only ever allowed to produce defined-risk trades.</p></div>
+  </div>
+  <div class="card warn"><p style="margin:0"><b>Not yet outcome-validated.</b> The blend weights and thresholds are intuition-based. The engine <i>discriminates</i> — it produces a genuine regime-matched strategy distribution — but no accuracy or win-rate claim is earned until it is measured against real <code>pick_outcomes</code> P&amp;L. Copy and UI must say "AI-recommended, regime-matched", never "proven" or "X% win rate".</p></div>
+</section>
+
+<!-- 2 -->
+<section id="pipeline">
+  <h2><span class="num">2</span>The pipeline, end to end</h2>
+  <div class="rule"></div>
+  <p class="lead"><span class="filepath">api/src/routes/ai.ts → /api/recommend</span></p>
+  <div class="flow">
+    <div class="step"><div class="dot"><b>1</b><i></i></div><div class="body">
+      <h4>Snapshot &amp; technicals</h4>
+      <p>Fetch price, 400 daily bars, options chain, Nasdaq/Yahoo OI. Compute RSI/MACD/ADX/Bollinger/SMAs and the gamma walls (put wall, call wall, GEX by strike, blended confidence).</p>
+    </div></div>
+    <div class="step"><div class="dot"><b>2</b><i></i></div><div class="body">
+      <h4>Engine — select &amp; score (gate cascade)</h4>
+      <p>First-pass-wins gate cascade picks one of six structures and scores it 0–100. Direction is derived from SMA alignment, so a crashed name reads <b>neutral</b>.</p>
+    </div></div>
+    <div class="step"><div class="dot"><b>3</b><i></i></div><div class="body">
+      <h4>Reaction gate — overlay</h4>
+      <p>Runs an independent support/resistance + regime analysis. It can <b>veto</b> (falling knife), <b>promote</b> a neutral pick to a directional spread, apply the <b>quality bounce exception</b>, or keep the pick.</p>
+    </div></div>
+    <div class="step"><div class="dot"><b>4</b><i></i></div><div class="body">
+      <h4>Leg builder — construct (fail-closed)</h4>
+      <p>Turns the chosen strategy into concrete strikes from the live chain. Legs must pass topology validation or nothing ships (a mislabelled structure is worse than NO_TRADE).</p>
+    </div></div>
+    <div class="step"><div class="dot"><b>5</b></div><div class="body">
+      <h4>Decision engine — go / no-go</h4>
+      <p>Prices the structure, classifies the regime, and returns APPROVED / WATCHLIST / NO_TRADE with a plain-English rationale and a risk plan.</p>
+    </div></div>
+  </div>
+</section>
+
+<!-- 2.5 -->
+<section id="checks">
+  <h2><span class="num">2✓</span>By the numbers — how much we check per stock</h2>
+  <div class="rule"></div>
+  <p class="lead">One ticker through Discover is not one model call — it is a chain of deterministic checks and computations. Here is the full count for a single discovery.</p>
+
+  <div class="card tinted" style="text-align:center;padding:26px">
+    <div style="font-family:var(--mono);font-size:44px;font-weight:700;color:var(--forest);line-height:1">≈ 80</div>
+    <div style="font-size:13px;color:var(--ink-muted);margin-top:4px">deterministic checks &amp; computations across 5 stages — before a single recommendation</div>
+    <div style="font-size:13px;color:var(--teal-text);margin-top:8px"><b>+ 8</b> specialist AI agents in the optional Verify pass (§8 / step 6)</div>
+  </div>
+
+  <table>
+    <thead><tr><th>Stage</th><th>What we check / compute</th><th>Count</th></tr></thead>
+    <tbody>
+      <tr><td><b>1 · Data</b></td><td>4 data pulls (snapshot · 400 bars · chain · OI) + Yahoo-chain fallback gate + OI/IV merge</td><td>6</td></tr>
+      <tr><td><b>1 · Technicals</b></td><td>RSI · MACD line · MACD signal · ADX · Bollinger width · Bollinger %B · SMA 20/50/100/200 · realized-vol · ATR · support/resistance</td><td>12</td></tr>
+      <tr><td><b>2 · Gamma &amp; confidence</b></td><td>put wall · call wall · gamma flip + 4 blended-confidence signals (OI · GEX · delta · volume)</td><td>7</td></tr>
+      <tr><td><b>2 · Score</b></td><td>3 pillars (gamma · IV · trend)</td><td>3</td></tr>
+      <tr><td><b>2 · Gate cascade</b></td><td>5 strategy gates with 14 sub-conditions (condor 3 · BWB 4 · directional 3 · calendar 3 · fallback 1)</td><td>14</td></tr>
+      <tr><td><b>2 · Direction &amp; premium</b></td><td>getDirection (3 conditions) + premium-adequacy penalty (IV/RV)</td><td>4</td></tr>
+      <tr><td><b>3 · Reaction — zones</b></td><td>gatherLevels → clusterLevels → analyzeZone → nearestScoreableZones</td><td>4</td></tr>
+      <tr><td><b>3 · Reaction — regime</b></td><td>5-level precedence + trend-into-zone (knife) flag + mapBias</td><td>7</td></tr>
+      <tr><td><b>3 · Quality exception</b></td><td>4 guards / 8 sub-conditions (eligible · oversold · wall-intact ×3 · stand-aside/knife ×3)</td><td>8</td></tr>
+      <tr><td><b>4 · Leg builder</b></td><td>per-leg snap rules (side · liquidity · 15% distance) + topology validation (basic · rule · uniform-qty · label-match)</td><td>7</td></tr>
+      <tr><td><b>5 · Decision</b></td><td>constructible · priced · prices-as-debit · premium-too-thin · thin-premium · score/gates · data-sufficiency ×3 · in-band · reaction veto</td><td>11</td></tr>
+      <tr><td colspan="2" style="text-align:right"><b>Deterministic total</b></td><td><b>≈ 83</b></td></tr>
+      <tr><td><b>6 · Verify</b> <span class="badge b-b">optional</span></td><td>8-agent pipeline: setup · technicals · gamma · IV/skew · strategy-fit · risk · portfolio · adversarial soundness</td><td>8 agents</td></tr>
+    </tbody>
+  </table>
+  <div class="callout">Of the ~83, roughly <b>30 are genuine pass/fail gates &amp; validations</b> (the gate cascade, the exception guards, leg topology, the decision go/no-go set); the rest are the computed signals those gates read. Every one is deterministic and reproducible — the same ticker at the same prices yields the same checks, on every surface.</div>
+</section>
+
+<!-- 3 -->
+<section id="snapshot">
+  <h2><span class="num">3</span>Step 1 — What we measure</h2>
+  <div class="rule"></div>
+  <div class="two">
+    <div class="card"><h3 style="margin-top:0">Gamma walls</h3><p style="font-size:13.5px;margin:0">Where dealers hold their largest hedging positions. Put wall (floor) and call wall (ceiling) bound the expected range; the gamma flip separates the positive-gamma (mean-reverting) zone above from the negative-gamma (trend-amplifying) zone below.</p></div>
+    <div class="card"><h3 style="margin-top:0">Technicals</h3><p style="font-size:13.5px;margin:0">RSI (oversold/overbought), ADX (trend strength), MACD (momentum), Bollinger width (volatility regime), SMA alignment (direction). All computed from 250+ real closes — not LLM-generated.</p></div>
+    <div class="card"><h3 style="margin-top:0">IV &amp; skew</h3><p style="font-size:13.5px;margin:0">ATM IV, IV/RV ratio (are options cheap or rich vs realized movement?), term structure (backwardation flags near-term event risk), expected move.</p></div>
+    <div class="card"><h3 style="margin-top:0">Liquidity</h3><p style="font-size:13.5px;margin:0">Open interest and volume per strike — how meaningful the walls are and whether the strikes actually trade.</p></div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="cascade">
+  <h2><span class="num">4</span>Step 2 — The gate cascade</h2>
+  <div class="rule"></div>
+  <p class="lead"><span class="filepath">strategy-engine.cjs → selectStrategy()</span> · First matching gate wins. This is what the UI shows as "GATE CASCADE".</p>
+  <table>
+    <thead><tr><th>#</th><th>Strategy</th><th>Fires when</th><th>Thesis</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><b>Iron Condor</b></td><td>conf ≥ 0.60 · band 3–15% · contracts ≥ 50</td><td>Strong walls, tight range → sell both sides.</td></tr>
+      <tr><td>2</td><td><b>Broken-Wing Butterfly</b></td><td>band &gt; 15% (or &gt;10% + IV≥25) · conf ≥ 0.30 · contracts ≥ 50 · quality bonus ≥ 5</td><td>Range too wide for a condor; asymmetric credit anchored to one wall.</td></tr>
+      <tr><td>3</td><td><b>Directional spread</b><br><span class="filepath">bull_put / bear_call</span></td><td>direction bullish/bearish · conf &gt; 0.40 · trend not weak</td><td>Real lean with a defended wall behind it.</td></tr>
+      <tr><td>4</td><td><b>Calendar spread</b></td><td>neutral · ATM IV &lt; 25 · IV/RV &lt; 1.0</td><td>Cheap vol, no trend → buy vega, sell theta.</td></tr>
+      <tr><td>5</td><td><b>Iron Butterfly</b> <span class="badge b-b">fallback</span></td><td>nothing earlier fired</td><td>Range-bound / moderate / no-edge — a correct default, not a failure.</td></tr>
+    </tbody>
+  </table>
+  <div class="callout"><b>The neutral trap.</b> Direction comes only from SMA alignment (<code>trendScore</code>). A crashed mega-cap has "mixed" SMAs → <code>trendScore = 0.50</code> → neutral → the directional gate (3) can never fire. So it lands on a BWB, which then prices as a debit and is rejected. That trap is exactly what the reaction gate's exception addresses for quality names.</div>
+  <p><b>Premium-adequacy penalty.</b> A credit structure is down-scored when IV/RV &lt; 1 (you're paid too little for the risk). Same penalty on both surfaces, so Discover and Scanner agree on the number. <span class="filepath">strategy-engine.cjs → premiumRiskPenalty()</span></p>
+</section>
+
+<!-- 5 -->
+<section id="confidence">
+  <h2><span class="num">5</span>How "confidence" is built (and the two numbers)</h2>
+  <div class="rule"></div>
+  <p class="lead">Gate-driving confidence blends four signals of whether the walls are meaningful.</p>
+  <pre><span class="k">blendedConfidence</span> = 0.40 × OI-absolute   <span class="c">// enough OI for walls to matter</span>
+                  + 0.35 × GEX-relative  <span class="c">// gamma concentrated at the walls</span>
+                  + 0.15 × delta         <span class="c">// positions actively building  (DARK today)</span>
+                  + 0.10 × volume        <span class="c">// strikes actually trading</span></pre>
+  <div class="card blue"><p style="margin:0"><b>Two different "confidence" numbers — don't confuse them.</b> The UI's <b>86%</b> "walls strongly defended" is this <i>blended</i> figure. The engine's <b>gate</b> and the reaction gate's wall-intact check use <code>analysis.confidence_score</code> — a <i>separate</i> gamma-reliability metric (the one the condor needs ≥0.60). For ORCL that is <b>0.551</b>, not 0.86. Thresholds in this doc refer to <code>confidence_score</code>.</p></div>
+  <p><b>Delta is DARK.</b> <code>DELTA_DARK = true</code>: the delta term is excluded from the gate-driving blend because Discover can't read OI history yet, and letting it in would make the same ticker score differently on different surfaces. Delta is still computed for diagnostics. Re-enabling it is a next-step (§11).</p>
+</section>
+
+<!-- 6 -->
+<section id="reaction">
+  <h2><span class="num">6</span>Step 3 — The reaction gate</h2>
+  <div class="rule"></div>
+  <p class="lead"><span class="filepath">shared/reaction/gate.cjs · regime.cjs · bias.cjs</span> — an independent second opinion built from price action around support/resistance zones.</p>
+
+  <h3>6.1 — Regime classification (precedence order)</h3>
+  <ol>
+    <li><b>Breakout / breakdown</b> — spot beyond a scoreable zone.</li>
+    <li><b>Trending</b> — ADX &gt; 25. Runs <i>before</i> proximity. If price is trending <i>into</i> a nearby zone, the <code>trendIntoZone</code> flag is set (down-into-support = falling knife; up-into-resistance = melt-up).</li>
+    <li><b>Testing support / resistance</b> — spot within 0.5×ATR of a tested rail.</li>
+    <li><b>Range-bound</b> — high containment + low ADX.</li>
+    <li><b>Unclear</b> — confidence capped at 40.</li>
+  </ol>
+
+  <h3>6.2 — The three outcomes</h3>
+  <div class="three">
+    <div class="card red"><h3 style="margin-top:0">Veto</h3><p style="font-size:13px;margin:0"><span class="badge b-red">falling_knife</span><br>Trend into support + bias <code>no_trade</code> → do not sell premium into a falling knife. (Up-into-resistance → <code>melt_up_into_resistance</code>.)</p></div>
+    <div class="card tinted"><h3 style="margin-top:0">Promote</h3><p style="font-size:13px;margin:0"><span class="badge b-a">directional</span><br>A neutral gamma pick + a directional bias at a tested rail → promote to the aligned spread (bull_put / bear_call / bull_call / bear_put).</p></div>
+    <div class="card"><h3 style="margin-top:0">Keep</h3><p style="font-size:13px;margin:0"><span class="badge b-b">no change</span><br>No veto, no directional bias, or an already-directional pick → keep the engine's gamma pick untouched.</p></div>
+  </div>
+  <p>Distance matters: <b>testing</b> a rail (within 0.5×ATR) is APPROVED-eligible; merely <b>approaching</b> it caps the result to WATCHLIST.</p>
+</section>
+
+<!-- 7 -->
+<section id="exception">
+  <h2><span class="num">7</span>The falling-knife exception — for a few quality stocks</h2>
+  <div class="rule"></div>
+  <p class="lead">Not every oversold downtrend is a knife. A durable mega-cap sitting above a defended wall mean-reverts — its selloff is usually sentiment, not a broken business. For <b>those names only</b>, we reinterpret the setup as a bounce.</p>
+
+  <h3>7.1 — Who is eligible</h3>
+  <p>Two groups earn the "oversold dip is a bounce" assumption — <b>25 names</b> total:</p>
+  <ul>
+    <li><b>21 mega-cap stocks</b> — <code>marketCapTier === 'mega'</code>: durable, wide-moat single names (the Magnificent-7 + other blue chips).</li>
+    <li><b>4 blue-chip ETFs</b> — <code>SPY</code>, <code>QQQ</code> (equity indices) and <code>GLD</code>, <code>SLV</code> (major commodities): baskets that structurally mean-revert.</li>
+  </ul>
+  <p>A small speculative single name's oversold dip is a genuine knife and gets <b>no</b> exception.</p>
+  <div class="callout">Eligibility gates <i>who can qualify</i>; the guards below decide <i>whether it fires</i>. Being on the list alone does nothing — the oversold + defended-wall guards still apply to every name.</div>
+  <div class="card warn"><p style="margin:0"><b>ETF nuance.</b> <code>SPY</code>/<code>QQQ</code> are the most reliable mean-reverters there are (broad equity indices with upward drift). <code>GLD</code>/<code>SLV</code> mean-revert too, but commodities can stay depressed for extended trends — so the structural-break guard (<code>spot &gt; put wall</code>) and the defined-risk debit vertical matter most for those two.</p></div>
+
+  <p><b>The 21 mega-cap stocks.</b> <code>Q</code> is the <code>qualityScore</code> (0–100) carried in the metadata; it is informational for this exception — eligibility keys only on the <code>mega</code> tier.</p>
+  <table>
+    <thead><tr><th>Ticker</th><th>Company</th><th>Q</th><th>Ticker</th><th>Company</th><th>Q</th></tr></thead>
+    <tbody>
+      <tr><td><code>AAPL</code></td><td>Apple</td><td>90</td>            <td><code>ORCL</code></td><td>Oracle</td><td>80</td></tr>
+      <tr><td><code>MSFT</code></td><td>Microsoft</td><td>90</td>        <td><code>ADBE</code></td><td>Adobe</td><td>80</td></tr>
+      <tr><td><code>NVDA</code></td><td>NVIDIA</td><td>88</td>           <td><code>CRM</code></td><td>Salesforce</td><td>80</td></tr>
+      <tr><td><code>GOOG</code></td><td>Alphabet</td><td>88</td>         <td><code>CSCO</code></td><td>Cisco</td><td>80</td></tr>
+      <tr><td><code>AMZN</code></td><td>Amazon</td><td>85</td>           <td><code>MU</code></td><td>Micron</td><td>80</td></tr>
+      <tr><td><code>META</code></td><td>Meta Platforms</td><td>85</td>   <td><code>NFLX</code></td><td>Netflix</td><td>80</td></tr>
+      <tr><td><code>TSM</code></td><td>TSMC</td><td>85</td>             <td><code>AVGO</code></td><td>Broadcom</td><td>82</td></tr>
+      <tr><td><code>ASML</code></td><td>ASML Holding</td><td>85</td>     <td><code>INTC</code></td><td>Intel</td><td>75</td></tr>
+      <tr><td><code>V</code></td><td>Visa</td><td>85</td>               <td><code>HSBC</code></td><td>HSBC Holdings</td><td>75</td></tr>
+      <tr><td><code>MA</code></td><td>Mastercard</td><td>85</td>        <td><code>TSLA</code></td><td>Tesla</td><td>72</td></tr>
+      <tr><td><code>BRK.B</code></td><td>Berkshire Hathaway</td><td>85</td> <td></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+  <p><b>+ 4 blue-chip ETFs</b> (eligible via a separate list, not the mega tier):</p>
+  <table>
+    <thead><tr><th>Ticker</th><th>Instrument</th><th>Class</th></tr></thead>
+    <tbody>
+      <tr><td><code>SPY</code></td><td>S&amp;P 500 ETF</td><td>Equity index — most reliable mean-reverter</td></tr>
+      <tr><td><code>QQQ</code></td><td>Nasdaq 100 ETF</td><td>Equity index — most reliable mean-reverter</td></tr>
+      <tr><td><code>GLD</code></td><td>Gold Trust ETF</td><td>Commodity — can trend longer; lean on the wall guard</td></tr>
+      <tr><td><code>SLV</code></td><td>Silver Trust ETF</td><td>Commodity — can trend longer; lean on the wall guard</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.2 — The guards (all must hold)</h3>
+  <pre><span class="c">// shared/reaction/gate.cjs → computeReactionGate()</span>
+oversold         = rsi &lt; <span class="g">30</span>
+wallDefended     = putWall != null && spot &gt; putWall && confidence_score &gt;= <span class="g">0.45</span>
+standAsideOrKnife = (trendIntoZone && side==='support') || bias==='no_trade' || regime==='testing_support'
+
+<span class="k">qualityBounce</span> = isQualityName && oversold && wallDefended && standAsideOrKnife</pre>
+  <table>
+    <thead><tr><th>Guard</th><th>Protects against</th></tr></thead>
+    <tbody>
+      <tr><td><b>oversold</b> (RSI&lt;30)</td><td>Firing when there is no extreme to revert from.</td></tr>
+      <tr><td><b>spot &gt; put wall</b></td><td>The structural-break line. Below the defended wall = the real structure change → exception voids, even for a mega-cap.</td></tr>
+      <tr><td><b>confidence_score ≥ 0.45</b></td><td>A noisy/thin wall reading. 0.45 is moderate — below the condor's 0.60 (a bounce needs no condor-grade wall) but above the 0.30 "weak" cutoff.</td></tr>
+      <tr><td><b>stand-aside / knife setup</b></td><td>Manufacturing a trade where the engine already has a view. We only override where there is something to override.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.3 — What it does</h3>
+  <p>When <code>qualityBounce</code> is true and the engine's pick is neutral, <code>applyReactionGate</code> — <b>before</b> the knife veto — promotes it to a <b>bull call spread</b>: a debit vertical, buy near ATM, sell toward the call wall. Flagged <code>quality_mean_reversion</code>. It never flips an already-directional pick.</p>
+  <div class="card tinted"><p style="margin:0"><b>Why a debit vertical?</b> It matches the cheap IV/RV (buys vol rather than selling under-priced premium), its max loss <i>is</i> the debit ("lose a little, live to re-buy"), and being a debit it sidesteps the <code>prices_as_debit</code> rejection that kills the credit BWB. One structure resolves all three constraints. See the companion doc <span class="filepath">QUALITY_MEAN_REVERSION_DESIGN.html</span>.</p></div>
+
+  <h3>7.4 — Adding or removing a stock</h3>
+  <p>The list lives in <b>two hand-synced places</b> — the Scanner reads one, the Discover API reads the other. <b>Both must be changed together</b>, or the two surfaces will disagree on who is eligible.</p>
+  <table>
+    <thead><tr><th>#</th><th>File</th><th>Read by</th><th>What to change</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><span class="filepath">pipeline/company-metadata.json</span></td><td>Scanner (pipeline)</td><td>Set the ticker's <code>"marketCapTier": "mega"</code> (and a <code>"qualityScore"</code>). This is the source of truth.</td></tr>
+      <tr><td>2</td><td><span class="filepath">web/scanner/company-metadata.json</span></td><td>(mirror)</td><td>Same edit — keep the two metadata copies identical.</td></tr>
+      <tr><td>3</td><td><span class="filepath">api/src/tools/quality-names.ts</span></td><td>Discover API</td><td>Add/remove the ticker in the <code>MEGA_CAPS</code> set (the API has no metadata file, so it mirrors the same names).</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:14px"><b>For a blue-chip ETF</b> (SPY/QQQ/GLD/SLV style), the tier field doesn't apply — edit the hardcoded ETF set in <b>both</b> code files instead:</p>
+  <table>
+    <thead><tr><th>File</th><th>Edit</th></tr></thead>
+    <tbody>
+      <tr><td><span class="filepath">api/src/tools/quality-names.ts</span></td><td>Add/remove the ticker in the <code>MEAN_REVERT_ETFS</code> set.</td></tr>
+      <tr><td><span class="filepath">pipeline/newleaf-pipeline.js</span></td><td>Add/remove the ticker in the <code>MEAN_REVERT_ETFS</code> const.</td></tr>
+    </tbody>
+  </table>
+
+  <h4 style="font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-muted);margin:16px 0 6px">To ADD a stock (e.g. QCOM)</h4>
+  <pre><span class="c">// 1 + 2 — in BOTH company-metadata.json files, on the QCOM entry:</span>
+<span class="s">"QCOM"</span>: { <span class="s">"name"</span>: <span class="s">"Qualcomm"</span>, <span class="s">"sector"</span>: <span class="s">"Technology"</span>,
+          <span class="g">"marketCapTier": "mega", "qualityScore": 80</span> }
+
+<span class="c">// 3 — in api/src/tools/quality-names.ts, add to the MEGA_CAPS set:</span>
+<span class="k">const</span> MEGA_CAPS = <span class="k">new</span> Set([ ... , <span class="g">'QCOM'</span> ]);</pre>
+
+  <h4 style="font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-muted);margin:16px 0 6px">To REMOVE a stock</h4>
+  <p style="margin:0 0 12px">Reverse the above: delete <code>marketCapTier</code>/<code>qualityScore</code> from both metadata files (or set the tier to <code>large</code>), and delete the ticker from <code>MEGA_CAPS</code>. It immediately stops qualifying — the guards still gate everyone else.</p>
+
+  <div class="card warn"><p style="margin:0"><b>Then deploy — the edits are inert until you do.</b> Discover: <code>cd api &amp;&amp; npm run deploy</code> (Firebase functions). Scanner: restart the daemon <code>launchctl kickstart -k gui/$(id -u)/com.newleaf.pipeline</code>. Verify by re-running the ticker in Discover. <b>Why two lists?</b> The Cloud Function ships without the metadata JSON, so the API keeps its own mirror; collapsing these into a single build-time source is next-step §11.5.</p></div>
+</section>
+
+<!-- 8 -->
+<section id="decision">
+  <h2><span class="num">8</span>Steps 4–5 — Legs &amp; the final decision</h2>
+  <div class="rule"></div>
+  <h3>Fail-closed leg construction</h3>
+  <p><span class="filepath">leg-builder.ts</span> snaps the chosen strategy to real strikes (nearest liquid, hard 15% distance cap, correct side). The result must pass <code>validateStrategy</code> topology — a symmetric fly returned as a BWB, or a debit vertical with crossed strikes, ships <b>nothing</b> rather than a mislabelled risk profile.</p>
+  <h3>Go / no-go</h3>
+  <p><span class="filepath">decision-engine.ts → buildDecision()</span> prices the structure from chain mids and returns one of:</p>
+  <table>
+    <thead><tr><th>Outcome</th><th>When</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-green">APPROVED</span></td><td>Score + gates pass, legs constructible, structure prices correctly, at a tested rail.</td></tr>
+      <tr><td><span class="badge b-blue">WATCHLIST</span></td><td>Sound but approaching (not testing) the rail, or a credit with thin premium (IV/RV &lt; 1.0).</td></tr>
+      <tr><td><span class="badge b-red">NO_TRADE</span></td><td>Falling-knife veto · legs not constructible · a <b>credit</b> structure that prices as a debit (<code>prices_as_debit</code>) · premium too thin (IV/RV &lt; 0.85).</td></tr>
+    </tbody>
+  </table>
+  <p class="callout">Credit-only rejections apply only to <code>CREDIT_DEFINED_RISK</code> structures (condor, iron-fly, BWB, bull-put, bear-call). A <b>debit</b> vertical — like the quality-bounce bull call spread — is exempt by design.</p>
+</section>
+
+<!-- 9 -->
+<section id="fixed">
+  <h2><span class="num">9</span>What the bugfixes changed</h2>
+  <div class="rule"></div>
+  <p class="lead">Wiring the exception surfaced three defects. All three are fixed and deployed — this is the current, correct state.</p>
+  <table>
+    <thead><tr><th>Area</th><th>Was</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-b">Data</span> Mega tags</td><td>12 names; META, AAPL, MSFT, NVDA, GOOG, AMZN, TSLA, AVGO, NFLX untagged → excluded</td><td>21 names, backfilled in <span class="filepath">company-metadata.json</span> (pipeline + web/scanner)</td></tr>
+      <tr><td><span class="badge b-b">Threshold</span> Wall floor</td><td>0.60 (condor grade) blocked ORCL's 0.551</td><td>0.45 (moderate) — a bounce needs no condor-strength wall</td></tr>
+      <tr><td><span class="badge b-red">Build</span> Validator</td><td><code>cp -r src/shared dist/shared</code> nested → deployed validator frozen without <code>bull_call_spread</code>/<code>bear_put_spread</code> rules → promotions failed → NO_TRADE</td><td><code>rm -rf dist/shared</code> before copy — validator always fresh</td></tr>
+    </tbody>
+  </table>
+  <div class="card red"><p style="margin:0"><b>The build bug was latent and wide.</b> It silently broke <i>every</i> promotion to a bull-call / bear-put debit vertical across all surfaces — not just the new exception. The quality bounce was simply the first thing to routinely emit one, which exposed a freeze that had been there since the first deploy.</p></div>
+</section>
+
+<!-- 10 -->
+<section id="orcl">
+  <h2><span class="num">10</span>Worked example — ORCL</h2>
+  <div class="rule"></div>
+  <p class="lead">Spot $140.85 · RSI 12.4 · ADX 34.3 · IV/RV 0.86 · put wall $125 (5,686 put OI) · call wall $152.5 · confidence 0.551.</p>
+  <div class="vs">
+    <div><h4>Before the fixes</h4>
+      <p style="font-size:13.5px"><span class="badge b-red">NO_TRADE · prices_as_debit</span></p>
+      <ul style="font-size:13px;margin-left:16px">
+        <li>Direction neutral → BWB.</li>
+        <li>BWB (a credit) prices as a net debit on this chain.</li>
+        <li>Decision engine rejects it. Stand aside.</li>
+      </ul></div>
+    <div><h4>Now</h4>
+      <p style="font-size:13.5px"><span class="badge b-green">WATCHLIST · Bull Call Spread</span></p>
+      <ul style="font-size:13px;margin-left:16px">
+        <li><code>qualityBounce = true</code> — mega ✓ · RSI 12.4 ✓ · $140.85 &gt; $125 &amp; 0.551 ≥ 0.45 ✓ · bias no_trade ✓.</li>
+        <li>Promoted → bull call spread <b>long 141 / short 152.5</b>.</li>
+        <li>Debit vertical → clears the debit rejection. Approaching support → WATCHLIST.</li>
+      </ul></div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section id="next">
+  <h2><span class="num">11</span>Next steps</h2>
+  <div class="rule"></div>
+  <p class="lead">Ordered by leverage. Nothing here is required for correctness today — it is how we make the engine sharper and prove it works.</p>
+  <table>
+    <thead><tr><th>#</th><th>Step</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><b>Outcome tracking (Layer 1)</b> — capture the engine snapshot + realized P&amp;L per pick</td><td>Nothing here is validated. Real <code>pick_outcomes</code> is the prerequisite for tuning every threshold below and for any accuracy claim.</td></tr>
+      <tr><td>2</td><td><b>Tune the exception against outcomes</b> — the 0.45 wall floor, the RSI&lt;30 cutoff, WATCHLIST-vs-APPROVED capping</td><td>These are intuition values. Once outcomes exist, tune them to actual bounce hit-rate, not judgement.</td></tr>
+      <tr><td>3</td><td><b>Un-dark delta</b> — give the API OI-history (from R2/Firestore), then flip <code>DELTA_DARK = false</code> on both surfaces together</td><td>Restores 15% of the confidence blend and a real directional-positioning signal; re-verify scanner === discover after.</td></tr>
+      <tr><td>4</td><td><b>Per-wall "defended" signal</b> — use put-wall OI concentration instead of the band-diluted <code>confidence_score</code></td><td>ORCL's wall (5,686 OI) is clearly defended even though the blended score is dragged down by the wide band. A wall-specific signal is a truer guard than a floor on a diluted metric.</td></tr>
+      <tr><td>5</td><td><b>Single source for the mega set</b> — derive the API's list from <code>company-metadata.json</code> at build instead of the hand-mirrored <code>quality-names.ts</code></td><td>Two hand-synced lists can drift. One source removes the maintenance coupling.</td></tr>
+      <tr><td>6</td><td><b>Widen the quality tier</b> — consider large-cap (not just mega) after the mega set is validated</td><td>Deliberately started narrow. Expand only once mega-cap behaviour is proven on real outcomes.</td></tr>
+      <tr><td>7</td><td><b>Surface the exception in the UI</b> — show the <code>quality_mean_reversion</code> flag + rationale on the Discover card</td><td>Users should see <i>why</i> a name that looks like a knife is being recommended — transparency builds trust in the override.</td></tr>
+    </tbody>
+  </table>
+  <div class="card warn"><p style="margin:0"><b>Guiding rule for all of the above:</b> the exception stays confined to <b>defined-risk</b> structures until outcomes prove it. Widen scope only with data, never with narrative.</p></div>
+</section>
+
+</main>
+</div>
+</body>
+</html>
