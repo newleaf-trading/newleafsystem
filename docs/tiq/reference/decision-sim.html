@@ -1,0 +1,372 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Wednesday — NewLeaf Decision Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --forest:#16271C; --forest2:#1E3326; --forest3:#27412F;
+    --gold:#B68F3E; --gold-lt:#E7D9AE;
+    --cream:#F2ECDD; --card:#FBF8F0;
+    --terra:#BC5B43; --teal:#3E7C6A;
+    --display:'Fraunces',Georgia,serif; --body:'DM Sans',system-ui,sans-serif; --mono:'Space Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--forest);color:var(--cream);font-family:var(--body);min-height:100vh;
+       display:flex;justify-content:center;padding:24px 18px 60px;-webkit-font-smoothing:antialiased}
+  .stage{width:100%;max-width:640px}
+
+  /* ---- the tape: signature element. a live ledger that never resets. ---- */
+  .tape{background:var(--forest2);border:1px solid var(--forest3);border-radius:10px;
+        padding:14px 16px;margin-bottom:26px;font-family:var(--mono);font-size:12px}
+  .tape-row{display:flex;justify-content:space-between;padding:4px 0;color:#8FA396;letter-spacing:.04em}
+  .tape-row b{color:var(--cream);font-weight:400}
+  .tape-row.pos b{color:var(--teal)}
+  .tape-row.neg b{color:var(--terra)}
+  .tape-hr{height:1px;background:var(--forest3);margin:8px 0}
+  .clock{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+         color:var(--gold);margin-bottom:12px}
+
+  .beat{font-size:15px;line-height:1.7;color:#C9D6CC;margin-bottom:16px}
+  .beat em{color:var(--gold-lt);font-style:normal}
+  h1{font-family:var(--display);font-size:26px;line-height:1.3;font-weight:600;margin-bottom:22px;letter-spacing:-.01em}
+
+  .opts{display:flex;flex-direction:column;gap:9px}
+  .opt{background:var(--card);color:#243027;border:none;border-radius:10px;padding:15px 17px;
+       text-align:left;font-family:var(--body);font-size:15px;line-height:1.5;cursor:pointer;
+       transition:transform .12s ease, box-shadow .18s ease}
+  .opt:hover{transform:translateX(3px);box-shadow:-3px 0 0 var(--gold)}
+  .opt:focus-visible{outline:2px solid var(--gold-lt);outline-offset:3px}
+
+  /* ---- confidence gate ---- */
+  .conf{margin-top:4px}
+  .conf-q{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+          color:var(--gold);margin-bottom:12px}
+  .conf-pick{background:var(--forest2);border:1px solid var(--forest3);color:var(--cream);
+             border-radius:8px;padding:13px 16px;font-family:var(--body);font-size:14.5px;
+             cursor:pointer;text-align:left;width:100%;margin-bottom:8px;transition:border-color .15s}
+  .conf-pick:hover{border-color:var(--gold)}
+  .conf-pick:focus-visible{outline:2px solid var(--gold-lt);outline-offset:2px}
+  .chosen{background:var(--forest2);border-left:2px solid var(--teal);border-radius:0 8px 8px 0;
+          padding:13px 16px;margin-bottom:20px;font-size:14.5px;line-height:1.5;color:#D8E2DA}
+  .chosen span{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;
+               text-transform:uppercase;color:#8FA396;margin-bottom:5px}
+
+  /* ---- result ---- */
+  .center{text-align:center}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+  .big{font-family:var(--display);font-size:38px;line-height:1.12;font-weight:600;letter-spacing:-.02em;margin:14px 0 16px}
+  .lede{font-size:16px;line-height:1.65;color:#C9D6CC;max-width:460px;margin:0 auto 28px}
+  .num{font-family:var(--display);font-size:56px;font-weight:600;color:var(--gold-lt);line-height:1}
+  .cap{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:#8FA396;margin-top:6px}
+
+  .split{display:flex;gap:10px;margin:30px 0 6px}
+  .half{flex:1;background:var(--forest2);border:1px solid var(--forest3);border-radius:10px;padding:18px 14px}
+  .half .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8FA396;margin-bottom:9px;line-height:1.5}
+  .half .val{font-family:var(--display);font-size:29px;font-weight:600}
+  .val.pos{color:var(--teal)} .val.neg{color:var(--terra)}
+
+  .callout{text-align:left;background:var(--forest2);border:1px solid var(--forest3);border-radius:10px;padding:20px;margin-top:12px}
+  .callout.hot{border-color:var(--terra)}
+  .callout h3{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-weight:400;margin-bottom:9px}
+  .callout.hot h3{color:var(--terra)}
+  .callout p{font-size:15px;line-height:1.65;color:#D8E2DA}
+  .callout p+p{margin-top:11px}
+
+  .log{text-align:left;margin-top:12px}
+  .log-row{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--forest3);font-size:14px;line-height:1.55}
+  .log-row:last-child{border:none}
+  .log-t{font-family:var(--mono);font-size:11px;color:#8FA396;flex:0 0 62px;padding-top:2px}
+  .log-b{flex:1;color:#C9D6CC}
+  .log-b i{display:block;font-style:normal;font-family:var(--mono);font-size:11px;color:var(--gold);margin-top:4px;letter-spacing:.05em}
+  .log-s{font-family:var(--mono);font-size:12px;color:var(--gold-lt);flex:0 0 42px;text-align:right;padding-top:2px}
+
+  .next,.again{border:none;border-radius:8px;padding:14px 26px;font-family:var(--body);font-weight:700;
+        font-size:15px;cursor:pointer;margin-top:22px}
+  .next{background:var(--gold);color:var(--forest)}
+  .next:hover{background:var(--gold-lt)}
+  .again{background:none;border:1px solid var(--forest3);color:#8FA396;font-weight:400}
+  .again:hover{border-color:var(--gold);color:var(--gold-lt)}
+  .next:focus-visible,.again:focus-visible{outline:2px solid var(--cream);outline-offset:3px}
+  .footnote{font-size:12.5px;line-height:1.65;color:#7C8F83;margin-top:24px;text-align:left}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  @media (max-width:480px){h1{font-size:22px}.big{font-size:30px}.split{flex-direction:column}}
+</style>
+
+<div class="stage" id="stage"></div>
+
+<script>
+/* ==================================================================
+   NewLeaf Decision Simulator — "The Wednesday"
+
+   Design commitments, all deliberate:
+
+   1. THE MARKET PATH IS SCRIPTED AND DOES NOT REACT TO THE USER.
+      If the market responded to choices, good decisions would sometimes
+      be punished by the engine and the score would be noise. Fixed path,
+      variable user state. This is what makes it an assessment.
+
+   2. SCORING IS PATH-DEPENDENT. The same action scores differently
+      depending on the position you are actually in. You cannot pattern
+      match "the disciplined answer" because it depends on your history.
+
+   3. DECISIONS AND OUTCOMES ARE SCORED SEPARATELY, then shown to
+      diverge. That divergence is the lesson.
+
+   4. THE SAME DECISION LOG IS REPLAYED AGAINST AN ALTERNATE SCRIPT.
+      Deterministic, cheap, and the only honest way to show someone
+      that they got away with something.
+
+   All P&L is computed deterministically from a mark table. No model
+   calls anywhere in the scoring path.
+================================================================== */
+
+const ACCOUNT = 50000;
+const CREDIT  = 0.80;     // per spread, 5-wide SPY put spread
+const WIDTH   = 5;
+const RULES   = { takeProfit: 0.50, stopMultiple: 2.0, maxRiskPct: 0.02 };
+
+// Scripted mark tables. SCRIPT_A is what happens. SCRIPT_B is the
+// Wednesday that was equally likely and did not occur.
+const SCRIPT_A = { t0:0.35, t1:1.05, t2:1.50, t3:0.55, t4:0.20 };
+const SCRIPT_B = { t0:0.35, t1:1.05, t2:1.50, t3:2.30, t4:3.80 };
+
+const CONF = [
+  {label:'Certain — I do this every time', v:1.00},
+  {label:'Fairly confident', v:0.70},
+  {label:'Not sure, it could go either way', v:0.40},
+  {label:'Honestly guessing', v:0.15}
+];
+
+// ------------------------------------------------------------------
+// Scenario. Each node reads state, so branches differ by history.
+// ------------------------------------------------------------------
+const NODES = [
+{
+  id:'n1', t:'t0', clock:'Wednesday 09:34',
+  beat:()=>`Your SPY <em>590/585 put spread</em> is showing <em>56% of maximum profit</em> with 12 days left. You sold three of them for 0.80.<br><br>Your written rule closes at 50%. That trigger fired yesterday.<br><br>The Fed decides at 19:00 tonight.`,
+  q:'What do you do?',
+  opts:[
+    {t:'Close all three. The rule fired', p:10, act:'closeAll'},
+    {t:'Close two, run one through the Fed', p:5, act:'closeTwo'},
+    {t:'Hold all three. The setup still looks fine', p:2, act:'hold', breaks:'ignored the profit rule'},
+    {t:'Hold, and sell two more while premium is rich', p:0, act:'addTwo', breaks:'added risk into an event'}]
+},
+{
+  id:'n2', t:'t1', clock:'Wednesday 19:14',
+  beat:s=>s.lots.length===0
+    ? `Hawkish hold. SPY dropped <em>1.8%</em> in nine minutes. Volatility is bid across the board — the spread you closed this morning at 0.35 is now marked <em>1.05</em>.<br><br>You are flat. Premium is the richest it has been in three weeks.`
+    : `Hawkish hold. SPY dropped <em>1.8%</em>. Your spread is marked <em>1.05</em> against the 0.80 you collected — you are down <em>${money(unreal(s,'t1'))}</em>.<br><br>Your stop sits at 2× credit, which is 1.60. You are not there yet.`,
+  q:s=>s.lots.length===0 ? 'Premium is rich and you have capital. What do you do?' : 'What do you do?',
+  opts:s=>s.lots.length===0
+    ? [{t:'Nothing tonight. Look tomorrow with a plan', p:10, act:'none'},
+       {t:'Open a new spread — this is exactly the volatility you wait for', p:4, act:'reopen', breaks:'entered outside your session plan'},
+       {t:'Re-enter the same trade you just closed, bigger', p:0, act:'reopenBig', breaks:'re-entered a closed trade on impulse'}]
+    : [{t:'Hold. The stop has not been hit', p:10, act:'hold'},
+       {t:'Close now and take the loss', p:5, act:'closeAll'},
+       {t:'Roll down and out for a small credit', p:3, act:'hold', breaks:'improvised a roll under stress'},
+       {t:'Sell two more at 1.05 — better prices than this morning', p:0, act:'addTwo', breaks:'added to a losing position'}]
+},
+{
+  id:'n3', t:'t2', clock:'Thursday 09:31',
+  beat:s=>s.lots.length===0
+    ? `SPY opened another 0.7% lower. The spread you are no longer in is marked <em>1.50</em>.<br><br>Had you held from yesterday morning you would be down roughly ${money(-(1.50-CREDIT)*100*3)}. You are flat and it is 09:31.`
+    : `SPY gapped lower again. Your spread is marked <em>1.50</em>. That is <em>1.88× the credit</em>. Your stop is 2×.<br><br>Open loss: <em>${money(unreal(s,'t2'))}</em>. That is ${(Math.abs(unreal(s,'t2'))/ACCOUNT*100).toFixed(1)}% of the account.`,
+  q:'What do you do?',
+  opts:s=>s.lots.length===0
+    ? [{t:'Stay flat. You have no setup and no plan for today', p:10, act:'none'},
+       {t:'Sell a spread now — this is the fattest premium of the month', p:3, act:'reopen', breaks:'entered without a written plan'},
+       {t:'Sell a spread, double size, to make back yesterday', p:0, act:'reopenBig', breaks:'sized up to recover'}]
+    : [{t:'Hold. The stop is 2× and this is 1.88×', p:10, act:'hold'},
+       {t:'Close now. It is close enough to the stop', p:6, act:'closeAll'},
+       {t:'Sell three more at 1.50. The premium is enormous', p:0, act:'addThree', breaks:'doubled a loser inside a drawdown'}]
+},
+{
+  id:'n4', t:'t2', clock:'Thursday 11:06',
+  beat:s=>`NVDA is up <em>6.2%</em> on a supply headline. It was not on your watchlist this morning. Its options went from cheap to expensive in an hour.<br><br>${s.breaks.length ? 'You are already having a difficult two days.' : 'Your day has gone to plan so far.'} Your group chat has four entries posted in it.`,
+  q:'What do you do?',
+  opts:[
+    {t:'Nothing. Write down what a valid NVDA entry would look like and set an alert', p:10, act:'none'},
+    {t:'Take a small defined-risk position to be involved', p:2, act:'none', breaks:'took an unplanned trade'},
+    {t:'Sell an NVDA spread — the premium is genuinely rich now', p:4, act:'none', breaks:'entered off-plan'},
+    {t:'Wait for it to come back to this morning\'s price, then buy', p:2, act:'none', breaks:'anchored to a stale price'}]
+},
+{
+  id:'n5', t:'t3', clock:'Thursday 16:02',
+  beat:s=>{
+    const st = s.lots.length ? `Your position is marked <em>0.55</em>. Open P&L <em>${money(unreal(s,'t3'))}</em>.` : `You are flat. Realised so far: <em>${money(s.cash)}</em>.`;
+    return `SPY reversed hard into the close and finished the day up 1.4%. ${st}<br><br>Tomorrow you have three setups on the watchlist. Your standard risk is 2% per trade.`;
+  },
+  q:'How do you size tomorrow?',
+  opts:s=>[
+    {t:'2% per trade. Same as always', p:10, act:'none'},
+    {t:'1% until the week settles down', p:6, act:'none'},
+    {t:s.breaks.length ? 'Skip tomorrow entirely and review the last two days' : 'Skip tomorrow — quit while ahead', p:s.breaks.length?8:4, act:'none'},
+    {t:'3% — the last two days cost me and there is ground to make up', p:0, act:'none', breaks:'sized up to recover losses'}]
+}];
+
+// ------------------------------------------------------------------
+// Engine
+// ------------------------------------------------------------------
+let S, node, tStart, stage=document.getElementById('stage');
+
+function fresh(){ return { lots:[{n:3, credit:CREDIT}], cash:0, breaks:[], log:[], i:0 }; }
+function unreal(s, t, script=SCRIPT_A){
+  return s.lots.reduce((a,l)=>a + (l.credit - script[t]) * 100 * l.n, 0);
+}
+function money(x){ const v=Math.round(x); return (v<0?'−£':'£') + Math.abs(v).toLocaleString(); }
+
+function apply(act, t, s, script=SCRIPT_A){
+  const m = script[t];
+  if(act==='closeAll'){ s.cash += unreal(s,t,script); s.lots=[]; }
+  else if(act==='closeTwo'){ const l=s.lots[0]; if(l){ s.cash += (l.credit-m)*100*2; l.n-=2; if(l.n<=0) s.lots=[]; } }
+  else if(act==='addTwo')   s.lots.push({n:2, credit:m});
+  else if(act==='addThree') s.lots.push({n:3, credit:m});
+  else if(act==='reopen')   s.lots.push({n:3, credit:m});
+  else if(act==='reopenBig')s.lots.push({n:6, credit:m});
+}
+
+// Replay a decision log against any script. This is the counterfactual.
+function replay(log, script){
+  const s = fresh();
+  for(const e of log){ apply(e.act, e.t, s, script); }
+  s.cash += unreal(s, 't4', script);
+  return s.cash;
+}
+
+start();
+
+function start(){
+  S = fresh(); node = 0;
+  stage.innerHTML = `<div class="center">
+    <div class="kicker">NewLeaf Decision Simulator</div>
+    <div class="big">The Wednesday</div>
+    <p class="lede">Two trading days. Five decisions. The market does not care what you choose — the path is already written and it runs the same either way.<br><br>You start with one open position and £50,000.</p>
+    <button class="next" id="go">Open the session</button></div>`;
+  document.getElementById('go').onclick = render;
+}
+
+function render(){
+  const N = NODES[node];
+  const beat = typeof N.beat === 'function' ? N.beat(S) : N.beat;
+  const q    = typeof N.q    === 'function' ? N.q(S)    : N.q;
+  const opts = typeof N.opts === 'function' ? N.opts(S) : N.opts;
+  tStart = Date.now();
+
+  stage.innerHTML = tape() + `
+    <div class="clock">${N.clock} · decision ${node+1} of ${NODES.length}</div>
+    <p class="beat">${beat}</p>
+    <h1>${q}</h1>
+    <div class="opts">${opts.map((o,k)=>`<button class="opt" data-k="${k}">${o.t}</button>`).join('')}</div>`;
+
+  stage.querySelectorAll('.opt').forEach(b=>b.onclick=()=>askConfidence(opts[+b.dataset.k], N));
+}
+
+function tape(){
+  const held = S.lots.reduce((a,l)=>a+l.n,0);
+  const risk = S.lots.reduce((a,l)=>a+(WIDTH-l.credit)*100*l.n, 0);
+  return `<div class="tape">
+    <div class="tape-row"><span>Account</span><b>£${ACCOUNT.toLocaleString()}</b></div>
+    <div class="tape-row"><span>Open contracts</span><b>${held || '—'}</b></div>
+    <div class="tape-row"><span>Capital at risk</span><b>${risk?money(risk)+' · '+(risk/ACCOUNT*100).toFixed(1)+'%':'—'}</b></div>
+    <div class="tape-hr"></div>
+    <div class="tape-row ${S.cash>0?'pos':S.cash<0?'neg':''}"><span>Realised</span><b>${money(S.cash)}</b></div>
+    <div class="tape-row"><span>Rules broken</span><b>${S.breaks.length||'0'}</b></div>
+  </div>`;
+}
+
+function askConfidence(opt, N){
+  const secs = (Date.now()-tStart)/1000;
+  stage.innerHTML = tape() + `
+    <div class="clock">${N.clock}</div>
+    <div class="chosen"><span>Your decision</span>${opt.t}</div>
+    <div class="conf">
+      <div class="conf-q">Before you see what happens — how confident are you?</div>
+      ${CONF.map((c,k)=>`<button class="conf-pick" data-k="${k}">${c.label}</button>`).join('')}
+    </div>`;
+  stage.querySelectorAll('.conf-pick').forEach(b=>
+    b.onclick=()=>commit(opt, N, CONF[+b.dataset.k], secs));
+}
+
+function commit(opt, N, conf, secs){
+  if(opt.breaks) S.breaks.push(opt.breaks);
+  S.log.push({ id:N.id, t:N.t, clock:N.clock, act:opt.act, text:opt.t,
+               pts:opt.p, conf:conf.v, confLabel:conf.label, secs });
+  apply(opt.act, N.t, S);
+  node++;
+  node < NODES.length ? render() : finish();
+}
+
+// ------------------------------------------------------------------
+// Result
+// ------------------------------------------------------------------
+function finish(){
+  const maxPts = NODES.length * 10;
+  const pts    = S.log.reduce((a,e)=>a+e.pts, 0);
+
+  const pnlA = replay(S.log, SCRIPT_A);
+  const pnlB = replay(S.log, SCRIPT_B);
+
+  // Calibration: mean gap between stated confidence and decision quality.
+  const gap  = S.log.reduce((a,e)=>a + (e.conf - e.pts/10), 0) / S.log.length;
+  const cal  = gap >  0.22 ? 'Overconfident'
+             : gap < -0.22 ? 'Underconfident' : 'Well calibrated';
+  const calNote = {
+    'Overconfident'  : 'You were surest on the decisions that scored worst. That pattern is the one most strongly associated with large drawdowns, because certainty is what removes the brake before size goes on.',
+    'Underconfident' : 'You second-guessed decisions you actually got right. The cost of that is invisible: trades not taken, size left on the table, and a slow drift toward doing nothing.',
+    'Well calibrated': 'Your confidence tracked your decision quality. You were unsure where the answer was genuinely close and sure where it was not — that is the rarest result on this screen.'
+  }[cal];
+
+  const secs = S.log.map(e=>e.secs).sort((a,b)=>a-b);
+  const med  = secs[Math.floor(secs.length/2)];
+  const pace = med < 6 ? 'Fast' : med > 32 ? 'Deliberate' : 'Measured';
+
+  const lucky = pts <= maxPts*0.5 && pnlA > 0;
+  const robbed = pts >= maxPts*0.7 && pnlA < pnlB;
+
+  stage.innerHTML = `<div class="center">
+    <div class="kicker">Session complete · Friday close</div>
+    <div class="num">${pts}<span style="font-size:26px;color:#8FA396">/${maxPts}</span></div>
+    <div class="cap">Decision score</div>
+
+    <div class="split">
+      <div class="half"><div class="lbl">What happened<br>Script A</div>
+        <div class="val ${pnlA>=0?'pos':'neg'}">${money(pnlA)}</div></div>
+      <div class="half"><div class="lbl">Same decisions,<br>the other Wednesday</div>
+        <div class="val ${pnlB>=0?'pos':'neg'}">${money(pnlB)}</div></div>
+    </div>
+
+    ${lucky ? `<div class="callout hot"><h3>You were rescued, not right</h3>
+      <p>Your decisions scored ${pts} out of ${maxPts} and you finished ${money(pnlA)}. That gap is not skill, it is a market that happened to turn.</p>
+      <p>The right-hand column is the same decision log run against a Wednesday where SPY kept falling instead of reversing. Nothing about your choices changes. Only the tape does.</p></div>` : ''}
+
+    ${robbed ? `<div class="callout"><h3>Good decisions, worse outcome</h3>
+      <p>You scored ${pts} out of ${maxPts} and still finished behind the alternate path. This happens, and it is the exact moment most traders abandon a working process.</p>
+      <p>A decision is judged by what you knew when you made it. You knew enough.</p></div>` : ''}
+
+    <div class="callout"><h3>Confidence — ${cal}</h3><p>${calNote}</p></div>
+    <div class="callout"><h3>Pace — ${pace}</h3>
+      <p>Median ${med.toFixed(0)} seconds per decision${
+        pace==='Fast' ? '. Under six seconds means recognition, not reasoning. That is efficient when your rules are sound and dangerous when they are not.'
+      : pace==='Deliberate' ? '. Long deliberation on decisions your own rules already answer is a sign the rules are not yet trusted.'
+      : '. You spent time where the decisions were close and moved quickly where they were not.'}</p></div>
+
+    ${S.breaks.length ? `<div class="callout hot"><h3>Rules broken — ${S.breaks.length}</h3>
+      <p>${S.breaks.map(b=>b.charAt(0).toUpperCase()+b.slice(1)).join('. ')}.</p></div>` : ''}
+
+    <div class="callout"><h3>Your session</h3><div class="log">
+      ${S.log.map(e=>`<div class="log-row">
+        <div class="log-t">${e.clock.split(' ')[1]}</div>
+        <div class="log-b">${e.text}<i>${e.confLabel} · ${e.secs.toFixed(0)}s</i></div>
+        <div class="log-s">${e.pts}/10</div></div>`).join('')}
+    </div></div>
+
+    <p class="footnote">The market path in this session was fixed before you started and did not respond to anything you did. That is deliberate: if the tape reacted to your choices, a good decision could be punished by the engine and the score would measure luck. Both columns above run the identical decision log — only the script differs.</p>
+    <button class="again" id="again">Run it again</button></div>`;
+
+  document.getElementById('again').onclick = start;
+}
+</script>
