@@ -1,0 +1,200 @@
+{
+  "bank_id": "newleaf-instinct-v1",
+  "version": "1.0.0",
+  "type": "frontdoor",
+  "_source": "Question text, insight lines and archetype copy extracted verbatim from docs/tiq/reference/instinct-quiz.html. Do not rewrite — the wording is deliberate (spec-frontdoor.md §2–4). consensus values are placeholders until n>500 real telemetry per item (spec-frontdoor §3).",
+  "scale": {
+    "formula": "round(100 * points_earned / points_available)",
+    "note": "Honest, no floor — the 50-point floor was removed in spec-simulator.md §1. Archetype is the headline; the number sits below it."
+  },
+  "axes": ["Knowledge", "Emotion", "System", "Risk", "Market"],
+  "archetypes": {
+    "discipline": {
+      "name": "The Architect",
+      "line": "You build the thing and then you trust the thing. Your instinct is to decide once, in advance, when it is cheap to think clearly — and then let the plan do the work.",
+      "edge": "You are unusually resistant to the two failure modes that end most accounts: sizing up after losses, and abandoning an exit rule because the chart looked good.",
+      "grow": "Your risk is a plan you have outgrown. Process traders under-revise. Book a quarterly review of the rules themselves, with data, so discipline never becomes inertia."
+    },
+    "patience": {
+      "name": "The Sniper",
+      "line": "You are comfortable doing nothing, which is rarer than it sounds. Most of the money in defined-risk trading is made by the trades you decline.",
+      "edge": "You do not confuse activity with progress. A missed move costs you nothing; you understand that a bad entry costs you twice.",
+      "grow": "Waiting can quietly become avoiding. Track your No Trade log — if your rejection rate climbs after losses rather than staying flat, that is fear wearing patience as a disguise."
+    },
+    "curiosity": {
+      "name": "The Scholar",
+      "line": "You reach for the mechanism. When something moves, you want to know which part of the machine did it — and that instinct compounds faster than any single strategy.",
+      "edge": "You correctly attribute outcomes. That is the skill that separates traders who learn from twenty trades from traders who repeat one trade twenty times.",
+      "grow": "Knowing is not sizing. The most dangerous profile in the data is strong mechanics with loose risk limits. Put the position-sizing rule in writing before the next trade."
+    },
+    "caution": {
+      "name": "The Guardian",
+      "line": "Your first question is always what this could cost. That instinct is the reason people are still trading five years in, and it does not get enough credit.",
+      "edge": "Capital preservation is not a consolation prize. An edge only pays out to someone who is still there, and you are built to still be there.",
+      "grow": "Under-sizing is a real cost, just an invisible one. If your risk per trade is well under your own limit, you are paying for comfort in returns you never see."
+    },
+    "balance": {
+      "name": "The Diplomat",
+      "line": "You look for the version of the decision that keeps options open. Half in, half out, hedge the rest — you are drawn to answers that do not commit fully.",
+      "edge": "You rarely take a catastrophic position, and you adapt faster than traders anchored to one method.",
+      "grow": "Splitting the difference is sometimes wisdom and sometimes an unwillingness to be wrong in public. Ask of each compromise: would I have chosen this in advance, or only now?"
+    },
+    "conviction": {
+      "name": "The Storm Chaser",
+      "line": "You lean in. When you see it, you want size on, and you would rather be decisively wrong than passively right. That energy is the raw material of every good trader.",
+      "edge": "You act. Plenty of people analyse a setup perfectly and never take it — you are not one of them, and that is not a small thing.",
+      "grow": "Conviction is the most expensive trait in trading when it is unbounded and the most valuable when it is. Same instinct, one rule: decide your size before you look at the chart."
+    }
+  },
+  "questions": [
+    {
+      "id": "FD-01",
+      "axis": "System",
+      "setup": "Your checklist has eight rules. Tonight seven of them pass.",
+      "stem": "What do you do?",
+      "options": [
+        { "text": "Skip it and wait for a cleaner one", "points": 10, "consensus": 34, "trait": "discipline" },
+        { "text": "Take it, but at half your usual size", "points": 5, "consensus": 41, "trait": "caution" },
+        { "text": "Take it normally — seven out of eight is strong", "points": 2, "consensus": 19, "trait": "conviction" },
+        { "text": "Take it and note which rule failed", "points": 6, "consensus": 6, "trait": "curiosity" }
+      ],
+      "insight": "<b>Most traders size down. The stronger move is to skip.</b> Size controls how much you lose, not whether the trade was worth taking. A rule you can halve your way past is not a rule."
+    },
+    {
+      "id": "FD-02",
+      "axis": "Emotion",
+      "setup": "A trade is up 60% of its maximum profit. Your written rule says close at 50%. The chart still looks great.",
+      "stem": "What do you do?",
+      "options": [
+        { "text": "Close it. The rule already fired", "points": 10, "consensus": 38, "trait": "discipline" },
+        { "text": "Close half, let half run", "points": 5, "consensus": 33, "trait": "balance" },
+        { "text": "Hold. Conditions are clearly favourable", "points": 2, "consensus": 29, "trait": "conviction" }
+      ],
+      "insight": "<b>The last 40% of a trade is the worst-paid part of it.</b> You wait longest, risk most, and earn least. Everyone knows this. Almost nobody closes."
+    },
+    {
+      "id": "FD-03",
+      "axis": "Risk",
+      "setup": "£20,000 account. You risk 2% per trade. This trade can lose £200 per contract.",
+      "stem": "How many contracts?",
+      "options": [
+        { "text": "2", "points": 10, "consensus": 52, "trait": "discipline" },
+        { "text": "4", "points": 3, "consensus": 22, "trait": "conviction" },
+        { "text": "1 — round down to be safe", "points": 7, "consensus": 18, "trait": "caution" },
+        { "text": "Depends how good the setup looks", "points": 0, "consensus": 8, "trait": "conviction" }
+      ],
+      "insight": "<b>£400 is the budget, £200 is the risk, so two.</b> The last option is the interesting one: the moment size depends on how a setup feels, you no longer have a risk limit — you have a suggestion."
+    },
+    {
+      "id": "FD-04",
+      "axis": "Emotion",
+      "setup": "A stock jumps 8% on news. It was not on your watchlist. Your group chat is lighting up.",
+      "stem": "What do you do?",
+      "options": [
+        { "text": "Nothing. Write down what a valid entry would look like", "points": 10, "consensus": 28, "trait": "patience" },
+        { "text": "Take a small position to be involved", "points": 3, "consensus": 31, "trait": "conviction" },
+        { "text": "Wait for it to pull back to where it started", "points": 4, "consensus": 27, "trait": "caution" },
+        { "text": "Sell premium — the options got expensive", "points": 6, "consensus": 14, "trait": "curiosity" }
+      ],
+      "insight": "<b>A missed move is not a signal.</b> Small size does not repair a missing reason. And that old price is just a number you remember — the company is worth something different now."
+    },
+    {
+      "id": "FD-05",
+      "axis": "Knowledge",
+      "setup": "You sold an option. A week passes. The stock has not moved and nothing else changed.",
+      "stem": "Good or bad for you?",
+      "options": [
+        { "text": "Good — the option is worth less than when you sold it", "points": 10, "consensus": 64, "trait": "curiosity" },
+        { "text": "Bad — you need movement to make money", "points": 2, "consensus": 16, "trait": "conviction" },
+        { "text": "Neutral — nothing happened", "points": 3, "consensus": 20, "trait": "caution" }
+      ],
+      "insight": "<b>Time is the seller's ally.</b> An option is partly a bet on what might still happen. Every day that passes, there is less \"still\" left to pay for."
+    },
+    {
+      "id": "FD-06",
+      "axis": "Emotion",
+      "setup": "You paid £2.10 for a position. It is now worth £1.05. You are holding on until it gets back to £2.10.",
+      "stem": "What is the honest question to ask yourself?",
+      "options": [
+        { "text": "Would I buy this today at £1.05?", "points": 10, "consensus": 44, "trait": "discipline" },
+        { "text": "How much time is left for it to recover?", "points": 5, "consensus": 32, "trait": "curiosity" },
+        { "text": "Should I buy more to lower my average?", "points": 0, "consensus": 24, "trait": "conviction" }
+      ],
+      "insight": "<b>The market has never heard of your entry price.</b> If you would not open this position now, then holding it is a decision you are making by not deciding."
+    },
+    {
+      "id": "FD-07",
+      "axis": "Risk",
+      "setup": "You hold short put spreads on NVDA, AMD and MSFT. Each one is 1.5% of your account.",
+      "stem": "How many positions is that, really?",
+      "options": [
+        { "text": "Close to one. In a tech selloff they all move together", "points": 10, "consensus": 47, "trait": "discipline" },
+        { "text": "Three. They are separate companies", "points": 2, "consensus": 29, "trait": "conviction" },
+        { "text": "Three, but I would count it as about two", "points": 6, "consensus": 24, "trait": "balance" }
+      ],
+      "insight": "<b>Diversification is about what things do in a bad week, not how many tickers you own.</b> Correlation has a nasty habit of arriving exactly when you needed it not to."
+    },
+    {
+      "id": "FD-08",
+      "axis": "Market",
+      "setup": "A company reports earnings tomorrow. Its options are unusually expensive today.",
+      "stem": "Why?",
+      "options": [
+        { "text": "The market is pricing in a big move, direction unknown", "points": 10, "consensus": 57, "trait": "curiosity" },
+        { "text": "The market expects the stock to go up", "points": 2, "consensus": 21, "trait": "conviction" },
+        { "text": "Demand from traders buying ahead of the event", "points": 6, "consensus": 22, "trait": "balance" }
+      ],
+      "insight": "<b>Expensive options mean \"something is about to happen\", not \"something good is about to happen\".</b> Price says how far. It does not say which way."
+    },
+    {
+      "id": "FD-09",
+      "axis": "Emotion",
+      "setup": "You just took the biggest loss of your month. It is 10:04am. Your hands are a bit shaky.",
+      "stem": "What do you do?",
+      "options": [
+        { "text": "Stop for the day and write up what happened", "points": 10, "consensus": 36, "trait": "discipline" },
+        { "text": "Keep trading, but at half size", "points": 5, "consensus": 34, "trait": "balance" },
+        { "text": "Re-enter the same idea at a better price", "points": 0, "consensus": 19, "trait": "conviction" },
+        { "text": "Flip and trade the other direction", "points": 0, "consensus": 11, "trait": "conviction" }
+      ],
+      "insight": "<b>The hour after a big loss is when your decisions are worst and your urge to make them is strongest.</b> That is not a coincidence — it is the whole problem."
+    },
+    {
+      "id": "FD-10",
+      "axis": "Knowledge",
+      "setup": "A stock trades at 100. You sold the 95 put and collected £1.50.",
+      "stem": "Below what price do you start losing money at expiry?",
+      "options": [
+        { "text": "£93.50", "points": 10, "consensus": 49, "trait": "curiosity" },
+        { "text": "£95.00", "points": 5, "consensus": 33, "trait": "caution" },
+        { "text": "£96.50", "points": 2, "consensus": 18, "trait": "balance" }
+      ],
+      "insight": "<b>The premium you collected is your cushion.</b> You are fine down to 95, and then the £1.50 absorbs the next £1.50 of damage. Below £93.50 it starts costing you."
+    },
+    {
+      "id": "FD-11",
+      "axis": "System",
+      "setup": "You have found a setup you like and you are about to place the order.",
+      "stem": "When do you decide where you will get out?",
+      "options": [
+        { "text": "Before the order goes in", "points": 10, "consensus": 58, "trait": "discipline" },
+        { "text": "Once you see how it opens", "points": 2, "consensus": 19, "trait": "conviction" },
+        { "text": "You set a target now and figure out the loss side later", "points": 4, "consensus": 23, "trait": "balance" }
+      ],
+      "insight": "<b>An exit decided while you are holding risk is not an exit, it is a reaction.</b> Most traders know the answer here and still do it in the wrong order. Being right on paper is the easy half."
+    },
+    {
+      "id": "FD-12",
+      "axis": "Emotion",
+      "setup": "Seven winners in a row. You are up 14% in six weeks. Your system was modelled at a 68% win rate; you are running at 74%.",
+      "stem": "Do you increase your size?",
+      "options": [
+        { "text": "No. Seven trades cannot tell you your edge improved", "points": 10, "consensus": 41, "trait": "discipline" },
+        { "text": "No, but only because the rules say not to", "points": 7, "consensus": 26, "trait": "caution" },
+        { "text": "Yes, modestly — the results support it", "points": 2, "consensus": 26, "trait": "conviction" },
+        { "text": "Yes. Press an edge when it is working", "points": 0, "consensus": 7, "trait": "conviction" }
+      ],
+      "insight": "<b>Over 40-odd trades, a 74% rate and a 68% rate are the same rate wearing different clothes.</b> The cost of being wrong about that is paid in real drawdown, which is why the streak feels like evidence and is not."
+    }
+  ]
+}

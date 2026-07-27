@@ -153,7 +153,7 @@ FMP / IBKR  →  binder  →  template  →  invariant checks  →  Verification
 **Invariant checks (deterministic, must pass).**
 1. Arithmetic in stem and explanation agrees with the bound data
 2. Exactly one choice holds the maximum `choice_points`
-3. The gap between best and second-best is ≥ 3 points, otherwise the item is ambiguous
+3. The gap between best and second-best is ≥ 3 points, otherwise the item is ambiguous — **knowledge-type items only; behavioural EQ items are exempt**, since §1.1 grades their distractors close on purpose (a small gap there is design, not ambiguity). Enforced this way in `scripts/tiq/validate-bank.js`.
 4. No distractor is factually true as written
 5. Bound market data is internally coherent — front IV > back IV when the template asserts an event, IV rank ∈ [0,100], implied move consistent with the quoted straddle
 6. Answer key position is randomised

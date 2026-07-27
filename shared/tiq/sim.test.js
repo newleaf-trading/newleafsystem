@@ -33,6 +33,7 @@ const PATHS = {
 const log = (p) => p.map(([act, tt, points]) => ({ act, t: tt, points }));
 
 console.log('\nP&L oracle — spec-simulator.md §5.3 (Script A = what happened, Script B = the other Wednesday)');
+// replay returns integer pence; oracle values are pounds at the presentation boundary.
 const CASES = [
   ['Close at 09:34, stay flat',            'closeFlat',   135,   135],
   ['Hold all three, never break a rule',   'holdAll',     180,  -900],
@@ -42,27 +43,29 @@ const CASES = [
 ];
 for (const [name, key, a, b] of CASES) {
   t(name, () => {
-    near(SIM.replay(WEDNESDAY, log(PATHS[key]), WEDNESDAY.scripts.A), a);
-    near(SIM.replay(WEDNESDAY, log(PATHS[key]), WEDNESDAY.scripts.B), b);
+    // Exact now — integer pence, not float pounds. strictEqual, not near.
+    assert.strictEqual(SIM.toPounds(SIM.replay(WEDNESDAY, log(PATHS[key]), WEDNESDAY.scripts.A)), a);
+    assert.strictEqual(SIM.toPounds(SIM.replay(WEDNESDAY, log(PATHS[key]), WEDNESDAY.scripts.B)), b);
   });
 }
 
 console.log('\npath-independence — the key oracle row: close early, stay flat');
-t('replay is IDENTICAL across Script A and Script B (log cannot leak into the market path)', () => {
+t('replay is EXACTLY IDENTICAL across Script A and Script B (log cannot leak into the market path)', () => {
   const l = log(PATHS.closeFlat);
-  const a = SIM.replay(WEDNESDAY, l, WEDNESDAY.scripts.A);
+  const a = SIM.replay(WEDNESDAY, l, WEDNESDAY.scripts.A); // integer pence
   const b = SIM.replay(WEDNESDAY, l, WEDNESDAY.scripts.B);
-  // Equality is the assertion. If the decision log ever influenced the market
-  // script, a and b would diverge — this is the guard that proves it never does.
+  // Equality is exact by construction — both are the same integer, so this
+  // holds for any scenario, not just when the operation order happens to match.
   assert.strictEqual(a, b);
-  near(a, 135); near(b, 135);
+  assert.ok(Number.isInteger(a), 'P&L is integer pence, got ' + a);
+  assert.strictEqual(SIM.toPounds(a), 135);
 });
 
 console.log('\nscoreRun');
 t('good decisions buy path-independence (holdAll differs; closeFlat does not)', () => {
   const flat = SIM.scoreRun(WEDNESDAY, log(PATHS.closeFlat));
-  near(flat.pnl.A, 135); near(flat.pnl.B, 135);
-  assert.strictEqual(flat.pnl.A, flat.pnl.B); // identical across scripts → robust
+  assert.strictEqual(SIM.toPounds(flat.pnl.A), 135);
+  assert.strictEqual(flat.pnl.A, flat.pnl.B); // identical across scripts, exact → robust
 });
 t('flags "rescued not right": low score, positive outcome on the script that happened', () => {
   const r = SIM.scoreRun(WEDNESDAY, log(PATHS.reckless)); // 4/50 decisions, still positive on A
@@ -79,23 +82,31 @@ t('decisionScore sums the logged points', () => {
 });
 
 console.log('\napply / state (pure — input log is never mutated)');
-t('closeAll realises open P&L and flattens', () => {
+t('closeAll realises open P&L and flattens (cash is integer pence)', () => {
   const s0 = SIM.freshState(WEDNESDAY);
   const s1 = SIM.applyAction(s0, 'closeAll', 't0', WEDNESDAY.scripts.A);
-  near(s1.cash, (0.80 - 0.35) * 100 * 3); // 135
+  assert.strictEqual(s1.cash, 13500);          // £135 in pence, exact
+  assert.strictEqual(SIM.toPounds(s1.cash), 135);
   assert.strictEqual(s1.lots.length, 0);
   assert.strictEqual(s0.lots.length, 1, 'original state untouched');
+  assert.strictEqual(s0.cash, 0, 'original cash untouched');
 });
 t('closeTwo partially reduces the front lot', () => {
   const s0 = SIM.freshState(WEDNESDAY);
   const s1 = SIM.applyAction(s0, 'closeTwo', 't0', WEDNESDAY.scripts.A);
-  near(s1.cash, (0.80 - 0.35) * 100 * 2); // 90
+  assert.strictEqual(SIM.toPounds(s1.cash), 90);
   assert.strictEqual(s1.lots[0].n, 1);
 });
-t('unrealised is scripted, not reactive', () => {
+t('unrealised is scripted, not reactive (integer pence)', () => {
   const s0 = SIM.freshState(WEDNESDAY);
-  near(SIM.unrealised(s0, WEDNESDAY.scripts.A, 't4'), (0.80 - 0.20) * 100 * 3); // 180
-  near(SIM.unrealised(s0, WEDNESDAY.scripts.B, 't4'), (0.80 - 3.80) * 100 * 3); // -900
+  assert.strictEqual(SIM.unrealised(s0, WEDNESDAY.scripts.A, 't4'), 18000);  // +£180
+  assert.strictEqual(SIM.unrealised(s0, WEDNESDAY.scripts.B, 't4'), -90000); // -£900
+});
+t('legPence / toPence / toPounds round-trip cleanly on 2dp prices', () => {
+  assert.strictEqual(SIM.toPence(2.30), 230); // float-noise price rounds exactly
+  assert.strictEqual(SIM.toPence(3.80), 380);
+  assert.strictEqual(SIM.legPence(0.80, 0.35, 3), 13500);
+  assert.strictEqual(SIM.toPounds(13500), 135);
 });
 
 console.log('\nreplay is a pure counterfactual (does not consume the log)', () => {});

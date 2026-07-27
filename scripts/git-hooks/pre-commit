@@ -1,0 +1,11 @@
+#!/bin/sh
+# TIQ pre-commit guard (no-CI decision — see docs/tiq deploy topology).
+# Blocks a commit when TIQ content violates its invariants, or when the browser
+# engine copy has drifted from the shared/tiq sources.
+#
+# Enable in a fresh clone with:  git config core.hooksPath scripts/git-hooks
+# Bypass a single commit (use sparingly) with:  git commit --no-verify
+
+set -e
+node scripts/tiq/validate-bank.js
+node shared/tiq/sync.js --check

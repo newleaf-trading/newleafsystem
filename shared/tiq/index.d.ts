@@ -68,11 +68,16 @@ export function impulsivityIndex(entries: Array<{ responseSeconds: number; estSe
 export function consistencyIndex(pairs: Array<{ gainScore: number; lossScore: number }>):
   { index: number | null; penalty: number; nPairs: number };
 
-// ── sim ──────────────────────────────────────────────────────────────────────
+// ── sim (money is INTEGER PENCE; call toPounds at the presentation boundary) ───
 export const CONTRACT_MULTIPLIER: number;
+export function toPence(pounds: number): number;
+export function toPounds(pence: number): number;
+export function legPence(credit: number, mark: number, n: number): number;
 export function freshState(scenario: any): any;
+/** Open P&L in integer pence. */
 export function unrealised(state: any, script: Record<string, number>, t: string): number;
 export function applyAction(state: any, action: string, t: string, script: Record<string, number>): any;
+/** Final realised P&L in integer pence. Equal logs on different scripts return equal integers. */
 export function replay(scenario: any, log: Array<{ act: string; t: string }>, script: Record<string, number>): number;
 export function decisionScore(log: Array<{ points?: number; pts?: number }>): number;
 export function scoreRun(scenario: any, log: any[], opts?: { primaryScript?: string }):

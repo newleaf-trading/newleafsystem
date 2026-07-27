@@ -761,32 +761,54 @@ function consistencyIndex(pairs) {
  *   4. The same decision log is replayed against alternate scripts — the
  *      counterfactual. Deterministic and cheap.
  *
- * All P&L is computed from a scripted mark table. No model calls anywhere.
+ * MONEY IS INTEGER PENCE INTERNALLY. Prices carry two decimals, so a leg's P&L
+ * ((credit − mark) × multiplier × contracts) is exact in pence but accumulates
+ * float noise in pounds. Every leg is rounded to pence at the moment it is
+ * realised (`legPence`), state cash is integer pence, and pounds appear only at
+ * the presentation boundary via `toPounds`. This makes path-independence exact
+ * by construction: identical decision logs on different scripts return the same
+ * integer, not two floats that happen to be close.
  */
 
-const CONTRACT_MULTIPLIER = 100;
+const CONTRACT_MULTIPLIER = 100; // option contract multiplier (shares per contract)
+
+/** Price in pounds (2dp) → integer pence. Math.round absorbs float noise (2.30·100). */
+function toPence(pounds) { return Math.round(pounds * 100); }
+
+/** Presentation boundary: integer pence → pounds. Call this, and only this, to display. */
+function toPounds(pence) { return pence / 100; }
+
+/**
+ * Realised/unrealised value of one lot in INTEGER pence, rounded at the price
+ * (i.e. at the point of realisation). (creditPence − markPence) is exact for
+ * 2dp inputs, so the whole leg is an exact integer.
+ */
+function legPence(credit, mark, n) {
+  return (toPence(credit) - toPence(mark)) * CONTRACT_MULTIPLIER * n;
+}
 
 function simCloneLots(lots) { return lots.map(l => ({ n: l.n, credit: l.credit })); }
 
-/** Fresh state for a scenario: the opening position, flat cash, empty log. */
+/** Fresh state for a scenario: the opening position, flat cash (pence), empty log. */
 function freshState(scenario) {
   return {
     lots: simCloneLots(scenario.opening_position || []),
-    cash: 0,
+    cash: 0, // integer pence
     breaks: [],
     log: []
   };
 }
 
-/** Open P&L of the current position at time key `t` on a given script. */
+/** Open P&L of the current position at time key `t` on a given script, in integer pence. */
 function unrealised(state, script, t) {
   const mark = script[t];
-  return state.lots.reduce((a, l) => a + (l.credit - mark) * CONTRACT_MULTIPLIER * l.n, 0);
+  return state.lots.reduce((a, l) => a + legPence(l.credit, mark, l.n), 0);
 }
 
 /**
  * Apply one action at time `t` against `script`. PURE — returns a new state,
- * never mutates the input. Actions match the reference prototype:
+ * never mutates the input. Cash is accumulated in integer pence. Actions match
+ * the reference prototype:
  *   closeAll, closeTwo, addTwo, addThree, reopen, reopenBig, hold, none.
  * A rich sell/close (addTwo etc.) opens at the current scripted mark.
  */
@@ -800,7 +822,7 @@ function applyAction(state, action, t, script) {
   } else if (action === 'closeTwo') {
     const l = s.lots[0];
     if (l) {
-      s.cash += (l.credit - mark) * CONTRACT_MULTIPLIER * 2;
+      s.cash += legPence(l.credit, mark, 2);
       l.n -= 2;
       if (l.n <= 0) s.lots.shift();
     }
@@ -818,9 +840,10 @@ function applyAction(state, action, t, script) {
 }
 
 /**
- * Replay a decision log against any script and return the final realised P&L.
- * This is the counterfactual: run the identical log against SCRIPT_A (what
- * happened) and SCRIPT_B (the other Wednesday). PURE — the log is not consumed.
+ * Replay a decision log against any script and return the final realised P&L in
+ * INTEGER PENCE. This is the counterfactual: run the identical log against
+ * SCRIPT_A (what happened) and SCRIPT_B (the other Wednesday). PURE — the log is
+ * not consumed, and equal logs on different scripts return equal integers.
  *
  * @param {object} scenario  needs scripts and settle_t
  * @param {object[]} log     [{ act, t }]
@@ -839,13 +862,15 @@ function decisionScore(log) {
 }
 
 /**
- * Score a completed run. Computes the decision score, the maximum, and P&L on
- * every script in the scenario, then flags the two teaching cases:
+ * Score a completed run. Computes the decision score, the maximum, and P&L (in
+ * integer pence) on every script in the scenario, then flags the two teaching
+ * cases:
  *   lucky  — low decision score but a positive outcome on the script that
  *            happened ("rescued, not right").
  *   robbed — high decision score but a worse outcome than an alternate script
  *            ("good decisions, worse outcome").
- * Confidence/pace are computed separately by calibration.js.
+ * P&L is pence; call toPounds() at the presentation boundary. Confidence/pace
+ * are computed separately by calibration.js.
  */
 function scoreRun(scenario, log, opts = {}) {
   const primary = opts.primaryScript || 'A';
@@ -864,11 +889,11 @@ function scoreRun(scenario, log, opts = {}) {
 }
 
   var TIQEngine = {
-    CATEGORY_WEIGHTS, CATEGORY_KEYS, ANCHOR, ANCHOR_TQ_CAP, scoreWeightedChoice, scoreMultiSelect, kendallTau, scoreRanking, scoreItem, rollupCategories, composite, anchorTQ, empiricalTQ, computeTQ, applyRuinGate, traitProfile, frontDoorScore, scoreSitting, buildNormTable, percentileOf, percentileBand, resolveCohort, buildLadder, rankOf, describeStanding, criterionBand, displayPrecision, sem, wilson, DISPLAY_TIERS, RANK_MIN_N, COHORT_MIN_N, normalizeConfidence, calibrationGap, brierScore, impulsivityIndex, consistencyIndex, CONTRACT_MULTIPLIER, freshState, unrealised, applyAction, replay, decisionScore, scoreRun,
+    CATEGORY_WEIGHTS, CATEGORY_KEYS, ANCHOR, ANCHOR_TQ_CAP, scoreWeightedChoice, scoreMultiSelect, kendallTau, scoreRanking, scoreItem, rollupCategories, composite, anchorTQ, empiricalTQ, computeTQ, applyRuinGate, traitProfile, frontDoorScore, scoreSitting, buildNormTable, percentileOf, percentileBand, resolveCohort, buildLadder, rankOf, describeStanding, criterionBand, displayPrecision, sem, wilson, DISPLAY_TIERS, RANK_MIN_N, COHORT_MIN_N, normalizeConfidence, calibrationGap, brierScore, impulsivityIndex, consistencyIndex, CONTRACT_MULTIPLIER, toPence, toPounds, legPence, freshState, unrealised, applyAction, replay, decisionScore, scoreRun,
     scoring: { CATEGORY_WEIGHTS, CATEGORY_KEYS, ANCHOR, ANCHOR_TQ_CAP, scoreWeightedChoice, scoreMultiSelect, kendallTau, scoreRanking, scoreItem, rollupCategories, composite, anchorTQ, empiricalTQ, computeTQ, applyRuinGate, traitProfile, frontDoorScore, scoreSitting },
     norms: { buildNormTable, percentileOf, percentileBand, resolveCohort, buildLadder, rankOf, describeStanding, criterionBand, displayPrecision, sem, wilson, DISPLAY_TIERS, RANK_MIN_N, COHORT_MIN_N },
     calibration: { normalizeConfidence, calibrationGap, brierScore, impulsivityIndex, consistencyIndex },
-    sim: { CONTRACT_MULTIPLIER, freshState, unrealised, applyAction, replay, decisionScore, scoreRun }
+    sim: { CONTRACT_MULTIPLIER, toPence, toPounds, legPence, freshState, unrealised, applyAction, replay, decisionScore, scoreRun }
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = TIQEngine;
   else root.TIQEngine = TIQEngine;
