@@ -102,11 +102,13 @@ Until you have a real cohort, `z()` has no distribution to draw on. Use a fixed 
 
 | composite | TQ |
 |---|---|
-| 90–100 | 130+ |
+| 90–100 | 130 |
 | 80–89 | 115–129 |
 | 68–79 | 100–114 |
 | 55–67 | 85–99 |
 | < 55 | < 85 |
+
+**The anchor table is capped at 130.** TQ 130 is already +2σ; anything above it is a three-sigma claim, and a table with no cohort behind it cannot justify one. An ideal respondent returns exactly 130 while anchor-based, not 145. The cap lifts only when empirical z-scoring takes over at n≥500. The engine enforces this (`anchorTQ` in `shared/tiq/scoring.js`), and `describeStanding` carries an `anchorBased` flag so the results screen can state it.
 
 Be explicit in the UI that early scores are anchor-based, not norm-referenced. Publishing a "TQ 132, 98th percentile" against a cohort of eleven people is the kind of claim that damages the product's credibility permanently.
 

@@ -1,0 +1,14 @@
+{
+  "name": "newleafsystem-shared-tiq",
+  "version": "1.0.0",
+  "description": "Deterministic scoring engine for the NewLeaf Trading Intelligence Quotient (TIQ)",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "test": "node scoring.test.js && node norms.test.js && node calibration.test.js && node sim.test.js",
+    "sync": "node sync.js",
+    "sync:check": "node sync.js --check"
+  }
+}

@@ -141,6 +141,7 @@ I'm not a lawyer and this isn't legal advice, but both are cheap to check now an
 {
   score: 118,
   band: 'Strong',                    // always present, criterion-referenced
+  anchorBased: true,                 // TQ is from the anchor table (n<500), not empirical — show the caveat
   mode: 'normed' | 'criterion_only',
   precision: 'percentile' | 'decile' | 'quartile' | 'none',
   display: '81st percentile',        // pre-formatted for the results screen

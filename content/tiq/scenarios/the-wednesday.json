@@ -1,0 +1,128 @@
+{
+  "id": "the-wednesday",
+  "scenario_version": "1.0.0",
+  "title": "The Wednesday",
+  "isolates": "event risk and rule integrity under drawdown",
+  "_source": "Extracted from docs/tiq/reference/decision-sim.html. Deterministic fields (account, rules, opening_position, scripts, settle_t, option acts/points) are consumed by shared/tiq/sim.js. Node beats/questions and option prose are carried as data for the (deferred) Workbench surface; the engine ignores them.",
+  "_conditions": "Node variants branch on user STATE, never on the market. 'flat' = no open lots; 'holding' = at least one open lot. 'clean'/'broken' = whether any rule has been broken. Beat tokens like {unreal:t1} are filled deterministically by the renderer from sim.js (unrealised at that time); the market path itself is fixed.",
+  "account": 50000,
+  "rules": { "takeProfit": 0.50, "stopMultiple": 2.0, "maxRiskPct": 0.02 },
+  "instrument": { "symbol": "SPY", "structure": "put_credit_spread", "shorts": "590/585", "width": 5, "credit": 0.80 },
+  "opening_position": [{ "n": 3, "credit": 0.80 }],
+  "settle_t": "t4",
+  "scripts": {
+    "A": { "t0": 0.35, "t1": 1.05, "t2": 1.50, "t3": 0.55, "t4": 0.20 },
+    "B": { "t0": 0.35, "t1": 1.05, "t2": 1.50, "t3": 2.30, "t4": 3.80 }
+  },
+  "script_labels": {
+    "A": "What happened — SPY reverses",
+    "B": "The other Wednesday — SPY keeps falling"
+  },
+  "confidence_scale": [
+    { "label": "Certain — I do this every time", "v": 1.0 },
+    { "label": "Fairly confident", "v": 0.7 },
+    { "label": "Not sure, it could go either way", "v": 0.4 },
+    { "label": "Honestly guessing", "v": 0.15 }
+  ],
+  "nodes": [
+    {
+      "id": "n1",
+      "t": "t0",
+      "clock": "Wednesday 09:34",
+      "beat": "Your SPY 590/585 put spread is showing 56% of maximum profit with 12 days left. You sold three of them for 0.80. Your written rule closes at 50%. That trigger fired yesterday. The Fed decides at 19:00 tonight.",
+      "question": "What do you do?",
+      "options": [
+        { "text": "Close all three. The rule fired", "points": 10, "act": "closeAll" },
+        { "text": "Close two, run one through the Fed", "points": 5, "act": "closeTwo" },
+        { "text": "Hold all three. The setup still looks fine", "points": 2, "act": "hold", "breaks": "ignored the profit rule" },
+        { "text": "Hold, and sell two more while premium is rich", "points": 0, "act": "addTwo", "breaks": "added risk into an event" }
+      ]
+    },
+    {
+      "id": "n2",
+      "t": "t1",
+      "clock": "Wednesday 19:14",
+      "beat_variants": {
+        "flat": "Hawkish hold. SPY dropped 1.8% in nine minutes. Volatility is bid across the board — the spread you closed this morning at 0.35 is now marked 1.05. You are flat. Premium is the richest it has been in three weeks.",
+        "holding": "Hawkish hold. SPY dropped 1.8%. Your spread is marked 1.05 against the 0.80 you collected — you are down {unreal:t1}. Your stop sits at 2× credit, which is 1.60. You are not there yet."
+      },
+      "question_variants": {
+        "flat": "Premium is rich and you have capital. What do you do?",
+        "holding": "What do you do?"
+      },
+      "option_variants": {
+        "flat": [
+          { "text": "Nothing tonight. Look tomorrow with a plan", "points": 10, "act": "none" },
+          { "text": "Open a new spread — this is exactly the volatility you wait for", "points": 4, "act": "reopen", "breaks": "entered outside your session plan" },
+          { "text": "Re-enter the same trade you just closed, bigger", "points": 0, "act": "reopenBig", "breaks": "re-entered a closed trade on impulse" }
+        ],
+        "holding": [
+          { "text": "Hold. The stop has not been hit", "points": 10, "act": "hold" },
+          { "text": "Close now and take the loss", "points": 5, "act": "closeAll" },
+          { "text": "Roll down and out for a small credit", "points": 3, "act": "hold", "breaks": "improvised a roll under stress" },
+          { "text": "Sell two more at 1.05 — better prices than this morning", "points": 0, "act": "addTwo", "breaks": "added to a losing position" }
+        ]
+      }
+    },
+    {
+      "id": "n3",
+      "t": "t2",
+      "clock": "Thursday 09:31",
+      "beat_variants": {
+        "flat": "SPY opened another 0.7% lower. The spread you are no longer in is marked 1.50. Had you held from yesterday morning you would be down roughly {heldLoss:t2}. You are flat and it is 09:31.",
+        "holding": "SPY gapped lower again. Your spread is marked 1.50. That is 1.88× the credit. Your stop is 2×. Open loss: {unreal:t2}. That is {pctOfAccount:t2}% of the account."
+      },
+      "question": "What do you do?",
+      "option_variants": {
+        "flat": [
+          { "text": "Stay flat. You have no setup and no plan for today", "points": 10, "act": "none" },
+          { "text": "Sell a spread now — this is the fattest premium of the month", "points": 3, "act": "reopen", "breaks": "entered without a written plan" },
+          { "text": "Sell a spread, double size, to make back yesterday", "points": 0, "act": "reopenBig", "breaks": "sized up to recover" }
+        ],
+        "holding": [
+          { "text": "Hold. The stop is 2× and this is 1.88×", "points": 10, "act": "hold" },
+          { "text": "Close now. It is close enough to the stop", "points": 6, "act": "closeAll" },
+          { "text": "Sell three more at 1.50. The premium is enormous", "points": 0, "act": "addThree", "breaks": "doubled a loser inside a drawdown" }
+        ]
+      }
+    },
+    {
+      "id": "n4",
+      "t": "t2",
+      "clock": "Thursday 11:06",
+      "beat_variants": {
+        "clean": "NVDA is up 6.2% on a supply headline. It was not on your watchlist this morning. Its options went from cheap to expensive in an hour. Your day has gone to plan so far. Your group chat has four entries posted in it.",
+        "broken": "NVDA is up 6.2% on a supply headline. It was not on your watchlist this morning. Its options went from cheap to expensive in an hour. You are already having a difficult two days. Your group chat has four entries posted in it."
+      },
+      "question": "What do you do?",
+      "options": [
+        { "text": "Nothing. Write down what a valid NVDA entry would look like and set an alert", "points": 10, "act": "none" },
+        { "text": "Take a small defined-risk position to be involved", "points": 2, "act": "none", "breaks": "took an unplanned trade" },
+        { "text": "Sell an NVDA spread — the premium is genuinely rich now", "points": 4, "act": "none", "breaks": "entered off-plan" },
+        { "text": "Wait for it to come back to this morning's price, then buy", "points": 2, "act": "none", "breaks": "anchored to a stale price" }
+      ]
+    },
+    {
+      "id": "n5",
+      "t": "t3",
+      "clock": "Thursday 16:02",
+      "beat_variants": {
+        "flat": "SPY reversed hard into the close and finished the day up 1.4%. You are flat. Realised so far: {cash}. Tomorrow you have three setups on the watchlist. Your standard risk is 2% per trade.",
+        "holding": "SPY reversed hard into the close and finished the day up 1.4%. Your position is marked 0.55. Open P&L {unreal:t3}. Tomorrow you have three setups on the watchlist. Your standard risk is 2% per trade."
+      },
+      "question": "How do you size tomorrow?",
+      "options": [
+        { "text": "2% per trade. Same as always", "points": 10, "act": "none" },
+        { "text": "1% until the week settles down", "points": 6, "act": "none" },
+        {
+          "act": "none",
+          "variants": {
+            "clean": { "text": "Skip tomorrow — quit while ahead", "points": 4 },
+            "broken": { "text": "Skip tomorrow entirely and review the last two days", "points": 8 }
+          }
+        },
+        { "text": "3% — the last two days cost me and there is ground to make up", "points": 0, "act": "none", "breaks": "sized up to recover losses" }
+      ]
+    }
+  ]
+}

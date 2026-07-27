@@ -87,7 +87,7 @@ docs/tiq/reference/            the two HTML prototypes
 ## Scoring contract
 
 ```
-item modes: weighted_choice | multi_select | ranking | forced_choice_vector | diagnostic_only
+item modes: weighted_choice | multi_select | ranking | diagnostic_only
 category_c = 100 * Σ earned / Σ max
 composite  = 0.18·KQ + 0.24·EQ + 0.20·SQ + 0.28·RQ + 0.10·MQ
 TQ         = 100 + 15 * z(composite)          # anchor table until n≥500, then empirical
