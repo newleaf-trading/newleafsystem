@@ -57,7 +57,10 @@ async function seed(db) {
     provenance
   });
 
-  // Items — mirror of the JSON, one doc per item, with an `active` flag.
+  // Items — full mirror (server-only, carries the key) AND a stripped public
+  // projection (tiqItemsPublic) that clients may read directly. Firestore rules
+  // cannot strip fields on read, so the projection is how "read the stripped
+  // fields only" is enforced (see web/firestore.rules).
   let batch = db.batch();
   let n = 0;
   for (const item of BANK.questions) {
@@ -67,10 +70,32 @@ async function seed(db) {
       active: true,
       provenance
     });
-    if (++n % 400 === 0) { await batch.commit(); batch = db.batch(); }
+    batch.set(db.collection('tiqItemsPublic').doc(item.id), {
+      ...stripForPublic(item),
+      bank_version: BANK.version,
+      active: true
+    });
+    if (++n % 200 === 0) { await batch.commit(); batch = db.batch(); }
   }
   await batch.commit();
   return { bank_version: BANK.version, items: BANK.questions.length };
+}
+
+/** The client-safe view of an item — no key, no scoring block, no explanation. */
+function stripForPublic(item) {
+  return {
+    id: item.id,
+    category: item.category,
+    subskill: item.subskill,
+    difficulty: item.difficulty,
+    type: item.type,
+    scenario: item.scenario ?? null,
+    stem: item.stem,
+    choices: (item.choices || []).map((c) => ({ key: c.key, text: c.text })),
+    mode: item.scoring ? item.scoring.mode : null,
+    est_seconds: item.est_seconds ?? null
+    // omitted: scoring, explanation, learning_objective, bias, tags, generator, pair_id, pair_role
+  };
 }
 
 module.exports = { seed, dbHandle };

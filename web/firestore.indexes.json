@@ -15,6 +15,30 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "expiry", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "tiqItems",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "bank_version", "order": "ASCENDING" },
+        { "fieldPath": "active", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tiqItemsPublic",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "bank_version", "order": "ASCENDING" },
+        { "fieldPath": "active", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tiqSittings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "finishedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

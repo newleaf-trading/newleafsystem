@@ -12,6 +12,7 @@
     "deploy": "npm run build && firebase deploy --only functions",
     "create-key": "tsx scripts/create-api-key.ts",
     "test:tiq": "firebase emulators:exec --only firestore --project demo-newleaf \"npx tsx src/routes/tiq.integration.test.ts\"",
+    "test:tiq:rules": "firebase emulators:exec --only firestore --project demo-tiq \"npx tsx src/routes/tiq.rules.test.ts\"",
     "typecheck": "tsc --noEmit"
   },
   "engines": {
@@ -31,6 +32,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0"
   }

@@ -105,9 +105,57 @@ service cloud.firestore {
       allow create, update: if request.auth != null;
     }
 
-    // ─── Catch-all read for any other collections ───
-    match /{document=**} {
+    // ─── TIQ assessment — server-authoritative (docs/tiq/TIQ-BUILD.md) ───
+    // The route layer's append-only and server-side-scoring guarantees are only
+    // real if a client cannot write or read these collections directly.
+
+    // Sittings: a client may read ONLY its own document, and never write. Every
+    // write goes through the server (the Admin SDK bypasses rules).
+    match /tiqSittings/{sittingId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow write: if false;
+    }
+
+    // Items carry the answer key, scoring blocks and explanations — server only.
+    // Clients read the stripped projection in tiqItemsPublic instead.
+    match /tiqItems/{itemId} {
+      allow read, write: if false;
+    }
+    match /tiqItemsPublic/{itemId} {
+      allow read: if true;   // stripped: no choice_points, no correct answer, no explanation
+      allow write: if false;
+    }
+
+    // Bank metadata (trait vocabulary, category weights) — no answers, no secrets.
+    match /tiqBanks/{version} {
       allow read: if true;
+      allow write: if false;
+    }
+
+    // Frozen norms, scenarios and item stats — read-only to clients, server write only.
+    match /tiqNorms/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /tiqScenarios/{scenarioId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    match /tiqItemStats/{itemId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ─── Public-read safety net for any other collection. The top-level
+    // collection name is bound so the sensitive TIQ collections above can be
+    // carved out — a bare `match /{document=**} { allow read: if true }` would
+    // OR-override their restrictions and silently make sittings and keyed items
+    // world-readable. Non-tiq collections keep their previous public-read. ───
+    match /{col}/{docId} {
+      allow read: if !(col in ['tiqSittings', 'tiqItems']);
+    }
+    match /{col}/{docId}/{document=**} {
+      allow read: if !(col in ['tiqSittings', 'tiqItems']);
     }
   }
 }
