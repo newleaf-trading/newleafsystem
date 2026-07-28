@@ -97,7 +97,7 @@
 const API_KEY = (window.localStorage && localStorage.getItem('nl_api_key')) || window.NEWLEAF_API_KEY || '';
 // Prod hosting has no /api→function rewrite, so the deployed page calls the
 // function directly; locally (server.cjs) relative /api is proxied.
-const API_BASE = /(?:web\.app|firebaseapp\.com)$/.test(location.hostname) ? 'https://us-central1-newleaf-trading.cloudfunctions.net/api' : '';
+const API_BASE = /^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/.test(location.hostname) ? '' : 'https://us-central1-newleaf-trading.cloudfunctions.net/api';
 // Prefer the signed-in Firebase session (exposed by the workbench nav); fall back
 // to a manual X-API-Key only if there is no session. No manual key needed.
 async function authHeader(){
