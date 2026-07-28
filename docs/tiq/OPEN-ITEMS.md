@@ -5,19 +5,14 @@ without**. Recorded here so it isn't only in session memory.
 
 ---
 
-## 1. Workbench → API browser auth
+## 1. Workbench → API browser auth — RESOLVED
 
-The static Workbench surfaces (`tiq.html`, `tiq-sim.html`) call the API with an `X-API-Key`
-read from `localStorage.nl_api_key`. There is no flow that mints or attaches that key for a
-signed-in browser session. This is a **shared gap with the other workbench pages**, not
-TIQ-specific.
-
-- **Unblocks it:** a general workbench→API auth mechanism (exchange the Firebase session for
-  an API key, or accept the Firebase ID token in `authMiddleware`). One fix serves every
-  workbench page.
-- **Ships without → breaks:** the surfaces work in dev (dev API key) and in tests (auth is
-  stubbed / rules-tested directly), but a real signed-in user hits 401 until a key is present.
-  The engine, API and rules are all correct and covered; only the browser handshake is missing.
+`authMiddleware` now accepts a Firebase ID token (`Authorization: Bearer`) in addition to
+`X-API-Key`; a signed-in user maps to their custom-claim role or `free`. The workbench nav
+exposes the session's ID token (`window.__nlGetIdToken` / `window.__nlAuthReady`) — one hook
+that serves every workbench page — and `tiq.html` / `tiq-sim.html` send it, falling back to a
+manual key only if there is no session. Verified live against the deployed API (Firebase Bearer
+→ 200 with no API key; invalid/absent → 401). No manual `localStorage` step needed.
 
 ## 2. Consensus percentages (front door)
 
