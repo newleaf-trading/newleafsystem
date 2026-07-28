@@ -14,6 +14,7 @@ import { registerAIAdjustRoutes } from './routes/ai-adjust.js';
 import { registerPublishRoutes } from './routes/publish.js';
 import { registerReasoningRoutes } from './routes/ai-reasoning.js';
 import { registerPlanRoutes } from './routes/plan.js';
+import { registerTIQRoutes } from './routes/tiq.js';
 import { LLMRouter } from './llm/router.js';
 import { JobStore } from './state/store.js';
 import { VerificationOrchestrator } from './orchestrator.js';
@@ -103,6 +104,7 @@ export function createApp() {
   registerPublishRoutes(fastify);
   registerReasoningRoutes(fastify, llm);
   registerPlanRoutes(fastify);
+  registerTIQRoutes(fastify);
 
   return fastify;
 }

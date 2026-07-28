@@ -1,0 +1,287 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TIQ Assessment — NewLeaf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- Static Workbench nav (same pattern as plan.html) -->
+<script src="load-nav.js" defer></script>
+
+<!--
+  TIQ Assessment surface. All scoring is SERVER-SIDE (api/src/routes/tiq.ts →
+  shared/tiq); this page never sees the answer key before answering. tiqEngine.js
+  is the generated browser copy of shared/tiq (drift-guarded by sync.js) and is
+  used here only for key-free presentation helpers (e.g. the criterion band),
+  never to score the sitting.
+-->
+<script src="public/js/tiqEngine.js"></script>
+
+<style>
+  :root{
+    --forest:#16271C; --forest2:#1E3326; --forest3:#27412F;
+    --gold:#B68F3E; --gold-lt:#E7D9AE;
+    --cream:#F2ECDD; --card:#FBF8F0; --terra:#BC5B43; --teal:#3E7C6A;
+    --display:'Fraunces',Georgia,serif; --body:'DM Sans',system-ui,sans-serif; --mono:'Space Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--forest);color:var(--cream);font-family:var(--body);min-height:100vh;-webkit-font-smoothing:antialiased}
+  .stage{width:100%;max-width:660px;margin:0 auto;padding:28px 18px 80px}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+  h1{font-family:var(--display);font-size:27px;line-height:1.28;font-weight:600;margin:14px 0 18px;letter-spacing:-.01em}
+  .lede{font-size:16px;line-height:1.65;color:#C9D6CC;margin-bottom:26px;max-width:520px}
+  .meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:#8FA396;margin-bottom:10px;text-transform:uppercase}
+  .prog{height:3px;background:var(--forest3);border-radius:2px;margin-bottom:22px;overflow:hidden}
+  .prog i{display:block;height:100%;background:var(--gold);transition:width .3s ease}
+  .cat{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+  .scenario{background:var(--forest2);border:1px solid var(--forest3);border-radius:10px;padding:14px 16px;font-size:14.5px;line-height:1.6;color:#C9D6CC;margin-bottom:16px}
+  .stem{font-family:var(--display);font-size:20px;line-height:1.4;font-weight:600;margin-bottom:20px}
+  .opts{display:flex;flex-direction:column;gap:9px}
+  .opt{background:var(--card);color:#243027;border:1px solid transparent;border-radius:10px;padding:15px 17px;text-align:left;font-size:15px;line-height:1.5;cursor:pointer;transition:transform .12s ease,box-shadow .18s ease;width:100%}
+  .opt:hover{transform:translateX(3px);box-shadow:-3px 0 0 var(--gold)}
+  .opt.sel{box-shadow:-4px 0 0 var(--teal)}
+  .opt:disabled{cursor:default;opacity:.9}
+  .rank-row{display:flex;align-items:center;gap:8px}
+  .rank-row .opt{flex:1}
+  .rank-btn{background:var(--forest2);border:1px solid var(--forest3);color:var(--cream);border-radius:7px;width:34px;height:34px;cursor:pointer;font-size:15px}
+  .btn{border:none;border-radius:8px;padding:13px 24px;font-family:var(--body);font-weight:700;font-size:15px;cursor:pointer;margin-top:20px;background:var(--gold);color:var(--forest)}
+  .btn:hover{background:var(--gold-lt)}
+  .btn.ghost{background:none;border:1px solid var(--forest3);color:#8FA396;font-weight:400}
+  .conf-q{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:18px 0 12px}
+  .conf{background:var(--forest2);border:1px solid var(--forest3);color:var(--cream);border-radius:8px;padding:13px 16px;font-size:14.5px;cursor:pointer;text-align:left;width:100%;margin-bottom:8px}
+  .conf:hover{border-color:var(--gold)}
+  .chosen{background:var(--forest2);border-left:2px solid var(--teal);border-radius:0 8px 8px 0;padding:12px 15px;margin-bottom:6px;font-size:14.5px;color:#D8E2DA}
+  .chosen span{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8FA396;margin-bottom:5px}
+  .fb{background:var(--forest2);border:1px solid var(--forest3);border-radius:10px;padding:16px;margin-top:14px;font-size:14.5px;line-height:1.6;color:#D8E2DA}
+  .fb .tag{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+  .fb.good .tag{color:var(--teal)} .fb.part .tag{color:var(--gold)}
+  /* results */
+  .center{text-align:center}
+  .num{font-family:var(--display);font-size:60px;font-weight:600;color:var(--gold-lt);line-height:1;margin-top:8px}
+  .band{font-family:var(--display);font-size:24px;font-weight:600;margin-top:6px}
+  .caveat{font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:.04em;margin-top:8px;line-height:1.5}
+  .bars{margin:28px 0 8px;text-align:left}
+  .bar-row{margin-bottom:12px}
+  .bar-top{display:flex;justify-content:space-between;font-size:13px;color:#C9D6CC;margin-bottom:5px}
+  .bar-top b{font-family:var(--mono);color:var(--gold-lt)}
+  .bar{height:8px;background:var(--forest3);border-radius:4px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--teal);transition:width .8s ease}
+  .callout{text-align:left;background:var(--forest2);border:1px solid var(--forest3);border-radius:10px;padding:18px;margin-top:12px}
+  .callout h3{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-weight:400;margin-bottom:9px}
+  .callout.hot{border-color:var(--terra)} .callout.hot h3{color:var(--terra)}
+  .callout p{font-size:14.5px;line-height:1.6;color:#D8E2DA} .callout p+p{margin-top:9px}
+  .ev{border-bottom:1px solid var(--forest3);padding:12px 0;font-size:14px;line-height:1.55;color:#C9D6CC}
+  .ev:last-child{border:none} .ev b{color:var(--gold-lt)}
+  .ev i{display:block;font-style:normal;color:#8FA396;margin-top:5px}
+  .lp{text-align:left;margin-top:8px} .lp li{margin:0 0 9px 18px;font-size:14.5px;line-height:1.55;color:#D8E2DA}
+  .two{display:flex;gap:10px;margin-top:12px} .two .callout{flex:1;margin-top:0}
+  .err{background:#3a1f1a;border:1px solid var(--terra);color:#f0d0c8;border-radius:10px;padding:16px;font-size:14px;line-height:1.6;margin-top:16px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div id="nav-root"></div>
+<div class="stage" id="stage"></div>
+
+<script>
+/* ── API access ───────────────────────────────────────────────────────────────
+   Workbench pages talk to the API through the /api proxy. Auth is by X-API-Key;
+   the key is read from localStorage('nl_api_key') or window.NEWLEAF_API_KEY. In
+   dev the API accepts DEV_API_KEY. (Same auth gap as other workbench pages — the
+   surface does not mint keys.) */
+const API_KEY = (window.localStorage && localStorage.getItem('nl_api_key')) || window.NEWLEAF_API_KEY || '';
+async function api(method, url, body){
+  const res = await fetch(url, {
+    method,
+    headers: { 'Content-Type':'application/json', ...(API_KEY ? {'X-API-Key':API_KEY} : {}) },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error || (method+' '+url+' → '+res.status));
+  return data;
+}
+
+const CONF = [
+  {label:'Certain — I would do this every time', v:5},
+  {label:'Fairly confident', v:4},
+  {label:'Could go either way', v:3},
+  {label:'Leaning, but unsure', v:2},
+  {label:'Honestly guessing', v:1}
+];
+const CAT_LABEL = { KQ:'Knowledge', EQ:'Emotion', SQ:'System', RQ:'Risk', MQ:'Market' };
+
+const stage = document.getElementById('stage');
+let S = null; // { sittingId, items, i, tStart }
+
+start();
+
+function start(){
+  stage.innerHTML = `<div>
+    <div class="kicker">NewLeaf · TIQ Assessment</div>
+    <h1>Forty situations.<br>Five dimensions of trading judgement.</h1>
+    <p class="lede">This is the full instrument, not the four-minute quiz. It checks knowledge, emotion,
+      process, risk and market read — including whether your rules hold up when you are losing, not just
+      when you are winning. Every answer is scored on our servers; you will see the reasoning after each one.
+      About 35 minutes. Your confidence is captured before each result and cannot be revised.</p>
+    <button class="btn" id="go">Begin the assessment</button>
+    <div id="err"></div>
+  </div>`;
+  document.getElementById('go').onclick = begin;
+}
+
+async function begin(){
+  try{
+    const r = await api('POST','/api/tiq/sittings',{});
+    S = { sittingId:r.sittingId, items:r.items, i:0 };
+    renderItem();
+  }catch(e){ showErr(e); }
+}
+
+function renderItem(){
+  const it = S.items[S.i];
+  S.tStart = Date.now();
+  const pct = Math.round(100 * S.i / S.items.length);
+  let body;
+  if(it.mode === 'multi_select') body = renderMulti(it);
+  else if(it.mode === 'ranking') body = renderRank(it);
+  else body = renderChoice(it);
+
+  stage.innerHTML = `
+    <div class="meta"><span>${String(S.i+1).padStart(2,'0')} / ${S.items.length}</span><span>${CAT_LABEL[it.category]||it.category}</span></div>
+    <div class="prog"><i style="width:${pct}%"></i></div>
+    <div class="cat">${CAT_LABEL[it.category]||it.category} · ${it.difficulty}</div>
+    ${it.scenario && it.scenario.text ? `<div class="scenario">${it.scenario.text}</div>` : ''}
+    <div class="stem">${it.stem}</div>
+    <div id="body">${body}</div>`;
+  wire(it);
+}
+
+function renderChoice(it){
+  return `<div class="opts">${it.choices.map(c=>`<button class="opt" data-k="${c.key}">${c.text}</button>`).join('')}</div>`;
+}
+function renderMulti(it){
+  return `<div class="opts">${it.choices.map(c=>`<button class="opt" data-k="${c.key}">${c.text}</button>`).join('')}</div>
+    <button class="btn" id="submit" disabled>Submit selection</button>`;
+}
+function renderRank(it){
+  return `<div id="ranklist">${it.choices.map(c=>rankRow(c)).join('')}</div>
+    <button class="btn" id="submit">Submit ranking</button>`;
+}
+function rankRow(c){ return `<div class="rank-row" data-k="${c.key}"><button class="rank-btn up">↑</button><button class="rank-btn down">↓</button><span class="opt" disabled>${c.text}</span></div>`; }
+
+function wire(it){
+  if(it.mode === 'weighted_choice'){
+    stage.querySelectorAll('.opt').forEach(b=>b.onclick=()=>askConfidence(it, { choice:b.dataset.k }, b.textContent));
+  } else if(it.mode === 'multi_select'){
+    const sel = new Set();
+    stage.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+      const k=b.dataset.k; if(sel.has(k)){sel.delete(k);b.classList.remove('sel');} else {sel.add(k);b.classList.add('sel');}
+      document.getElementById('submit').disabled = sel.size===0;
+    });
+    document.getElementById('submit').onclick=()=>askConfidence(it, { selected:[...sel] }, [...sel].join(', ')+' selected');
+  } else if(it.mode === 'ranking'){
+    const list = document.getElementById('ranklist');
+    list.querySelectorAll('.up').forEach(btn=>btn.onclick=()=>{const r=btn.closest('.rank-row'); if(r.previousElementSibling) list.insertBefore(r, r.previousElementSibling);});
+    list.querySelectorAll('.down').forEach(btn=>btn.onclick=()=>{const r=btn.closest('.rank-row'); if(r.nextElementSibling) list.insertBefore(r.nextElementSibling, r);});
+    document.getElementById('submit').onclick=()=>{
+      const order=[...list.querySelectorAll('.rank-row')].map(r=>r.dataset.k);
+      askConfidence(it, { order }, 'ranking submitted');
+    };
+  }
+}
+
+// Confidence is gated BETWEEN the answer and the result — it cannot be revised.
+function askConfidence(it, answer, chosenText){
+  const secs = (Date.now()-S.tStart)/1000;
+  stage.innerHTML = `
+    <div class="cat">${CAT_LABEL[it.category]||it.category}</div>
+    <div class="chosen"><span>Your answer</span>${chosenText}</div>
+    <div class="conf-q">Before you see whether it was right — how confident are you?</div>
+    ${CONF.map((c,k)=>`<button class="conf" data-k="${k}">${c.label}</button>`).join('')}`;
+  stage.querySelectorAll('.conf').forEach(b=>b.onclick=()=>submit(it, answer, CONF[+b.dataset.k].v, Math.round(secs*1000)));
+}
+
+async function submit(it, answer, confidence, elapsed_ms){
+  try{
+    const r = await api('POST', `/api/tiq/sittings/${S.sittingId}/responses`, { itemId:it.id, ...answer, confidence, elapsed_ms });
+    showFeedback(it, r);
+  }catch(e){ showErr(e); }
+}
+
+function showFeedback(it, r){
+  const cls = r.isBest ? 'good' : (r.earned>0 ? 'part' : 'part');
+  const tag = r.isBest ? 'Best answer' : (r.earned>0 ? `${r.earned} / ${r.max}` : `${r.earned} / ${r.max}`);
+  const expl = r.explanation ? (r.explanation.correct || '') : '';
+  const last = S.i === S.items.length-1;
+  stage.innerHTML = `
+    <div class="cat">${CAT_LABEL[it.category]||it.category}</div>
+    <div class="fb ${cls}"><div class="tag">${tag}</div>${expl}</div>
+    <button class="btn" id="next">${last ? 'See your result' : 'Next situation'}</button>`;
+  document.getElementById('next').onclick=()=>{ S.i++; last ? finish() : renderItem(); };
+}
+
+async function finish(){
+  stage.innerHTML = `<div class="center"><div class="kicker">Scoring your sitting…</div></div>`;
+  try{
+    await api('POST', `/api/tiq/sittings/${S.sittingId}/finish`, {});
+    const st = await api('GET', `/api/tiq/sittings/${S.sittingId}/standing`);
+    renderResult(st);
+  }catch(e){ showErr(e); }
+}
+
+function renderResult(st){
+  // criterion band from the shared engine (key-free presentation helper)
+  const band = (window.TIQEngine ? TIQEngine.criterionBand(st.tq) : st.band);
+  const caveat = st.anchorBased
+    ? 'Anchor-based score — not yet norm-referenced. A cohort of real sittings is still being gathered, so this is a criterion band, not a percentile.'
+    : '';
+  const cats = ['KQ','EQ','SQ','RQ','MQ'];
+
+  const gated = st.categories && Object.keys(st.categories).length ? '' : '';
+  const bars = cats.map(c=>{
+    const v = Math.round(st.categoryScores[c]||0);
+    return `<div class="bar-row"><div class="bar-top"><span>${CAT_LABEL[c]}</span><b>${v}</b></div><div class="bar"><i style="width:${v}%"></i></div></div>`;
+  }).join('');
+
+  const traits = (st.traitEvidence||[]).map(t=>`
+    <div class="ev"><b>${cap(t.trait.replace(/_/g,' '))}</b> — surfaced by: “${t.stem||''}”
+      ${t.yourChoice?`<i>You chose: ${t.yourChoice}</i>`:''}
+      ${t.better?`<i>Stronger answer: ${t.better}</i>`:''}</div>`).join('') || '<div class="ev">No elevated bias stood out — a rare and good result.</div>';
+
+  const cons = st.consistency;
+  const consLine = cons && cons.index!=null
+    ? `${cons.index} / 100 across ${cons.nPairs} framing pair${cons.nPairs===1?'':'s'} — ${cons.index>=80?'your rules held whether you were winning or losing.':'your answers shifted between the gain frame and the loss frame, which is where discipline is actually tested.'}`
+    : 'Not enough framing pairs in this sitting to measure.';
+  const pace = st.pace;
+  const paceLine = pace ? `${pace.pace}. Median ${Math.round((pace.medianRatio||0)*100)}% of the time we budgeted per item${pace.belowFloor?' — fast enough that this sitting would be flagged for review.':'.'}` : '';
+
+  const lp = (st.learningPath||[]);
+  const lpBlock = lp.length ? `<div class="callout"><h3>Your learning path</h3><ol class="lp">${lp.map(s=>`<li>${s}</li>`).join('')}</ol></div>` : '';
+
+  const ruin = (st.categories && st.tq<=95 && band==='Foundational') ? '' : '';
+
+  stage.innerHTML = `<div class="center">
+    <div class="kicker">Your Trading Intelligence Quotient</div>
+    <div class="num">${Math.round(st.tq)}</div>
+    <div class="band">${band}</div>
+    ${caveat?`<div class="caveat">${caveat}</div>`:''}
+  </div>
+  <div class="bars">${bars}</div>
+  <div class="callout"><h3>Where your bias showed</h3>${traits}</div>
+  <div class="two">
+    <div class="callout"><h3>Consistency</h3><p>${consLine}</p></div>
+    <div class="callout"><h3>Pace</h3><p>${paceLine}</p></div>
+  </div>
+  ${st.calibration?`<div class="callout"><h3>Confidence — ${st.calibration.label}</h3><p>Mean gap between how sure you were and how well you actually scored: ${st.calibration.gap}.</p></div>`:''}
+  ${lpBlock}
+  <div class="center"><button class="btn ghost" id="again" style="margin-top:24px">Retake (a fresh sitting)</button></div>`;
+  document.getElementById('again').onclick = start;
+}
+
+function showErr(e){
+  const box = document.getElementById('err') || stage;
+  box.innerHTML = `<div class="err"><b>Something went wrong.</b><br>${(e&&e.message)||e}<br><br>
+    If this is an auth error, the assessment needs an API key — set <code>localStorage.nl_api_key</code>.</div>`;
+}
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+</script>

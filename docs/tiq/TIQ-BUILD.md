@@ -72,6 +72,13 @@ docs/tiq/reference/            the two HTML prototypes
 
 ## Firestore collections
 
+**`content/tiq/` is the source of truth; Firestore is a seeded mirror.** `tiqItems`,
+`tiqScenarios` and the item text in every collection are populated from the JSON banks
+(`scripts/tiq/seed-firestore.js`) and validated by `scripts/tiq/validate-bank.js`. To fix or
+add an item, **edit the JSON and re-seed** — never hand-edit a document in the Firebase
+console. Console edits are silently overwritten by the next seed and skip the invariant
+checks, which is exactly how a bank ships with two defensible best answers.
+
 | collection | doc | notes |
 |---|---|---|
 | `tiqItems` | one per item | mirrors bank JSON, `active` flag, `bank_version` |

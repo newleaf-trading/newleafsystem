@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "node scripts/clean-spa.js && vite build && node scripts/inject-env.js && node scripts/prerender.js",
     "preview": "vite preview",
+    "postinstall": "node ../scripts/tiq/install-hooks.js",
     "validate:tiq": "node ../scripts/tiq/validate-bank.js",
     "predeploy:tiq": "node ../shared/tiq/sync.js --check && node ../scripts/tiq/validate-bank.js",
     "deploy": "npm run predeploy:tiq && npm run build && firebase deploy --only hosting:newleafsystem"

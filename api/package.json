@@ -6,11 +6,12 @@
   "main": "dist/functions.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc && rm -rf dist/shared && cp -r src/shared dist/shared && mkdir -p pipeline && cp ../pipeline/strategy-engine.js pipeline/strategy-engine.cjs && cp ../pipeline/gamma-analyzer-enhanced.js pipeline/gamma-analyzer-enhanced.cjs && rm -rf shared && mkdir -p shared && cp -r ../shared/reaction shared/reaction",
+    "build": "tsc && rm -rf dist/shared && cp -r src/shared dist/shared && mkdir -p pipeline && cp ../pipeline/strategy-engine.js pipeline/strategy-engine.cjs && cp ../pipeline/gamma-analyzer-enhanced.js pipeline/gamma-analyzer-enhanced.cjs && rm -rf shared && mkdir -p shared && cp -r ../shared/reaction shared/reaction && cp -r ../shared/tiq shared/tiq",
     "start": "node dist/index.js",
     "emulate": "firebase emulators:start --only functions,firestore",
     "deploy": "npm run build && firebase deploy --only functions",
     "create-key": "tsx scripts/create-api-key.ts",
+    "test:tiq": "firebase emulators:exec --only firestore --project demo-newleaf \"npx tsx src/routes/tiq.integration.test.ts\"",
     "typecheck": "tsc --noEmit"
   },
   "engines": {
