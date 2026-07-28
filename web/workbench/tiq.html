@@ -90,8 +90,11 @@
    dev the API accepts DEV_API_KEY. (Same auth gap as other workbench pages — the
    surface does not mint keys.) */
 const API_KEY = (window.localStorage && localStorage.getItem('nl_api_key')) || window.NEWLEAF_API_KEY || '';
+// Prod hosting has no /api→function rewrite, so the deployed page calls the
+// function directly; locally (server.cjs) relative /api is proxied.
+const API_BASE = /(?:web\.app|firebaseapp\.com)$/.test(location.hostname) ? 'https://us-central1-newleaf-trading.cloudfunctions.net/api' : '';
 async function api(method, url, body){
-  const res = await fetch(url, {
+  const res = await fetch(API_BASE + url, {
     method,
     headers: { 'Content-Type':'application/json', ...(API_KEY ? {'X-API-Key':API_KEY} : {}) },
     body: body ? JSON.stringify(body) : undefined
