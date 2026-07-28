@@ -23,6 +23,8 @@
       { "source": "/workbench/analysis/**", "destination": "/index.html" },
       { "source": "/workbench/projection", "destination": "/index.html" },
       { "source": "/workbench/plan", "destination": "/workbench/plan.html" },
+      { "source": "/workbench/tiq", "destination": "/workbench/tiq.html" },
+      { "source": "/workbench/tiq-sim", "destination": "/workbench/tiq-sim.html" },
       { "source": "/trading/**", "destination": "/index.html" },
       { "source": "/picks/**", "destination": "/index.html" },
       { "source": "/privacy-policy", "destination": "/privacy-policy.html" },
