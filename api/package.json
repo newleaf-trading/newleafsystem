@@ -12,6 +12,7 @@
     "deploy": "npm run build && firebase deploy --only functions",
     "create-key": "tsx scripts/create-api-key.ts",
     "test:tiq": "firebase emulators:exec --only firestore --project demo-newleaf \"npx tsx src/routes/tiq.integration.test.ts\"",
+    "test:tiq:sim": "firebase emulators:exec --only firestore --project demo-newleaf \"npx tsx src/routes/tiq-sim.integration.test.ts\"",
     "test:tiq:rules": "firebase emulators:exec --only firestore --project demo-tiq \"npx tsx src/routes/tiq.rules.test.ts\"",
     "typecheck": "tsc --noEmit"
   },

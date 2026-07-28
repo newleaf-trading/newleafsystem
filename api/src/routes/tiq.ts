@@ -133,6 +133,72 @@ function provenanceNow(bankVersion: string) {
   });
 }
 
+// ── simulator: scenario loading, stripping and server-side option scoring ────
+
+const scenarioCache: Record<string, any> = {};
+async function loadScenario(db: any, id: string) {
+  if (scenarioCache[id]) return scenarioCache[id];
+  const snap = await db.collection('tiqScenarios').doc(id).get();
+  if (!snap.exists) return null;
+  scenarioCache[id] = snap.data();
+  return scenarioCache[id];
+}
+
+/**
+ * Every option a node can present, across all three variant mechanisms (flat
+ * options, per-option variants, node-level option_variants), flattened with its
+ * decision `points`. Used ONLY server-side to score a decision — the client
+ * identifies its choice by text, and points are never sent to it.
+ */
+function collectNodeOptions(node: any): any[] {
+  const out: any[] = [];
+  const add = (o: any, v?: any) => out.push({ text: (v || o).text, points: (v || o).points, act: o.act, breaks: o.breaks || null });
+  if (Array.isArray(node.options)) {
+    for (const o of node.options) {
+      if (o.variants) for (const vk of Object.keys(o.variants)) add(o, o.variants[vk]);
+      else add(o);
+    }
+  }
+  if (node.option_variants) {
+    for (const vk of Object.keys(node.option_variants)) for (const o of node.option_variants[vk]) add(o);
+  }
+  return out;
+}
+
+/** Strip decision `points` from every option; keep text/act/breaks so the client
+ *  can render, drive the running tape (via act) and count rules broken (via breaks).
+ *  Scripts stay — the market path is fixed and public by design (spec-simulator §5.1). */
+function stripScenario(scen: any) {
+  const stripOpt = (o: any) => {
+    const c: any = { text: o.text, act: o.act };
+    if (o.breaks) c.breaks = o.breaks;
+    if (o.variants) { c.variants = {}; for (const vk of Object.keys(o.variants)) c.variants[vk] = { text: o.variants[vk].text }; }
+    return c;
+  };
+  const nodes = (scen.nodes || []).map((n: any) => {
+    const nn: any = { id: n.id, t: n.t, clock: n.clock };
+    for (const k of ['beat', 'beat_variants', 'question', 'question_variants']) if (n[k] !== undefined) nn[k] = n[k];
+    if (Array.isArray(n.options)) nn.options = n.options.map(stripOpt);
+    if (n.option_variants) { nn.option_variants = {}; for (const vk of Object.keys(n.option_variants)) nn.option_variants[vk] = n.option_variants[vk].map(stripOpt); }
+    return nn;
+  });
+  return {
+    id: scen.id, scenario_version: scen.scenario_version, title: scen.title,
+    account: scen.account, rules: scen.rules, instrument: scen.instrument,
+    opening_position: scen.opening_position, settle_t: scen.settle_t,
+    scripts: scen.scripts, script_labels: scen.script_labels || {},
+    confidence_scale: scen.confidence_scale || [], nodes
+  };
+}
+
+function provenanceScenario(scen: any) {
+  return TIQ.provenance({
+    timestamp: new Date().toISOString(),
+    commitSha: process.env.COMMIT_SHA || process.env.CODE_COMMIT_SHA || null,
+    bankVersion: null, normVersion: null, scenarioVersion: scen.scenario_version || null
+  });
+}
+
 export function registerTIQRoutes(fastify: FastifyInstance) {
   const gate = { preHandler: [requireTier('free')] }; // authenticated; free tier is enough
 
@@ -408,6 +474,143 @@ export function registerTIQRoutes(fastify: FastifyInstance) {
         calibration: s.calibration,
         learningPath: s.learningPath
       };
+    } catch (err: any) {
+      req.log?.error?.(err);
+      return reply.code(500).send({ error: err.message });
+    }
+  });
+
+  // ── SIMULATOR — repeatable sessions, separate from assessment sittings ───────
+  // Sessions are repeatable by design (a user has many), and NOTHING here touches
+  // tiqSittings or the norms/standing path — they are not assessment attempts.
+
+  // start a session → returns the scenario with decision points STRIPPED
+  fastify.post('/api/tiq/sim/:scenarioId/sessions', gate, async (req, reply) => {
+    const { scenarioId } = req.params as any;
+    try {
+      const db = await getDb();
+      const scen = await loadScenario(db, scenarioId);
+      if (!scen) return reply.code(404).send({ error: 'scenario not found' });
+      const { FieldValue } = await import('firebase-admin/firestore');
+      const id = randomUUID().replace(/-/g, '').slice(0, 20);
+
+      await db.collection('tiqSimSessions').doc(id).set({
+        id,
+        kind: 'tiq-sim-session',
+        scenarioId,
+        scenario_version: scen.scenario_version || null,
+        status: 'in_progress',
+        userId: (req as any).userId || null,
+        decisions: {},
+        provenance: provenanceScenario(scen),
+        createdAt: FieldValue.serverTimestamp(),
+        startedAtISO: new Date().toISOString()
+      });
+      return { sessionId: id, scenario: stripScenario(scen) };
+    } catch (err: any) {
+      req.log?.error?.(err);
+      return reply.code(500).send({ error: err.message });
+    }
+  });
+
+  // record one decision — server derives act/t/points from the scenario by the
+  // chosen option's text; points are scored server-side and never revealed here.
+  fastify.post('/api/tiq/sim/:scenarioId/sessions/:id/decisions', gate, async (req, reply) => {
+    const { scenarioId, id } = req.params as any;
+    const body = req.body as any;
+    if (!body?.nodeId || body?.choiceText == null) return reply.code(400).send({ error: 'nodeId and choiceText are required' });
+    try {
+      const db = await getDb();
+      const ref = db.collection('tiqSimSessions').doc(id);
+      const snap = await ref.get();
+      if (!snap.exists) return reply.code(404).send({ error: 'session not found' });
+      const session = snap.data() as any;
+      if (session.status === 'complete') return reply.code(409).send({ error: 'session is complete; start a new session' });
+      if (session.decisions?.[body.nodeId]) return reply.code(409).send({ error: 'node already decided' });
+
+      const scen = await loadScenario(db, scenarioId);
+      const node = (scen?.nodes || []).find((n: any) => n.id === body.nodeId);
+      if (!node) return reply.code(400).send({ error: 'unknown node' });
+      const opt = collectNodeOptions(node).find((o) => o.text === body.choiceText);
+      if (!opt) return reply.code(400).send({ error: 'unknown choice' });
+
+      await ref.update({
+        [`decisions.${body.nodeId}`]: {
+          act: opt.act, t: node.t, points: opt.points, breaks: opt.breaks || null,
+          choiceText: body.choiceText,
+          confidence: Number.isFinite(body.confidence) ? body.confidence : null,
+          elapsed_ms: Number.isFinite(body.elapsed_ms) ? body.elapsed_ms : null,
+          answeredAtISO: new Date().toISOString()
+        },
+        provenance: provenanceScenario(scen)
+      });
+      return { ok: true, nodeId: body.nodeId };
+    } catch (err: any) {
+      req.log?.error?.(err);
+      return reply.code(500).send({ error: err.message });
+    }
+  });
+
+  // finish — server-side scoreRun across EVERY script, plus survival stats.
+  fastify.post('/api/tiq/sim/:scenarioId/sessions/:id/finish', gate, async (req, reply) => {
+    const { scenarioId, id } = req.params as any;
+    try {
+      const db = await getDb();
+      const { FieldValue } = await import('firebase-admin/firestore');
+      const ref = db.collection('tiqSimSessions').doc(id);
+      const snap = await ref.get();
+      if (!snap.exists) return reply.code(404).send({ error: 'session not found' });
+      const session = snap.data() as any;
+      if (session.status === 'complete') return reply.code(409).send({ error: 'session already finished; retakes are new sessions' });
+
+      const scen = await loadScenario(db, scenarioId);
+      const log = (scen.nodes || [])
+        .map((n: any) => session.decisions?.[n.id])
+        .filter(Boolean)
+        .map((d: any) => ({ act: d.act, t: d.t, points: d.points }));
+
+      const run = TIQ.scoreRun(scen, log); // pnl in integer pence, keyed by script
+
+      // Confidence calibration — needs the secret per-decision points, so it is
+      // computed here, server-side (spec-simulator §2). Confidence arrives on the
+      // scenario's 0–1 scale; decision quality is points/10.
+      const calEntries = (scen.nodes || [])
+        .map((n: any) => session.decisions?.[n.id])
+        .filter((d: any) => d && d.confidence != null)
+        .map((d: any) => ({ confidence: d.confidence, quality: (d.points || 0) / 10 }));
+      const calibration = TIQ.calibrationGap(calEntries);
+
+      const accountPence = (scen.account || 0) * 100;
+      const survival = TIQ.survivalStats(Object.values(run.pnl), accountPence);
+      const pnlPounds: Record<string, number> = {};
+      for (const k of Object.keys(run.pnl)) pnlPounds[k] = TIQ.toPounds(run.pnl[k]);
+
+      const result = {
+        decisionScore: run.decisionScore,
+        maxScore: run.maxScore,
+        pnl: run.pnl,                 // integer pence — the exact, path-independent numbers
+        pnlPounds,                    // presentation
+        primaryScript: run.primaryScript,
+        scriptLabels: scen.script_labels || {},
+        scriptCount: Object.keys(run.pnl).length,
+        lucky: run.lucky,             // decisionScore <= 50% of max AND actual-script P&L positive
+        robbed: run.robbed,
+        calibration,
+        survival: {
+          ...survival,
+          medianPounds: TIQ.toPounds(survival.median),
+          worstDecilePounds: TIQ.toPounds(survival.worstDecile)
+        }
+      };
+
+      await ref.update({
+        status: 'complete',
+        result,
+        finishedAt: FieldValue.serverTimestamp(),
+        finishedAtISO: new Date().toISOString(),
+        provenance: provenanceScenario(scen)
+      });
+      return { sessionId: id, status: 'complete', result };
     } catch (err: any) {
       req.log?.error?.(err);
       return reply.code(500).send({ error: err.message });

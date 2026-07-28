@@ -118,5 +118,24 @@ t('same log replays identically twice', () => {
   assert.strictEqual(l.length, 5, 'log not mutated');
 });
 
+console.log('\nsurvivalStats (many-script distribution)');
+t('two survivable scripts → 100% survival, median of the pair', () => {
+  const s = SIM.survivalStats([13500, 13500], 50000 * 100);
+  assert.strictEqual(s.n, 2);
+  assert.strictEqual(s.survivalShare, 1);
+  assert.strictEqual(s.median, 13500);
+});
+t('a wipeout path drops survival share and shows up as the worst decile', () => {
+  const s = SIM.survivalStats([-6000000, 13500, 500000], 5000000);
+  assert.strictEqual(s.n, 3);
+  assert.ok(Math.abs(s.survivalShare - 2 / 3) < 1e-9); // -£60k on £50k is wiped
+  assert.strictEqual(s.worstDecile, -6000000);
+  assert.strictEqual(s.median, 13500);
+});
+t('empty input is safe', () => {
+  const s = SIM.survivalStats([], 5000000);
+  assert.strictEqual(s.n, 0);
+});
+
 console.log(`\n${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);

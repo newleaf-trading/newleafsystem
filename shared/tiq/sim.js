@@ -141,6 +141,23 @@ function scoreRun(scenario, log, opts = {}) {
   return { decisionScore: score, maxScore, pnl, primaryScript: primary, lucky, robbed };
 }
 
+/**
+ * Distribution stats across many scripts (spec-simulator §5.4: "run the log
+ * against 200 scripts rather than two and show the distribution"). All P&L in
+ * integer pence; account in pence too. survives = the account is not wiped
+ * (accountPence + pnl > 0).
+ *   { n, median, worstDecile, survivalShare }
+ */
+function survivalStats(pnlValues, accountPence) {
+  const vals = (pnlValues || []).filter(Number.isFinite).slice().sort((a, b) => a - b);
+  const n = vals.length;
+  if (!n) return { n: 0, median: 0, worstDecile: 0, survivalShare: 0 };
+  const median = n % 2 ? vals[(n - 1) / 2] : Math.round((vals[n / 2 - 1] + vals[n / 2]) / 2);
+  const worstDecile = vals[Math.floor(0.1 * (n - 1))]; // 10th-percentile outcome
+  const survived = vals.filter(v => accountPence + v > 0).length;
+  return { n, median, worstDecile, survivalShare: survived / n };
+}
+
 module.exports = {
   CONTRACT_MULTIPLIER,
   toPence,
@@ -151,5 +168,6 @@ module.exports = {
   applyAction,
   replay,
   decisionScore,
-  scoreRun
+  scoreRun,
+  survivalStats
 };

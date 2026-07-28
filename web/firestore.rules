@@ -132,17 +132,27 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Frozen norms, scenarios and item stats — read-only to clients, server write only.
+    // Frozen norms and item stats — read-only to clients, server write only.
     match /tiqNorms/{document=**} {
       allow read: if true;
       allow write: if false;
     }
-    match /tiqScenarios/{scenarioId} {
-      allow read: if request.auth != null;
-      allow write: if false;
-    }
     match /tiqItemStats/{itemId} {
       allow read: if true;
+      allow write: if false;
+    }
+
+    // Scenarios carry the per-option decision points (the simulator's answer key),
+    // so — like tiqItems — they are SERVER-ONLY. Clients get a points-stripped
+    // scenario from POST /api/tiq/sim/:scenarioId/sessions, never a direct read.
+    match /tiqScenarios/{scenarioId} {
+      allow read, write: if false;
+    }
+
+    // Simulator sessions: repeatable, one per attempt, server-write only. A client
+    // may read only its own session (which carries its own decision points).
+    match /tiqSimSessions/{sessionId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
       allow write: if false;
     }
 
@@ -152,10 +162,10 @@ service cloud.firestore {
     // OR-override their restrictions and silently make sittings and keyed items
     // world-readable. Non-tiq collections keep their previous public-read. ───
     match /{col}/{docId} {
-      allow read: if !(col in ['tiqSittings', 'tiqItems']);
+      allow read: if !(col in ['tiqSittings', 'tiqItems', 'tiqScenarios', 'tiqSimSessions']);
     }
     match /{col}/{docId}/{document=**} {
-      allow read: if !(col in ['tiqSittings', 'tiqItems']);
+      allow read: if !(col in ['tiqSittings', 'tiqItems', 'tiqScenarios', 'tiqSimSessions']);
     }
   }
 }

@@ -16,6 +16,7 @@
  */
 
 const path = require('path');
+const fs = require('fs');
 
 const TIQ = require(path.resolve(__dirname, '..', '..', 'shared', 'tiq', 'index.js'));
 const BANK = require(path.resolve(__dirname, '..', '..', 'content', 'tiq', 'bank-v1.json'));
@@ -78,7 +79,23 @@ async function seed(db) {
     if (++n % 200 === 0) { await batch.commit(); batch = db.batch(); }
   }
   await batch.commit();
-  return { bank_version: BANK.version, items: BANK.questions.length };
+
+  // Scenarios — full docs (server-only; carry the per-option decision points).
+  const scenDir = path.resolve(__dirname, '..', '..', 'content', 'tiq', 'scenarios');
+  let scenarios = 0;
+  if (fs.existsSync(scenDir)) {
+    for (const file of fs.readdirSync(scenDir).filter((f) => f.endsWith('.json'))) {
+      const scen = require(path.join(scenDir, file));
+      await db.collection('tiqScenarios').doc(scen.id).set({
+        ...scen,
+        active: true,
+        provenance: { ...provenance, versions: { ...provenance.versions, scenario: scen.scenario_version || null } }
+      });
+      scenarios++;
+    }
+  }
+
+  return { bank_version: BANK.version, items: BANK.questions.length, scenarios };
 }
 
 /** The client-safe view of an item — no key, no scoring block, no explanation. */

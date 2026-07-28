@@ -45,6 +45,9 @@ async function main() {
     await setDoc(doc(db, 'tiqItemsPublic/i1'), { id: 'i1', stem: 'a question' });
     await setDoc(doc(db, 'tiqBanks/1.0.0'), { version: '1.0.0' });
     await setDoc(doc(db, 'tiqItemStats/i1'), { choices: {} });
+    await setDoc(doc(db, 'tiqScenarios/the-wednesday'), { id: 'the-wednesday', nodes: [] });
+    await setDoc(doc(db, 'tiqSimSessions/sim_alice'), { userId: 'alice', status: 'complete' });
+    await setDoc(doc(db, 'tiqSimSessions/sim_bob'), { userId: 'bob', status: 'complete' });
   });
 
   const alice = env.authenticatedContext('alice').firestore();
@@ -67,6 +70,13 @@ async function main() {
   await expect('unauthenticated read of tiqBanks succeeds (no secrets)', assertSucceeds(getDoc(doc(anon, 'tiqBanks/1.0.0'))));
   await expect('client read of tiqItemStats succeeds', assertSucceeds(getDoc(doc(alice, 'tiqItemStats/i1'))));
   await expect('client write to tiqItemStats is DENIED', assertFails(setDoc(doc(alice, 'tiqItemStats/i1'), { choices: { A: 99 } })));
+
+  console.log('\ntiqScenarios (holds the sim key) server-only; tiqSimSessions server-write, own read');
+  await expect('client CANNOT read tiqScenarios (carries per-option points)', assertFails(getDoc(doc(alice, 'tiqScenarios/the-wednesday'))));
+  await expect('client-authenticated WRITE to tiqSimSessions is DENIED', assertFails(setDoc(doc(alice, 'tiqSimSessions/sim_alice'), { userId: 'alice', tampered: true })));
+  await expect('client cannot CREATE a sim session', assertFails(setDoc(doc(alice, 'tiqSimSessions/sim_new'), { userId: 'alice' })));
+  await expect('client reads its OWN sim session', assertSucceeds(getDoc(doc(alice, 'tiqSimSessions/sim_alice'))));
+  await expect("client cannot read another user's sim session", assertFails(getDoc(doc(bob, 'tiqSimSessions/sim_alice'))));
 
   await env.cleanup();
   console.log(`\n${pass} passed, ${fail} failed\n`);

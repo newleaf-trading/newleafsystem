@@ -1,0 +1,265 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision Simulator — NewLeaf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="load-nav.js" defer></script>
+
+<!--
+  Decision Simulator surface. Ported from docs/tiq/reference/decision-sim.html —
+  narration and node text are deliberate and NOT rewritten. The running tape is
+  computed in the browser by tiqEngine.js (the generated, drift-guarded copy of
+  shared/tiq), but every SCORE and the counterfactual P&L come from the server
+  (api/src/routes/tiq.ts). The market path is scripted and never reacts to the
+  user. Session is persisted append-only; a retake is a new session.
+-->
+<script src="public/js/tiqEngine.js"></script>
+
+<style>
+  :root{--forest:#16271C;--forest2:#1E3326;--forest3:#27412F;--gold:#B68F3E;--gold-lt:#E7D9AE;--cream:#F2ECDD;--card:#FBF8F0;--terra:#BC5B43;--teal:#3E7C6A;
+    --display:'Fraunces',Georgia,serif;--body:'DM Sans',system-ui,sans-serif;--mono:'Space Mono',monospace;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--forest);color:var(--cream);font-family:var(--body);min-height:100vh;display:flex;justify-content:center;padding:24px 18px 60px;-webkit-font-smoothing:antialiased}
+  .stage{width:100%;max-width:640px}
+  .tape{background:var(--forest2);border:1px solid var(--forest3);border-radius:10px;padding:14px 16px;margin-bottom:26px;font-family:var(--mono);font-size:12px}
+  .tape-row{display:flex;justify-content:space-between;padding:4px 0;color:#8FA396;letter-spacing:.04em}
+  .tape-row b{color:var(--cream);font-weight:400}
+  .tape-row.pos b{color:var(--teal)} .tape-row.neg b{color:var(--terra)}
+  .tape-hr{height:1px;background:var(--forest3);margin:8px 0}
+  .clock{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:12px}
+  .beat{font-size:15px;line-height:1.7;color:#C9D6CC;margin-bottom:16px}
+  .beat em{color:var(--gold-lt);font-style:normal}
+  h1{font-family:var(--display);font-size:26px;line-height:1.3;font-weight:600;margin-bottom:22px;letter-spacing:-.01em}
+  .opts{display:flex;flex-direction:column;gap:9px}
+  .opt{background:var(--card);color:#243027;border:none;border-radius:10px;padding:15px 17px;text-align:left;font-family:var(--body);font-size:15px;line-height:1.5;cursor:pointer;transition:transform .12s ease,box-shadow .18s ease}
+  .opt:hover{transform:translateX(3px);box-shadow:-3px 0 0 var(--gold)}
+  .conf{margin-top:4px}
+  .conf-q{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:12px}
+  .conf-pick{background:var(--forest2);border:1px solid var(--forest3);color:var(--cream);border-radius:8px;padding:13px 16px;font-family:var(--body);font-size:14.5px;cursor:pointer;text-align:left;width:100%;margin-bottom:8px}
+  .conf-pick:hover{border-color:var(--gold)}
+  .chosen{background:var(--forest2);border-left:2px solid var(--teal);border-radius:0 8px 8px 0;padding:13px 16px;margin-bottom:20px;font-size:14.5px;line-height:1.5;color:#D8E2DA}
+  .chosen span{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8FA396;margin-bottom:5px}
+  .center{text-align:center}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+  .big{font-family:var(--display);font-size:38px;line-height:1.12;font-weight:600;letter-spacing:-.02em;margin:14px 0 16px}
+  .lede{font-size:16px;line-height:1.65;color:#C9D6CC;max-width:460px;margin:0 auto 28px}
+  .num{font-family:var(--display);font-size:56px;font-weight:600;color:var(--gold-lt);line-height:1}
+  .cap{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:#8FA396;margin-top:6px}
+  .split{display:flex;gap:10px;margin:30px 0 6px;flex-wrap:wrap}
+  .half{flex:1;min-width:150px;background:var(--forest2);border:1px solid var(--forest3);border-radius:10px;padding:18px 14px}
+  .half .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8FA396;margin-bottom:9px;line-height:1.5}
+  .half .val{font-family:var(--display);font-size:29px;font-weight:600}
+  .val.pos{color:var(--teal)} .val.neg{color:var(--terra)}
+  .callout{text-align:left;background:var(--forest2);border:1px solid var(--forest3);border-radius:10px;padding:20px;margin-top:12px}
+  .callout.hot{border-color:var(--terra)}
+  .callout h3{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-weight:400;margin-bottom:9px}
+  .callout.hot h3{color:var(--terra)}
+  .callout p{font-size:15px;line-height:1.65;color:#D8E2DA} .callout p+p{margin-top:11px}
+  .log{text-align:left;margin-top:12px}
+  .log-row{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--forest3);font-size:14px;line-height:1.55}
+  .log-row:last-child{border:none}
+  .log-t{font-family:var(--mono);font-size:11px;color:#8FA396;flex:0 0 62px;padding-top:2px}
+  .log-b{flex:1;color:#C9D6CC}
+  .log-b i{display:block;font-style:normal;font-family:var(--mono);font-size:11px;color:var(--gold);margin-top:4px;letter-spacing:.05em}
+  .next,.again{border:none;border-radius:8px;padding:14px 26px;font-family:var(--body);font-weight:700;font-size:15px;cursor:pointer;margin-top:22px}
+  .next{background:var(--gold);color:var(--forest)} .next:hover{background:var(--gold-lt)}
+  .again{background:none;border:1px solid var(--forest3);color:#8FA396;font-weight:400} .again:hover{border-color:var(--gold);color:var(--gold-lt)}
+  .footnote{font-size:12.5px;line-height:1.65;color:#7C8F83;margin-top:24px;text-align:left}
+  .err{background:#3a1f1a;border:1px solid var(--terra);color:#f0d0c8;border-radius:10px;padding:16px;font-size:14px;line-height:1.6}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  @media (max-width:480px){h1{font-size:22px}.big{font-size:30px}}
+</style>
+
+<div class="stage" id="stage"></div>
+
+<script>
+const T = window.TIQEngine;
+const params = new URLSearchParams(location.search);
+const SCENARIO_ID = params.get('scenario') || 'the-wednesday';
+const API_KEY = (window.localStorage && localStorage.getItem('nl_api_key')) || window.NEWLEAF_API_KEY || '';
+
+async function api(method, url, body){
+  const res = await fetch(url, { method, headers:{'Content-Type':'application/json', ...(API_KEY?{'X-API-Key':API_KEY}:{})}, body: body?JSON.stringify(body):undefined });
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error || (method+' '+url+' → '+res.status));
+  return data;
+}
+
+let SESSION, SCEN, S, node, tStart, WIDTH, ACCOUNT, SCRIPT_A;
+const stage = document.getElementById('stage');
+
+start();
+async function start(){
+  stage.innerHTML = `<div class="center"><div class="kicker">Loading…</div></div>`;
+  try{
+    const r = await api('POST', `/api/tiq/sim/${SCENARIO_ID}/sessions`, {});
+    SESSION = r.sessionId; SCEN = r.scenario;
+    ACCOUNT = SCEN.account; WIDTH = (SCEN.instrument && SCEN.instrument.width) || 5; SCRIPT_A = SCEN.scripts.A;
+    S = T.freshState(SCEN); node = 0;
+    intro();
+  }catch(e){ showErr(e); }
+}
+
+function intro(){
+  stage.innerHTML = `<div class="center">
+    <div class="kicker">NewLeaf Decision Simulator</div>
+    <div class="big">${SCEN.title || SCENARIO_ID}</div>
+    <p class="lede">Two trading days. Five decisions. The market does not care what you choose — the path is already written and it runs the same either way.<br><br>You start with one open position and £${ACCOUNT.toLocaleString()}.</p>
+    <button class="next" id="go">Open the session</button></div>`;
+  document.getElementById('go').onclick = render;
+}
+
+function money(x){ const v=Math.round(x); return (v<0?'−£':'£') + Math.abs(v).toLocaleString(); }
+function poundsUnreal(t, script){ return T.toPounds(T.unrealised(S, script||SCRIPT_A, t)); }
+
+// resolve a node/option variant against user STATE (never the market)
+function pickVariant(variants){
+  const keys = Object.keys(variants);
+  if(keys.includes('flat')) return variants[S.lots.length ? 'holding' : 'flat'];
+  if(keys.includes('clean')) return variants[S.breaks.length ? 'broken' : 'clean'];
+  return variants[keys[0]];
+}
+function fillBeat(text){
+  return (text||'')
+    .replace(/\{unreal:(t\d)\}/g, (_,t)=> money(poundsUnreal(t)))
+    .replace(/\{pctOfAccount:(t\d)\}/g, (_,t)=> (Math.abs(poundsUnreal(t))/ACCOUNT*100).toFixed(1))
+    .replace(/\{heldLoss:(t\d)\}/g, (_,t)=> money(T.toPounds(T.unrealised(T.freshState(SCEN), SCRIPT_A, t))))
+    .replace(/\{cash\}/g, ()=> money(T.toPounds(S.cash)));
+}
+
+function tape(){
+  const held = S.lots.reduce((a,l)=>a+l.n,0);
+  const risk = S.lots.reduce((a,l)=>a+(WIDTH-l.credit)*100*l.n,0);
+  const cash = T.toPounds(S.cash);
+  return `<div class="tape">
+    <div class="tape-row"><span>Account</span><b>£${ACCOUNT.toLocaleString()}</b></div>
+    <div class="tape-row"><span>Open contracts</span><b>${held||'—'}</b></div>
+    <div class="tape-row"><span>Capital at risk</span><b>${risk?money(risk)+' · '+(risk/ACCOUNT*100).toFixed(1)+'%':'—'}</b></div>
+    <div class="tape-hr"></div>
+    <div class="tape-row ${cash>0?'pos':cash<0?'neg':''}"><span>Realised</span><b>${money(cash)}</b></div>
+    <div class="tape-row"><span>Rules broken</span><b>${S.breaks.length||'0'}</b></div>
+  </div>`;
+}
+
+function currentOptions(N){
+  let opts = N.option_variants ? pickVariant(N.option_variants) : (N.options||[]);
+  return opts.map(o=>{
+    const text = o.variants ? pickVariant(o.variants).text : o.text;
+    return { text, act:o.act, breaks:o.breaks||null };
+  });
+}
+
+function render(){
+  const N = SCEN.nodes[node];
+  const beat = fillBeat(N.beat_variants ? pickVariant(N.beat_variants) : N.beat);
+  const q = N.question_variants ? pickVariant(N.question_variants) : N.question;
+  const opts = currentOptions(N);
+  tStart = Date.now();
+  stage.innerHTML = tape() + `
+    <div class="clock">${N.clock} · decision ${node+1} of ${SCEN.nodes.length}</div>
+    <p class="beat">${beat}</p>
+    <h1>${q}</h1>
+    <div class="opts">${opts.map((o,k)=>`<button class="opt" data-k="${k}">${o.text}</button>`).join('')}</div>`;
+  stage.querySelectorAll('.opt').forEach(b=>b.onclick=()=>askConfidence(N, opts[+b.dataset.k]));
+}
+
+// confidence gate — between the decision and the outcome, so it cannot be revised
+function askConfidence(N, opt){
+  const secs = (Date.now()-tStart)/1000;
+  const CONF = SCEN.confidence_scale || [{label:'Certain',v:1},{label:'Fairly confident',v:0.7},{label:'Could go either way',v:0.4},{label:'Guessing',v:0.15}];
+  stage.innerHTML = tape() + `
+    <div class="clock">${N.clock}</div>
+    <div class="chosen"><span>Your decision</span>${opt.text}</div>
+    <div class="conf"><div class="conf-q">Before you see what happens — how confident are you?</div>
+    ${CONF.map((c,k)=>`<button class="conf-pick" data-k="${k}">${c.label}</button>`).join('')}</div>`;
+  stage.querySelectorAll('.conf-pick').forEach(b=>b.onclick=()=>commit(N, opt, CONF[+b.dataset.k], secs));
+}
+
+async function commit(N, opt, conf, secs){
+  try{
+    await api('POST', `/api/tiq/sim/${SCENARIO_ID}/sessions/${SESSION}/decisions`, { nodeId:N.id, choiceText:opt.text, confidence:conf.v, elapsed_ms:Math.round(secs*1000) });
+  }catch(e){ return showErr(e); }
+  // advance the LOCAL tape along the actual script (server holds the scores)
+  S = T.applyAction(S, opt.act, N.t, SCRIPT_A);
+  if(opt.breaks) S.breaks = [...S.breaks, opt.breaks];
+  S.log = [...S.log, { clock:N.clock, text:opt.text, confLabel:conf.label, secs }];
+  node++;
+  node < SCEN.nodes.length ? render() : finish();
+}
+
+async function finish(){
+  stage.innerHTML = `<div class="center"><div class="kicker">Settling the week…</div></div>`;
+  let R;
+  try{ R = (await api('POST', `/api/tiq/sim/${SCENARIO_ID}/sessions/${SESSION}/finish`, {})).result; }
+  catch(e){ return showErr(e); }
+  renderResult(R);
+}
+
+function renderResult(R){
+  const scripts = Object.keys(R.pnlPounds);
+  const labels = R.scriptLabels || {};
+  const secs = S.log.map(e=>e.secs).sort((a,b)=>a-b);
+  const med = secs.length ? secs[Math.floor(secs.length/2)] : 0;
+  const pace = med < 6 ? 'Fast' : med > 32 ? 'Deliberate' : 'Measured';
+
+  // Two scripts → the counterfactual two-column. 3+ → the distribution.
+  let outcomeBlock;
+  if(R.scriptCount <= 2){
+    outcomeBlock = `<div class="split">${scripts.map((k,idx)=>`
+      <div class="half"><div class="lbl">${idx===0?'What happened':'Same decisions,'}<br>${labels[k]||('Script '+k)}</div>
+      <div class="val ${R.pnlPounds[k]>=0?'pos':'neg'}">${money(R.pnlPounds[k])}</div></div>`).join('')}</div>`;
+  } else {
+    const sv = R.survival;
+    outcomeBlock = `<div class="split">
+      <div class="half"><div class="lbl">Median outcome<br>${R.scriptCount} paths</div><div class="val ${sv.medianPounds>=0?'pos':'neg'}">${money(sv.medianPounds)}</div></div>
+      <div class="half"><div class="lbl">Worst decile</div><div class="val neg">${money(sv.worstDecilePounds)}</div></div>
+      <div class="half"><div class="lbl">Account survives</div><div class="val ${sv.survivalShare>=0.9?'pos':'neg'}">${Math.round(sv.survivalShare*100)}%</div></div>
+    </div>`;
+  }
+
+  const calNote = {
+    'Overconfident':'You were surest on the decisions that scored worst. That pattern is the one most strongly associated with large drawdowns, because certainty is what removes the brake before size goes on.',
+    'Underconfident':'You second-guessed decisions you actually got right. The cost of that is invisible: trades not taken, size left on the table, and a slow drift toward doing nothing.',
+    'Well calibrated':'Your confidence tracked your decision quality. You were unsure where the answer was genuinely close and sure where it was not — that is the rarest result on this screen.'
+  }[R.calibration ? R.calibration.label : 'Well calibrated'];
+
+  const primary = R.primaryScript, altBest = Math.max(...scripts.filter(k=>k!==primary).map(k=>R.pnlPounds[k]));
+
+  stage.innerHTML = `<div class="center">
+    <div class="kicker">Session complete · Friday close</div>
+    <div class="num">${R.decisionScore}<span style="font-size:26px;color:#8FA396">/${R.maxScore}</span></div>
+    <div class="cap">Decision score</div>
+    ${outcomeBlock}
+
+    ${R.lucky ? `<div class="callout hot"><h3>You were rescued, not right</h3>
+      <p>Your decisions scored ${R.decisionScore} out of ${R.maxScore} and you finished ${money(R.pnlPounds[primary])}. That gap is not skill, it is a market that happened to turn.</p>
+      <p>The other column is the same decision log run against a Wednesday where SPY kept falling instead of reversing. Nothing about your choices changes. Only the tape does.</p></div>` : ''}
+
+    ${R.robbed ? `<div class="callout"><h3>Good decisions, worse outcome</h3>
+      <p>You scored ${R.decisionScore} out of ${R.maxScore} and still finished behind the alternate path. This happens, and it is the exact moment most traders abandon a working process.</p>
+      <p>A decision is judged by what you knew when you made it. You knew enough.</p></div>` : ''}
+
+    ${R.calibration ? `<div class="callout"><h3>Confidence — ${R.calibration.label}</h3><p>${calNote}</p></div>` : ''}
+    <div class="callout"><h3>Pace — ${pace}</h3><p>Median ${med.toFixed(0)} seconds per decision${
+      pace==='Fast' ? '. Under six seconds means recognition, not reasoning. That is efficient when your rules are sound and dangerous when they are not.'
+      : pace==='Deliberate' ? '. Long deliberation on decisions your own rules already answer is a sign the rules are not yet trusted.'
+      : '. You spent time where the decisions were close and moved quickly where they were not.'}</p></div>
+
+    ${S.breaks.length ? `<div class="callout hot"><h3>Rules broken — ${S.breaks.length}</h3><p>${S.breaks.map(b=>b.charAt(0).toUpperCase()+b.slice(1)).join('. ')}.</p></div>` : ''}
+
+    <div class="callout"><h3>Your session</h3><div class="log">
+      ${S.log.map(e=>`<div class="log-row"><div class="log-t">${e.clock.split(' ')[1]}</div>
+        <div class="log-b">${e.text}<i>${e.confLabel} · ${e.secs.toFixed(0)}s</i></div></div>`).join('')}
+    </div></div>
+
+    <p class="footnote">The market path in this session was fixed before you started and did not respond to anything you did. That is deliberate: if the tape reacted to your choices, a good decision could be punished by the engine and the score would measure luck. Every column above runs the identical decision log — only the script differs.</p>
+    <button class="again" id="again">Run it again</button></div>`;
+  document.getElementById('again').onclick = start;
+}
+
+function showErr(e){
+  stage.innerHTML = `<div class="err"><b>Something went wrong.</b><br>${(e&&e.message)||e}<br><br>If this is an auth error, the simulator needs an API key — set <code>localStorage.nl_api_key</code>.</div>`;
+}
+</script>
