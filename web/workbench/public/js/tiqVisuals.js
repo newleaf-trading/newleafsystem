@@ -189,6 +189,28 @@
     return frame(g);
   }
 
+  // ── category icons (Knowledge / Emotion / System / Risk / Market) ────────────
+  var ICON_PATH = {
+    KQ: '<path d="M12 6C10.5 5 8 4.5 5 4.5V18c3 0 5.5.5 7 1.5 1.5-1 4-1.5 7-1.5V4.5c-3 0-5.5.5-7 1.5z"/><path d="M12 6v13.5"/>', // open book
+    EQ: '<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>', // heart
+    SQ: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/>', // gear
+    RQ: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>', // shield
+    MQ: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>' // trending up
+  };
+  var AXIS_TO_CAT = { Knowledge: 'KQ', Emotion: 'EQ', System: 'SQ', Risk: 'RQ', Market: 'MQ' };
+  var CAT_COLOR = { KQ: C.goldLt, EQ: C.terra, SQ: C.teal, RQ: C.gold, MQ: '#3E6E8C' };
+
+  function icon(cat, size, color) {
+    var k = ICON_PATH[cat] ? cat : (AXIS_TO_CAT[cat] || cat);
+    var d = ICON_PATH[k];
+    if (!d) return '';
+    size = size || 18;
+    color = color || CAT_COLOR[k] || 'currentColor';
+    return '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" stroke="' + color +
+      '" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;flex-shrink:0">' + d + '</svg>';
+  }
+  function catColor(cat) { var k = ICON_PATH[cat] ? cat : (AXIS_TO_CAT[cat] || cat); return CAT_COLOR[k] || C.gold; }
+
   var TYPES = { payoff: payoff, checklist: checklist, gauge: gauge, streak: streak, bars: bars, sizing: sizing, snapshot: snapshot, volterm: volterm };
 
   function render(spec) {
@@ -196,5 +218,5 @@
     try { return TYPES[spec.type](spec); } catch (e) { return ''; }
   }
 
-  root.TIQVisuals = { render: render, types: Object.keys(TYPES) };
+  root.TIQVisuals = { render: render, icon: icon, catColor: catColor, types: Object.keys(TYPES) };
 })(typeof window !== 'undefined' ? window : globalThis);

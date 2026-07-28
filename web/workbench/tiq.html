@@ -37,7 +37,10 @@
   .meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:#8FA396;margin-bottom:10px;text-transform:uppercase}
   .prog{height:3px;background:var(--forest3);border-radius:2px;margin-bottom:22px;overflow:hidden}
   .prog i{display:block;height:100%;background:var(--gold);transition:width .3s ease}
-  .cat{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+  .cat{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+  .dims{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 26px}
+  .dim{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;background:var(--forest2);border:1px solid var(--forest3);border-radius:20px;padding:7px 13px}
+  .bar-top .blbl{display:inline-flex;align-items:center;gap:6px}
   .scenario{background:var(--forest2);border:1px solid var(--forest3);border-radius:10px;padding:14px 16px;font-size:14.5px;line-height:1.6;color:#C9D6CC;margin-bottom:16px}
   .viz{margin:4px 0 18px}
   .viz svg{display:block}
@@ -143,6 +146,7 @@ function start(){
       process, risk and market read — including whether your rules hold up when you are losing, not just
       when you are winning. Every answer is scored on our servers; you will see the reasoning after each one.
       About 35 minutes. Your confidence is captured before each result and cannot be revised.</p>
+    <div class="dims">${window.TIQVisuals ? ['KQ','EQ','SQ','RQ','MQ'].map(c=>`<span class="dim" style="color:${TIQVisuals.catColor(c)};border-color:${TIQVisuals.catColor(c)}55">${TIQVisuals.icon(c,18)}${CAT_LABEL[c]}</span>`).join('') : ''}</div>
     <button class="btn" id="go">Begin the assessment</button>
     <div id="err"></div>
   </div>`;
@@ -169,7 +173,7 @@ function renderItem(){
   stage.innerHTML = `
     <div class="meta"><span>${String(S.i+1).padStart(2,'0')} / ${S.items.length}</span><span>${CAT_LABEL[it.category]||it.category}</span></div>
     <div class="prog"><i style="width:${pct}%"></i></div>
-    <div class="cat">${CAT_LABEL[it.category]||it.category} · ${it.difficulty}</div>
+    <div class="cat" style="color:${window.TIQVisuals?TIQVisuals.catColor(it.category):'var(--gold)'}">${window.TIQVisuals?TIQVisuals.icon(it.category,15):''}${CAT_LABEL[it.category]||it.category} · ${it.difficulty}</div>
     ${it.scenario && it.scenario.text ? `<div class="scenario">${it.scenario.text}</div>` : ''}
     ${it.visual && window.TIQVisuals ? `<div class="viz">${TIQVisuals.render(it.visual)}</div>` : ''}
     <div class="stem">${it.stem}</div>
@@ -261,7 +265,9 @@ function renderResult(st){
   const gated = st.categories && Object.keys(st.categories).length ? '' : '';
   const bars = cats.map(c=>{
     const v = Math.round(st.categoryScores[c]||0);
-    return `<div class="bar-row"><div class="bar-top"><span>${CAT_LABEL[c]}</span><b>${v}</b></div><div class="bar"><i style="width:${v}%"></i></div></div>`;
+    const col = window.TIQVisuals ? TIQVisuals.catColor(c) : 'var(--teal)';
+    const ic = window.TIQVisuals ? TIQVisuals.icon(c, 14) : '';
+    return `<div class="bar-row"><div class="bar-top"><span class="blbl">${ic}${CAT_LABEL[c]}</span><b>${v}</b></div><div class="bar"><i style="width:${v}%;background:${col}"></i></div></div>`;
   }).join('');
 
   const traits = (st.traitEvidence||[]).map(t=>`
