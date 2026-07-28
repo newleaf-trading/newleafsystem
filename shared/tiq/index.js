@@ -15,6 +15,7 @@ const scoring = require('./scoring');
 const norms = require('./norms');
 const calibration = require('./calibration');
 const sim = require('./sim');
+const reliability = require('./reliability'); // offline bank analysis; not in the browser bundle
 
 const SCORING_VERSION = '1.0.0';
 
@@ -48,11 +49,13 @@ module.exports = {
   norms,
   calibration,
   sim,
+  reliability,
   // flat re-export for convenience (names are unique across modules)
   ...scoring,
   ...norms,
   ...calibration,
   ...sim,
+  ...reliability,
   // engine metadata + provenance
   SCORING_VERSION,
   provenance

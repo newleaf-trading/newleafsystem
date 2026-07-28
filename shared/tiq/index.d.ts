@@ -83,6 +83,11 @@ export function decisionScore(log: Array<{ points?: number; pts?: number }>): nu
 export function scoreRun(scenario: any, log: any[], opts?: { primaryScript?: string }):
   { decisionScore: number; maxScore: number; pnl: Record<string, number>; primaryScript: string; lucky: boolean; robbed: boolean };
 
+// ── reliability (offline bank analysis; not in the browser bundle) ────────────
+export function cronbachAlpha(matrix: number[][]): number | null;
+export function itemTotalCorrelations(matrix: number[][]): (number | null)[];
+export function pearson(x: number[], y: number[]): number | null;
+
 // ── engine ───────────────────────────────────────────────────────────────────
 export const SCORING_VERSION: string;
 export function provenance(opts?: {

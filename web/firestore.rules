@@ -145,6 +145,8 @@ service cloud.firestore {
     // Scenarios carry the per-option decision points (the simulator's answer key),
     // so — like tiqItems — they are SERVER-ONLY. Clients get a points-stripped
     // scenario from POST /api/tiq/sim/:scenarioId/sessions, never a direct read.
+    // DO NOT relax to client-read: these are NOT reference data — the scoring key
+    // lives inside the scenario document, so a client read would leak it.
     match /tiqScenarios/{scenarioId} {
       allow read, write: if false;
     }

@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "private": true,
   "scripts": {
-    "test": "node scoring.test.js && node norms.test.js && node calibration.test.js && node sim.test.js",
+    "test": "node scoring.test.js && node norms.test.js && node calibration.test.js && node sim.test.js && node reliability.test.js",
     "sync": "node sync.js",
     "sync:check": "node sync.js --check"
   }
