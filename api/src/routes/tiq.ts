@@ -346,6 +346,27 @@ export function registerTIQRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // ── consensus (front-door bar) — STUBBED behind a flag ───────────────────────
+  // The front door uses the bank's static illustrative values until real
+  // telemetry exists; we never present fabricated percentages as live
+  // (spec-frontdoor §3). This returns available:false until TIQ_CONSENSUS_LIVE=1
+  // and tiqItemStats has data for the item.
+  fastify.get('/api/tiq/items/:id/consensus', gate, async (req, reply) => {
+    const { id } = req.params as any;
+    if (process.env.TIQ_CONSENSUS_LIVE !== '1') {
+      return { itemId: id, available: false, source: 'static', note: 'Live consensus disabled until tiqItemStats has real data.' };
+    }
+    try {
+      const db = await getDb();
+      const snap = await db.collection('tiqItemStats').doc(id).get();
+      if (!snap.exists) return { itemId: id, available: false, source: 'static' };
+      const d = snap.data() as any;
+      return { itemId: id, available: true, source: 'telemetry', n: d.n || 0, choices: d.choices || {}, abandonRate: d.abandonRate ?? null };
+    } catch (err: any) {
+      return reply.code(500).send({ error: err.message });
+    }
+  });
+
   // ── standing: TQ, categories, traits, percentile, rank ───────────────────────
   fastify.get('/api/tiq/sittings/:id/standing', gate, async (req, reply) => {
     const { id } = req.params as any;

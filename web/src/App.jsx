@@ -38,6 +38,9 @@ const HowWeRecommendPage = lazy(() => import('./marketing/how-we-recommend/HowWe
 const TrackRecordPage = lazy(() => import('./marketing/track-record/TrackRecordPage').then(m => ({ default: m.TrackRecordPage })));
 const AboutPage = lazy(() => import('./marketing/about/AboutPage').then(m => ({ default: m.AboutPage })));
 
+// Instinct Quiz — public acquisition front door (no auth, no tier)
+const InstinctPage = lazy(() => import('./instinct/InstinctPage'));
+
 // Documentation pages — lazy
 const ScoringAlgorithmPage = lazy(() => import('./marketing/scoring-algorithm/ScoringAlgorithmPage').then(m => ({ default: m.ScoringAlgorithmPage })));
 const ProbabilityEnginePage = lazy(() => import('./marketing/probability-engine/ProbabilityEnginePage').then(m => ({ default: m.ProbabilityEnginePage })));
@@ -120,6 +123,7 @@ export default function App() {
           <Route path="/ai-portfolio" element={<AIPortfolioPage />} />
           <Route path="/verification-desk" element={<VerificationDeskPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/instinct" element={<InstinctPage />} />
         </Route>
 
         {/* Product pages */}

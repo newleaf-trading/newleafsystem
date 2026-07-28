@@ -31,6 +31,9 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: false, // preserve dist/picks/, dist/quant/, dist/desk/
+    // shared/tiq/scoring.js is CommonJS and lives outside node_modules, so tell
+    // the commonjs plugin to transform it (default: node_modules only).
+    commonjsOptions: { include: [/node_modules/, /shared[\\/]tiq[\\/]/] },
   },
   resolve: {
     alias: {
@@ -39,9 +42,14 @@ export default defineConfig({
       '@shared': path.resolve(__dirname, 'src/shared'),
       '@picks': path.resolve(__dirname, 'src/picks'),
       '@app-firebase': path.resolve(__dirname, 'src/firebase'),
+      // Repo-root TIQ scoring (pure CJS, no sibling requires) + the front-door bank.
+      '@tiq-scoring': path.resolve(__dirname, '../shared/tiq/scoring.js'),
+      '@tiq-frontdoor': path.resolve(__dirname, '../content/tiq/frontdoor-v1.json'),
     },
   },
   server: {
+    // Allow importing the shared engine and content bank from the repo root.
+    fs: { allow: [path.resolve(__dirname, '..')] },
     port: 5173,
     proxy: {
       '/api': {
