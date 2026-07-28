@@ -98,7 +98,8 @@ function stripItem(item: any) {
     stem: item.stem,
     choices: (item.choices || []).map((c: any) => ({ key: c.key, text: c.text })),
     mode: item.scoring?.mode,
-    est_seconds: item.est_seconds ?? null
+    est_seconds: item.est_seconds ?? null,
+    visual: item.visual ?? null // diagram spec — reveals nothing about the answer
     // stripped: scoring, explanation, learning_objective, bias, tags, generator,
     // pair_id, pair_role.
   };

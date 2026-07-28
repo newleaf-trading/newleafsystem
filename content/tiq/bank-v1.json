@@ -27,11 +27,26 @@
     "action_bias"
   ],
   "categories": {
-    "KQ": { "label": "Knowledge Quotient", "weight": 0.18 },
-    "EQ": { "label": "Emotion Quotient", "weight": 0.24 },
-    "SQ": { "label": "System Quotient", "weight": 0.20 },
-    "RQ": { "label": "Risk Quotient", "weight": 0.28 },
-    "MQ": { "label": "Market Intelligence", "weight": 0.10 }
+    "KQ": {
+      "label": "Knowledge Quotient",
+      "weight": 0.18
+    },
+    "EQ": {
+      "label": "Emotion Quotient",
+      "weight": 0.24
+    },
+    "SQ": {
+      "label": "System Quotient",
+      "weight": 0.2
+    },
+    "RQ": {
+      "label": "Risk Quotient",
+      "weight": 0.28
+    },
+    "MQ": {
+      "label": "Market Intelligence",
+      "weight": 0.1
+    }
   },
   "questions": [
     {
@@ -47,16 +62,35 @@
       },
       "stem": "Ignoring commissions, what is the maximum loss on the whole position, and when is it realised?",
       "choices": [
-        { "key": "A", "text": "1,800 dollars, realised only if AAPL closes at or below 210 at expiry" },
-        { "key": "B", "text": "700 dollars, realised if AAPL closes at or below 215 at expiry" },
-        { "key": "C", "text": "2,500 dollars, realised if AAPL closes at or below 210 at expiry" },
-        { "key": "D", "text": "Unlimited, because a short put has unlimited downside" }
+        {
+          "key": "A",
+          "text": "1,800 dollars, realised only if AAPL closes at or below 210 at expiry"
+        },
+        {
+          "key": "B",
+          "text": "700 dollars, realised if AAPL closes at or below 215 at expiry"
+        },
+        {
+          "key": "C",
+          "text": "2,500 dollars, realised if AAPL closes at or below 210 at expiry"
+        },
+        {
+          "key": "D",
+          "text": "Unlimited, because a short put has unlimited downside"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 3, "C": 4, "D": 0 },
-        "ruin_flag_choices": ["D"]
+        "choice_points": {
+          "A": 10,
+          "B": 3,
+          "C": 4,
+          "D": 0
+        },
+        "ruin_flag_choices": [
+          "D"
+        ]
       },
       "explanation": {
         "correct": "Spread width 5.00 minus credit 1.40 equals 3.60 of risk per spread, times 100 times 5 contracts equals 1,800 dollars, and it is only fully realised below the long strike at expiry.",
@@ -69,8 +103,46 @@
       "bias": null,
       "learning_objective": "Compute max loss on a vertical and know the exact conditions under which it occurs.",
       "est_seconds": 60,
-      "tags": ["verticals", "risk_arithmetic"],
-      "generator": { "template_id": "T-VERT-MAXLOSS-01", "bindings": ["symbol", "spot", "width", "credit", "contracts"] }
+      "tags": [
+        "verticals",
+        "risk_arithmetic"
+      ],
+      "generator": {
+        "template_id": "T-VERT-MAXLOSS-01",
+        "bindings": [
+          "symbol",
+          "spot",
+          "width",
+          "credit",
+          "contracts"
+        ]
+      },
+      "visual": {
+        "type": "payoff",
+        "title": "AAPL · 215/210 put credit spread",
+        "points": [
+          {
+            "x": 207,
+            "y": -3.6
+          },
+          {
+            "x": 210,
+            "y": -3.6
+          },
+          {
+            "x": 215,
+            "y": 1.4
+          },
+          {
+            "x": 218,
+            "y": 1.4
+          }
+        ],
+        "strikes": [
+          210,
+          215
+        ]
+      }
     },
     {
       "id": "KQ-A-INT-0002",
@@ -85,15 +157,32 @@
       },
       "stem": "What is the dominant driver of the 0.30 gain?",
       "choices": [
-        { "key": "A", "text": "Vega. A short vertical is net short vega and the short leg carries more vega than the long leg" },
-        { "key": "B", "text": "Theta. Two days of decay on a 45 DTE spread" },
-        { "key": "C", "text": "Delta. Even a 0.3 percent move produces most of the P and L on a 30-delta spread" },
-        { "key": "D", "text": "Gamma. Realised movement was lower than implied" }
+        {
+          "key": "A",
+          "text": "Vega. A short vertical is net short vega and the short leg carries more vega than the long leg"
+        },
+        {
+          "key": "B",
+          "text": "Theta. Two days of decay on a 45 DTE spread"
+        },
+        {
+          "key": "C",
+          "text": "Delta. Even a 0.3 percent move produces most of the P and L on a 30-delta spread"
+        },
+        {
+          "key": "D",
+          "text": "Gamma. Realised movement was lower than implied"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 4, "C": 0, "D": 2 }
+        "choice_points": {
+          "A": 10,
+          "B": 4,
+          "C": 0,
+          "D": 2
+        }
       },
       "explanation": {
         "correct": "The short 30-delta leg sits closer to the money and therefore has higher vega than the long 20-delta leg, so the structure is net short vega. A 23-point IV rank collapse with price flat is a vega event.",
@@ -106,8 +195,39 @@
       "bias": null,
       "learning_objective": "Attribute P and L to the correct Greek instead of assuming decay explains every gain.",
       "est_seconds": 75,
-      "tags": ["greeks", "vega", "iv_rank"],
-      "generator": { "template_id": "T-PNL-ATTRIB-01", "bindings": ["symbol", "spot", "dte", "deltas", "iv_rank_start", "iv_rank_end"] }
+      "tags": [
+        "greeks",
+        "vega",
+        "iv_rank"
+      ],
+      "generator": {
+        "template_id": "T-PNL-ATTRIB-01",
+        "bindings": [
+          "symbol",
+          "spot",
+          "dte",
+          "deltas",
+          "iv_rank_start",
+          "iv_rank_end"
+        ]
+      },
+      "visual": {
+        "type": "bars",
+        "title": "What changed in two sessions",
+        "unit": "",
+        "items": [
+          {
+            "label": "IV rank at entry",
+            "value": 55
+          },
+          {
+            "label": "IV rank now",
+            "value": 32,
+            "accent": "good"
+          }
+        ],
+        "caption": "Price ~flat · spread marked 1.40 → 1.10"
+      }
     },
     {
       "id": "KQ-A-INT-0003",
@@ -117,15 +237,32 @@
       "type": "A",
       "stem": "Which structure is simultaneously positive theta AND positive vega at initiation, with the underlying at the short strike?",
       "choices": [
-        { "key": "A", "text": "Long calendar spread" },
-        { "key": "B", "text": "Short strangle" },
-        { "key": "C", "text": "Long straddle" },
-        { "key": "D", "text": "Short put vertical" }
+        {
+          "key": "A",
+          "text": "Long calendar spread"
+        },
+        {
+          "key": "B",
+          "text": "Short strangle"
+        },
+        {
+          "key": "C",
+          "text": "Long straddle"
+        },
+        {
+          "key": "D",
+          "text": "Short put vertical"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 2, "C": 2, "D": 2 }
+        "choice_points": {
+          "A": 10,
+          "B": 2,
+          "C": 2,
+          "D": 2
+        }
       },
       "explanation": {
         "correct": "A long calendar is short the front month and long the back month at the same strike. The front decays faster, giving positive theta, while the longer-dated leg dominates vega, giving positive vega. It is the only common retail structure with that combination.",
@@ -138,8 +275,17 @@
       "bias": null,
       "learning_objective": "Recognise a structure by its Greek signature rather than its name.",
       "est_seconds": 50,
-      "tags": ["greeks", "calendars"],
-      "generator": { "template_id": "T-GREEK-SIG-01", "bindings": ["target_signature", "distractor_set"] }
+      "tags": [
+        "greeks",
+        "calendars"
+      ],
+      "generator": {
+        "template_id": "T-GREEK-SIG-01",
+        "bindings": [
+          "target_signature",
+          "distractor_set"
+        ]
+      }
     },
     {
       "id": "KQ-B-INT-0004",
@@ -154,15 +300,32 @@
       },
       "stem": "Which reading of the gap between 0.163 and 0.148 is most nearly correct?",
       "choices": [
-        { "key": "A", "text": "Delta approximates but systematically overstates probability ITM, partly because the two quantities come from different terms in the pricing model and partly because of drift and skew" },
-        { "key": "B", "text": "The platform data is stale, the two numbers should be identical" },
-        { "key": "C", "text": "Delta is probability of touching, probability ITM is probability of finishing there, and touch is roughly double" },
-        { "key": "D", "text": "The gap is the market maker edge embedded in the quote" }
+        {
+          "key": "A",
+          "text": "Delta approximates but systematically overstates probability ITM, partly because the two quantities come from different terms in the pricing model and partly because of drift and skew"
+        },
+        {
+          "key": "B",
+          "text": "The platform data is stale, the two numbers should be identical"
+        },
+        {
+          "key": "C",
+          "text": "Delta is probability of touching, probability ITM is probability of finishing there, and touch is roughly double"
+        },
+        {
+          "key": "D",
+          "text": "The gap is the market maker edge embedded in the quote"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 0, "C": 5, "D": 0 }
+        "choice_points": {
+          "A": 10,
+          "B": 0,
+          "C": 5,
+          "D": 0
+        }
       },
       "explanation": {
         "correct": "Delta is a hedge ratio, not a probability. It is close to the risk-neutral probability of finishing ITM but is not the same quantity, and skew and drift push them apart.",
@@ -175,8 +338,36 @@
       "bias": null,
       "learning_objective": "Stop treating delta as a probability without qualification.",
       "est_seconds": 90,
-      "tags": ["delta", "probability"],
-      "generator": { "template_id": "T-DELTA-PROB-01", "bindings": ["symbol", "spot", "delta", "prob_itm"] }
+      "tags": [
+        "delta",
+        "probability"
+      ],
+      "generator": {
+        "template_id": "T-DELTA-PROB-01",
+        "bindings": [
+          "symbol",
+          "spot",
+          "delta",
+          "prob_itm"
+        ]
+      },
+      "visual": {
+        "type": "bars",
+        "title": "Delta vs probability ITM",
+        "items": [
+          {
+            "label": "Put delta",
+            "value": 0.163,
+            "accent": "gold"
+          },
+          {
+            "label": "Prob. ITM (platform)",
+            "value": 0.148,
+            "accent": "good"
+          }
+        ],
+        "caption": "Delta slightly overstates P(ITM) once drift/vol skew are priced"
+      }
     },
     {
       "id": "KQ-E-ADV-0005",
@@ -186,7 +377,7 @@
       "type": "E",
       "scenario": {
         "symbol": "META",
-        "spot": 716.0,
+        "spot": 716,
         "event": "Earnings after the close in 3 days",
         "chain": {
           "front_expiry_dte": 4,
@@ -200,17 +391,40 @@
       },
       "stem": "You have a modest bearish lean but low conviction, and you want the trade to survive being wrong on direction. Which structure best matches the situation?",
       "choices": [
-        { "key": "A", "text": "Short front-week iron condor with wings outside the implied move, sized so max loss is inside your risk budget" },
-        { "key": "B", "text": "Long front-week straddle to capture the move" },
-        { "key": "C", "text": "Long calendar at the money, selling the front week and buying the 32 DTE" },
-        { "key": "D", "text": "Naked short front-week strangle at the implied move boundary" }
+        {
+          "key": "A",
+          "text": "Short front-week iron condor with wings outside the implied move, sized so max loss is inside your risk budget"
+        },
+        {
+          "key": "B",
+          "text": "Long front-week straddle to capture the move"
+        },
+        {
+          "key": "C",
+          "text": "Long calendar at the money, selling the front week and buying the 32 DTE"
+        },
+        {
+          "key": "D",
+          "text": "Naked short front-week strangle at the implied move boundary"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 2, "C": 4, "D": 0 },
-        "ruin_flag_choices": ["D"],
-        "trait_loadings": { "D": { "overconfidence": 2 } }
+        "choice_points": {
+          "A": 10,
+          "B": 2,
+          "C": 4,
+          "D": 0
+        },
+        "ruin_flag_choices": [
+          "D"
+        ],
+        "trait_loadings": {
+          "D": {
+            "overconfidence": 2
+          }
+        }
       },
       "explanation": {
         "correct": "The implied move exceeds the eight-quarter average, so front vol is priced above recent realised. A defined-risk condor harvests the crush, is direction-tolerant, and caps the tail that the 9.4 percent historical outlier represents.",
@@ -223,8 +437,37 @@
       "bias": null,
       "learning_objective": "Compare implied event move against the realised distribution before selecting structure.",
       "est_seconds": 150,
-      "tags": ["earnings", "iv_crush", "structure_selection"],
-      "generator": { "template_id": "T-EARN-STRUCT-01", "bindings": ["symbol", "spot", "front_iv", "back_iv", "implied_move", "realised_history"] }
+      "tags": [
+        "earnings",
+        "iv_crush",
+        "structure_selection"
+      ],
+      "generator": {
+        "template_id": "T-EARN-STRUCT-01",
+        "bindings": [
+          "symbol",
+          "spot",
+          "front_iv",
+          "back_iv",
+          "implied_move",
+          "realised_history"
+        ]
+      },
+      "visual": {
+        "type": "volterm",
+        "title": "META event vol term structure",
+        "points": [
+          {
+            "label": "Front week",
+            "iv": 78
+          },
+          {
+            "label": "32 DTE",
+            "iv": 41
+          }
+        ],
+        "caption": "Front implies 6.8% · 8-earnings avg 5.1%, max 9.4%"
+      }
     },
     {
       "id": "KQ-D-ADV-0006",
@@ -234,16 +477,36 @@
       "type": "D",
       "stem": "Select every statement that is true about a short 5-wide put vertical with 2 DTE and the underlying sitting between the strikes.",
       "choices": [
-        { "key": "A", "text": "Gamma risk is at or near its maximum for the life of the trade" },
-        { "key": "B", "text": "Remaining theta is large in percentage terms but small in absolute dollars relative to the open risk" },
-        { "key": "C", "text": "Vega exposure is close to negligible" },
-        { "key": "D", "text": "Assignment risk on the short leg is meaningful and rises into the close on expiry day" },
-        { "key": "E", "text": "Because the structure is defined risk, holding to expiry cannot produce a loss larger than the modelled maximum" }
+        {
+          "key": "A",
+          "text": "Gamma risk is at or near its maximum for the life of the trade"
+        },
+        {
+          "key": "B",
+          "text": "Remaining theta is large in percentage terms but small in absolute dollars relative to the open risk"
+        },
+        {
+          "key": "C",
+          "text": "Vega exposure is close to negligible"
+        },
+        {
+          "key": "D",
+          "text": "Assignment risk on the short leg is meaningful and rises into the close on expiry day"
+        },
+        {
+          "key": "E",
+          "text": "Because the structure is defined risk, holding to expiry cannot produce a loss larger than the modelled maximum"
+        }
       ],
       "scoring": {
         "mode": "multi_select",
         "max_points": 10,
-        "correct_keys": ["A", "B", "C", "D"],
+        "correct_keys": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
         "per_correct": 2.5,
         "per_incorrect": -2.5,
         "floor": 0
@@ -257,8 +520,19 @@
       "bias": null,
       "learning_objective": "Understand pin risk and why defined risk is defined only up to assignment mechanics.",
       "est_seconds": 120,
-      "tags": ["gamma", "pin_risk", "assignment"],
-      "generator": { "template_id": "T-EXPIRY-TRUTH-01", "bindings": ["dte", "width", "moneyness"] }
+      "tags": [
+        "gamma",
+        "pin_risk",
+        "assignment"
+      ],
+      "generator": {
+        "template_id": "T-EXPIRY-TRUTH-01",
+        "bindings": [
+          "dte",
+          "width",
+          "moneyness"
+        ]
+      }
     },
     {
       "id": "KQ-A-PRO-0007",
@@ -273,15 +547,32 @@
       },
       "stem": "What is the correct read and action?",
       "choices": [
-        { "key": "A", "text": "Extrinsic value of 0.08 is below the 0.24 dividend, so early exercise is economically rational for the holder and assignment tonight is likely. Decide now whether you want to be short stock" },
-        { "key": "B", "text": "With 9 DTE remaining no rational holder exercises early, so no action is needed" },
-        { "key": "C", "text": "Assignment risk is driven by delta, and at 0.94 delta it is high regardless of the dividend" },
-        { "key": "D", "text": "Buy back the call at any price, since assignment is always the worst outcome" }
+        {
+          "key": "A",
+          "text": "Extrinsic value of 0.08 is below the 0.24 dividend, so early exercise is economically rational for the holder and assignment tonight is likely. Decide now whether you want to be short stock"
+        },
+        {
+          "key": "B",
+          "text": "With 9 DTE remaining no rational holder exercises early, so no action is needed"
+        },
+        {
+          "key": "C",
+          "text": "Assignment risk is driven by delta, and at 0.94 delta it is high regardless of the dividend"
+        },
+        {
+          "key": "D",
+          "text": "Buy back the call at any price, since assignment is always the worst outcome"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 0, "C": 4, "D": 3 }
+        "choice_points": {
+          "A": 10,
+          "B": 0,
+          "C": 4,
+          "D": 3
+        }
       },
       "explanation": {
         "correct": "The dividend capture test is extrinsic value versus dividend. When extrinsic is less than the dividend, exercising to capture the dividend beats holding the option.",
@@ -294,8 +585,38 @@
       "bias": null,
       "learning_objective": "Apply the extrinsic-versus-dividend test for early assignment.",
       "est_seconds": 100,
-      "tags": ["assignment", "dividends"],
-      "generator": { "template_id": "T-EX-DIV-ASSIGN-01", "bindings": ["symbol", "spot", "strike", "dividend", "extrinsic", "dte"] }
+      "tags": [
+        "assignment",
+        "dividends"
+      ],
+      "generator": {
+        "template_id": "T-EX-DIV-ASSIGN-01",
+        "bindings": [
+          "symbol",
+          "spot",
+          "strike",
+          "dividend",
+          "extrinsic",
+          "dte"
+        ]
+      },
+      "visual": {
+        "type": "bars",
+        "title": "ORCL 205 call · assignment check",
+        "items": [
+          {
+            "label": "Extrinsic left",
+            "value": 0.08,
+            "accent": "bad"
+          },
+          {
+            "label": "Dividend tomorrow",
+            "value": 0.24,
+            "accent": "gold"
+          }
+        ],
+        "caption": "Extrinsic (0.08) < dividend (0.24) → early-assignment risk"
+      }
     },
     {
       "id": "KQ-B-ADV-0008",
@@ -310,15 +631,32 @@
       },
       "stem": "You are considering a long ATM calendar, selling 14 DTE and buying 45 DTE. What is the most accurate assessment?",
       "choices": [
-        { "key": "A", "text": "The vol structure is favourable because backwardation typically normalises and front IV falls faster, but the same backwardation is the market pricing large near-term moves, and the short leg is short gamma. Realised movement, not vol structure, is the binding risk" },
-        { "key": "B", "text": "Backwardation makes calendars strictly unattractive because you are selling the cheaper leg" },
-        { "key": "C", "text": "Backwardation makes calendars strictly attractive because you sell the richest vol on the curve" },
-        { "key": "D", "text": "Term structure is irrelevant to calendars, only IV rank matters" }
+        {
+          "key": "A",
+          "text": "The vol structure is favourable because backwardation typically normalises and front IV falls faster, but the same backwardation is the market pricing large near-term moves, and the short leg is short gamma. Realised movement, not vol structure, is the binding risk"
+        },
+        {
+          "key": "B",
+          "text": "Backwardation makes calendars strictly unattractive because you are selling the cheaper leg"
+        },
+        {
+          "key": "C",
+          "text": "Backwardation makes calendars strictly attractive because you sell the richest vol on the curve"
+        },
+        {
+          "key": "D",
+          "text": "Term structure is irrelevant to calendars, only IV rank matters"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 2, "C": 4, "D": 0 }
+        "choice_points": {
+          "A": 10,
+          "B": 2,
+          "C": 4,
+          "D": 0
+        }
       },
       "explanation": {
         "correct": "Both effects are live at once. The vol-structure edge is real and the gamma risk is real, and the second usually dominates over a two-week horizon in a panic tape. Holding two opposing considerations at the same time is the skill being measured.",
@@ -331,8 +669,37 @@
       "bias": null,
       "learning_objective": "Hold vol-structure edge and gamma risk in view simultaneously.",
       "est_seconds": 140,
-      "tags": ["term_structure", "calendars", "vix"],
-      "generator": { "template_id": "T-TERM-STRUCT-01", "bindings": ["symbol", "vix", "front_fut", "second_fut", "iv_front", "iv_back"] }
+      "tags": [
+        "term_structure",
+        "calendars",
+        "vix"
+      ],
+      "generator": {
+        "template_id": "T-TERM-STRUCT-01",
+        "bindings": [
+          "symbol",
+          "vix",
+          "front_fut",
+          "second_fut",
+          "iv_front",
+          "iv_back"
+        ]
+      },
+      "visual": {
+        "type": "volterm",
+        "title": "SPY ATM IV term structure",
+        "points": [
+          {
+            "label": "14 DTE",
+            "iv": 29
+          },
+          {
+            "label": "45 DTE",
+            "iv": 24
+          }
+        ],
+        "caption": "Front > back (backwardation) — the calendar sells the cheap wing"
+      }
     },
     {
       "id": "KQ-A-INT-0009",
@@ -346,15 +713,32 @@
       },
       "stem": "What does that combination tell you?",
       "choices": [
-        { "key": "A", "text": "Current IV sits low in the high-to-low range but above most daily readings, which means the range was stretched by a small number of extreme spikes" },
-        { "key": "B", "text": "The two metrics contradict each other, so one of the data feeds is wrong" },
-        { "key": "C", "text": "IV is genuinely low and both metrics agree that premium selling is favoured" },
-        { "key": "D", "text": "IV percentile is always the higher number, so the pair carries no information" }
+        {
+          "key": "A",
+          "text": "Current IV sits low in the high-to-low range but above most daily readings, which means the range was stretched by a small number of extreme spikes"
+        },
+        {
+          "key": "B",
+          "text": "The two metrics contradict each other, so one of the data feeds is wrong"
+        },
+        {
+          "key": "C",
+          "text": "IV is genuinely low and both metrics agree that premium selling is favoured"
+        },
+        {
+          "key": "D",
+          "text": "IV percentile is always the higher number, so the pair carries no information"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 0, "C": 2, "D": 0 }
+        "choice_points": {
+          "A": 10,
+          "B": 0,
+          "C": 2,
+          "D": 0
+        }
       },
       "explanation": {
         "correct": "Rank is position within the high-low range, percentile is the share of days below the current level. A low rank with a high percentile is the signature of a distribution with a few violent spikes.",
@@ -367,10 +751,36 @@
       "bias": null,
       "learning_objective": "Read IV rank and IV percentile together to infer the shape of the vol distribution.",
       "est_seconds": 90,
-      "tags": ["iv_rank", "iv_percentile"],
-      "generator": { "template_id": "T-IVR-IVP-01", "bindings": ["symbol", "iv_rank", "iv_percentile"] }
+      "tags": [
+        "iv_rank",
+        "iv_percentile"
+      ],
+      "generator": {
+        "template_id": "T-IVR-IVP-01",
+        "bindings": [
+          "symbol",
+          "iv_rank",
+          "iv_percentile"
+        ]
+      },
+      "visual": {
+        "type": "bars",
+        "title": "TSLA · IV rank vs IV percentile",
+        "items": [
+          {
+            "label": "IV rank",
+            "value": 34,
+            "accent": "gold"
+          },
+          {
+            "label": "IV percentile",
+            "value": 71,
+            "accent": "good"
+          }
+        ],
+        "caption": "Low rank, high percentile → IV usually lower, but range is compressed"
+      }
     },
-
     {
       "id": "EQ-F-INT-0010",
       "category": "EQ",
@@ -382,22 +792,54 @@
       },
       "stem": "What do you do?",
       "choices": [
-        { "key": "A", "text": "Take 5 contracts. The rules passed, the sizing rule is the sizing rule" },
-        { "key": "B", "text": "Take 2 contracts to rebuild confidence before returning to full size" },
-        { "key": "C", "text": "Take 8 contracts. Four losses in a row means the run is due to turn" },
-        { "key": "D", "text": "Skip it and paper trade until two consecutive wins" }
+        {
+          "key": "A",
+          "text": "Take 5 contracts. The rules passed, the sizing rule is the sizing rule"
+        },
+        {
+          "key": "B",
+          "text": "Take 2 contracts to rebuild confidence before returning to full size"
+        },
+        {
+          "key": "C",
+          "text": "Take 8 contracts. Four losses in a row means the run is due to turn"
+        },
+        {
+          "key": "D",
+          "text": "Skip it and paper trade until two consecutive wins"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 6, "C": 0, "D": 3 },
-        "trait_loadings": {
-          "A": { "discipline": 3, "process_trust": 3 },
-          "B": { "loss_aversion": 2, "discipline": 1 },
-          "C": { "gamblers_fallacy": 3, "revenge_trading": 3, "overconfidence": 2 },
-          "D": { "fear": 3, "loss_aversion": 2 }
+        "choice_points": {
+          "A": 10,
+          "B": 6,
+          "C": 0,
+          "D": 3
         },
-        "ruin_flag_choices": ["C"]
+        "trait_loadings": {
+          "A": {
+            "discipline": 3,
+            "process_trust": 3
+          },
+          "B": {
+            "loss_aversion": 2,
+            "discipline": 1
+          },
+          "C": {
+            "gamblers_fallacy": 3,
+            "revenge_trading": 3,
+            "overconfidence": 2
+          },
+          "D": {
+            "fear": 3,
+            "loss_aversion": 2
+          }
+        },
+        "ruin_flag_choices": [
+          "C"
+        ]
       },
       "explanation": {
         "correct": "A run of four rule-following losses is unremarkable at typical condor win rates. Nothing in the evidence says the system changed, so nothing in the response should change.",
@@ -410,8 +852,29 @@
       "bias": "gamblers_fallacy_revenge_trading",
       "learning_objective": "Separate outcome sequence from process validity.",
       "est_seconds": 90,
-      "tags": ["drawdown", "sizing_discipline"],
-      "generator": { "template_id": "T-STREAK-01", "bindings": ["streak_length", "strategy", "standard_size"] }
+      "tags": [
+        "drawdown",
+        "sizing_discipline"
+      ],
+      "generator": {
+        "template_id": "T-STREAK-01",
+        "bindings": [
+          "streak_length",
+          "strategy",
+          "standard_size"
+        ]
+      },
+      "visual": {
+        "type": "streak",
+        "title": "Four iron condors, by the rules",
+        "outcomes": [
+          "L",
+          "L",
+          "L",
+          "L"
+        ],
+        "caption": "All four met every gate and were exited by rule · a 5th now passes"
+      }
     },
     {
       "id": "EQ-F-INT-0011",
@@ -427,20 +890,49 @@
       },
       "stem": "What do you do?",
       "choices": [
-        { "key": "A", "text": "Close the position now" },
-        { "key": "B", "text": "Close half now, let half run" },
-        { "key": "C", "text": "Hold. The rule is a guideline and conditions are favourable" },
-        { "key": "D", "text": "Hold and add a second spread while the trend is working" }
+        {
+          "key": "A",
+          "text": "Close the position now"
+        },
+        {
+          "key": "B",
+          "text": "Close half now, let half run"
+        },
+        {
+          "key": "C",
+          "text": "Hold. The rule is a guideline and conditions are favourable"
+        },
+        {
+          "key": "D",
+          "text": "Hold and add a second spread while the trend is working"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 5, "C": 2, "D": 0 },
+        "choice_points": {
+          "A": 10,
+          "B": 5,
+          "C": 2,
+          "D": 0
+        },
         "trait_loadings": {
-          "A": { "discipline": 3 },
-          "B": { "greed": 1, "discipline": 1 },
-          "C": { "greed": 2, "confirmation_bias": 2 },
-          "D": { "greed": 3, "overconfidence": 2, "action_bias": 2 }
+          "A": {
+            "discipline": 3
+          },
+          "B": {
+            "greed": 1,
+            "discipline": 1
+          },
+          "C": {
+            "greed": 2,
+            "confirmation_bias": 2
+          },
+          "D": {
+            "greed": 3,
+            "overconfidence": 2,
+            "action_bias": 2
+          }
         }
       },
       "explanation": {
@@ -454,8 +946,29 @@
       "bias": "greed_rule_erosion",
       "learning_objective": "Detect whether rules survive contact with a pleasant outcome.",
       "est_seconds": 75,
-      "tags": ["exit_discipline", "framing_pair"],
-      "generator": { "template_id": "T-FRAME-GAIN-01", "bindings": ["symbol", "pct_max_profit", "dte", "rule_set"] }
+      "tags": [
+        "exit_discipline",
+        "framing_pair"
+      ],
+      "generator": {
+        "template_id": "T-FRAME-GAIN-01",
+        "bindings": [
+          "symbol",
+          "pct_max_profit",
+          "dte",
+          "rule_set"
+        ]
+      },
+      "visual": {
+        "type": "gauge",
+        "title": "MSFT spread · profit vs rule",
+        "value": 62,
+        "target": 50,
+        "max": 100,
+        "unit": "%",
+        "targetLabel": "50% rule",
+        "caption": "Take-profit and 21-DTE triggers have both already passed"
+      }
     },
     {
       "id": "EQ-F-INT-0012",
@@ -471,22 +984,56 @@
       },
       "stem": "What do you do?",
       "choices": [
-        { "key": "A", "text": "Close now, slightly ahead of the trigger, and record it" },
-        { "key": "B", "text": "Hold to the 2x trigger exactly, then close" },
-        { "key": "C", "text": "Hold past the trigger. Support is right there and the thesis is intact" },
-        { "key": "D", "text": "Roll the spread down and out for a small credit to buy time" }
+        {
+          "key": "A",
+          "text": "Close now, slightly ahead of the trigger, and record it"
+        },
+        {
+          "key": "B",
+          "text": "Hold to the 2x trigger exactly, then close"
+        },
+        {
+          "key": "C",
+          "text": "Hold past the trigger. Support is right there and the thesis is intact"
+        },
+        {
+          "key": "D",
+          "text": "Roll the spread down and out for a small credit to buy time"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 9, "B": 10, "C": 0, "D": 3 },
-        "trait_loadings": {
-          "A": { "discipline": 2, "fear": 1 },
-          "B": { "discipline": 3, "process_trust": 3 },
-          "C": { "loss_aversion": 3, "hope_bias": 3, "confirmation_bias": 2, "sunk_cost": 2 },
-          "D": { "hope_bias": 2, "sunk_cost": 2, "loss_aversion": 2 }
+        "choice_points": {
+          "A": 9,
+          "B": 10,
+          "C": 0,
+          "D": 3
         },
-        "ruin_flag_choices": ["C"]
+        "trait_loadings": {
+          "A": {
+            "discipline": 2,
+            "fear": 1
+          },
+          "B": {
+            "discipline": 3,
+            "process_trust": 3
+          },
+          "C": {
+            "loss_aversion": 3,
+            "hope_bias": 3,
+            "confirmation_bias": 2,
+            "sunk_cost": 2
+          },
+          "D": {
+            "hope_bias": 2,
+            "sunk_cost": 2,
+            "loss_aversion": 2
+          }
+        },
+        "ruin_flag_choices": [
+          "C"
+        ]
       },
       "explanation": {
         "correct": "Executing the written rule is the answer. Closing marginally early is close to equivalent and is scored accordingly.",
@@ -498,8 +1045,31 @@
       "bias": "loss_aversion",
       "learning_objective": "Test whether rule adherence is symmetric across gain and loss frames.",
       "est_seconds": 85,
-      "tags": ["exit_discipline", "framing_pair"],
-      "generator": { "template_id": "T-FRAME-LOSS-01", "bindings": ["symbol", "loss_multiple", "dte", "rule_set"] }
+      "tags": [
+        "exit_discipline",
+        "framing_pair"
+      ],
+      "generator": {
+        "template_id": "T-FRAME-LOSS-01",
+        "bindings": [
+          "symbol",
+          "loss_multiple",
+          "dte",
+          "rule_set"
+        ]
+      },
+      "visual": {
+        "type": "gauge",
+        "title": "AMZN spread · loss vs stop",
+        "value": 1.9,
+        "target": 2,
+        "max": 2,
+        "unit": "×",
+        "danger": true,
+        "targetLabel": "2× stop",
+        "rightLabel": "stop: 2× credit",
+        "caption": "At 1.9× the credit with 19 DTE — the stop rule is nearly hit"
+      }
     },
     {
       "id": "EQ-F-ADV-0013",
@@ -513,20 +1083,49 @@
       },
       "stem": "What do you do?",
       "choices": [
-        { "key": "A", "text": "Nothing. Log the move, note what a valid post-news setup would look like, and set an alert for those conditions" },
-        { "key": "B", "text": "Enter a small defined-risk bullish position to participate without committing much" },
-        { "key": "C", "text": "Sell a put spread to take advantage of the elevated IV, even though the setup was not on your list" },
-        { "key": "D", "text": "Wait for a pullback to the pre-news level and buy there" }
+        {
+          "key": "A",
+          "text": "Nothing. Log the move, note what a valid post-news setup would look like, and set an alert for those conditions"
+        },
+        {
+          "key": "B",
+          "text": "Enter a small defined-risk bullish position to participate without committing much"
+        },
+        {
+          "key": "C",
+          "text": "Sell a put spread to take advantage of the elevated IV, even though the setup was not on your list"
+        },
+        {
+          "key": "D",
+          "text": "Wait for a pullback to the pre-news level and buy there"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 2, "C": 4, "D": 3 },
+        "choice_points": {
+          "A": 10,
+          "B": 2,
+          "C": 4,
+          "D": 3
+        },
         "trait_loadings": {
-          "A": { "discipline": 3, "patience": 3 },
-          "B": { "fomo": 3, "action_bias": 3 },
-          "C": { "fomo": 2, "action_bias": 2 },
-          "D": { "anchoring": 3, "fomo": 1 }
+          "A": {
+            "discipline": 3,
+            "patience": 3
+          },
+          "B": {
+            "fomo": 3,
+            "action_bias": 3
+          },
+          "C": {
+            "fomo": 2,
+            "action_bias": 2
+          },
+          "D": {
+            "anchoring": 3,
+            "fomo": 1
+          }
         }
       },
       "explanation": {
@@ -540,8 +1139,42 @@
       "bias": "fomo",
       "learning_objective": "Recognise that a missed move is not a signal.",
       "est_seconds": 90,
-      "tags": ["fomo", "news_reaction"],
-      "generator": { "template_id": "T-FOMO-NEWS-01", "bindings": ["symbol", "move_pct", "iv_rank_before", "iv_rank_after", "news_type"] }
+      "tags": [
+        "fomo",
+        "news_reaction"
+      ],
+      "generator": {
+        "template_id": "T-FOMO-NEWS-01",
+        "bindings": [
+          "symbol",
+          "move_pct",
+          "iv_rank_before",
+          "iv_rank_after",
+          "news_type"
+        ]
+      },
+      "visual": {
+        "type": "snapshot",
+        "title": "NVDA · nothing on your plan",
+        "chips": [
+          {
+            "label": "NVDA intraday",
+            "value": "+9%",
+            "dir": "up"
+          },
+          {
+            "label": "IV rank",
+            "value": "28 → 61",
+            "dir": "up"
+          },
+          {
+            "label": "Your gates met",
+            "value": "none",
+            "dir": "flat"
+          }
+        ],
+        "caption": "Three group entries posted in the last twenty minutes"
+      }
     },
     {
       "id": "EQ-F-ADV-0014",
@@ -555,20 +1188,48 @@
       },
       "stem": "Which response best indicates calibrated thinking?",
       "choices": [
-        { "key": "A", "text": "Write down, before checking anything else, what the new data point would have to imply for you to exit, then evaluate it against that" },
-        { "key": "B", "text": "Look for analyst commentary that addresses the new data point and see how the consensus reads it" },
-        { "key": "C", "text": "Note the contradiction but hold, since the other two data points are unaffected and the position is flat" },
-        { "key": "D", "text": "Exit immediately. Any contradiction to the thesis invalidates the trade" }
+        {
+          "key": "A",
+          "text": "Write down, before checking anything else, what the new data point would have to imply for you to exit, then evaluate it against that"
+        },
+        {
+          "key": "B",
+          "text": "Look for analyst commentary that addresses the new data point and see how the consensus reads it"
+        },
+        {
+          "key": "C",
+          "text": "Note the contradiction but hold, since the other two data points are unaffected and the position is flat"
+        },
+        {
+          "key": "D",
+          "text": "Exit immediately. Any contradiction to the thesis invalidates the trade"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 4, "C": 3, "D": 3 },
+        "choice_points": {
+          "A": 10,
+          "B": 4,
+          "C": 3,
+          "D": 3
+        },
         "trait_loadings": {
-          "A": { "discipline": 3, "process_trust": 2 },
-          "B": { "confirmation_bias": 3 },
-          "C": { "confirmation_bias": 2, "hope_bias": 1 },
-          "D": { "fear": 2, "action_bias": 2 }
+          "A": {
+            "discipline": 3,
+            "process_trust": 2
+          },
+          "B": {
+            "confirmation_bias": 3
+          },
+          "C": {
+            "confirmation_bias": 2,
+            "hope_bias": 1
+          },
+          "D": {
+            "fear": 2,
+            "action_bias": 2
+          }
         }
       },
       "explanation": {
@@ -582,8 +1243,18 @@
       "bias": "confirmation_bias",
       "learning_objective": "Pre-commit falsification criteria rather than evaluating evidence while holding risk.",
       "est_seconds": 110,
-      "tags": ["confirmation_bias", "thesis_management"],
-      "generator": { "template_id": "T-CONFIRM-01", "bindings": ["symbol", "thesis_points", "contradicting_datum"] }
+      "tags": [
+        "confirmation_bias",
+        "thesis_management"
+      ],
+      "generator": {
+        "template_id": "T-CONFIRM-01",
+        "bindings": [
+          "symbol",
+          "thesis_points",
+          "contradicting_datum"
+        ]
+      }
     },
     {
       "id": "EQ-F-BEG-0015",
@@ -597,22 +1268,52 @@
       },
       "stem": "What is the primary problem with that answer?",
       "choices": [
-        { "key": "A", "text": "Your entry price is not an input the market uses, and the only relevant question is whether you would open this position at 1.05 today" },
-        { "key": "B", "text": "Break-even targets are fine, but 2.10 is too far away given the time remaining" },
-        { "key": "C", "text": "You should average down to lower your break-even" },
-        { "key": "D", "text": "There is no problem. Waiting for break-even avoids realising a loss" }
+        {
+          "key": "A",
+          "text": "Your entry price is not an input the market uses, and the only relevant question is whether you would open this position at 1.05 today"
+        },
+        {
+          "key": "B",
+          "text": "Break-even targets are fine, but 2.10 is too far away given the time remaining"
+        },
+        {
+          "key": "C",
+          "text": "You should average down to lower your break-even"
+        },
+        {
+          "key": "D",
+          "text": "There is no problem. Waiting for break-even avoids realising a loss"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 4, "C": 0, "D": 0 },
-        "trait_loadings": {
-          "A": { "discipline": 3 },
-          "B": { "anchoring": 2 },
-          "C": { "anchoring": 3, "sunk_cost": 3 },
-          "D": { "anchoring": 3, "loss_aversion": 3, "hope_bias": 2 }
+        "choice_points": {
+          "A": 10,
+          "B": 4,
+          "C": 0,
+          "D": 0
         },
-        "ruin_flag_choices": ["C"]
+        "trait_loadings": {
+          "A": {
+            "discipline": 3
+          },
+          "B": {
+            "anchoring": 2
+          },
+          "C": {
+            "anchoring": 3,
+            "sunk_cost": 3
+          },
+          "D": {
+            "anchoring": 3,
+            "loss_aversion": 3,
+            "hope_bias": 2
+          }
+        },
+        "ruin_flag_choices": [
+          "C"
+        ]
       },
       "explanation": {
         "correct": "The replacement test removes the anchor. If you would not open this position now at 1.05, holding it is a decision you are making by default rather than on merit.",
@@ -625,8 +1326,36 @@
       "bias": "anchoring",
       "learning_objective": "Apply the replacement test instead of anchoring on entry price.",
       "est_seconds": 70,
-      "tags": ["anchoring", "sunk_cost"],
-      "generator": { "template_id": "T-ANCHOR-ENTRY-01", "bindings": ["symbol", "entry_price", "current_price"] }
+      "tags": [
+        "anchoring",
+        "sunk_cost"
+      ],
+      "generator": {
+        "template_id": "T-ANCHOR-ENTRY-01",
+        "bindings": [
+          "symbol",
+          "entry_price",
+          "current_price"
+        ]
+      },
+      "visual": {
+        "type": "bars",
+        "title": "TSLA debit spread",
+        "unit": "",
+        "items": [
+          {
+            "label": "You paid",
+            "value": 2.1,
+            "accent": "gold"
+          },
+          {
+            "label": "Marks now",
+            "value": 1.05,
+            "accent": "bad"
+          }
+        ],
+        "caption": "The market has never heard of your 2.10 entry price"
+      }
     },
     {
       "id": "EQ-F-ADV-0016",
@@ -640,20 +1369,49 @@
       },
       "stem": "Under what condition is the roll the correct decision?",
       "choices": [
-        { "key": "A", "text": "Only if a written roll policy exists, the rolled position independently passes your entry gates, and the increased max loss still fits your risk budget" },
-        { "key": "B", "text": "Whenever the roll can be done for a net credit, since a credit means you are being paid to wait" },
-        { "key": "C", "text": "Whenever you still believe in the original directional thesis" },
-        { "key": "D", "text": "Never. Rolling a loser is always wrong" }
+        {
+          "key": "A",
+          "text": "Only if a written roll policy exists, the rolled position independently passes your entry gates, and the increased max loss still fits your risk budget"
+        },
+        {
+          "key": "B",
+          "text": "Whenever the roll can be done for a net credit, since a credit means you are being paid to wait"
+        },
+        {
+          "key": "C",
+          "text": "Whenever you still believe in the original directional thesis"
+        },
+        {
+          "key": "D",
+          "text": "Never. Rolling a loser is always wrong"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 2, "C": 0, "D": 4 },
+        "choice_points": {
+          "A": 10,
+          "B": 2,
+          "C": 0,
+          "D": 4
+        },
         "trait_loadings": {
-          "A": { "discipline": 3, "process_trust": 3 },
-          "B": { "hope_bias": 3, "sunk_cost": 2 },
-          "C": { "hope_bias": 3, "confirmation_bias": 2, "sunk_cost": 3 },
-          "D": { "fear": 1 }
+          "A": {
+            "discipline": 3,
+            "process_trust": 3
+          },
+          "B": {
+            "hope_bias": 3,
+            "sunk_cost": 2
+          },
+          "C": {
+            "hope_bias": 3,
+            "confirmation_bias": 2,
+            "sunk_cost": 3
+          },
+          "D": {
+            "fear": 1
+          }
         }
       },
       "explanation": {
@@ -667,8 +1425,40 @@
       "bias": "hope_bias",
       "learning_objective": "Evaluate a roll as a fresh position rather than as a rescue.",
       "est_seconds": 120,
-      "tags": ["rolling", "sunk_cost"],
-      "generator": { "template_id": "T-ROLL-DECISION-01", "bindings": ["symbol", "itm_pct", "dte", "roll_credit", "max_loss_before", "max_loss_after"] }
+      "tags": [
+        "rolling",
+        "sunk_cost"
+      ],
+      "generator": {
+        "template_id": "T-ROLL-DECISION-01",
+        "bindings": [
+          "symbol",
+          "itm_pct",
+          "dte",
+          "roll_credit",
+          "max_loss_before",
+          "max_loss_after"
+        ]
+      },
+      "visual": {
+        "type": "bars",
+        "title": "QQQ roll · risk added",
+        "unit": "$",
+        "format": "money",
+        "items": [
+          {
+            "label": "Current max loss",
+            "value": 380,
+            "accent": "gold"
+          },
+          {
+            "label": "Rolled max loss",
+            "value": 460,
+            "accent": "bad"
+          }
+        ],
+        "caption": "Rolling out/down adds $80 of risk for a 0.18 credit"
+      }
     },
     {
       "id": "EQ-E-PRO-0017",
@@ -681,22 +1471,51 @@
       },
       "stem": "What is the strongest objection?",
       "choices": [
-        { "key": "A", "text": "43 trades cannot distinguish a 68 percent system from a 74 percent one, and doubling risk doubles the drawdown when the sample regresses" },
-        { "key": "B", "text": "3 percent per trade is above the conventional limit, so it is wrong regardless of the evidence" },
-        { "key": "C", "text": "Six weeks is too short a period, you should wait a full quarter" },
-        { "key": "D", "text": "There is no objection. Sizing up when results confirm the edge is correct capital allocation" }
+        {
+          "key": "A",
+          "text": "43 trades cannot distinguish a 68 percent system from a 74 percent one, and doubling risk doubles the drawdown when the sample regresses"
+        },
+        {
+          "key": "B",
+          "text": "3 percent per trade is above the conventional limit, so it is wrong regardless of the evidence"
+        },
+        {
+          "key": "C",
+          "text": "Six weeks is too short a period, you should wait a full quarter"
+        },
+        {
+          "key": "D",
+          "text": "There is no objection. Sizing up when results confirm the edge is correct capital allocation"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 5, "C": 4, "D": 0 },
-        "trait_loadings": {
-          "A": { "discipline": 3, "process_trust": 3 },
-          "B": { "discipline": 2 },
-          "C": { "recency_bias": 1 },
-          "D": { "overconfidence": 3, "recency_bias": 3 }
+        "choice_points": {
+          "A": 10,
+          "B": 5,
+          "C": 4,
+          "D": 0
         },
-        "ruin_flag_choices": ["D"]
+        "trait_loadings": {
+          "A": {
+            "discipline": 3,
+            "process_trust": 3
+          },
+          "B": {
+            "discipline": 2
+          },
+          "C": {
+            "recency_bias": 1
+          },
+          "D": {
+            "overconfidence": 3,
+            "recency_bias": 3
+          }
+        },
+        "ruin_flag_choices": [
+          "D"
+        ]
       },
       "explanation": {
         "correct": "The standard error on a 74 percent rate over 43 trades is roughly 7 percentage points. The observed outperformance is inside noise. The asymmetry matters: sizing up on noise is paid for with real drawdowns.",
@@ -709,8 +1528,36 @@
       "bias": "overconfidence",
       "learning_objective": "Understand sampling error before treating recent results as evidence of edge.",
       "est_seconds": 130,
-      "tags": ["overconfidence", "sample_size", "sizing"],
-      "generator": { "template_id": "T-OVERCONF-SIZING-01", "bindings": ["streak", "sample_n", "observed_wr", "modelled_wr", "risk_before", "risk_after"] }
+      "tags": [
+        "overconfidence",
+        "sample_size",
+        "sizing"
+      ],
+      "generator": {
+        "template_id": "T-OVERCONF-SIZING-01",
+        "bindings": [
+          "streak",
+          "sample_n",
+          "observed_wr",
+          "modelled_wr",
+          "risk_before",
+          "risk_after"
+        ]
+      },
+      "visual": {
+        "type": "streak",
+        "title": "Seven in a row",
+        "outcomes": [
+          "W",
+          "W",
+          "W",
+          "W",
+          "W",
+          "W",
+          "W"
+        ],
+        "caption": "74% over 43 trades vs 68% modelled — 43 trades cannot tell them apart"
+      }
     },
     {
       "id": "EQ-F-INT-0018",
@@ -723,20 +1570,46 @@
       },
       "stem": "What is the most important thing the last five weeks did NOT tell you?",
       "choices": [
-        { "key": "A", "text": "How the strangles would have performed in a volatility regime that did not occur during the sample" },
-        { "key": "B", "text": "Whether the strangle strikes were optimally placed" },
-        { "key": "C", "text": "Whether commissions materially affected the comparison" },
-        { "key": "D", "text": "Whether the condors would have done better with wider wings" }
+        {
+          "key": "A",
+          "text": "How the strangles would have performed in a volatility regime that did not occur during the sample"
+        },
+        {
+          "key": "B",
+          "text": "Whether the strangle strikes were optimally placed"
+        },
+        {
+          "key": "C",
+          "text": "Whether commissions materially affected the comparison"
+        },
+        {
+          "key": "D",
+          "text": "Whether the condors would have done better with wider wings"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 3, "C": 1, "D": 3 },
+        "choice_points": {
+          "A": 10,
+          "B": 3,
+          "C": 1,
+          "D": 3
+        },
         "trait_loadings": {
-          "A": { "discipline": 3, "process_trust": 2 },
-          "B": { "recency_bias": 1 },
-          "C": { "recency_bias": 2 },
-          "D": { "recency_bias": 1 }
+          "A": {
+            "discipline": 3,
+            "process_trust": 2
+          },
+          "B": {
+            "recency_bias": 1
+          },
+          "C": {
+            "recency_bias": 2
+          },
+          "D": {
+            "recency_bias": 1
+          }
         }
       },
       "explanation": {
@@ -750,8 +1623,19 @@
       "bias": "recency_bias",
       "learning_objective": "Ask what the sample period excluded before allocating on its results.",
       "est_seconds": 100,
-      "tags": ["recency_bias", "regime"],
-      "generator": { "template_id": "T-RECENCY-REGIME-01", "bindings": ["window_weeks", "strategy_a", "strategy_b", "regime_description"] }
+      "tags": [
+        "recency_bias",
+        "regime"
+      ],
+      "generator": {
+        "template_id": "T-RECENCY-REGIME-01",
+        "bindings": [
+          "window_weeks",
+          "strategy_a",
+          "strategy_b",
+          "regime_description"
+        ]
+      }
     },
     {
       "id": "EQ-B-ADV-0019",
@@ -765,22 +1649,55 @@
       },
       "stem": "Which sequence of actions is best?",
       "choices": [
-        { "key": "A", "text": "Stop trading for the session, write the post-mortem while it is fresh, and check whether the gap was inside or outside your assumed tail before deciding whether anything changes" },
-        { "key": "B", "text": "Immediately re-enter in the same direction at better prices, since the thesis is now cheaper" },
-        { "key": "C", "text": "Switch to the opposite direction to capture the continuation" },
-        { "key": "D", "text": "Halve your size and keep trading the plan for the rest of the day" }
+        {
+          "key": "A",
+          "text": "Stop trading for the session, write the post-mortem while it is fresh, and check whether the gap was inside or outside your assumed tail before deciding whether anything changes"
+        },
+        {
+          "key": "B",
+          "text": "Immediately re-enter in the same direction at better prices, since the thesis is now cheaper"
+        },
+        {
+          "key": "C",
+          "text": "Switch to the opposite direction to capture the continuation"
+        },
+        {
+          "key": "D",
+          "text": "Halve your size and keep trading the plan for the rest of the day"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 0, "C": 0, "D": 5 },
-        "trait_loadings": {
-          "A": { "discipline": 3, "patience": 3 },
-          "B": { "revenge_trading": 3, "sunk_cost": 3, "confirmation_bias": 2 },
-          "C": { "revenge_trading": 3, "action_bias": 3 },
-          "D": { "action_bias": 2, "discipline": 1 }
+        "choice_points": {
+          "A": 10,
+          "B": 0,
+          "C": 0,
+          "D": 5
         },
-        "ruin_flag_choices": ["B", "C"]
+        "trait_loadings": {
+          "A": {
+            "discipline": 3,
+            "patience": 3
+          },
+          "B": {
+            "revenge_trading": 3,
+            "sunk_cost": 3,
+            "confirmation_bias": 2
+          },
+          "C": {
+            "revenge_trading": 3,
+            "action_bias": 3
+          },
+          "D": {
+            "action_bias": 2,
+            "discipline": 1
+          }
+        },
+        "ruin_flag_choices": [
+          "B",
+          "C"
+        ]
       },
       "explanation": {
         "correct": "The loss was inside the design of a defined-risk system, which means the system worked. The post-mortem question that matters is whether the gap exceeded the tail you assumed when sizing.",
@@ -793,10 +1710,42 @@
       "bias": "revenge_trading",
       "learning_objective": "Install a cooling-off protocol after outsized losses.",
       "est_seconds": 100,
-      "tags": ["revenge_trading", "post_mortem"],
-      "generator": { "template_id": "T-REVENGE-GAP-01", "bindings": ["symbol", "loss_pct", "news_type", "time_of_day"] }
+      "tags": [
+        "revenge_trading",
+        "post_mortem"
+      ],
+      "generator": {
+        "template_id": "T-REVENGE-GAP-01",
+        "bindings": [
+          "symbol",
+          "loss_pct",
+          "news_type",
+          "time_of_day"
+        ]
+      },
+      "visual": {
+        "type": "snapshot",
+        "title": "SPY gapped overnight",
+        "chips": [
+          {
+            "label": "Gap",
+            "value": "through short strike",
+            "dir": "down"
+          },
+          {
+            "label": "Loss taken",
+            "value": "−1.8%",
+            "dir": "down"
+          },
+          {
+            "label": "Clock",
+            "value": "09:47",
+            "dir": "flat"
+          }
+        ],
+        "caption": "Defined-risk max loss already realised at the open"
+      }
     },
-
     {
       "id": "SQ-C-INT-0020",
       "category": "SQ",
@@ -805,17 +1754,42 @@
       "type": "C",
       "stem": "Rank these checks into the order that minimises wasted work and avoids commitment bias. Position 1 is first.",
       "choices": [
-        { "key": "A", "text": "Event calendar check for earnings, dividends and macro prints inside the expiry" },
-        { "key": "B", "text": "Liquidity check on open interest and bid-ask width" },
-        { "key": "C", "text": "IV rank and vol regime assessment" },
-        { "key": "D", "text": "Strike and structure selection" },
-        { "key": "E", "text": "Position size from the risk budget" },
-        { "key": "F", "text": "Write the exit plan and the invalidation level" }
+        {
+          "key": "A",
+          "text": "Event calendar check for earnings, dividends and macro prints inside the expiry"
+        },
+        {
+          "key": "B",
+          "text": "Liquidity check on open interest and bid-ask width"
+        },
+        {
+          "key": "C",
+          "text": "IV rank and vol regime assessment"
+        },
+        {
+          "key": "D",
+          "text": "Strike and structure selection"
+        },
+        {
+          "key": "E",
+          "text": "Position size from the risk budget"
+        },
+        {
+          "key": "F",
+          "text": "Write the exit plan and the invalidation level"
+        }
       ],
       "scoring": {
         "mode": "ranking",
         "max_points": 10,
-        "correct_order": ["A", "B", "C", "D", "E", "F"],
+        "correct_order": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E",
+          "F"
+        ],
         "method": "kendall_tau_scaled",
         "partial_credit": true
       },
@@ -828,8 +1802,16 @@
       "bias": null,
       "learning_objective": "Order a checklist so cheap disqualifiers run before expensive commitment.",
       "est_seconds": 120,
-      "tags": ["checklist", "process"],
-      "generator": { "template_id": "T-GATE-ORDER-01", "bindings": ["gate_set"] }
+      "tags": [
+        "checklist",
+        "process"
+      ],
+      "generator": {
+        "template_id": "T-GATE-ORDER-01",
+        "bindings": [
+          "gate_set"
+        ]
+      }
     },
     {
       "id": "SQ-E-ADV-0021",
@@ -854,22 +1836,53 @@
       },
       "stem": "What is the correct action?",
       "choices": [
-        { "key": "A", "text": "No Trade. Log it with the two failing gates and the reason, and set an alert for after earnings" },
-        { "key": "B", "text": "Trade it at half size, since six of eight gates pass" },
-        { "key": "C", "text": "Trade it but choose an expiry before earnings, which resolves one failure and leaves only low IV" },
-        { "key": "D", "text": "Trade it. IV rank is a preference and earnings can be managed actively" }
+        {
+          "key": "A",
+          "text": "No Trade. Log it with the two failing gates and the reason, and set an alert for after earnings"
+        },
+        {
+          "key": "B",
+          "text": "Trade it at half size, since six of eight gates pass"
+        },
+        {
+          "key": "C",
+          "text": "Trade it but choose an expiry before earnings, which resolves one failure and leaves only low IV"
+        },
+        {
+          "key": "D",
+          "text": "Trade it. IV rank is a preference and earnings can be managed actively"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 2, "C": 6, "D": 0 },
-        "trait_loadings": {
-          "A": { "discipline": 3, "process_trust": 3, "patience": 2 },
-          "B": { "action_bias": 3 },
-          "C": { "discipline": 1, "action_bias": 1 },
-          "D": { "overconfidence": 3, "action_bias": 3 }
+        "choice_points": {
+          "A": 10,
+          "B": 2,
+          "C": 6,
+          "D": 0
         },
-        "ruin_flag_choices": ["D"]
+        "trait_loadings": {
+          "A": {
+            "discipline": 3,
+            "process_trust": 3,
+            "patience": 2
+          },
+          "B": {
+            "action_bias": 3
+          },
+          "C": {
+            "discipline": 1,
+            "action_bias": 1
+          },
+          "D": {
+            "overconfidence": 3,
+            "action_bias": 3
+          }
+        },
+        "ruin_flag_choices": [
+          "D"
+        ]
       },
       "explanation": {
         "correct": "Gates are not a scorecard to be averaged. IV rank 18 means you are selling cheap premium, which removes the core edge of a premium-selling strategy, and that failure is not fixable by expiry selection.",
@@ -882,8 +1895,59 @@
       "bias": "action_bias",
       "learning_objective": "Treat No Trade as a positive output of the system, not an absence of one.",
       "est_seconds": 150,
-      "tags": ["no_trade", "gates", "iv_rank"],
-      "generator": { "template_id": "T-GATE-PANEL-01", "bindings": ["symbol", "gate_results", "fail_count", "fail_types"] }
+      "tags": [
+        "no_trade",
+        "gates",
+        "iv_rank"
+      ],
+      "generator": {
+        "template_id": "T-GATE-PANEL-01",
+        "bindings": [
+          "symbol",
+          "gate_results",
+          "fail_count",
+          "fail_types"
+        ]
+      },
+      "visual": {
+        "type": "checklist",
+        "title": "Six of eight gates pass",
+        "items": [
+          {
+            "label": "Trend aligned",
+            "pass": true
+          },
+          {
+            "label": "Above the defended wall",
+            "pass": true
+          },
+          {
+            "label": "IV rank in band",
+            "pass": true
+          },
+          {
+            "label": "Liquidity / tight spread",
+            "pass": true
+          },
+          {
+            "label": "Earnings clear of expiry",
+            "pass": false
+          },
+          {
+            "label": "Correlation within budget",
+            "pass": true
+          },
+          {
+            "label": "Exit plan written",
+            "pass": true
+          },
+          {
+            "label": "Catalyst risk checked",
+            "pass": false
+          }
+        ],
+        "caption": "6 of 8 gates pass · 2 fail"
+      }
     },
     {
       "id": "SQ-D-INT-0022",
@@ -893,24 +1957,55 @@
       "type": "D",
       "stem": "Select every circumstance that legitimately justifies deviating from a written trading rule in the moment.",
       "choices": [
-        { "key": "A", "text": "A pre-written exception clause in the rule itself covers this exact case" },
-        { "key": "B", "text": "A platform or broker outage prevents the rule from being executed as written" },
-        { "key": "C", "text": "A material change in the position that the rule was never designed to cover, such as an assignment" },
-        { "key": "D", "text": "The setup looks unusually good" },
-        { "key": "E", "text": "You have been in drawdown and need this one to work" },
-        { "key": "F", "text": "An experienced trader you respect is doing the opposite" }
+        {
+          "key": "A",
+          "text": "A pre-written exception clause in the rule itself covers this exact case"
+        },
+        {
+          "key": "B",
+          "text": "A platform or broker outage prevents the rule from being executed as written"
+        },
+        {
+          "key": "C",
+          "text": "A material change in the position that the rule was never designed to cover, such as an assignment"
+        },
+        {
+          "key": "D",
+          "text": "The setup looks unusually good"
+        },
+        {
+          "key": "E",
+          "text": "You have been in drawdown and need this one to work"
+        },
+        {
+          "key": "F",
+          "text": "An experienced trader you respect is doing the opposite"
+        }
       ],
       "scoring": {
         "mode": "multi_select",
         "max_points": 10,
-        "correct_keys": ["A", "B", "C"],
+        "correct_keys": [
+          "A",
+          "B",
+          "C"
+        ],
         "per_correct": 3.34,
         "per_incorrect": -3.34,
         "floor": 0,
         "trait_loadings": {
-          "D": { "overconfidence": 2, "action_bias": 2 },
-          "E": { "revenge_trading": 3, "loss_aversion": 2 },
-          "F": { "confirmation_bias": 2, "fomo": 2 }
+          "D": {
+            "overconfidence": 2,
+            "action_bias": 2
+          },
+          "E": {
+            "revenge_trading": 3,
+            "loss_aversion": 2
+          },
+          "F": {
+            "confirmation_bias": 2,
+            "fomo": 2
+          }
         }
       },
       "explanation": {
@@ -924,8 +2019,17 @@
       "bias": "rule_erosion",
       "learning_objective": "Distinguish structural exceptions from emotional ones.",
       "est_seconds": 110,
-      "tags": ["rules", "discipline"],
-      "generator": { "template_id": "T-OVERRIDE-01", "bindings": ["legitimate_set", "emotional_set"] }
+      "tags": [
+        "rules",
+        "discipline"
+      ],
+      "generator": {
+        "template_id": "T-OVERRIDE-01",
+        "bindings": [
+          "legitimate_set",
+          "emotional_set"
+        ]
+      }
     },
     {
       "id": "SQ-B-ADV-0023",
@@ -938,20 +2042,50 @@
       },
       "stem": "What is the correct conclusion?",
       "choices": [
-        { "key": "A", "text": "Nothing changes. Those seven counterfactuals are the known cost of the rule, and they were already priced into the backtest that produced it" },
-        { "key": "B", "text": "The rule needs revising to something like 70 percent, since live results show the target is set too low" },
-        { "key": "C", "text": "Keep the rule but make exceptions when the position is comfortably out of the money at the 50 percent mark" },
-        { "key": "D", "text": "Abandon the target and manage discretionarily, since the backtest clearly failed to capture live conditions" }
+        {
+          "key": "A",
+          "text": "Nothing changes. Those seven counterfactuals are the known cost of the rule, and they were already priced into the backtest that produced it"
+        },
+        {
+          "key": "B",
+          "text": "The rule needs revising to something like 70 percent, since live results show the target is set too low"
+        },
+        {
+          "key": "C",
+          "text": "Keep the rule but make exceptions when the position is comfortably out of the money at the 50 percent mark"
+        },
+        {
+          "key": "D",
+          "text": "Abandon the target and manage discretionarily, since the backtest clearly failed to capture live conditions"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 3, "C": 2, "D": 0 },
+        "choice_points": {
+          "A": 10,
+          "B": 3,
+          "C": 2,
+          "D": 0
+        },
         "trait_loadings": {
-          "A": { "process_trust": 3, "discipline": 3 },
-          "B": { "recency_bias": 3, "greed": 2 },
-          "C": { "greed": 2, "confirmation_bias": 2 },
-          "D": { "greed": 3, "overconfidence": 3, "recency_bias": 2 }
+          "A": {
+            "process_trust": 3,
+            "discipline": 3
+          },
+          "B": {
+            "recency_bias": 3,
+            "greed": 2
+          },
+          "C": {
+            "greed": 2,
+            "confirmation_bias": 2
+          },
+          "D": {
+            "greed": 3,
+            "overconfidence": 3,
+            "recency_bias": 2
+          }
         }
       },
       "explanation": {
@@ -965,8 +2099,18 @@
       "bias": "counterfactual_regret",
       "learning_objective": "Resist revising a validated rule on the basis of visible counterfactuals.",
       "est_seconds": 140,
-      "tags": ["exit_rules", "backtest_integrity"],
-      "generator": { "template_id": "T-RULE-REGRET-01", "bindings": ["target_pct", "live_n", "counterfactual_n"] }
+      "tags": [
+        "exit_rules",
+        "backtest_integrity"
+      ],
+      "generator": {
+        "template_id": "T-RULE-REGRET-01",
+        "bindings": [
+          "target_pct",
+          "live_n",
+          "counterfactual_n"
+        ]
+      }
     },
     {
       "id": "SQ-E-PRO-0024",
@@ -979,20 +2123,47 @@
       },
       "stem": "What does this evidence most support?",
       "choices": [
-        { "key": "A", "text": "The win rate is intact but the loss distribution has changed, which points at a regime shift in gap frequency rather than at signal decay. Investigate whether entry criteria are systematically placing you into event windows" },
-        { "key": "B", "text": "The system is performing to specification. Win rate matches the model" },
-        { "key": "C", "text": "The system has broken and should be suspended pending a full rebuild" },
-        { "key": "D", "text": "Variance. Twenty trades is far too small to say anything" }
+        {
+          "key": "A",
+          "text": "The win rate is intact but the loss distribution has changed, which points at a regime shift in gap frequency rather than at signal decay. Investigate whether entry criteria are systematically placing you into event windows"
+        },
+        {
+          "key": "B",
+          "text": "The system is performing to specification. Win rate matches the model"
+        },
+        {
+          "key": "C",
+          "text": "The system has broken and should be suspended pending a full rebuild"
+        },
+        {
+          "key": "D",
+          "text": "Variance. Twenty trades is far too small to say anything"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 1, "C": 3, "D": 5 },
+        "choice_points": {
+          "A": 10,
+          "B": 1,
+          "C": 3,
+          "D": 5
+        },
         "trait_loadings": {
-          "A": { "process_trust": 3, "discipline": 3 },
-          "B": { "confirmation_bias": 3 },
-          "C": { "fear": 2, "action_bias": 2 },
-          "D": { "process_trust": 1 }
+          "A": {
+            "process_trust": 3,
+            "discipline": 3
+          },
+          "B": {
+            "confirmation_bias": 3
+          },
+          "C": {
+            "fear": 2,
+            "action_bias": 2
+          },
+          "D": {
+            "process_trust": 1
+          }
         }
       },
       "explanation": {
@@ -1006,8 +2177,38 @@
       "bias": null,
       "learning_objective": "Monitor loss distribution and failure mode clustering, not just hit rate.",
       "est_seconds": 160,
-      "tags": ["system_monitoring", "expectancy"],
-      "generator": { "template_id": "T-SYS-DEGRADE-01", "bindings": ["modelled_wr", "live_wr", "loss_ratio_before", "loss_ratio_after", "failure_mode"] }
+      "tags": [
+        "system_monitoring",
+        "expectancy"
+      ],
+      "generator": {
+        "template_id": "T-SYS-DEGRADE-01",
+        "bindings": [
+          "modelled_wr",
+          "live_wr",
+          "loss_ratio_before",
+          "loss_ratio_after",
+          "failure_mode"
+        ]
+      },
+      "visual": {
+        "type": "bars",
+        "title": "Same win rate, worse losses",
+        "unit": "× avg win",
+        "items": [
+          {
+            "label": "Avg loss (before)",
+            "value": 1.7,
+            "accent": "gold"
+          },
+          {
+            "label": "Avg loss (now)",
+            "value": 2.6,
+            "accent": "bad"
+          }
+        ],
+        "caption": "70% rate held, but 5 of 6 losses were gaps through the short strike"
+      }
     },
     {
       "id": "SQ-A-BEG-0025",
@@ -1017,15 +2218,32 @@
       "type": "A",
       "stem": "Which journal field does the most to improve future decisions?",
       "choices": [
-        { "key": "A", "text": "The reason you expected the trade to work, written before entry, in falsifiable terms" },
-        { "key": "B", "text": "The profit or loss in pounds" },
-        { "key": "C", "text": "A screenshot of the chart at entry" },
-        { "key": "D", "text": "How you felt during the trade" }
+        {
+          "key": "A",
+          "text": "The reason you expected the trade to work, written before entry, in falsifiable terms"
+        },
+        {
+          "key": "B",
+          "text": "The profit or loss in pounds"
+        },
+        {
+          "key": "C",
+          "text": "A screenshot of the chart at entry"
+        },
+        {
+          "key": "D",
+          "text": "How you felt during the trade"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 2, "C": 4, "D": 5 }
+        "choice_points": {
+          "A": 10,
+          "B": 2,
+          "C": 4,
+          "D": 5
+        }
       },
       "explanation": {
         "correct": "A pre-registered falsifiable thesis is the only field that lets you later separate a good decision from a good outcome. Everything else is recorded after you know the answer.",
@@ -1038,8 +2256,16 @@
       "bias": "outcome_bias",
       "learning_objective": "Pre-register a falsifiable thesis so decision quality can be assessed independently of outcome.",
       "est_seconds": 60,
-      "tags": ["journaling", "outcome_bias"],
-      "generator": { "template_id": "T-JOURNAL-FIELD-01", "bindings": ["field_set"] }
+      "tags": [
+        "journaling",
+        "outcome_bias"
+      ],
+      "generator": {
+        "template_id": "T-JOURNAL-FIELD-01",
+        "bindings": [
+          "field_set"
+        ]
+      }
     },
     {
       "id": "SQ-C-ADV-0026",
@@ -1052,22 +2278,53 @@
       },
       "stem": "Rank the steps.",
       "choices": [
-        { "key": "A", "text": "Confirm no macro print or earnings inside the expiry window" },
-        { "key": "B", "text": "Confirm current portfolio beta-weighted delta leaves room for this position" },
-        { "key": "C", "text": "Select strikes from the delta target" },
-        { "key": "D", "text": "Calculate contract count from max loss and risk budget" },
-        { "key": "E", "text": "Set the profit target, the stop and the time stop" },
-        { "key": "F", "text": "Submit the order at the mid and work it" }
+        {
+          "key": "A",
+          "text": "Confirm no macro print or earnings inside the expiry window"
+        },
+        {
+          "key": "B",
+          "text": "Confirm current portfolio beta-weighted delta leaves room for this position"
+        },
+        {
+          "key": "C",
+          "text": "Select strikes from the delta target"
+        },
+        {
+          "key": "D",
+          "text": "Calculate contract count from max loss and risk budget"
+        },
+        {
+          "key": "E",
+          "text": "Set the profit target, the stop and the time stop"
+        },
+        {
+          "key": "F",
+          "text": "Submit the order at the mid and work it"
+        }
       ],
       "scoring": {
         "mode": "ranking",
         "max_points": 10,
-        "correct_order": ["A", "B", "C", "D", "E", "F"],
+        "correct_order": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E",
+          "F"
+        ],
         "method": "kendall_tau_scaled",
         "partial_credit": true,
         "critical_constraints": [
-          { "rule": "E must precede F", "penalty_if_violated": 4 },
-          { "rule": "B must precede D", "penalty_if_violated": 2 }
+          {
+            "rule": "E must precede F",
+            "penalty_if_violated": 4
+          },
+          {
+            "rule": "B must precede D",
+            "penalty_if_violated": 2
+          }
         ]
       },
       "explanation": {
@@ -1079,8 +2336,18 @@
       "bias": null,
       "learning_objective": "Sequence portfolio checks and exit definition before order submission.",
       "est_seconds": 120,
-      "tags": ["process", "sequencing"],
-      "generator": { "template_id": "T-PRETRADE-SEQ-01", "bindings": ["symbol", "step_set", "constraints"] }
+      "tags": [
+        "process",
+        "sequencing"
+      ],
+      "generator": {
+        "template_id": "T-PRETRADE-SEQ-01",
+        "bindings": [
+          "symbol",
+          "step_set",
+          "constraints"
+        ]
+      }
     },
     {
       "id": "SQ-D-PRO-0027",
@@ -1090,16 +2357,36 @@
       "type": "D",
       "stem": "Select every reason a No Trade decision should be logged with the same rigour as an executed trade.",
       "choices": [
-        { "key": "A", "text": "It measures whether gates are actually being applied or quietly skipped" },
-        { "key": "B", "text": "It builds the counterfactual dataset needed to test whether any gate is too strict" },
-        { "key": "C", "text": "It reveals whether rejections cluster in particular regimes, symbols or times of day" },
-        { "key": "D", "text": "It creates a record for tax purposes" },
-        { "key": "E", "text": "It provides a behavioural check on whether rejection rate collapses during drawdowns" }
+        {
+          "key": "A",
+          "text": "It measures whether gates are actually being applied or quietly skipped"
+        },
+        {
+          "key": "B",
+          "text": "It builds the counterfactual dataset needed to test whether any gate is too strict"
+        },
+        {
+          "key": "C",
+          "text": "It reveals whether rejections cluster in particular regimes, symbols or times of day"
+        },
+        {
+          "key": "D",
+          "text": "It creates a record for tax purposes"
+        },
+        {
+          "key": "E",
+          "text": "It provides a behavioural check on whether rejection rate collapses during drawdowns"
+        }
       ],
       "scoring": {
         "mode": "multi_select",
         "max_points": 10,
-        "correct_keys": ["A", "B", "C", "E"],
+        "correct_keys": [
+          "A",
+          "B",
+          "C",
+          "E"
+        ],
         "per_correct": 2.5,
         "per_incorrect": -2.5,
         "floor": 0
@@ -1113,10 +2400,17 @@
       "bias": null,
       "learning_objective": "Instrument the No Trade path as a first-class dataset.",
       "est_seconds": 110,
-      "tags": ["no_trade", "instrumentation"],
-      "generator": { "template_id": "T-NOTRADE-LOG-01", "bindings": ["reason_set"] }
+      "tags": [
+        "no_trade",
+        "instrumentation"
+      ],
+      "generator": {
+        "template_id": "T-NOTRADE-LOG-01",
+        "bindings": [
+          "reason_set"
+        ]
+      }
     },
-
     {
       "id": "RQ-A-INT-0028",
       "category": "RQ",
@@ -1128,20 +2422,43 @@
       },
       "stem": "How many contracts?",
       "choices": [
-        { "key": "A", "text": "2 contracts, because 2.78 must round down" },
-        { "key": "B", "text": "3 contracts, because 2.78 rounds to 3 and the overage is trivial" },
-        { "key": "C", "text": "2.78 contracts is not tradeable, so widen the spread until the number is whole" },
-        { "key": "D", "text": "7 contracts, since the 1,000 risk budget divided by the 140 credit gives 7" }
+        {
+          "key": "A",
+          "text": "2 contracts, because 2.78 must round down"
+        },
+        {
+          "key": "B",
+          "text": "3 contracts, because 2.78 rounds to 3 and the overage is trivial"
+        },
+        {
+          "key": "C",
+          "text": "2.78 contracts is not tradeable, so widen the spread until the number is whole"
+        },
+        {
+          "key": "D",
+          "text": "7 contracts, since the 1,000 risk budget divided by the 140 credit gives 7"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 4, "C": 3, "D": 0 },
-        "trait_loadings": {
-          "B": { "greed": 1 },
-          "D": { "overconfidence": 2 }
+        "choice_points": {
+          "A": 10,
+          "B": 4,
+          "C": 3,
+          "D": 0
         },
-        "ruin_flag_choices": ["D"]
+        "trait_loadings": {
+          "B": {
+            "greed": 1
+          },
+          "D": {
+            "overconfidence": 2
+          }
+        },
+        "ruin_flag_choices": [
+          "D"
+        ]
       },
       "explanation": {
         "correct": "1,000 divided by 360 is 2.78, and sizing rules always round down. Rounding up means the limit is not a limit.",
@@ -1154,8 +2471,26 @@
       "bias": null,
       "learning_objective": "Size from capital at risk and always round down.",
       "est_seconds": 70,
-      "tags": ["sizing", "risk_budget"],
-      "generator": { "template_id": "T-SIZING-01", "bindings": ["account", "risk_pct", "width", "credit"] }
+      "tags": [
+        "sizing",
+        "risk_budget"
+      ],
+      "generator": {
+        "template_id": "T-SIZING-01",
+        "bindings": [
+          "account",
+          "risk_pct",
+          "width",
+          "credit"
+        ]
+      },
+      "visual": {
+        "type": "sizing",
+        "account": 50000,
+        "riskPct": 2,
+        "riskPerContract": 360,
+        "unit": "$"
+      }
     },
     {
       "id": "RQ-A-ADV-0029",
@@ -1168,15 +2503,32 @@
       },
       "stem": "What is the expected value per trade, and what follows?",
       "choices": [
-        { "key": "A", "text": "Minus 10. A 70 percent win rate is not sufficient, and the strategy is only viable if active management shifts the loss side" },
-        { "key": "B", "text": "Plus 98. The win side dominates" },
-        { "key": "C", "text": "Plus 42. Net of the loss contribution the strategy is profitable" },
-        { "key": "D", "text": "Zero. Defined-risk strategies are break-even before costs by construction" }
+        {
+          "key": "A",
+          "text": "Minus 10. A 70 percent win rate is not sufficient, and the strategy is only viable if active management shifts the loss side"
+        },
+        {
+          "key": "B",
+          "text": "Plus 98. The win side dominates"
+        },
+        {
+          "key": "C",
+          "text": "Plus 42. Net of the loss contribution the strategy is profitable"
+        },
+        {
+          "key": "D",
+          "text": "Zero. Defined-risk strategies are break-even before costs by construction"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 0, "C": 2, "D": 0 }
+        "choice_points": {
+          "A": 10,
+          "B": 0,
+          "C": 2,
+          "D": 0
+        }
       },
       "explanation": {
         "correct": "0.70 times 140 is 98, 0.30 times minus 360 is minus 108, giving minus 10 before commissions. High win rate with an unmanaged tail is a losing structure, which is exactly why managed exits at 50 percent and 21 DTE exist.",
@@ -1189,8 +2541,38 @@
       "bias": null,
       "learning_objective": "Compute expectancy and understand why win rate alone is meaningless.",
       "est_seconds": 90,
-      "tags": ["expectancy", "management"],
-      "generator": { "template_id": "T-EV-CALC-01", "bindings": ["win_rate", "avg_win", "avg_loss"] }
+      "tags": [
+        "expectancy",
+        "management"
+      ],
+      "generator": {
+        "template_id": "T-EV-CALC-01",
+        "bindings": [
+          "win_rate",
+          "avg_win",
+          "avg_loss"
+        ]
+      },
+      "visual": {
+        "type": "bars",
+        "title": "Expected value per trade",
+        "unit": "",
+        "items": [
+          {
+            "label": "Win · 70% × +140",
+            "value": 98,
+            "accent": "good",
+            "display": "+98"
+          },
+          {
+            "label": "Loss · 30% × −360",
+            "value": 108,
+            "accent": "bad",
+            "display": "−108"
+          }
+        ],
+        "caption": "EV = 98 − 108 = −10 per trade — a losing strategy held to expiry"
+      }
     },
     {
       "id": "RQ-D-ADV-0030",
@@ -1203,20 +2585,44 @@
       },
       "stem": "Select every statement that is true.",
       "choices": [
-        { "key": "A", "text": "In a broad technology selloff these five behave much closer to one position than five, so effective concentration is far above 1.5 percent" },
-        { "key": "B", "text": "QQQ and SMH overlap materially with the three single names, so the book is doubly concentrated" },
-        { "key": "C", "text": "Beta-weighted portfolio delta is the correct measure of the aggregate exposure, not the sum of individual max losses" },
-        { "key": "D", "text": "Because every position is defined risk, the true worst case remains bounded at 7.5 percent" },
-        { "key": "E", "text": "Correlation among these names tends to rise precisely in the selloffs that would hurt this book" }
+        {
+          "key": "A",
+          "text": "In a broad technology selloff these five behave much closer to one position than five, so effective concentration is far above 1.5 percent"
+        },
+        {
+          "key": "B",
+          "text": "QQQ and SMH overlap materially with the three single names, so the book is doubly concentrated"
+        },
+        {
+          "key": "C",
+          "text": "Beta-weighted portfolio delta is the correct measure of the aggregate exposure, not the sum of individual max losses"
+        },
+        {
+          "key": "D",
+          "text": "Because every position is defined risk, the true worst case remains bounded at 7.5 percent"
+        },
+        {
+          "key": "E",
+          "text": "Correlation among these names tends to rise precisely in the selloffs that would hurt this book"
+        }
       ],
       "scoring": {
         "mode": "multi_select",
         "max_points": 10,
-        "correct_keys": ["A", "B", "C", "E"],
+        "correct_keys": [
+          "A",
+          "B",
+          "C",
+          "E"
+        ],
         "per_correct": 2.5,
         "per_incorrect": -2.5,
         "floor": 0,
-        "trait_loadings": { "D": { "overconfidence": 2 } }
+        "trait_loadings": {
+          "D": {
+            "overconfidence": 2
+          }
+        }
       },
       "explanation": {
         "correct": "A, B, C and E. The bound in D is arithmetically true and is the wrong mental model: 7.5 percent taken all at once, in a single correlated event, is a different risk from 7.5 percent spread across independent outcomes, and correlation rises exactly when you need it not to.",
@@ -1227,8 +2633,52 @@
       "bias": "diversification_illusion",
       "learning_objective": "Measure correlated concentration rather than summing independent max losses.",
       "est_seconds": 130,
-      "tags": ["correlation", "portfolio_risk", "beta_weighting"],
-      "generator": { "template_id": "T-CORREL-BOOK-01", "bindings": ["symbol_set", "risk_each", "sector"] }
+      "tags": [
+        "correlation",
+        "portfolio_risk",
+        "beta_weighting"
+      ],
+      "generator": {
+        "template_id": "T-CORREL-BOOK-01",
+        "bindings": [
+          "symbol_set",
+          "risk_each",
+          "sector"
+        ]
+      },
+      "visual": {
+        "type": "bars",
+        "title": "Five names, one bet",
+        "unit": "%",
+        "items": [
+          {
+            "label": "NVDA",
+            "value": 1.5
+          },
+          {
+            "label": "AMD",
+            "value": 1.5
+          },
+          {
+            "label": "MSFT",
+            "value": 1.5
+          },
+          {
+            "label": "QQQ",
+            "value": 1.5
+          },
+          {
+            "label": "SMH",
+            "value": 1.5
+          },
+          {
+            "label": "Effective in a tech selloff",
+            "value": 7.5,
+            "accent": "bad"
+          }
+        ],
+        "caption": "Each passes the 1.5% budget; correlated, they act like one 7.5% trade"
+      }
     },
     {
       "id": "RQ-E-PRO-0031",
@@ -1241,20 +2691,44 @@
       },
       "stem": "SPY falls 5 percent overnight and VIX doubles. Which observation should drive tonight's action?",
       "choices": [
-        { "key": "A", "text": "Short vega of minus 900 into an IV rank of 22 is the binding problem. A vol doubling from a low base produces a mark-to-market loss and a buying power expansion that could force liquidation at the worst prices" },
-        { "key": "B", "text": "Minus 340 beta-weighted delta is the binding problem, implying roughly 3,400 dollars of directional loss per 1 percent SPY move" },
-        { "key": "C", "text": "Buying power usage at 62 percent is the binding problem and should be cut to 50 percent" },
-        { "key": "D", "text": "Nothing needs to change. Every position is individually defined risk" }
+        {
+          "key": "A",
+          "text": "Short vega of minus 900 into an IV rank of 22 is the binding problem. A vol doubling from a low base produces a mark-to-market loss and a buying power expansion that could force liquidation at the worst prices"
+        },
+        {
+          "key": "B",
+          "text": "Minus 340 beta-weighted delta is the binding problem, implying roughly 3,400 dollars of directional loss per 1 percent SPY move"
+        },
+        {
+          "key": "C",
+          "text": "Buying power usage at 62 percent is the binding problem and should be cut to 50 percent"
+        },
+        {
+          "key": "D",
+          "text": "Nothing needs to change. Every position is individually defined risk"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 6, "C": 4, "D": 0 },
-        "trait_loadings": {
-          "A": { "discipline": 3, "process_trust": 2 },
-          "D": { "overconfidence": 3 }
+        "choice_points": {
+          "A": 10,
+          "B": 6,
+          "C": 4,
+          "D": 0
         },
-        "ruin_flag_choices": ["D"]
+        "trait_loadings": {
+          "A": {
+            "discipline": 3,
+            "process_trust": 2
+          },
+          "D": {
+            "overconfidence": 3
+          }
+        },
+        "ruin_flag_choices": [
+          "D"
+        ]
       },
       "explanation": {
         "correct": "Delta loss is roughly 17,000 on a 5 percent move and is real but calculable. The vega and margin interaction is what turns a survivable loss into a forced one, because buying power requirements expand as volatility rises, exactly when the mark is worst.",
@@ -1267,8 +2741,49 @@
       "bias": null,
       "learning_objective": "Model buying power expansion under vol shock, not just mark-to-market loss.",
       "est_seconds": 180,
-      "tags": ["margin", "stress_test", "vega"],
-      "generator": { "template_id": "T-STRESS-BOOK-01", "bindings": ["net_liq", "bp_used", "beta_delta", "net_vega", "vix", "shock_size"] }
+      "tags": [
+        "margin",
+        "stress_test",
+        "vega"
+      ],
+      "generator": {
+        "template_id": "T-STRESS-BOOK-01",
+        "bindings": [
+          "net_liq",
+          "bp_used",
+          "beta_delta",
+          "net_vega",
+          "vix",
+          "shock_size"
+        ]
+      },
+      "visual": {
+        "type": "snapshot",
+        "title": "Book greeks vs the shock",
+        "chips": [
+          {
+            "label": "Net liq",
+            "value": "$120k",
+            "dir": "flat"
+          },
+          {
+            "label": "Buying power used",
+            "value": "$74k",
+            "dir": "flat"
+          },
+          {
+            "label": "Beta-wtd Δ vs SPY",
+            "value": "−340",
+            "dir": "down"
+          },
+          {
+            "label": "Aggregate vega",
+            "value": "−900",
+            "dir": "down"
+          }
+        ],
+        "caption": "SPY −5% & VIX doubles → short delta AND short vega both hurt at once"
+      }
     },
     {
       "id": "RQ-A-BEG-0032",
@@ -1278,15 +2793,32 @@
       "type": "A",
       "stem": "For an account under 50,000 dollars, what is the strongest argument for defined-risk structures over undefined-risk ones, even when the undefined version has better expectancy?",
       "choices": [
-        { "key": "A", "text": "A single tail event cannot end the account, which preserves the ability to keep trading the edge for long enough that expectancy can express itself" },
-        { "key": "B", "text": "Defined-risk structures have higher win rates" },
-        { "key": "C", "text": "Defined-risk structures are cheaper in commissions" },
-        { "key": "D", "text": "Brokers do not permit undefined risk on small accounts" }
+        {
+          "key": "A",
+          "text": "A single tail event cannot end the account, which preserves the ability to keep trading the edge for long enough that expectancy can express itself"
+        },
+        {
+          "key": "B",
+          "text": "Defined-risk structures have higher win rates"
+        },
+        {
+          "key": "C",
+          "text": "Defined-risk structures are cheaper in commissions"
+        },
+        {
+          "key": "D",
+          "text": "Brokers do not permit undefined risk on small accounts"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 2, "C": 0, "D": 3 }
+        "choice_points": {
+          "A": 10,
+          "B": 2,
+          "C": 0,
+          "D": 3
+        }
       },
       "explanation": {
         "correct": "Expectancy is a property of a long run, and you only reach the long run if you survive every short run. Capping the tail buys survival.",
@@ -1299,8 +2831,16 @@
       "bias": null,
       "learning_objective": "Understand risk of ruin as the constraint that makes expectancy accessible.",
       "est_seconds": 70,
-      "tags": ["defined_risk", "risk_of_ruin"],
-      "generator": { "template_id": "T-DEFINED-RISK-01", "bindings": ["account_size"] }
+      "tags": [
+        "defined_risk",
+        "risk_of_ruin"
+      ],
+      "generator": {
+        "template_id": "T-DEFINED-RISK-01",
+        "bindings": [
+          "account_size"
+        ]
+      }
     },
     {
       "id": "RQ-B-ADV-0033",
@@ -1313,20 +2853,43 @@
       },
       "stem": "What is the best assessment?",
       "choices": [
-        { "key": "A", "text": "Stay well below Kelly. The fraction is extremely sensitive to estimation error in the edge, and overestimating edge by a modest amount pushes you past the growth-optimal point into a region with severe drawdowns" },
-        { "key": "B", "text": "Move to half Kelly at 4.5 percent, which is the standard compromise" },
-        { "key": "C", "text": "Move to full Kelly. It is by definition growth-optimal" },
-        { "key": "D", "text": "Kelly does not apply to options, so ignore it" }
+        {
+          "key": "A",
+          "text": "Stay well below Kelly. The fraction is extremely sensitive to estimation error in the edge, and overestimating edge by a modest amount pushes you past the growth-optimal point into a region with severe drawdowns"
+        },
+        {
+          "key": "B",
+          "text": "Move to half Kelly at 4.5 percent, which is the standard compromise"
+        },
+        {
+          "key": "C",
+          "text": "Move to full Kelly. It is by definition growth-optimal"
+        },
+        {
+          "key": "D",
+          "text": "Kelly does not apply to options, so ignore it"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 6, "C": 0, "D": 2 },
-        "trait_loadings": {
-          "C": { "overconfidence": 3 },
-          "B": { "overconfidence": 1 }
+        "choice_points": {
+          "A": 10,
+          "B": 6,
+          "C": 0,
+          "D": 2
         },
-        "ruin_flag_choices": ["C"]
+        "trait_loadings": {
+          "C": {
+            "overconfidence": 3
+          },
+          "B": {
+            "overconfidence": 1
+          }
+        },
+        "ruin_flag_choices": [
+          "C"
+        ]
       },
       "explanation": {
         "correct": "Kelly assumes the edge is known. In trading it is estimated from a small sample, and the penalty curve is asymmetric: being over is much worse than being under. A 9 percent implied fraction is itself evidence the edge estimate is inflated.",
@@ -1339,8 +2902,35 @@
       "bias": "overconfidence",
       "learning_objective": "Treat Kelly as an upper bound on a noisy estimate rather than a target.",
       "est_seconds": 140,
-      "tags": ["kelly", "sizing"],
-      "generator": { "template_id": "T-KELLY-01", "bindings": ["kelly_fraction", "current_fraction"] }
+      "tags": [
+        "kelly",
+        "sizing"
+      ],
+      "generator": {
+        "template_id": "T-KELLY-01",
+        "bindings": [
+          "kelly_fraction",
+          "current_fraction"
+        ]
+      },
+      "visual": {
+        "type": "bars",
+        "title": "Kelly vs your rule",
+        "unit": "%",
+        "items": [
+          {
+            "label": "Full Kelly",
+            "value": 9,
+            "accent": "bad"
+          },
+          {
+            "label": "Your fixed rule",
+            "value": 1.5,
+            "accent": "good"
+          }
+        ],
+        "caption": "Full Kelly is a ceiling, not a target — fractional Kelly survives a bad edge estimate"
+      }
     },
     {
       "id": "RQ-A-PRO-0034",
@@ -1350,20 +2940,44 @@
       "type": "A",
       "stem": "You are down 40 percent from the account high. What gain on the remaining capital returns you to the high, and what does that imply for sizing during drawdown?",
       "choices": [
-        { "key": "A", "text": "66.7 percent, which is why risk per trade should generally be reduced in drawdown rather than increased, since the recovery burden grows faster than the loss" },
-        { "key": "B", "text": "40 percent, which means recovery is symmetric with the loss" },
-        { "key": "C", "text": "66.7 percent, which is why risk per trade should be increased to recover faster" },
-        { "key": "D", "text": "About 50 percent, and sizing should be held constant throughout" }
+        {
+          "key": "A",
+          "text": "66.7 percent, which is why risk per trade should generally be reduced in drawdown rather than increased, since the recovery burden grows faster than the loss"
+        },
+        {
+          "key": "B",
+          "text": "40 percent, which means recovery is symmetric with the loss"
+        },
+        {
+          "key": "C",
+          "text": "66.7 percent, which is why risk per trade should be increased to recover faster"
+        },
+        {
+          "key": "D",
+          "text": "About 50 percent, and sizing should be held constant throughout"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 0, "C": 2, "D": 3 },
-        "trait_loadings": {
-          "C": { "revenge_trading": 3, "overconfidence": 2 },
-          "B": { "overconfidence": 1 }
+        "choice_points": {
+          "A": 10,
+          "B": 0,
+          "C": 2,
+          "D": 3
         },
-        "ruin_flag_choices": ["C"]
+        "trait_loadings": {
+          "C": {
+            "revenge_trading": 3,
+            "overconfidence": 2
+          },
+          "B": {
+            "overconfidence": 1
+          }
+        },
+        "ruin_flag_choices": [
+          "C"
+        ]
       },
       "explanation": {
         "correct": "1 divided by 0.6 is 1.667, so 66.7 percent. The convexity of the recovery requirement is the entire argument for defending capital early rather than trading harder late.",
@@ -1376,10 +2990,37 @@
       "bias": "recovery_urgency",
       "learning_objective": "Internalise drawdown convexity and its implication for sizing.",
       "est_seconds": 80,
-      "tags": ["drawdown", "sizing"],
-      "generator": { "template_id": "T-DRAWDOWN-MATH-01", "bindings": ["drawdown_pct"] }
+      "tags": [
+        "drawdown",
+        "sizing"
+      ],
+      "generator": {
+        "template_id": "T-DRAWDOWN-MATH-01",
+        "bindings": [
+          "drawdown_pct"
+        ]
+      },
+      "visual": {
+        "type": "bars",
+        "title": "Drawdown is not symmetric",
+        "unit": "%",
+        "items": [
+          {
+            "label": "Drawdown from high",
+            "value": 40,
+            "accent": "bad",
+            "display": "−40%"
+          },
+          {
+            "label": "Gain needed to recover",
+            "value": 66.7,
+            "accent": "gold",
+            "display": "+66.7%"
+          }
+        ],
+        "caption": "Down 40% needs +66.7% on what is left just to get back to even"
+      }
     },
-
     {
       "id": "MQ-A-INT-0035",
       "category": "MQ",
@@ -1391,18 +3032,41 @@
       },
       "stem": "You hold short-dated short put spreads on SPY. What is the most useful immediate read?",
       "choices": [
-        { "key": "A", "text": "The move is a repricing of the rate path rather than a growth shock, so the vol expansion is more likely to decay over days than to compound, but that is a probabilistic lean and not a reason to override your exit rules" },
-        { "key": "B", "text": "Vol has expanded, so add to the short put spreads at better prices" },
-        { "key": "C", "text": "A hot inflation print reliably marks the start of a sustained downtrend, so close everything" },
-        { "key": "D", "text": "CPI affects bonds, not equity index options, so nothing has changed for your positions" }
+        {
+          "key": "A",
+          "text": "The move is a repricing of the rate path rather than a growth shock, so the vol expansion is more likely to decay over days than to compound, but that is a probabilistic lean and not a reason to override your exit rules"
+        },
+        {
+          "key": "B",
+          "text": "Vol has expanded, so add to the short put spreads at better prices"
+        },
+        {
+          "key": "C",
+          "text": "A hot inflation print reliably marks the start of a sustained downtrend, so close everything"
+        },
+        {
+          "key": "D",
+          "text": "CPI affects bonds, not equity index options, so nothing has changed for your positions"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 3, "C": 2, "D": 0 },
+        "choice_points": {
+          "A": 10,
+          "B": 3,
+          "C": 2,
+          "D": 0
+        },
         "trait_loadings": {
-          "B": { "greed": 2, "action_bias": 2 },
-          "C": { "fear": 3, "recency_bias": 2 }
+          "B": {
+            "greed": 2,
+            "action_bias": 2
+          },
+          "C": {
+            "fear": 3,
+            "recency_bias": 2
+          }
         }
       },
       "explanation": {
@@ -1416,8 +3080,48 @@
       "bias": null,
       "learning_objective": "Distinguish a policy repricing from a growth shock and calibrate confidence accordingly.",
       "est_seconds": 120,
-      "tags": ["cpi", "rates", "vol_regime"],
-      "generator": { "template_id": "T-CPI-REACT-01", "bindings": ["actual", "expected", "spy_move", "yield_move", "vix_move"] }
+      "tags": [
+        "cpi",
+        "rates",
+        "vol_regime"
+      ],
+      "generator": {
+        "template_id": "T-CPI-REACT-01",
+        "bindings": [
+          "actual",
+          "expected",
+          "spy_move",
+          "yield_move",
+          "vix_move"
+        ]
+      },
+      "visual": {
+        "type": "snapshot",
+        "title": "Hot CPI print",
+        "chips": [
+          {
+            "label": "Core CPI m/m",
+            "value": "0.4% vs 0.2%",
+            "dir": "up"
+          },
+          {
+            "label": "SPY",
+            "value": "−1.3%",
+            "dir": "down"
+          },
+          {
+            "label": "2y yield",
+            "value": "+14bp",
+            "dir": "up"
+          },
+          {
+            "label": "VIX",
+            "value": "+3.2",
+            "dir": "up"
+          }
+        ],
+        "caption": "Rates repriced to remove a cut — a rates shock, not an equity-specific one"
+      }
     },
     {
       "id": "MQ-E-ADV-0036",
@@ -1431,20 +3135,43 @@
       },
       "stem": "Which is the most accurate characterisation of the opportunity?",
       "choices": [
-        { "key": "A", "text": "The front expiry carries an event premium that will collapse within minutes of 14:00 regardless of direction, but with a cut 92 percent priced the market risk sits in the projections and the press conference, not the decision itself" },
-        { "key": "B", "text": "With a cut 92 percent priced, the outcome is effectively known, so selling front-expiry premium is close to a free roll" },
-        { "key": "C", "text": "22 percent front IV against 15 percent at 30 days is a mispricing to be arbitraged with a calendar" },
-        { "key": "D", "text": "FOMC days are unpredictable, so no position should be held into them" }
+        {
+          "key": "A",
+          "text": "The front expiry carries an event premium that will collapse within minutes of 14:00 regardless of direction, but with a cut 92 percent priced the market risk sits in the projections and the press conference, not the decision itself"
+        },
+        {
+          "key": "B",
+          "text": "With a cut 92 percent priced, the outcome is effectively known, so selling front-expiry premium is close to a free roll"
+        },
+        {
+          "key": "C",
+          "text": "22 percent front IV against 15 percent at 30 days is a mispricing to be arbitraged with a calendar"
+        },
+        {
+          "key": "D",
+          "text": "FOMC days are unpredictable, so no position should be held into them"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 1, "C": 4, "D": 3 },
-        "trait_loadings": {
-          "B": { "overconfidence": 3 },
-          "D": { "fear": 2 }
+        "choice_points": {
+          "A": 10,
+          "B": 1,
+          "C": 4,
+          "D": 3
         },
-        "ruin_flag_choices": ["B"]
+        "trait_loadings": {
+          "B": {
+            "overconfidence": 3
+          },
+          "D": {
+            "fear": 2
+          }
+        },
+        "ruin_flag_choices": [
+          "B"
+        ]
       },
       "explanation": {
         "correct": "Priced decisions are rarely where the volatility comes from. The projections and the tone of the press conference carry the surprise, and the crush happens whichever way price moves.",
@@ -1457,8 +3184,35 @@
       "bias": null,
       "learning_objective": "Locate where event risk actually sits when the headline outcome is already priced.",
       "est_seconds": 150,
-      "tags": ["fomc", "event_vol", "term_structure"],
-      "generator": { "template_id": "T-FOMC-01", "bindings": ["front_iv", "back_iv", "priced_probability", "event_type"] }
+      "tags": [
+        "fomc",
+        "event_vol",
+        "term_structure"
+      ],
+      "generator": {
+        "template_id": "T-FOMC-01",
+        "bindings": [
+          "front_iv",
+          "back_iv",
+          "priced_probability",
+          "event_type"
+        ]
+      },
+      "visual": {
+        "type": "volterm",
+        "title": "SPY IV into the FOMC",
+        "points": [
+          {
+            "label": "Day after FOMC",
+            "iv": 22
+          },
+          {
+            "label": "30 DTE",
+            "iv": 15
+          }
+        ],
+        "caption": "A cut is 92% priced — the front premium is event vol that will crush after"
+      }
     },
     {
       "id": "MQ-A-ADV-0037",
@@ -1471,18 +3225,39 @@
       },
       "stem": "What is the most defensible interpretation?",
       "choices": [
-        { "key": "A", "text": "Defensive rotation with credit confirming, which argues for reducing net short-put delta and lowering the delta of new short strikes, even though the index has barely moved" },
-        { "key": "B", "text": "Ordinary rotation noise, since the index is down only 1.1 percent" },
-        { "key": "C", "text": "Falling yields are bullish for equities, so this is a buying opportunity in technology" },
-        { "key": "D", "text": "Widening credit spreads always precede a recession, so move to cash" }
+        {
+          "key": "A",
+          "text": "Defensive rotation with credit confirming, which argues for reducing net short-put delta and lowering the delta of new short strikes, even though the index has barely moved"
+        },
+        {
+          "key": "B",
+          "text": "Ordinary rotation noise, since the index is down only 1.1 percent"
+        },
+        {
+          "key": "C",
+          "text": "Falling yields are bullish for equities, so this is a buying opportunity in technology"
+        },
+        {
+          "key": "D",
+          "text": "Widening credit spreads always precede a recession, so move to cash"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 2, "C": 2, "D": 3 },
+        "choice_points": {
+          "A": 10,
+          "B": 2,
+          "C": 2,
+          "D": 3
+        },
         "trait_loadings": {
-          "C": { "confirmation_bias": 2 },
-          "D": { "fear": 3 }
+          "C": {
+            "confirmation_bias": 2
+          },
+          "D": {
+            "fear": 3
+          }
         }
       },
       "explanation": {
@@ -1496,8 +3271,48 @@
       "bias": null,
       "learning_objective": "Read internals and credit as leading signals rather than watching the index level.",
       "est_seconds": 130,
-      "tags": ["sector_rotation", "credit_spreads", "internals"],
-      "generator": { "template_id": "T-ROTATION-01", "bindings": ["leading_sectors", "lagging_sectors", "yield_move", "credit_move", "index_move"] }
+      "tags": [
+        "sector_rotation",
+        "credit_spreads",
+        "internals"
+      ],
+      "generator": {
+        "template_id": "T-ROTATION-01",
+        "bindings": [
+          "leading_sectors",
+          "lagging_sectors",
+          "yield_move",
+          "credit_move",
+          "index_move"
+        ]
+      },
+      "visual": {
+        "type": "snapshot",
+        "title": "Three weeks of rotation",
+        "chips": [
+          {
+            "label": "Utilities / staples",
+            "value": "lead",
+            "dir": "up"
+          },
+          {
+            "label": "Tech / discretionary",
+            "value": "lag",
+            "dir": "down"
+          },
+          {
+            "label": "10y yield",
+            "value": "−28bp",
+            "dir": "down"
+          },
+          {
+            "label": "HY credit spreads",
+            "value": "+34bp",
+            "dir": "up"
+          }
+        ],
+        "caption": "Defensive leadership + wider credit = risk-off under a flat index"
+      }
     },
     {
       "id": "MQ-A-INT-0038",
@@ -1510,15 +3325,32 @@
       },
       "stem": "Why did equities rally despite a hot headline number?",
       "choices": [
-        { "key": "A", "text": "The composition was benign. Wages in line and a participation-driven rise in unemployment point to expanding labour supply rather than an overheating wage spiral, so the growth is not inflationary" },
-        { "key": "B", "text": "Strong payrolls are always bullish for equities" },
-        { "key": "C", "text": "The unemployment rate rising is the dominant signal and implies imminent cuts" },
-        { "key": "D", "text": "The 6 basis point yield move shows the bond market disagreed, and equities are simply wrong" }
+        {
+          "key": "A",
+          "text": "The composition was benign. Wages in line and a participation-driven rise in unemployment point to expanding labour supply rather than an overheating wage spiral, so the growth is not inflationary"
+        },
+        {
+          "key": "B",
+          "text": "Strong payrolls are always bullish for equities"
+        },
+        {
+          "key": "C",
+          "text": "The unemployment rate rising is the dominant signal and implies imminent cuts"
+        },
+        {
+          "key": "D",
+          "text": "The 6 basis point yield move shows the bond market disagreed, and equities are simply wrong"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 2, "C": 4, "D": 1 }
+        "choice_points": {
+          "A": 10,
+          "B": 2,
+          "C": 4,
+          "D": 1
+        }
       },
       "explanation": {
         "correct": "Composition beats headline. Supply-driven employment growth without wage acceleration is the combination markets welcome, because it delivers growth without forcing the policy path higher.",
@@ -1531,8 +3363,48 @@
       "bias": null,
       "learning_objective": "Read the composition of a data release rather than the headline print.",
       "est_seconds": 110,
-      "tags": ["payrolls", "macro_interpretation"],
-      "generator": { "template_id": "T-NFP-01", "bindings": ["actual", "expected", "wages", "unemployment", "participation", "market_reaction"] }
+      "tags": [
+        "payrolls",
+        "macro_interpretation"
+      ],
+      "generator": {
+        "template_id": "T-NFP-01",
+        "bindings": [
+          "actual",
+          "expected",
+          "wages",
+          "unemployment",
+          "participation",
+          "market_reaction"
+        ]
+      },
+      "visual": {
+        "type": "snapshot",
+        "title": "Hot payrolls, market rallies",
+        "chips": [
+          {
+            "label": "NFP",
+            "value": "310k vs 175k",
+            "dir": "up"
+          },
+          {
+            "label": "Unemployment",
+            "value": "4.2% (participation)",
+            "dir": "up"
+          },
+          {
+            "label": "Equities",
+            "value": "rally",
+            "dir": "up"
+          },
+          {
+            "label": "10y yield",
+            "value": "+6bp",
+            "dir": "up"
+          }
+        ],
+        "caption": "A rising participation rate reads as healthy supply, not overheating"
+      }
     },
     {
       "id": "MQ-E-PRO-0039",
@@ -1545,21 +3417,48 @@
       },
       "stem": "What does the divergence most likely indicate, and what follows for a premium seller?",
       "choices": [
-        { "key": "A", "text": "The options market is pricing a localised shock rather than systemic stress. Selling elevated vol has better than usual odds, but the divergence is an inference from second-order signals rather than a guarantee, so it justifies a normal-sized defined-risk position, not a larger one" },
-        { "key": "B", "text": "VIX at 27 is a systemic warning regardless of the other signals, so reduce exposure" },
-        { "key": "C", "text": "The divergence confirms the spike is false, which justifies sizing up to take advantage of a rare clean signal" },
-        { "key": "D", "text": "VVIX and SKEW are secondary indicators with no practical predictive value" }
+        {
+          "key": "A",
+          "text": "The options market is pricing a localised shock rather than systemic stress. Selling elevated vol has better than usual odds, but the divergence is an inference from second-order signals rather than a guarantee, so it justifies a normal-sized defined-risk position, not a larger one"
+        },
+        {
+          "key": "B",
+          "text": "VIX at 27 is a systemic warning regardless of the other signals, so reduce exposure"
+        },
+        {
+          "key": "C",
+          "text": "The divergence confirms the spike is false, which justifies sizing up to take advantage of a rare clean signal"
+        },
+        {
+          "key": "D",
+          "text": "VVIX and SKEW are secondary indicators with no practical predictive value"
+        }
       ],
       "scoring": {
         "mode": "weighted_choice",
         "max_points": 10,
-        "choice_points": { "A": 10, "B": 4, "C": 0, "D": 1 },
-        "trait_loadings": {
-          "A": { "discipline": 3, "process_trust": 2 },
-          "B": { "fear": 2 },
-          "C": { "overconfidence": 3, "greed": 2 }
+        "choice_points": {
+          "A": 10,
+          "B": 4,
+          "C": 0,
+          "D": 1
         },
-        "ruin_flag_choices": ["C"]
+        "trait_loadings": {
+          "A": {
+            "discipline": 3,
+            "process_trust": 2
+          },
+          "B": {
+            "fear": 2
+          },
+          "C": {
+            "overconfidence": 3,
+            "greed": 2
+          }
+        },
+        "ruin_flag_choices": [
+          "C"
+        ]
       },
       "explanation": {
         "correct": "A spike without a curve inversion, without a vol-of-vol expansion and without tail repricing looks like an idiosyncratic event. The discipline being tested is separating a better-than-usual read from a licence to increase size.",
@@ -1572,8 +3471,50 @@
       "bias": "overconfidence",
       "learning_objective": "Read vol complex divergence, and keep analytical confidence separate from position size.",
       "est_seconds": 180,
-      "tags": ["vix", "vvix", "skew", "vol_regime"],
-      "generator": { "template_id": "T-VOL-DIVERGE-01", "bindings": ["vix_before", "vix_after", "curve_state", "vvix_move", "skew_move", "breadth"] }
+      "tags": [
+        "vix",
+        "vvix",
+        "skew",
+        "vol_regime"
+      ],
+      "generator": {
+        "template_id": "T-VOL-DIVERGE-01",
+        "bindings": [
+          "vix_before",
+          "vix_after",
+          "curve_state",
+          "vvix_move",
+          "skew_move",
+          "breadth"
+        ]
+      },
+      "visual": {
+        "type": "snapshot",
+        "title": "VIX spike — but the internals?",
+        "chips": [
+          {
+            "label": "VIX",
+            "value": "14 → 27",
+            "dir": "up"
+          },
+          {
+            "label": "VIX curve",
+            "value": "still contango",
+            "dir": "flat"
+          },
+          {
+            "label": "VVIX",
+            "value": "92 → 104",
+            "dir": "up"
+          },
+          {
+            "label": "SKEW",
+            "value": "~unchanged",
+            "dir": "flat"
+          }
+        ],
+        "caption": "Contango + calm VVIX/SKEW + single sector = a localised shock, not systemic"
+      }
     },
     {
       "id": "MQ-D-INT-0040",
@@ -1583,16 +3524,35 @@
       "type": "D",
       "stem": "Select every statement that is generally true about implied volatility around a single-name earnings event.",
       "choices": [
-        { "key": "A", "text": "Front-cycle IV typically rises into the event and drops sharply immediately after the release" },
-        { "key": "B", "text": "The term structure typically inverts, with the expiry containing the event carrying higher IV than later expiries" },
-        { "key": "C", "text": "The implied move derived from the ATM straddle is on average close to, and frequently above, the subsequent realised move" },
-        { "key": "D", "text": "The crush occurs only if the stock fails to move materially" },
-        { "key": "E", "text": "Elevated pre-earnings IV mainly reflects a directional view held by the market" }
+        {
+          "key": "A",
+          "text": "Front-cycle IV typically rises into the event and drops sharply immediately after the release"
+        },
+        {
+          "key": "B",
+          "text": "The term structure typically inverts, with the expiry containing the event carrying higher IV than later expiries"
+        },
+        {
+          "key": "C",
+          "text": "The implied move derived from the ATM straddle is on average close to, and frequently above, the subsequent realised move"
+        },
+        {
+          "key": "D",
+          "text": "The crush occurs only if the stock fails to move materially"
+        },
+        {
+          "key": "E",
+          "text": "Elevated pre-earnings IV mainly reflects a directional view held by the market"
+        }
       ],
       "scoring": {
         "mode": "multi_select",
         "max_points": 10,
-        "correct_keys": ["A", "B", "C"],
+        "correct_keys": [
+          "A",
+          "B",
+          "C"
+        ],
         "per_correct": 3.34,
         "per_incorrect": -3.34,
         "floor": 0
@@ -1607,8 +3567,17 @@
       "bias": null,
       "learning_objective": "Understand the mechanics of the earnings vol cycle, especially that crush is independent of direction.",
       "est_seconds": 100,
-      "tags": ["earnings", "iv_crush", "term_structure"],
-      "generator": { "template_id": "T-EARN-IV-TRUTH-01", "bindings": ["statement_pool"] }
+      "tags": [
+        "earnings",
+        "iv_crush",
+        "term_structure"
+      ],
+      "generator": {
+        "template_id": "T-EARN-IV-TRUTH-01",
+        "bindings": [
+          "statement_pool"
+        ]
+      }
     }
   ]
 }

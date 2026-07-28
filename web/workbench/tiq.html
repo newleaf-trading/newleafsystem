@@ -17,6 +17,9 @@
   never to score the sitting.
 -->
 <script src="public/js/tiqEngine.js"></script>
+<!-- Deterministic per-question diagrams (payoff, checklist, sizing, …). Every
+     number comes from the question's `visual` spec; nothing is generated. -->
+<script src="public/js/tiqVisuals.js"></script>
 
 <style>
   :root{
@@ -36,6 +39,8 @@
   .prog i{display:block;height:100%;background:var(--gold);transition:width .3s ease}
   .cat{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
   .scenario{background:var(--forest2);border:1px solid var(--forest3);border-radius:10px;padding:14px 16px;font-size:14.5px;line-height:1.6;color:#C9D6CC;margin-bottom:16px}
+  .viz{margin:4px 0 18px}
+  .viz svg{display:block}
   .stem{font-family:var(--display);font-size:20px;line-height:1.4;font-weight:600;margin-bottom:20px}
   .opts{display:flex;flex-direction:column;gap:9px}
   .opt{background:var(--card);color:#243027;border:1px solid transparent;border-radius:10px;padding:15px 17px;text-align:left;font-size:15px;line-height:1.5;cursor:pointer;transition:transform .12s ease,box-shadow .18s ease;width:100%}
@@ -166,6 +171,7 @@ function renderItem(){
     <div class="prog"><i style="width:${pct}%"></i></div>
     <div class="cat">${CAT_LABEL[it.category]||it.category} · ${it.difficulty}</div>
     ${it.scenario && it.scenario.text ? `<div class="scenario">${it.scenario.text}</div>` : ''}
+    ${it.visual && window.TIQVisuals ? `<div class="viz">${TIQVisuals.render(it.visual)}</div>` : ''}
     <div class="stem">${it.stem}</div>
     <div id="body">${body}</div>`;
   wire(it);

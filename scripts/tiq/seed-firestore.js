@@ -118,7 +118,8 @@ function stripForPublic(item) {
     stem: item.stem,
     choices: (item.choices || []).map((c) => ({ key: c.key, text: c.text })),
     mode: item.scoring ? item.scoring.mode : null,
-    est_seconds: item.est_seconds ?? null
+    est_seconds: item.est_seconds ?? null,
+    visual: item.visual ?? null
     // omitted: scoring, explanation, learning_objective, bias, tags, generator, pair_id, pair_role
   };
 }
