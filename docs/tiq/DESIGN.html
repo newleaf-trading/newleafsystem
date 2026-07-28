@@ -1,0 +1,263 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TIQ — Design & Build Doc · NewLeaf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --forest:#16271C; --forest2:#1E3326; --forest3:#27412F;
+    --gold:#B68F3E; --goldLt:#E7D9AE; --cream:#F2ECDD; --card:#FBF8F0;
+    --terra:#BC5B43; --teal:#3E7C6A; --mute:#8FA396;
+    --display:'Fraunces',Georgia,serif; --body:'DM Sans',system-ui,sans-serif; --mono:'Space Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--forest);color:var(--cream);font-family:var(--body);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:56px 26px 100px}
+  header{border-bottom:1px solid var(--forest3);padding-bottom:30px;margin-bottom:44px}
+  .kick{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
+  h1{font-family:var(--display);font-weight:600;font-size:46px;line-height:1.1;letter-spacing:-.02em;margin:14px 0 12px}
+  .sub{font-size:18px;color:#C9D6CC;max-width:640px}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .badge{font-family:var(--mono);font-size:11px;letter-spacing:.08em;padding:6px 12px;border-radius:20px;border:1px solid var(--forest3);color:var(--mute)}
+  .badge.live{border-color:var(--teal);color:var(--teal)}
+  .badge.gold{border-color:var(--gold);color:var(--goldLt)}
+  h2{font-family:var(--display);font-weight:600;font-size:28px;margin:52px 0 8px;letter-spacing:-.01em;scroll-margin-top:20px}
+  h2 .n{font-family:var(--mono);font-size:15px;color:var(--gold);margin-right:12px}
+  h3{font-family:var(--display);font-size:19px;font-weight:600;margin:28px 0 8px;color:var(--goldLt)}
+  p{margin:10px 0;color:#D8E2DA}
+  p.lead{color:#C9D6CC}
+  a{color:var(--goldLt)}
+  ul{margin:10px 0 10px 22px} li{margin:6px 0;color:#D8E2DA}
+  code{font-family:var(--mono);font-size:.86em;background:var(--forest2);border:1px solid var(--forest3);border-radius:5px;padding:1px 6px;color:var(--goldLt)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+  @media(max-width:640px){.grid{grid-template-columns:1fr}}
+  .cardbox{background:var(--forest2);border:1px solid var(--forest3);border-radius:12px;padding:18px 20px}
+  .cardbox h4{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+  .cardbox p{margin:4px 0;font-size:14.5px}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14.5px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--forest3);vertical-align:top}
+  th{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);font-weight:400}
+  td code{white-space:nowrap}
+  .ok{color:var(--teal)} .warn{color:var(--gold)} .no{color:var(--terra)}
+  pre{background:var(--forest2);border:1px solid var(--forest3);border-radius:10px;padding:16px 18px;overflow:auto;margin:14px 0;font-family:var(--mono);font-size:13px;line-height:1.55;color:#Cfe0d6}
+  pre .c{color:var(--mute)}
+  .callout{border-left:3px solid var(--gold);background:var(--forest2);border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0}
+  .callout.warn{border-color:var(--terra)}
+  .callout h4{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+  .callout.warn h4{color:var(--terra)}
+  .toc{background:var(--forest2);border:1px solid var(--forest3);border-radius:12px;padding:18px 22px;margin:30px 0;columns:2;column-gap:30px}
+  @media(max-width:640px){.toc{columns:1}}
+  .toc a{display:block;color:#C9D6CC;text-decoration:none;font-size:14px;padding:3px 0;font-family:var(--mono)}
+  .toc a:hover{color:var(--goldLt)}
+  footer{margin-top:70px;padding-top:24px;border-top:1px solid var(--forest3);color:var(--mute);font-size:13px}
+  .metric{font-family:var(--display);font-size:34px;font-weight:600;color:var(--goldLt);line-height:1}
+  .metricrow{display:flex;flex-wrap:wrap;gap:26px;margin:18px 0}
+  .metric small{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--mute);margin-top:6px;font-weight:400}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="kick">NewLeaf · Design & Build Doc</div>
+  <h1>Trading Intelligence Quotient</h1>
+  <p class="sub">Three assessment surfaces on one deterministic scoring engine. No LLM anywhere in the number path — every score, percentile, P&amp;L and diagram is computed by pure, tested code.</p>
+  <div class="meta">
+    <span class="badge live">● LIVE in production</span>
+    <span class="badge gold">newleaf-trading</span>
+    <span class="badge">Phases 1–5 shipped</span>
+    <span class="badge">126 automated checks green</span>
+    <span class="badge">branch: detail-plan</span>
+  </div>
+</header>
+
+<div class="metricrow">
+  <div class="metric">3<small>surfaces</small></div>
+  <div class="metric">82<small>engine tests</small></div>
+  <div class="metric">44<small>emulator + live checks</small></div>
+  <div class="metric">40<small>assessment items</small></div>
+  <div class="metric">28<small>with diagrams</small></div>
+  <div class="metric">0<small>LLM calls in scoring</small></div>
+</div>
+
+<div class="toc">
+  <a href="#what">01 · What it is</a>
+  <a href="#principles">02 · Principles</a>
+  <a href="#engine">03 · The engine</a>
+  <a href="#scoring">04 · Scoring contract</a>
+  <a href="#content">05 · Content &amp; validation</a>
+  <a href="#api">06 · API</a>
+  <a href="#auth">07 · Auth</a>
+  <a href="#rules">08 · Firestore security</a>
+  <a href="#visuals">09 · Question diagrams</a>
+  <a href="#deploy">10 · Deployment</a>
+  <a href="#tests">11 · Test results</a>
+  <a href="#decisions">12 · Decisions &amp; gotchas</a>
+  <a href="#open">13 · Open items</a>
+  <a href="#timeline">14 · Build timeline</a>
+</div>
+
+<h2 id="what"><span class="n">01</span>What it is</h2>
+<p class="lead">One deterministic engine feeds three surfaces that escalate in commitment — a public acquisition quiz, a full paid assessment, and a repeatable judgement simulator.</p>
+<table>
+  <tr><th>Surface</th><th>Route</th><th>Auth</th><th>Measures</th></tr>
+  <tr><td><b>Instinct Quiz</b></td><td><code>/instinct</code> · React SPA</td><td class="ok">public</td><td>instinct — 12 items, archetype + score</td></tr>
+  <tr><td><b>TIQ Assessment</b></td><td><code>/workbench/tiq</code> · static</td><td>free tier</td><td>knowledge &amp; bias — 40 items, TQ, five percentiles, ruin gate</td></tr>
+  <tr><td><b>Decision Simulator</b></td><td><code>/workbench/tiq-sim.html?scenario=…</code> · static</td><td>free tier</td><td>judgement over time — scripted path, counterfactual replay, repeatable</td></tr>
+</table>
+<p><b>Live:</b> <a href="https://newleafsystem.com/instinct">newleafsystem.com/instinct</a> · <a href="https://newleafsystem.com/workbench/tiq">/workbench/tiq</a> · <a href="https://newleafsystem.com/workbench/tiq-sim.html?scenario=the-wednesday">/workbench/tiq-sim.html</a></p>
+
+<h2 id="principles"><span class="n">02</span>Principles</h2>
+<div class="grid">
+  <div class="cardbox"><h4>No LLM in the number path</h4><p>Item scores, category scores, TQ, percentile, rank, calibration, simulator P&amp;L and every diagram are pure deterministic code in <code>shared/tiq/</code>. Models may only write item/scenario text, offline.</p></div>
+  <div class="cardbox"><h4>Pure &amp; testable</h4><p>The engine is CommonJS, no network, no Firestore, no DOM, no <code>Date.now()</code> in scoring (timestamps injected). Every export tested in isolation.</p></div>
+  <div class="cardbox"><h4>Append-only &amp; provenance</h4><p>Sittings and sim sessions are append-only — a retake is a new document. Every Firestore write carries a nested provenance envelope.</p></div>
+  <div class="cardbox"><h4>Honesty over flattery</h4><p>Cohort floors (n≥30 to norm, n≥500 to rank) are enforced in code; anchor-based TQ is capped at 130; percentiles degrade to a criterion band rather than fabricate precision.</p></div>
+</div>
+
+<h2 id="engine"><span class="n">03</span>The engine — <code>shared/tiq/</code></h2>
+<p class="lead">Patterned on <code>shared/plan</code>: own package, colocated <code>*.test.js</code> (plain <code>node:assert</code>), hand-written <code>.d.ts</code>, and a <code>sync.js</code> drift guard.</p>
+<table>
+  <tr><th>Module</th><th>Responsibility</th></tr>
+  <tr><td><code>scoring.js</code></td><td>item scoring (weighted_choice · multi_select · ranking · diagnostic_only), category rollup, composite, anchor/empirical TQ, ruin gate, trait profile, front-door score</td></tr>
+  <tr><td><code>norms.js</code></td><td>mid-rank percentile, Wilson CI, measurement-error band, cohort ladder, rank, display-precision ladder, <code>describeStanding</code></td></tr>
+  <tr><td><code>calibration.js</code></td><td>confidence gap (Brier), impulsivity / pace, framing-pair consistency</td></tr>
+  <tr><td><code>sim.js</code></td><td>scripted-path state machine, <code>applyAction</code>, <code>replay</code> counterfactual, <code>scoreRun</code>, <code>survivalStats</code> — <b>money in integer pence</b> so path-independence is exact</td></tr>
+  <tr><td><code>reliability.js</code></td><td>Cronbach's alpha per category + item-total correlation — the gate for turning on percentiles (offline; not bundled to the browser)</td></tr>
+  <tr><td><code>index.js</code></td><td>barrel + <code>provenance()</code> + version constants</td></tr>
+  <tr><td><code>sync.js</code></td><td>regenerates <code>web/workbench/public/js/tiqEngine.js</code>; <code>--check</code> is a release blocker</td></tr>
+</table>
+<div class="callout"><h4>Drift guard</h4><p>The static Workbench has no bundler, so the browser loads a generated copy of the engine. <code>sync.js --check</code> fails the build if the browser copy has drifted from the Node source — otherwise the browser and server could score differently.</p></div>
+
+<h2 id="scoring"><span class="n">04</span>Scoring contract</h2>
+<pre><span class="c"># per-category, then blended</span>
+category_c = 100 × Σ earned / Σ max
+composite  = 0.18·KQ + 0.24·EQ + 0.20·SQ + 0.28·RQ + 0.10·MQ
+TQ         = 100 + 15·z(composite)      <span class="c"># anchor table (capped 130) until n≥500, then empirical</span>
+
+<span class="c"># the ruin gate — caps, never raises</span>
+if RQ &lt; 45 or ruin_flags ≥ 2 → TQ = min(TQ, 95), banner "Capital preservation risk"
+
+<span class="c"># percentile — mid-rank, clamped, suppressed below cohort floors</span>
+percentile = 100 × (below + 0.5·equal) / n</pre>
+<p>RQ carries the largest weight and KQ the second-smallest on purpose: knowledge is the cheapest of the five to acquire and the least predictive of survival.</p>
+
+<h2 id="content"><span class="n">05</span>Content &amp; validation</h2>
+<p class="lead"><code>content/tiq/</code> is the source of truth; Firestore is a seeded mirror. Edit the JSON and re-seed — never the console.</p>
+<ul>
+  <li><code>bank-v1.json</code> — 40 assessment items, five categories, framing pairs, ruin flags, trait loadings.</li>
+  <li><code>frontdoor-v1.json</code> — 12-item Instinct quiz + 6 archetypes.</li>
+  <li><code>scenarios/the-wednesday.json</code> — the simulator scenario (scripts, rules, nodes).</li>
+  <li><code>scripts/tiq/validate-bank.js</code> — 10 invariant rules (duplicate ids, choice/scoring key match, one clear best answer, ≥3-pt gap for knowledge items, framing-pair parity, category validity, ruin-flag validity, front-door consensus sums to 100). Runs pre-commit and pre-deploy.</li>
+</ul>
+<div class="callout"><h4>Rule 4 exemption</h4><p>The "best vs second-best ≥ 3 points" gap is scoped to knowledge-type items; behavioural EQ items are exempt, because the bank deliberately grades their distractors close so there are no free wrong answers.</p></div>
+
+<h2 id="api"><span class="n">06</span>API — <code>api/src/routes/tiq.ts</code></h2>
+<p class="lead">All scoring is server-side. Item sequences are served with the answer key, scoring blocks and explanations <b>stripped</b> — a client that could see the key before answering makes the instrument worthless.</p>
+<table>
+  <tr><th>Endpoint</th><th>Does</th></tr>
+  <tr><td><code>POST /api/tiq/sittings</code></td><td>start — returns the stripped item sequence, framing pairs ≥4 items apart</td></tr>
+  <tr><td><code>POST …/:id/responses</code></td><td>record choice + confidence + elapsed_ms; the key &amp; explanation come back <i>only here</i></td></tr>
+  <tr><td><code>POST …/:id/finish</code></td><td>compute all scores (server-side); append-only</td></tr>
+  <tr><td><code>GET …/:id/standing</code></td><td>TQ, categories, traits; percentile/rank from frozen norms only — none yet, so criterion band + <code>anchorBased</code></td></tr>
+  <tr><td><code>POST /api/tiq/sim/:scenarioId/sessions</code></td><td>start a session — returns the points-stripped scenario</td></tr>
+  <tr><td><code>POST …/sessions/:id/decisions</code></td><td>client sends choice text; server matches option → points; append-only</td></tr>
+  <tr><td><code>POST …/sessions/:id/finish</code></td><td>scoreRun across every script + survival stats + calibration</td></tr>
+  <tr><td><code>GET /api/tiq/items/:id/consensus</code></td><td>front-door consensus — stubbed behind <code>TIQ_CONSENSUS_LIVE</code> until telemetry exists</td></tr>
+</table>
+
+<h2 id="auth"><span class="n">07</span>Auth</h2>
+<p>The middleware accepts two credentials. <b>API key</b> (<code>X-API-Key</code>) for services, and a <b>Firebase ID token</b> (<code>Authorization: Bearer</code>) for signed-in browser sessions — the workbench nav exposes the token (<code>window.__nlGetIdToken</code>), so the surfaces authenticate automatically with no manual key. A verified user maps to their custom-claim role, or <code>free</code>.</p>
+
+<h2 id="rules"><span class="n">08</span>Firestore security</h2>
+<p class="lead">The append-only / server-side guarantees are only real if a client can't reach the collections directly. A blanket <code>allow read: if true</code> catch-all was replaced with a collection-bound one so the sensitive collections could be carved out.</p>
+<table>
+  <tr><th>Collection</th><th>Client access</th></tr>
+  <tr><td><code>tiqSittings</code></td><td class="warn">read own document only · <b>no client write</b></td></tr>
+  <tr><td><code>tiqItems</code> (holds the key)</td><td class="no">server only</td></tr>
+  <tr><td><code>tiqItemsPublic</code> (stripped)</td><td class="ok">read</td></tr>
+  <tr><td><code>tiqScenarios</code> (holds sim points)</td><td class="no">server only</td></tr>
+  <tr><td><code>tiqSimSessions</code></td><td class="warn">read own · no client write</td></tr>
+  <tr><td><code>tiqBanks · tiqNorms · tiqItemStats</code></td><td class="ok">read-only</td></tr>
+</table>
+<p>Verified with a rules test against the emulator (16/16), including the assertion that a client-authenticated write to <code>tiqSittings</code> is denied.</p>
+
+<h2 id="visuals"><span class="n">09</span>Question diagrams — <code>tiqVisuals.js</code></h2>
+<p class="lead">Text-only trading scenarios are hard to parse, so 28 of 40 questions carry a <code>visual</code> spec rendered as inline SVG — computed from the question's own numbers, nothing generated. AI image generation was rejected: a trading diagram must be numerically exact.</p>
+<table>
+  <tr><th>Type</th><th>Used for</th></tr>
+  <tr><td><code>payoff</code></td><td>spreads — breakeven, max loss/profit, R:R</td></tr>
+  <tr><td><code>checklist</code></td><td>gates / rules that pass or fail</td></tr>
+  <tr><td><code>gauge</code></td><td>progress toward a profit target or stop</td></tr>
+  <tr><td><code>streak</code></td><td>runs of wins / losses</td></tr>
+  <tr><td><code>bars</code></td><td>EV, Kelly, correlation, drawdown recovery, compares</td></tr>
+  <tr><td><code>sizing</code></td><td>position-size arithmetic (budget ÷ risk)</td></tr>
+  <tr><td><code>snapshot</code></td><td>macro prints &amp; vol internals as a tape</td></tr>
+  <tr><td><code>volterm</code></td><td>IV term structure across tenors</td></tr>
+</table>
+<p>Purely-judgement items get no diagram. The style was prototyped in Remotion and ported to live SVG for a responsive, always-correct page render.</p>
+
+<h2 id="deploy"><span class="n">10</span>Deployment</h2>
+<p>Firebase project <code>newleaf-trading</code>, no CI — manual deploys.</p>
+<table>
+  <tr><th>Part</th><th>Command / target</th></tr>
+  <tr><td>Web (SPA + static surfaces)</td><td><code>cd web &amp;&amp; npm run deploy</code> → hosting <code>newleafsystem</code></td></tr>
+  <tr><td>API (functions)</td><td><code>cd api &amp;&amp; npm run deploy</code> → <code>…cloudfunctions.net/api</code></td></tr>
+  <tr><td>Firestore rules + indexes</td><td><code>firebase deploy --only firestore</code> → <code>newleafdb</code></td></tr>
+  <tr><td>Seed prod content</td><td><code>node scripts/tiq/seed-firestore.js</code> (service-account creds → newleafdb)</td></tr>
+</table>
+<div class="callout warn"><h4>Custom-domain routing (found &amp; fixed live)</h4><p>The static surfaces call the API by absolute function URL on <b>any</b> deployed host — the hosting has no <code>/api</code>→function rewrite, so a relative <code>/api</code> on <code>newleafsystem.com</code> served the SPA and broke the page. Clean-URL rewrites (<code>/workbench/tiq</code> → <code>tiq.html</code>) were also added so the paths resolve to the static pages instead of the SPA's 404.</p></div>
+
+<h2 id="tests"><span class="n">11</span>Test results</h2>
+<table>
+  <tr><th>Suite</th><th>Result</th></tr>
+  <tr><td>Engine (pure, <code>node:assert</code>)</td><td class="ok">82 / 82</td></tr>
+  <tr><td>Content validator</td><td class="ok">all invariants hold</td></tr>
+  <tr><td>Assessment API (emulator)</td><td class="ok">20 / 20</td></tr>
+  <tr><td>Simulator API (emulator)</td><td class="ok">18 / 18</td></tr>
+  <tr><td>Firestore rules (emulator)</td><td class="ok">16 / 16</td></tr>
+  <tr><td>Live smoke (deployed function → newleafdb)</td><td class="ok">10 / 10</td></tr>
+  <tr><td>Firebase-session auth (deployed)</td><td class="ok">5 / 5</td></tr>
+</table>
+<p>Two invariants proven end-to-end: the simulator's close-early path returns <b>identical P&amp;L across scripts</b> (path-independence, exact integer pence, through the API), and the ruin gate caps a reckless respondent at TQ 95 with the capital-preservation banner.</p>
+
+<h2 id="decisions"><span class="n">12</span>Decisions &amp; gotchas</h2>
+<ul>
+  <li><b>Anchor TQ capped at 130</b> — TQ 130 is already +2σ; a table with no cohort behind it cannot justify a three-sigma claim. Empirical z-scoring lifts the cap at n≥500.</li>
+  <li><b><code>forced_choice_vector</code> removed</b> — named in the brief but defined nowhere and used by no item; <code>trait_loadings</code> already does that job.</li>
+  <li><b><code>tiqScenarios</code> is server-only</b> — the scoring key moved into the scenario documents, so the security posture had to move with it.</li>
+  <li><b>Integer pence</b> — simulator P&amp;L is computed in pence so path-independence is exact by construction, not float luck.</li>
+  <li><b>Named-database trap</b> — the namespaced <code>admin.firestore(app, dbId)</code> silently ignores the id and writes to <code>(default)</code>; auth and the route read the named <code>newleafdb</code> via the modular <code>getFirestore</code>. A first prod seed landed in the wrong database until the seed switched to the modular API.</li>
+  <li><b>JDK 24</b> — firebase-tools' emulator needs JDK 21+; the machine default is Java 11, so <code>JAVA_HOME</code> points at the installed OpenJDK 24 for the emulator tests.</li>
+</ul>
+
+<h2 id="open"><span class="n">13</span>Open items</h2>
+<table>
+  <tr><th>Item</th><th>Status / what unblocks it</th></tr>
+  <tr><td>Workbench→API browser auth</td><td class="ok">resolved — Firebase Bearer token, no manual key</td></tr>
+  <tr><td>Live consensus percentages</td><td class="warn">static &amp; labelled illustrative until <code>tiqItemStats</code> has real data</td></tr>
+  <tr><td>Frozen norms / empirical TQ</td><td class="warn">blocked on a real cohort (n≥500); run <code>reliability.js</code> first</td></tr>
+  <tr><td>Adaptive delivery / IRT</td><td class="warn">spec phase 2 — ~200 responses per item</td></tr>
+  <tr><td>Diagrams on the remaining 12 items + Instinct quiz</td><td class="warn">optional extension of the visual library</td></tr>
+</table>
+
+<h2 id="timeline"><span class="n">14</span>Build timeline</h2>
+<table>
+  <tr><th>Phase</th><th>What shipped</th></tr>
+  <tr><td>1</td><td>deterministic engine + tests</td></tr>
+  <tr><td>2</td><td>integer-pence sim, front-door bank, content validator + pre-commit hook</td></tr>
+  <tr><td>3</td><td>assessment persistence, API, Workbench surface</td></tr>
+  <tr><td>—</td><td>Firestore security rules + rules test</td></tr>
+  <tr><td>4</td><td>Instinct Quiz (React front door)</td></tr>
+  <tr><td>5</td><td>Decision Simulator</td></tr>
+  <tr><td>+</td><td>reliability tooling, OPEN-ITEMS doc</td></tr>
+  <tr><td>+</td><td>production deploy (hosting · functions · rules · seed) &amp; live verification</td></tr>
+  <tr><td>+</td><td>per-question diagrams (deterministic inline SVG, 28/40)</td></tr>
+  <tr><td>+</td><td>custom-domain routing &amp; API-base fixes</td></tr>
+</table>
+
+<footer>
+  Source of truth: <code>docs/tiq/TIQ-BUILD.md</code> + the four <code>spec-*.md</code>. Detail on open work in <code>docs/tiq/OPEN-ITEMS.md</code>.
+  <br>Generated as a build summary · NewLeaf TIQ · project newleaf-trading.
+</footer>
+</div>
