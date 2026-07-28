@@ -27,10 +27,17 @@ function requireAdmin() {
   try { return require('firebase-admin'); }
   catch { return require(path.resolve(__dirname, '..', '..', 'api', 'node_modules', 'firebase-admin')); }
 }
+function requireAdminFirestore() {
+  try { return require('firebase-admin/firestore'); }
+  catch { return require(path.resolve(__dirname, '..', '..', 'api', 'node_modules', 'firebase-admin', 'lib', 'firestore')); }
+}
 function dbHandle() {
   const admin = requireAdmin();
   if (!admin.apps.length) admin.initializeApp({ projectId: process.env.GCLOUD_PROJECT || process.env.FIREBASE_PROJECT_ID || 'demo-newleaf' });
-  return DB_ID && DB_ID !== '(default)' ? admin.firestore(undefined, DB_ID) : admin.firestore();
+  // Modular getFirestore is named-database aware; namespaced admin.firestore(app, id)
+  // is not and would read (default) instead of newleafdb.
+  const { getFirestore } = requireAdminFirestore();
+  return (DB_ID && DB_ID !== '(default)') ? getFirestore(DB_ID) : getFirestore();
 }
 
 async function run(db) {
