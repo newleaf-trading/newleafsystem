@@ -14,6 +14,7 @@ import {
 import { FootageComposite } from './FootageComposite.jsx';
 import { PayoffDiagram } from './PayoffDiagram.jsx';
 import { ChecklistViz } from './ChecklistViz.jsx';
+import { SvgFrame } from './SvgFrame.jsx';
 import { ComplianceOverlay } from './ComplianceOverlay.jsx';
 import { WarRoomSegment } from './WarRoomSegment.jsx';
 import { VoxExplainer } from './VoxExplainer.jsx';
@@ -111,6 +112,7 @@ export const RemotionRoot = () => {
           breakeven: 104,
         }}
       />
+      <Composition id="SvgFrame" component={SvgFrame} durationInFrames={30} width={640} height={300} fps={30} />
       <Composition
         id="ChecklistViz"
         component={ChecklistViz}
