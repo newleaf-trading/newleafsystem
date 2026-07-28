@@ -752,6 +752,12 @@ const app = initializeApp({
 });
 const auth = getAuth(app);
 
+// Expose the signed-in session to workbench surfaces (TIQ, etc.) so they can call
+// the API with the Firebase ID token — no manual API key needed. Reuses this same
+// default app, so the persisted session is shared across every workbench page.
+window.__nlAuthReady = new Promise(function (res) { onAuthStateChanged(auth, function () { res(); }); });
+window.__nlGetIdToken = function () { return auth.currentUser ? auth.currentUser.getIdToken() : Promise.resolve(null); };
+
 function getInitials(user) {
   if (user.displayName) {
     return user.displayName.split(' ').map(function (n) { return n[0]; }).join('').toUpperCase().slice(0, 2);

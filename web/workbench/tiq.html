@@ -93,10 +93,22 @@ const API_KEY = (window.localStorage && localStorage.getItem('nl_api_key')) || w
 // Prod hosting has no /api→function rewrite, so the deployed page calls the
 // function directly; locally (server.cjs) relative /api is proxied.
 const API_BASE = /(?:web\.app|firebaseapp\.com)$/.test(location.hostname) ? 'https://us-central1-newleaf-trading.cloudfunctions.net/api' : '';
+// Prefer the signed-in Firebase session (exposed by the workbench nav); fall back
+// to a manual X-API-Key only if there is no session. No manual key needed.
+async function authHeader(){
+  try{
+    if(window.__nlAuthReady){
+      await Promise.race([window.__nlAuthReady, new Promise(r=>setTimeout(r,5000))]);
+      const t = window.__nlGetIdToken ? await window.__nlGetIdToken() : null;
+      if(t) return { Authorization:'Bearer '+t };
+    }
+  }catch(e){}
+  return API_KEY ? { 'X-API-Key':API_KEY } : {};
+}
 async function api(method, url, body){
   const res = await fetch(API_BASE + url, {
     method,
-    headers: { 'Content-Type':'application/json', ...(API_KEY ? {'X-API-Key':API_KEY} : {}) },
+    headers: { 'Content-Type':'application/json', ...(await authHeader()) },
     body: body ? JSON.stringify(body) : undefined
   });
   const data = await res.json().catch(()=>({}));
@@ -284,7 +296,7 @@ function renderResult(st){
 function showErr(e){
   const box = document.getElementById('err') || stage;
   box.innerHTML = `<div class="err"><b>Something went wrong.</b><br>${(e&&e.message)||e}<br><br>
-    If this is an auth error, the assessment needs an API key — set <code>localStorage.nl_api_key</code>.</div>`;
+    If this is an auth error, sign in with the button at the top right, then reload.</div>`;
 }
 function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
 </script>

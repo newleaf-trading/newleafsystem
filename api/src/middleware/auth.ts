@@ -21,6 +21,25 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
   }
 
   const apiKey = request.headers['x-api-key'] as string | undefined;
+
+  // Signed-in browser sessions (workbench surfaces) authenticate with a Firebase
+  // ID token instead of an API key — no manual key needed. Additive: X-API-Key
+  // still works. Role comes from a custom claim if present, else 'free'.
+  const authz = request.headers['authorization'] as string | undefined;
+  if (!apiKey && authz && authz.startsWith('Bearer ')) {
+    try {
+      initFirebase();
+      const { getAuth } = await import('firebase-admin/auth');
+      const decoded = await getAuth().verifyIdToken(authz.slice(7).trim());
+      const claim = (decoded as any).role ?? (decoded as any).tier;
+      request.userRole = (claim === 'admin' || claim === 'premium' || claim === 'basic') ? claim : 'free';
+      request.userId = decoded.uid;
+      return;
+    } catch {
+      return reply.code(401).send({ error: 'Invalid or expired session' });
+    }
+  }
+
   if (!apiKey) {
     return reply.code(401).send({ error: 'Missing X-API-Key header' });
   }
