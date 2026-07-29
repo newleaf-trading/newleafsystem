@@ -30,40 +30,58 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--forest);color:var(--cream);font-family:var(--body);min-height:100vh;-webkit-font-smoothing:antialiased}
-  .stage{width:100%;max-width:660px;margin:0 auto;padding:28px 18px 80px}
+  .stage{width:100%;max-width:1060px;margin:0 auto;padding:26px 20px 90px}
+  .narrow{max-width:640px;margin:0 auto}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .step{animation:fade .32s ease both}
   .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
-  h1{font-family:var(--display);font-size:27px;line-height:1.28;font-weight:600;margin:14px 0 18px;letter-spacing:-.01em}
-  .lede{font-size:16px;line-height:1.65;color:#C9D6CC;margin-bottom:26px;max-width:520px}
-  .meta{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:#8FA396;margin-bottom:10px;text-transform:uppercase}
-  .prog{height:3px;background:var(--forest3);border-radius:2px;margin-bottom:22px;overflow:hidden}
-  .prog i{display:block;height:100%;background:var(--gold);transition:width .3s ease}
-  .cat{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
-  .dims{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 26px}
+  h1{font-family:var(--display);font-size:33px;line-height:1.2;font-weight:600;margin:14px 0 18px;letter-spacing:-.015em}
+  .lede{font-size:16px;line-height:1.65;color:#C9D6CC;margin-bottom:26px;max-width:560px}
+  .meta{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:#8FA396;margin-bottom:9px;text-transform:uppercase}
+  .prog{height:4px;background:var(--forest3);border-radius:3px;margin-bottom:30px;overflow:hidden}
+  .prog i{display:block;height:100%;border-radius:3px;transition:width .4s ease}
+  .qgrid{display:grid;grid-template-columns:.92fr 1.08fr;gap:46px;align-items:start}
+  @media(max-width:900px){.qgrid{grid-template-columns:1fr;gap:20px}}
+  .cat{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+  .dims{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 28px}
   .dim{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;background:var(--forest2);border:1px solid var(--forest3);border-radius:20px;padding:7px 13px}
   .bar-top .blbl{display:inline-flex;align-items:center;gap:6px}
-  .scenario{background:var(--forest2);border:1px solid var(--forest3);border-radius:10px;padding:14px 16px;font-size:14.5px;line-height:1.6;color:#C9D6CC;margin-bottom:16px}
-  .viz{margin:4px 0 18px}
+  .scenario{background:var(--forest2);border:1px solid var(--forest3);border-left:3px solid var(--catc,var(--gold));border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.65;color:#D2DED6;margin-bottom:16px}
+  .viz{margin:2px 0 8px}
   .viz svg{display:block}
-  .stem{font-family:var(--display);font-size:20px;line-height:1.4;font-weight:600;margin-bottom:20px}
-  .opts{display:flex;flex-direction:column;gap:9px}
-  .opt{background:var(--card);color:#243027;border:1px solid transparent;border-radius:10px;padding:15px 17px;text-align:left;font-size:15px;line-height:1.5;cursor:pointer;transition:transform .12s ease,box-shadow .18s ease;width:100%}
-  .opt:hover{transform:translateX(3px);box-shadow:-3px 0 0 var(--gold)}
-  .opt.sel{box-shadow:-4px 0 0 var(--teal)}
-  .opt:disabled{cursor:default;opacity:.9}
+  .ctxcard{background:var(--forest2);border:1px solid var(--forest3);border-radius:14px;padding:32px 26px;text-align:center}
+  .ctxcard .big{margin:0 auto 18px;width:66px;height:66px;display:flex;align-items:center;justify-content:center;border-radius:16px;background:var(--forest);border:1px solid var(--catc,var(--forest3))}
+  .ctxcard h4{font-family:var(--display);font-size:25px;font-weight:600;color:var(--cream);margin-bottom:8px}
+  .ctxcard p{font-size:14.5px;line-height:1.6;color:#9FB0A4}
+  .stem{font-family:var(--display);font-size:23px;line-height:1.35;font-weight:600;margin-bottom:22px;letter-spacing:-.01em}
+  @media(max-width:900px){.stem{font-size:20px}}
+  .opts{display:flex;flex-direction:column;gap:10px}
+  .opt{display:flex;align-items:flex-start;gap:14px;background:var(--card);color:#243027;border:1.5px solid transparent;border-radius:12px;padding:16px 18px;text-align:left;font-size:15px;line-height:1.5;cursor:pointer;transition:transform .14s ease,box-shadow .18s ease,border-color .15s;width:100%}
+  .opt:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.28)}
+  .opt .bdg{flex:0 0 26px;height:26px;border-radius:8px;background:var(--forest);color:var(--gold-lt);font-family:var(--mono);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:-1px}
+  .opt .otext{flex:1}
+  .opt.sel{border-color:var(--teal)} .opt.sel .bdg{background:var(--teal);color:var(--forest)}
+  .opt:disabled{cursor:default}
   .rank-row{display:flex;align-items:center;gap:8px}
-  .rank-row .opt{flex:1}
-  .rank-btn{background:var(--forest2);border:1px solid var(--forest3);color:var(--cream);border-radius:7px;width:34px;height:34px;cursor:pointer;font-size:15px}
-  .btn{border:none;border-radius:8px;padding:13px 24px;font-family:var(--body);font-weight:700;font-size:15px;cursor:pointer;margin-top:20px;background:var(--gold);color:var(--forest)}
+  .rank-row .opt{flex:1;cursor:default}
+  .rank-btn{background:var(--forest2);border:1px solid var(--forest3);color:var(--cream);border-radius:8px;width:38px;height:38px;cursor:pointer;font-size:16px;flex:0 0 auto}
+  .rank-btn:hover{border-color:var(--gold);color:var(--gold-lt)}
+  .btn{border:none;border-radius:9px;padding:14px 26px;font-family:var(--body);font-weight:700;font-size:15px;cursor:pointer;margin-top:22px;background:var(--gold);color:var(--forest)}
   .btn:hover{background:var(--gold-lt)}
   .btn.ghost{background:none;border:1px solid var(--forest3);color:#8FA396;font-weight:400}
-  .conf-q{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:18px 0 12px}
-  .conf{background:var(--forest2);border:1px solid var(--forest3);color:var(--cream);border-radius:8px;padding:13px 16px;font-size:14.5px;cursor:pointer;text-align:left;width:100%;margin-bottom:8px}
-  .conf:hover{border-color:var(--gold)}
-  .chosen{background:var(--forest2);border-left:2px solid var(--teal);border-radius:0 8px 8px 0;padding:12px 15px;margin-bottom:6px;font-size:14.5px;color:#D8E2DA}
-  .chosen span{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8FA396;margin-bottom:5px}
-  .fb{background:var(--forest2);border:1px solid var(--forest3);border-radius:10px;padding:16px;margin-top:14px;font-size:14.5px;line-height:1.6;color:#D8E2DA}
-  .fb .tag{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
-  .fb.good .tag{color:var(--teal)} .fb.part .tag{color:var(--gold)}
+  .chosen{background:var(--forest2);border-left:3px solid var(--teal);border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:24px;font-size:15px;color:#D8E2DA}
+  .chosen span{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8FA396;margin-bottom:6px}
+  .conf-q{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin:0 0 16px}
+  .confscale{display:flex;gap:10px}
+  @media(max-width:640px){.confscale{flex-wrap:wrap}}
+  .confseg{flex:1;min-width:112px;background:var(--forest2);border:1px solid var(--forest3);border-bottom:3px solid var(--c,var(--gold));border-radius:12px;padding:16px 12px;cursor:pointer;text-align:center;transition:transform .14s,background .15s}
+  .confseg:hover{transform:translateY(-3px);background:var(--forest3)}
+  .confseg .dot{display:block;width:14px;height:14px;border-radius:50%;background:var(--c,var(--gold));margin:0 auto 10px}
+  .confseg .cl{font-family:var(--body);font-size:13px;color:#B9C7BD;line-height:1.35}
+  .confseg .cl b{display:block;font-weight:700;color:var(--cream);margin-bottom:2px;font-size:14px}
+  .fb{background:var(--forest2);border:1px solid var(--forest3);border-radius:12px;padding:20px 22px;margin-top:6px;font-size:15px;line-height:1.65;color:#D8E2DA}
+  .fb .tag{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+  .fb.good{border-color:var(--teal)} .fb.good .tag{color:var(--teal)} .fb.part .tag{color:var(--gold)}
   /* results */
   .center{text-align:center}
   .num{font-family:var(--display);font-size:60px;font-weight:600;color:var(--gold-lt);line-height:1;margin-top:8px}
@@ -125,13 +143,24 @@ async function api(method, url, body){
 }
 
 const CONF = [
-  {label:'Certain — I would do this every time', v:5},
-  {label:'Fairly confident', v:4},
-  {label:'Could go either way', v:3},
-  {label:'Leaning, but unsure', v:2},
-  {label:'Honestly guessing', v:1}
+  {label:'Certain', long:'I do this every time', v:5},
+  {label:'Confident', long:'fairly sure', v:4},
+  {label:'50 / 50', long:'could go either way', v:3},
+  {label:'Unsure', long:'leaning, but shaky', v:2},
+  {label:'Guessing', long:'honestly a guess', v:1}
 ];
+const CONF_COLOR = ['#3E7C6A','#6E8B58','#B68F3E','#C0764E','#BC5B43'];
 const CAT_LABEL = { KQ:'Knowledge', EQ:'Emotion', SQ:'System', RQ:'Risk', MQ:'Market' };
+const CAT_DESC = {
+  KQ:'The mechanics — Greeks, structure, and the arithmetic of a defined-risk trade.',
+  EQ:'Whether your rules survive fear, greed and a losing streak.',
+  SQ:'A repeatable process, in the right order, that you actually trust.',
+  RQ:'Staying in the game — sizing, correlation and the maths of ruin.',
+  MQ:'Reading the tape — volatility, macro prints and event risk.'
+};
+function catCol(c){ return window.TIQVisuals ? TIQVisuals.catColor(c) : 'var(--gold)'; }
+function catIcon(c,s){ return window.TIQVisuals ? TIQVisuals.icon(c,s||15) : ''; }
+function textOf(it,k){ const c=(it.choices||[]).find(x=>x.key===k); return c?c.text:''; }
 
 const stage = document.getElementById('stage');
 let S = null; // { sittingId, items, i, tStart }
@@ -139,7 +168,7 @@ let S = null; // { sittingId, items, i, tStart }
 start();
 
 function start(){
-  stage.innerHTML = `<div>
+  stage.innerHTML = `<div class="step narrow">
     <div class="kicker">NewLeaf · TIQ Assessment</div>
     <h1>Forty situations.<br>Five dimensions of trading judgement.</h1>
     <p class="lede">This is the full instrument, not the four-minute quiz. It checks knowledge, emotion,
@@ -165,52 +194,77 @@ function renderItem(){
   const it = S.items[S.i];
   S.tStart = Date.now();
   const pct = Math.round(100 * S.i / S.items.length);
+  const col = catCol(it.category);
   let body;
   if(it.mode === 'multi_select') body = renderMulti(it);
   else if(it.mode === 'ranking') body = renderRank(it);
   else body = renderChoice(it);
 
-  stage.innerHTML = `
-    <div class="meta"><span>${String(S.i+1).padStart(2,'0')} / ${S.items.length}</span><span>${CAT_LABEL[it.category]||it.category}</span></div>
-    <div class="prog"><i style="width:${pct}%"></i></div>
-    <div class="cat" style="color:${window.TIQVisuals?TIQVisuals.catColor(it.category):'var(--gold)'}">${window.TIQVisuals?TIQVisuals.icon(it.category,15):''}${CAT_LABEL[it.category]||it.category} · ${it.difficulty}</div>
-    ${it.scenario && it.scenario.text ? `<div class="scenario">${it.scenario.text}</div>` : ''}
-    ${it.visual && window.TIQVisuals ? `<div class="viz">${TIQVisuals.render(it.visual)}</div>` : ''}
-    <div class="stem">${it.stem}</div>
-    <div id="body">${body}</div>`;
+  const hasCtx = (it.scenario && it.scenario.text) || (it.visual && window.TIQVisuals);
+  const left = hasCtx
+    ? `${it.scenario && it.scenario.text ? `<div class="scenario" style="--catc:${col}">${it.scenario.text}</div>` : ''}
+       ${it.visual && window.TIQVisuals ? `<div class="viz">${TIQVisuals.render(it.visual)}</div>` : ''}`
+    : ctxCard(it, col);
+
+  stage.innerHTML = `<div class="step">
+    <div class="meta"><span>${String(S.i+1).padStart(2,'0')} / ${S.items.length}</span><span>${CAT_LABEL[it.category]||it.category} · ${it.difficulty}</span></div>
+    <div class="prog"><i style="width:${pct||2}%;background:${col}"></i></div>
+    <div class="qgrid">
+      <div class="qctx">
+        <div class="cat" style="color:${col}">${catIcon(it.category,15)}${CAT_LABEL[it.category]||it.category}</div>
+        ${left}
+      </div>
+      <div class="qmain">
+        <div class="stem">${it.stem}</div>
+        <div id="body">${body}</div>
+      </div>
+    </div>
+  </div>`;
   wire(it);
 }
 
+function ctxCard(it, col){
+  return `<div class="ctxcard" style="--catc:${col}">
+    <div class="big">${catIcon(it.category,32)}</div>
+    <h4 style="color:${col}">${CAT_LABEL[it.category]||it.category}</h4>
+    <p>${CAT_DESC[it.category]||''}</p>
+    <p style="margin-top:12px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8FA396">${it.difficulty}</p>
+  </div>`;
+}
+function bdgLetter(i){ return String.fromCharCode(65+i); }
 function renderChoice(it){
-  return `<div class="opts">${it.choices.map(c=>`<button class="opt" data-k="${c.key}">${c.text}</button>`).join('')}</div>`;
+  return `<div class="opts">${it.choices.map((c,i)=>`<button class="opt" data-k="${c.key}"><span class="bdg">${bdgLetter(i)}</span><span class="otext">${c.text}</span></button>`).join('')}</div>`;
 }
 function renderMulti(it){
-  return `<div class="opts">${it.choices.map(c=>`<button class="opt" data-k="${c.key}">${c.text}</button>`).join('')}</div>
+  return `<div class="opts">${it.choices.map((c,i)=>`<button class="opt" data-k="${c.key}"><span class="bdg">${bdgLetter(i)}</span><span class="otext">${c.text}</span></button>`).join('')}</div>
     <button class="btn" id="submit" disabled>Submit selection</button>`;
 }
 function renderRank(it){
-  return `<div id="ranklist">${it.choices.map(c=>rankRow(c)).join('')}</div>
+  return `<p style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8FA396;margin-bottom:12px">Order them — 1 is first</p>
+    <div id="ranklist" class="opts">${it.choices.map(c=>rankRow(c)).join('')}</div>
     <button class="btn" id="submit">Submit ranking</button>`;
 }
-function rankRow(c){ return `<div class="rank-row" data-k="${c.key}"><button class="rank-btn up">↑</button><button class="rank-btn down">↓</button><span class="opt" disabled>${c.text}</span></div>`; }
+function rankRow(c){ return `<div class="rank-row" data-k="${c.key}"><button class="rank-btn up" title="Move up">↑</button><button class="rank-btn down" title="Move down">↓</button><span class="opt" disabled><span class="bdg num">1</span><span class="otext">${c.text}</span></span></div>`; }
+function renumberRanks(list){ [...list.querySelectorAll('.rank-row')].forEach((r,i)=>{ const b=r.querySelector('.bdg'); if(b) b.textContent=i+1; }); }
 
 function wire(it){
   if(it.mode === 'weighted_choice'){
-    stage.querySelectorAll('.opt').forEach(b=>b.onclick=()=>askConfidence(it, { choice:b.dataset.k }, b.textContent));
+    stage.querySelectorAll('.opt').forEach(b=>b.onclick=()=>askConfidence(it, { choice:b.dataset.k }, textOf(it,b.dataset.k)));
   } else if(it.mode === 'multi_select'){
     const sel = new Set();
     stage.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
       const k=b.dataset.k; if(sel.has(k)){sel.delete(k);b.classList.remove('sel');} else {sel.add(k);b.classList.add('sel');}
       document.getElementById('submit').disabled = sel.size===0;
     });
-    document.getElementById('submit').onclick=()=>askConfidence(it, { selected:[...sel] }, [...sel].join(', ')+' selected');
+    document.getElementById('submit').onclick=()=>askConfidence(it, { selected:[...sel] }, [...sel].map(k=>textOf(it,k)).join(' · '));
   } else if(it.mode === 'ranking'){
     const list = document.getElementById('ranklist');
-    list.querySelectorAll('.up').forEach(btn=>btn.onclick=()=>{const r=btn.closest('.rank-row'); if(r.previousElementSibling) list.insertBefore(r, r.previousElementSibling);});
-    list.querySelectorAll('.down').forEach(btn=>btn.onclick=()=>{const r=btn.closest('.rank-row'); if(r.nextElementSibling) list.insertBefore(r.nextElementSibling, r);});
+    renumberRanks(list);
+    list.querySelectorAll('.up').forEach(btn=>btn.onclick=()=>{const r=btn.closest('.rank-row'); if(r.previousElementSibling){ list.insertBefore(r, r.previousElementSibling); renumberRanks(list);} });
+    list.querySelectorAll('.down').forEach(btn=>btn.onclick=()=>{const r=btn.closest('.rank-row'); if(r.nextElementSibling){ list.insertBefore(r.nextElementSibling, r); renumberRanks(list);} });
     document.getElementById('submit').onclick=()=>{
       const order=[...list.querySelectorAll('.rank-row')].map(r=>r.dataset.k);
-      askConfidence(it, { order }, 'ranking submitted');
+      askConfidence(it, { order }, 'Your ranking');
     };
   }
 }
@@ -218,12 +272,14 @@ function wire(it){
 // Confidence is gated BETWEEN the answer and the result — it cannot be revised.
 function askConfidence(it, answer, chosenText){
   const secs = (Date.now()-S.tStart)/1000;
-  stage.innerHTML = `
-    <div class="cat">${CAT_LABEL[it.category]||it.category}</div>
+  const col = catCol(it.category);
+  stage.innerHTML = `<div class="step narrow">
+    <div class="cat" style="color:${col}">${catIcon(it.category,15)}${CAT_LABEL[it.category]||it.category}</div>
     <div class="chosen"><span>Your answer</span>${chosenText}</div>
     <div class="conf-q">Before you see whether it was right — how confident are you?</div>
-    ${CONF.map((c,k)=>`<button class="conf" data-k="${k}">${c.label}</button>`).join('')}`;
-  stage.querySelectorAll('.conf').forEach(b=>b.onclick=()=>submit(it, answer, CONF[+b.dataset.k].v, Math.round(secs*1000)));
+    <div class="confscale">${CONF.map((c,k)=>`<button class="confseg" style="--c:${CONF_COLOR[k]}" data-k="${k}"><span class="dot"></span><span class="cl"><b>${c.label}</b>${c.long}</span></button>`).join('')}</div>
+  </div>`;
+  stage.querySelectorAll('.confseg').forEach(b=>b.onclick=()=>submit(it, answer, CONF[+b.dataset.k].v, Math.round(secs*1000)));
 }
 
 async function submit(it, answer, confidence, elapsed_ms){
@@ -234,14 +290,14 @@ async function submit(it, answer, confidence, elapsed_ms){
 }
 
 function showFeedback(it, r){
-  const cls = r.isBest ? 'good' : (r.earned>0 ? 'part' : 'part');
-  const tag = r.isBest ? 'Best answer' : (r.earned>0 ? `${r.earned} / ${r.max}` : `${r.earned} / ${r.max}`);
+  const cls = r.isBest ? 'good' : 'part';
+  const tag = r.isBest ? '✓ Best answer' : `Scored ${r.earned} / ${r.max}`;
   const expl = r.explanation ? (r.explanation.correct || '') : '';
   const last = S.i === S.items.length-1;
-  stage.innerHTML = `
-    <div class="cat">${CAT_LABEL[it.category]||it.category}</div>
+  stage.innerHTML = `<div class="step narrow">
+    <div class="cat" style="color:${catCol(it.category)}">${catIcon(it.category,15)}${CAT_LABEL[it.category]||it.category}</div>
     <div class="fb ${cls}"><div class="tag">${tag}</div>${expl}</div>
-    <button class="btn" id="next">${last ? 'See your result' : 'Next situation'}</button>`;
+    <button class="btn" id="next">${last ? 'See your result →' : 'Next situation →'}</button>`;
   document.getElementById('next').onclick=()=>{ S.i++; last ? finish() : renderItem(); };
 }
 
@@ -287,7 +343,7 @@ function renderResult(st){
 
   const ruin = (st.categories && st.tq<=95 && band==='Foundational') ? '' : '';
 
-  stage.innerHTML = `<div class="center">
+  stage.innerHTML = `<div class="step narrow"><div class="center">
     <div class="kicker">Your Trading Intelligence Quotient</div>
     <div class="num">${Math.round(st.tq)}</div>
     <div class="band">${band}</div>
@@ -301,7 +357,7 @@ function renderResult(st){
   </div>
   ${st.calibration?`<div class="callout"><h3>Confidence — ${st.calibration.label}</h3><p>Mean gap between how sure you were and how well you actually scored: ${st.calibration.gap}.</p></div>`:''}
   ${lpBlock}
-  <div class="center"><button class="btn ghost" id="again" style="margin-top:24px">Retake (a fresh sitting)</button></div>`;
+  <div class="center"><button class="btn ghost" id="again" style="margin-top:24px">Retake (a fresh sitting)</button></div></div>`;
   document.getElementById('again').onclick = start;
 }
 

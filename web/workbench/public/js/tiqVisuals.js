@@ -164,7 +164,8 @@
       var arrow = c.dir === 'up' ? '▲' : c.dir === 'down' ? '▼' : '—';
       g += '<rect x="' + x.toFixed(1) + '" y="' + y + '" width="' + cw.toFixed(1) + '" height="' + ch + '" rx="10" fill="' + C.forest + '" stroke="' + C.forest3 + '"/>';
       g += '<text x="' + (x + 14).toFixed(1) + '" y="' + (y + 24) + '" font-family="' + MONO + '" font-size="11" letter-spacing="1" fill="' + C.mute + '">' + esc((c.label || '').toUpperCase()) + '</text>';
-      g += '<text x="' + (x + 14).toFixed(1) + '" y="' + (y + 48) + '" font-family="' + DISP + '" font-weight="600" font-size="22" fill="' + accent + '">' + esc(arrow + ' ' + c.value) + '</text>';
+      var vtxt = arrow + ' ' + c.value, vfs = vtxt.length > 16 ? 13 : vtxt.length > 11 ? 16 : 20; // shrink long values so they never clip
+      g += '<text x="' + (x + 14).toFixed(1) + '" y="' + (y + 47) + '" font-family="' + DISP + '" font-weight="600" font-size="' + vfs + '" fill="' + accent + '">' + esc(vtxt) + '</text>';
     });
     if (s.caption) g += '<text x="24" y="' + (T + rows * (ch + gap) + 24) + '" font-family="' + BODY + '" font-size="13" fill="' + C.mute + '">' + esc(s.caption) + '</text>';
     return frame(g, T + rows * (ch + gap) + (s.caption ? 44 : 20));
