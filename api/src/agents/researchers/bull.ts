@@ -65,7 +65,7 @@ Evidence: ${opposing.evidence.map(e => `- ${e}`).join('\n')}`;
 
 export class BullResearcher extends BaseAgent<ResearcherInput, ResearcherArgument> {
   readonly name = 'bull';
-  readonly model = 'gpt-4' as const;
+  readonly model = 'qwen-max' as const;
   readonly budgetModel = 'deepseek' as const;
 
   async run(input: ResearcherInput, ctx: AgentContext): Promise<ResearcherArgument> {
