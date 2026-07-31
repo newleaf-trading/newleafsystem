@@ -1230,7 +1230,7 @@
     let currentStage = 1;
     let maxStage = 1;
     let state = {
-      ticker: '', spot: 0, ivRank: 0, atr14: 0, rsi: 0, adx: 0,
+      ticker: '', spot: 0, ivRank: null, atr14: null, rsi: null, adx: null,
       trend: '', earningsDaysOut: 0, putWall: 0, callWall: 0,
       aiRead: '', expirations: [], selectedExpiry: '',
       strategies: [], selectedStrategy: null, selectedStrategyIndex: -1,
@@ -1551,13 +1551,14 @@
           const gd = await gammaRes.json();
           const ind = indData.indicators || {};
           state.indicators = ind;
-          state.ivRank = 0; // IV rank not in indicators — computed per-chain; leave for stage 2
-          state.rsi = ind.rsi14 || 0;
-          state.adx = ind.adx14 || 0;
-          state.atr14 = ind.atr14 || 0;
+          state.ivRank = null; // IV rank not in indicators — computed per-chain in stage 2
+          // Missing indicators stay null (→ "—"/"n/a"), never a misleading 0 reading.
+          state.rsi = ind.rsi14 ?? null;
+          state.adx = ind.adx14 ?? null;
+          state.atr14 = ind.atr14 ?? null;
           state.trend = ind.smaTrend || ind.priceVsSma || 'unknown';
-          state.putWall = gd.putWallStrike || 0;
-          state.callWall = gd.callWallStrike || 0;
+          state.putWall = gd.putWallStrike ?? null;
+          state.callWall = gd.callWallStrike ?? null;
 
           // Fire ai-read in the background — don't block the UI
           aiReadText = '';
@@ -1682,7 +1683,9 @@
         state.callWall = a.oiWalls?.callStrike || oiData.callWallStrike || state.callWall;
         state.gexPutWall = a.gexWalls?.putStrike || null;
         state.gexCallWall = a.gexWalls?.callStrike || null;
-        state.atmIv = a.atmIv || null;
+        // ATM IV comes ONLY from the trustworthy R2 report (bestIvData), never the
+        // broken gamma-analysis scale (a.atmIv). Backfilled when the report lands.
+        state.atmIv = (state._reportIv && typeof state._reportIv.atmIv === 'number') ? state._reportIv.atmIv : null;
         state.confScore = a.confidenceScore ?? null;
         state.oiConf = a.oiConfidence ?? null;
         state.volConf = a.volumeConfidence ?? null;
@@ -1847,6 +1850,9 @@
         if (state.ticker !== tickerAtLoad) return; // ticker changed mid-flight — drop stale update
         setDDVerdict($('#dd-card-iv'), $('#dd-verdict-iv'), ddIvVerdict());
         const iv = bestIvData();
+        // Backfill the single source of truth for ATM IV so PoP, expected-move and the
+        // desk IV tile all use the real value (or honest null), not the broken scale.
+        state.atmIv = (iv && typeof iv.atmIv === 'number') ? iv.atmIv : null;
         const el = $('#stat-iv'); if (el) el.textContent = (iv && typeof iv.atmIv === 'number') ? iv.atmIv.toFixed(1) + '%' : '--';
       }).catch(() => {});
     }
@@ -2826,25 +2832,28 @@
           if (stratType === 'bear_call_spread') {
             const s1 = find(cfg.shortCall), s2 = find(cfg.longCall);
             nc = ((s1.call?.mid || 0) - (s2.call?.mid || 0));
-            legs = [{ strike: s1.strike, side: 'short' }, { strike: s2.strike, side: 'long' }];
+            legs = [{ strike: s1.strike, side: 'short', type: 'call', mid: s1.call?.mid || 0 }, { strike: s2.strike, side: 'long', type: 'call', mid: s2.call?.mid || 0 }];
           } else {
             const s1 = find(cfg.shortPut), s2 = find(cfg.longPut);
             nc = ((s1.put?.mid || 0) - (s2.put?.mid || 0));
-            legs = [{ strike: s1.strike, side: 'short' }, { strike: s2.strike, side: 'long' }];
+            legs = [{ strike: s1.strike, side: 'short', type: 'put', mid: s1.put?.mid || 0 }, { strike: s2.strike, side: 'long', type: 'put', mid: s2.put?.mid || 0 }];
           }
         } else {
           const lp = find(cfg.longPut), sp = find(cfg.shortPut);
           const sc = find(cfg.shortCall), lc = find(cfg.longCall);
           nc = (sp.put?.mid || 0) - (lp.put?.mid || 0) + (sc.call?.mid || 0) - (lc.call?.mid || 0);
+          legs = [{ strike: sp.strike, side: 'short', type: 'put', mid: sp.put?.mid || 0 }, { strike: lp.strike, side: 'long', type: 'put', mid: lp.put?.mid || 0 }, { strike: sc.strike, side: 'short', type: 'call', mid: sc.call?.mid || 0 }, { strike: lc.strike, side: 'long', type: 'call', mid: lc.call?.mid || 0 }];
         }
-        // Estimate PoP from wing width: wider wings = higher PoP
-        const wingWidth = Math.abs(cfg.shortCall - cfg.shortPut);
-        const estimatedPoP = Math.min(92, Math.max(45, 50 + wingWidth * 7));
+        // Real PoP for this preset's legs (lognormal integration). If IV/DTE aren't
+        // available yet, show no PoP rather than a fabricated wing-width guess.
+        const _pdte = state.selectedExpiry ? Math.max(1, Math.round((new Date(state.selectedExpiry + 'T16:00:00').getTime() - Date.now()) / 86400000)) : null;
+        let _ppop = (legs && legs.length && _pdte) ? _estimatePoP(legs, state.qty, nc, state.spot, state.atmIv, _pdte) : null;
+        _ppop = _ppop != null ? (_ppop <= 1 ? Math.round(_ppop * 100) : Math.round(_ppop)) : null;
 
         const prefix = key === 'conservative' ? 'cons' : key === 'balanced' ? 'bal' : 'agg';
         const popEl = $(`#preset-${prefix}-pop`);
         const crEl = $(`#preset-${prefix}-cr`);
-        if (popEl) popEl.textContent = `~${estimatedPoP}% PoP`;
+        if (popEl) popEl.textContent = _ppop != null ? `~${_ppop}% PoP` : 'PoP n/a';
         if (crEl) crEl.textContent = nc >= 0 ? `$${nc.toFixed(2)} credit` : `$${Math.abs(nc).toFixed(2)} debit`;
       }
     }
@@ -2884,11 +2893,9 @@
       // just 2-breakeven ranges. Falls back to the old breakeven/credit heuristic if IV/DTE missing.
       const _dte = Math.max(1, Math.round((new Date(state.selectedExpiry + 'T16:00:00').getTime() - Date.now()) / 86400000));
       const popVal = _estimatePoP(state.legs, state.qty, nc, state.spot, state.atmIv, _dte);
-      const estimatedPop = (popVal !== null && popVal !== undefined)
-        ? popVal
-        : (breakevens.length >= 2
-            ? Math.round(Math.min(95, Math.max(30, 100 * (breakevens[1] - breakevens[0]) / (state.spot * 0.4))))
-            : (nc > 0 ? '~' + Math.round(Math.min(90, 50 + nc * 20)) : '---'));
+      // Real PoP only. When IV/DTE aren't available the integration returns null —
+      // show "n/a", never a fabricated credit/breakeven heuristic.
+      const estimatedPop = (popVal !== null && popVal !== undefined) ? popVal : 'n/a';
 
       // Valid setup status
       const valid = nc > 0 && state.legs.length >= 2;
@@ -2918,7 +2925,7 @@
           `best case at expiration \u00b7 ${state.qty} contracts`, 'var(--green)') +
         metric('Max Loss', typeof ml === 'number' ? '-$' + ml.toLocaleString('en-US', {maximumFractionDigits:0}) : 'N/A',
           'defined risk', 'var(--red)') +
-        metric('PoP', estimatedPop + '%', 'probability of profit', '') +
+        metric('PoP', estimatedPop === 'n/a' ? 'n/a' : estimatedPop + '%', 'probability of profit', '') +
         metric('Reward : Risk', rr === 'N/A' ? 'N/A' : rr + ' : 1', 'max profit \u00f7 max loss',
           (rr !== 'N/A' && parseFloat(rr) >= 1) ? 'var(--green)' : 'var(--ink)') +
         metric('Breakevens', beStr, 'at expiration', '');
@@ -3772,7 +3779,7 @@
     // ---- per-agent read specs (every figure from state / engine snapshot) -----
     function buildReadSpecs(reports) {
       const ev = state.evidence || {};
-      const rv = (state._techData && typeof state._techData.realizedVol30d === 'number') ? state._techData.realizedVol30d : null;
+      const rv = (state._techData && typeof state._techData.realizedVol30d === 'number') ? state._techData.realizedVol30d * 100 : null; // stored as a fraction — percent for display, matching the IV panel
       const pol = (typeof ev.sentiment?.polarity === 'number') ? ev.sentiment.polarity : null;
       const cats = Array.isArray(ev.sentiment?.catalystsInWindow) ? ev.sentiment.catalystsInWindow.filter(Boolean) : [];
       const chain = state.volConf != null ? state.volConf : state.deltaConf;
@@ -4762,21 +4769,29 @@
         const nc = computeNetCredit();
         const ml = computeMaxLoss(nc);
         const bk = computeBreakevens();
+        const _pdte = Math.round((new Date(state.selectedExpiry + 'T16:00:00').getTime() - Date.now()) / 86400000);
+        // The SAME real PoP the investor saw in Step 5 — never a fabricated formula.
+        let _pop = _estimatePoP(state.legs, state.qty, nc, state.spot, state.atmIv, _pdte);
+        _pop = _pop != null ? (_pop <= 1 ? Math.round(_pop * 100) : Math.round(_pop)) : null;
+        // Direction derived from the structure when the strategy object doesn't carry it.
+        const _sname = (state.selectedStrategy?.strategy || state.selectedStrategy?.name || '').toLowerCase();
+        const _dir = state.selectedStrategy?.direction || (_sname.includes('bull') ? 'bullish' : _sname.includes('bear') ? 'bearish' : 'neutral');
 
         const payload = {
           ticker: state.ticker,
           strategy: state.selectedStrategy?.strategy || state.selectedStrategy?.name || 'Iron Condor',
-          direction: state.selectedStrategy?.direction || 'neutral',
+          direction: _dir,
           spotPrice: state.spot,
           expiry: state.selectedExpiry,
-          dte: Math.round((new Date(state.selectedExpiry + 'T16:00:00').getTime() - Date.now()) / 86400000),
-          legs: state.legs.map(l => ({ action: l.side === 'short' ? 'SELL' : 'BUY', type: l.type.toUpperCase(), strike: l.strike, premium: l.mid, delta: l.delta || 0 })),
-          greeks: {},
+          dte: _pdte,
+          // delta is only included when a real per-leg delta exists — never defaulted to 0.
+          legs: state.legs.map(l => ({ action: l.side === 'short' ? 'SELL' : 'BUY', type: l.type.toUpperCase(), strike: l.strike, premium: l.mid, ...(typeof l.delta === 'number' ? { delta: l.delta } : {}) })),
+          greeks: null,
           netCredit: nc,
           maxProfit: computeMaxProfit(nc),
           maxLoss: ml,
-          rewardRisk: ml > 0 ? computeMaxProfit(nc) / ml : 0,
-          pop: state.legs.length ? 50 + Math.round(nc * 10) : 0,
+          rewardRisk: ml > 0 ? computeMaxProfit(nc) / ml : null,
+          pop: _pop,
           breakevens: bk,
           gammaData: { put_wall: state.gexPutWall || state.putWall, call_wall: state.gexCallWall || state.callWall },
           gammaAnalysis: { oiWalls: { putStrike: state.putWall, callStrike: state.callWall }, gexWalls: { putStrike: state.gexPutWall, callStrike: state.gexCallWall }, confidenceScore: state.confScore, atmIv: state.atmIv },
