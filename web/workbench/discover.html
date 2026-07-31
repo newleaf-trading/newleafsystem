@@ -3741,20 +3741,32 @@
         g += `<rect x="${x.toFixed(1)}" y="${(base - bh).toFixed(1)}" width="${w.toFixed(1)}" height="${bh.toFixed(1)}" fill="${hue}" opacity="${it.dim ? '.35' : '.8'}"/>`;
         g += `<text x="${(x + w / 2).toFixed(1)}" y="${H - 3}" text-anchor="middle">${it.label}</text>`;
       });
-      return `<svg class="vd-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${g}</svg>`;
+      return `<svg class="vd-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${g}</svg>`;
     }
     function vdWallMap(putWall, callWall, spot, hue) {
-      const W = 260, H = 74, y = 40;
+      const W = 320, H = 96, y = 52;
       const vals = [putWall, callWall, spot].filter(v => v != null && !Number.isNaN(v));
       if (vals.length < 2) return vdBars([{ label: 'walls', val: 0, max: 1 }], hue);
       const lo = Math.min(...vals) * 0.985, hi = Math.max(...vals) * 1.015, r = (hi - lo) || 1;
-      const px = v => (8 + ((v - lo) / r) * (W - 16));
-      let g = `<path class="grid" d="M8 ${y}H${W - 8}" stroke="var(--vd-line3)" stroke-width="1"/>`;
-      const tick = (v, label, col) => v == null ? '' :
-        `<line x1="${px(v).toFixed(1)}" y1="${y - 10}" x2="${px(v).toFixed(1)}" y2="${y + 10}" stroke="${col}" stroke-width="2"/>` +
-        `<text x="${px(v).toFixed(1)}" y="${y + 22}" text-anchor="middle">${label} ${vdNum(v, 0)}</text>`;
-      g += tick(putWall, 'Put', 'var(--vd-no)') + tick(callWall, 'Call', 'var(--vd-no)') + tick(spot, 'Spot', hue);
-      return `<svg class="vd-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${g}</svg>`;
+      const px = v => (24 + ((v - lo) / r) * (W - 48));
+      const anchor = x => x < 40 ? 'start' : x > W - 40 ? 'end' : 'middle';
+      let g = `<path class="grid" d="M20 ${y}H${W - 20}" stroke="var(--vd-line3)" stroke-width="1"/>`;
+      // Walls labelled below the axis; spot above — so a spot sitting near a wall never collides.
+      const below = (v, label, col) => { if (v == null) return ''; const x = px(v); return `<line x1="${x.toFixed(1)}" y1="${y - 8}" x2="${x.toFixed(1)}" y2="${y + 8}" stroke="${col}" stroke-width="2"/><text x="${x.toFixed(1)}" y="${y + 22}" text-anchor="${anchor(x)}">${label} ${vdNum(v, 0)}</text>`; };
+      const above = (v, label, col) => { if (v == null) return ''; const x = px(v); return `<line x1="${x.toFixed(1)}" y1="${y - 8}" x2="${x.toFixed(1)}" y2="${y + 8}" stroke="${col}" stroke-width="2"/><text x="${x.toFixed(1)}" y="${y - 13}" text-anchor="${anchor(x)}">${label} ${vdNum(v, 0)}</text>`; };
+      g += below(putWall, 'Put', 'var(--vd-no)') + below(callWall, 'Call', 'var(--vd-no)') + above(spot, 'Spot', hue);
+      return `<svg class="vd-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${g}</svg>`;
+    }
+    // Diverging sentiment meter (-1 … +1) for PULSE — real polarity, not a bar proxy.
+    function vdPolarityMeter(pol, hue) {
+      const W = 320, H = 96, y = 54;
+      const px = v => (24 + ((v + 1) / 2) * (W - 48));
+      let g = `<path class="grid" d="M20 ${y}H${W - 20}" stroke="var(--vd-line3)" stroke-width="1"/>`;
+      g += `<line x1="${px(0).toFixed(1)}" y1="${y - 7}" x2="${px(0).toFixed(1)}" y2="${y + 7}" stroke="var(--vd-line3)" stroke-width="1"/>`;
+      g += `<text x="20" y="${y + 20}" text-anchor="start">Bearish</text><text x="${px(0).toFixed(1)}" y="${y + 20}" text-anchor="middle">0</text><text x="${W - 20}" y="${y + 20}" text-anchor="end">Bullish</text>`;
+      if (pol != null) { const p = Math.max(-1, Math.min(1, pol)); const x = px(p); const col = p > 0.1 ? 'var(--vd-ok)' : p < -0.1 ? 'var(--vd-no)' : hue;
+        g += `<line x1="${px(0).toFixed(1)}" y1="${y}" x2="${x.toFixed(1)}" y2="${y}" stroke="${col}" stroke-width="3"/><circle cx="${x.toFixed(1)}" cy="${y}" r="4" fill="${col}"/><text x="${x.toFixed(1)}" y="${y - 13}" text-anchor="middle">${(p > 0 ? '+' : '') + p.toFixed(2)}</text>`; }
+      return `<svg class="vd-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${g}</svg>`;
     }
 
     // ---- per-agent read specs (every figure from state / engine snapshot) -----
@@ -3775,30 +3787,37 @@
         line: line('technical'), inputs: inputs.technical.split(' · '),
         tiles: [['ADX', vdNum(state.adx, 1), (state.adx != null && state.adx < 20) ? 'No trend' : ''], ['ATR', state.atr14 != null ? '$' + vdNum(state.atr14, 2) : '—', ''], ['Trend', ev.technical?.trend || '—', ''], ['Breakout', ev.technical?.breakoutRisk || '—', '']]
       };
+      // Gamma specialist reads the PRIMARY (GEX / dealer-hedging) walls — the same
+      // ones the gamma analysis is built on — not the secondary OI walls.
+      const gPut = state.gexPutWall != null ? state.gexPutWall : state.putWall;
+      const gCall = state.gexCallWall != null ? state.gexCallWall : state.callWall;
       S.gamma = {
         head: 'OI conf', val: state.oiConf != null ? state.oiConf.toFixed(2) : '—', pct: state.oiConf != null ? state.oiConf * 100 : 0,
         low: state.oiConf != null && state.oiConf < 0.40, note: state.oiConf == null ? '' : state.oiConf < 0.40 ? 'Unreliable' : 'Usable',
-        evTitle: 'Gamma walls vs spot', chart: vdWallMap(state.putWall, state.callWall, state.spot, vdHue('gamma')),
-        line: line('gamma'), inputs: inputs.gamma.split(' · '),
-        tiles: [['Put wall', vdNum(state.putWall, 0), ''], ['Call wall', vdNum(state.callWall, 0), ''], ['Flip dist', ev.gamma?.flipDistance != null ? vdNum(ev.gamma.flipDistance, 1) : '—', ''], ['Integrity', ev.gamma?.wallIntegrity != null ? vdNum(ev.gamma.wallIntegrity, 2) : '—', '']]
+        evTitle: 'Gamma walls vs spot', chart: vdWallMap(gPut, gCall, state.spot, vdHue('gamma')),
+        line: line('gamma'), inputs: [`walls ${vdNum(gPut, 0)}/${vdNum(gCall, 0)}`, `OI conf ${state.oiConf != null ? state.oiConf.toFixed(2) : 'n/a'}`],
+        tiles: [['Put wall', vdNum(gPut, 0), ''], ['Call wall', vdNum(gCall, 0), ''], ['Flip dist', ev.gamma?.flipDistance != null ? vdNum(ev.gamma.flipDistance, 1) : '—', ''], ['Integrity', ev.gamma?.wallIntegrity != null ? vdNum(ev.gamma.wallIntegrity, 2) : '—', '']]
       };
+      // IV rank is authoritative from the engine evidence; null → genuinely unavailable
+      // (show n/a, never a misleading 0).
+      const ivr = ev.iv ? ev.iv.ivRank : state.ivRank; const ivNa = ivr == null;
       S.iv = {
-        head: 'IV rank', val: state.ivRank != null ? vdNum(state.ivRank, 0) : '—', pct: vdClampPct(state.ivRank),
-        note: state.ivRank == null ? '' : state.ivRank >= 60 ? 'Elevated' : state.ivRank <= 25 ? 'Low' : 'Moderate',
+        head: 'IV rank', val: ivNa ? 'n/a' : vdNum(ivr, 0), pct: ivNa ? 0 : vdClampPct(ivr),
+        note: ivNa ? 'Unavailable' : ivr >= 60 ? 'Elevated' : ivr <= 25 ? 'Low' : 'Moderate',
         evTitle: 'Implied vs realised vol', chart: vdBars([
           { label: 'IV', val: +state.atmIv || 0, max: Math.max(60, (+state.atmIv || 0), (+rv || 0)) },
           { label: 'RV', val: +rv || 0, max: Math.max(60, (+state.atmIv || 0), (+rv || 0)), dim: true }], vdHue('iv')),
-        line: line('iv'), inputs: inputs.iv.split(' · '),
+        line: line('iv'), inputs: [state.atmIv != null ? `IV ${vdNum(state.atmIv, 1)}%` : 'IV n/a', ivNa ? 'IV rank n/a' : `IV rank ${vdNum(ivr, 0)}`],
         tiles: [['Implied', state.atmIv != null ? vdNum(state.atmIv, 1) + '%' : '—', ''], ['Realised', rv != null ? vdNum(rv, 1) + '%' : '—', ''], ['IV / RV', (state.atmIv && rv) ? (state.atmIv / rv).toFixed(2) : '—', ''], ['Premium', ev.iv?.premiumFairness || '—', '']]
       };
       const chainPct = chain != null ? Math.round(chain * 100) : null;
+      const tone = pol == null ? '—' : pol > 0.1 ? 'Positive' : pol < -0.1 ? 'Negative' : 'Balanced';
       S.sentiment = {
         head: 'Polarity', val: pol != null ? (pol > 0 ? '+' : '') + pol.toFixed(2) : '—', pct: pol != null ? (pol + 1) / 2 * 100 : 50,
-        note: pol == null ? '' : pol > 0.1 ? 'Positive' : pol < -0.1 ? 'Negative' : 'Balanced',
-        evTitle: 'Flow & chain depth', chart: vdBars([
-          { label: 'OI', val: +state.oiConf || 0, max: 1 }, { label: 'Chain', val: +chain || 0, max: 1 }], vdHue('sentiment')),
-        line: line('sentiment'), inputs: [`${cats.length} catalyst${cats.length === 1 ? '' : 's'}`, chainPct != null ? `chain ${chainPct}%` : 'chain n/a'],
-        tiles: [['Catalysts', String(cats.length), ''], ['Polarity', pol != null ? pol.toFixed(2) : '—', ''], ['OI conf', state.oiConf != null ? state.oiConf.toFixed(2) : '—', ''], ['Chain', chainPct != null ? chainPct + '%' : '—', '']]
+        note: pol == null ? '' : tone,
+        evTitle: 'Retail sentiment', chart: vdPolarityMeter(pol, vdHue('sentiment')),
+        line: line('sentiment'), inputs: [`${cats.length} catalyst${cats.length === 1 ? '' : 's'}`, `polarity ${pol != null ? (pol > 0 ? '+' : '') + pol.toFixed(2) : 'n/a'}`],
+        tiles: [['Catalysts', String(cats.length), ''], ['Polarity', pol != null ? pol.toFixed(2) : '—', ''], ['Tone', tone, ''], ['Chain', chainPct != null ? chainPct + '%' : '—', '']]
       };
       return S;
     }
@@ -4089,8 +4108,14 @@
         reported++; if (rep && rep.stance === 'caution') flags++; calls += 2;
       });
       revealDep();
-      uiCalls(calls); uiProgress(reported); uiNow('Awaiting your review');
-      DESK_AGENTS.filter(a => a.ph === 3).forEach(a => roState(a.key, 'done', deskChip(a.key, reports[a.key]?.stance).label, deskChip(a.key, reports[a.key]?.stance).cls));
+      // Sentinel + Oracle belong to Step 5 — only show them done if the verdict
+      // was already run for this structure; otherwise they stay Queued at 6/8.
+      const ph3Done = state.phase3Shown === deskCache.hash;
+      DESK_AGENTS.filter(a => a.ph === 3).forEach(a => {
+        if (ph3Done) { const c = deskChip(a.key, reports[a.key]?.stance); roState(a.key, 'done', c.label, c.cls); reported++; }
+        else roState(a.key, null, 'Queued', '');
+      });
+      uiCalls(calls); uiProgress(reported); uiNow(ph3Done ? 'Desk complete' : 'Awaiting your review');
       $('#vd-pnav')?.querySelectorAll('.vd-pstep').forEach(b => b.removeAttribute('disabled'));
       const seeBtn = $('#vd-seeverdict'); if (seeBtn) seeBtn.classList.add('ready');
     }
