@@ -1683,9 +1683,11 @@
         state.callWall = a.oiWalls?.callStrike || oiData.callWallStrike || state.callWall;
         state.gexPutWall = a.gexWalls?.putStrike || null;
         state.gexCallWall = a.gexWalls?.callStrike || null;
-        // ATM IV comes ONLY from the trustworthy R2 report (bestIvData), never the
-        // broken gamma-analysis scale (a.atmIv). Backfilled when the report lands.
-        state.atmIv = (state._reportIv && typeof state._reportIv.atmIv === 'number') ? state._reportIv.atmIv : null;
+        // ATM IV: prefer the R2 report (nightly, richest), else the live gamma-analysis
+        // atmIv — now a ±5% near-money cluster average (server fix), so it's trustworthy
+        // and restores IV/PoP coverage for tickers without a report.
+        state.atmIv = (state._reportIv && typeof state._reportIv.atmIv === 'number') ? state._reportIv.atmIv
+          : (typeof a.atmIv === 'number' && a.atmIv > 0 ? a.atmIv : null);
         state.confScore = a.confidenceScore ?? null;
         state.oiConf = a.oiConfidence ?? null;
         state.volConf = a.volumeConfidence ?? null;
@@ -1850,9 +1852,10 @@
         if (state.ticker !== tickerAtLoad) return; // ticker changed mid-flight — drop stale update
         setDDVerdict($('#dd-card-iv'), $('#dd-verdict-iv'), ddIvVerdict());
         const iv = bestIvData();
-        // Backfill the single source of truth for ATM IV so PoP, expected-move and the
-        // desk IV tile all use the real value (or honest null), not the broken scale.
-        state.atmIv = (iv && typeof iv.atmIv === 'number') ? iv.atmIv : null;
+        // If the R2 report has ATM IV, it's the richest source — prefer it. Otherwise
+        // keep whatever the (now-fixed) live gamma-analysis atmIv already set; don't
+        // null out a valid live value just because there's no report.
+        if (iv && typeof iv.atmIv === 'number') state.atmIv = iv.atmIv;
         const el = $('#stat-iv'); if (el) el.textContent = (iv && typeof iv.atmIv === 'number') ? iv.atmIv.toFixed(1) + '%' : '--';
       }).catch(() => {});
     }

@@ -391,15 +391,16 @@ export async function fetchFullGammaAnalysis(ticker: string, expiry: string, spo
   const deltaConfidence = totalOI > 0 ? Math.min(1, (wallOI / totalOI) * 3) : 0;
   const confidenceScore = oiConfidence * 0.5 + volumeConfidence * 0.2 + deltaConfidence * 0.3;
 
-  // ATM IV: find the nearest-to-money call + put, average their IV
-  const sortedByDist = strikes.map(s => ({ ...s, dist: Math.abs(s.strike - spot) })).sort((a, b) => a.dist - b.dist);
-  const atm = sortedByDist[0];
-  let atmIv: number | null = null;
-  if (atm) {
-    const ivs = [atm.callIV, atm.putIV].filter(v => v > 0);
-    atmIv = ivs.length ? +(ivs.reduce((a, b) => a + b, 0) / ivs.length * 100).toFixed(1) : null;
-  }
-  const ivLevel = atmIv ? (atmIv > 50 ? 'high' : atmIv > 25 ? 'normal' : 'low') : 'unknown';
+  // ATM IV: average the IV of ALL strikes within ±5% of spot — matches the pipeline
+  // gamma-analyzer (newleaf-pipeline.js) and the R2 report. A single nearest strike
+  // is dominated by illiquid/stale front-week quotes and collapses to noise
+  // (e.g. 1.6% when the near-money cluster is ~66%).
+  const atmStrikes = spot > 0 ? strikes.filter(s => Math.abs(s.strike - spot) / spot < 0.05) : [];
+  const atmIvs = atmStrikes.flatMap(s => [s.callIV, s.putIV]).filter(v => v > 0);
+  const atmIv: number | null = atmIvs.length
+    ? +((atmIvs.reduce((a, b) => a + b, 0) / atmIvs.length) * 100).toFixed(1)
+    : null;
+  const ivLevel = atmIv == null ? 'unknown' : atmIv > 50 ? 'high' : atmIv < 25 ? 'low' : 'normal';
 
   // Top strikes by gamma exposure (with call/put/net GEX)
   const topStrikes = [...strikes]
