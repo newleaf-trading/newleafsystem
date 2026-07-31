@@ -57,7 +57,7 @@
     .pn-col { display: flex; flex-direction: column; align-items: center; }
 
     /* Main container */
-    .main { max-width: 1100px; margin: 0 auto; padding: 16px 24px 80px; }
+    .main { max-width: 1560px; margin: 0 auto; padding: 16px 24px 80px; }
     .strat-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
     .strat-strip-label { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); margin-right: 4px; white-space: nowrap; }
     .strat-chip { display: flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--white); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
@@ -66,22 +66,6 @@
     .strat-chip svg { width: 32px; height: 14px; flex-shrink: 0; }
     .strat-chip-name { font-size: 11px; font-weight: 600; }
 
-    /* Verification seats */
-    .vp-seat { background:var(--cream);border-radius:8px;padding:10px 12px;transition:all 0.3s; }
-    .vp-seat.processing { background:#fffbeb;border:1px solid #fcd34d; }
-    .vp-seat.done { background:var(--white);border:1px solid var(--border); }
-    .vp-seat-head { display:flex;justify-content:space-between;align-items:center;margin-bottom:6px; }
-    .vp-seat-head span:first-child { font-size:12px;font-weight:600; }
-    .vp-seat-tier { font-size:8px;padding:2px 6px;border-radius:3px;background:var(--cream-dark);color:var(--ink-muted);font-weight:600; }
-    .vp-seat-finding { font-size:11px;color:var(--ink-muted);line-height:1.5; }
-    .vp-seat-finding.active { color:var(--ink);font-style:italic; }
-    .vp-seat-tag { margin-top:6px; }
-    .vp-seat-tag span { font-size:9px;padding:2px 7px;border-radius:4px;font-weight:600; }
-    .vp-seat-tag .tag-supportive { background:var(--pass-bg);color:var(--pass-text); }
-    .vp-seat-tag .tag-caution { background:var(--concern-bg);color:var(--concern-text); }
-    .vp-seat-tag .tag-neutral { background:var(--cream-dark);color:var(--ink-muted); }
-    .vp-seat-transcript { font-size:11px;color:var(--ink-muted);line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);max-height:280px;overflow-y:auto; }
-    .vp-seat-expand { font-size:10px;color:var(--teal);cursor:pointer;margin-top:4px;background:none;border:none;text-decoration:underline; }
     /* Rich per-agent drawer (structured badges + full analysis) */
     .vp-badges { display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px; }
     .vp-badge { font-size:10px;padding:2px 7px;border-radius:4px;background:var(--cream-dark);color:var(--ink-muted);white-space:nowrap; }
@@ -784,6 +768,304 @@
       </div>
     </div>
 
+    <!-- ===== Verification Desk (three-phase) styles ===== -->
+    <style id="vdesk-styles">
+      /* All tokens + selectors are scoped under .vdesk so nothing collides with
+         the page's global styles. Default is the live-site light theme; a dark
+         override is provided for completeness. */
+      .vdesk{
+        --vd-panel:#FFFFFF;--vd-panel2:#FBFAF4;
+        --vd-line:rgba(18,42,30,.14);--vd-line2:rgba(18,42,30,.08);--vd-line3:rgba(18,42,30,.24);
+        --vd-text:#13271C;--vd-stone:#6E7A70;--vd-body2:#4C5A51;--vd-body3:#37453D;--vd-role:#6E7A70;
+        --vd-medal:#07110C;--vd-track:rgba(18,42,30,.1);
+        --vd-gold:#8A6A22;--vd-ok:#2C7A4E;--vd-warn:#9C6C12;--vd-no:#A94A38;
+        --vd-sage:#42705A;--vd-green:#2C7A4E;--vd-red:#A94A38;--vd-amber:#9C6C12;
+        --vd-seal:rgba(138,106,34,.42);--vd-flagline:rgba(169,74,56,.4);--vd-goldsoft:rgba(138,106,34,.4);
+        --vd-verdict-bg:linear-gradient(165deg,rgba(138,106,34,.07),rgba(255,255,255,.9));
+        --vd-disp:"Fraunces",Georgia,serif;--vd-body:"DM Sans",system-ui,sans-serif;--vd-mono:"Space Mono",ui-monospace,monospace;
+        font-family:var(--vd-body);color:var(--vd-text);margin-top:12px}
+      .vdesk[data-theme="dark"]{
+        --vd-panel:#0C1A13;--vd-panel2:#112418;
+        --vd-line:rgba(237,231,216,.12);--vd-line2:rgba(237,231,216,.07);--vd-line3:rgba(237,231,216,.22);
+        --vd-text:#EDE7D8;--vd-stone:#8A8878;--vd-body2:#B4AFA1;--vd-body3:#C8C3B5;--vd-role:#9C978A;
+        --vd-track:rgba(237,231,216,.1);
+        --vd-gold:#C9A54E;--vd-ok:#6BBE93;--vd-warn:#D9A43C;--vd-no:#C96F5E;
+        --vd-sage:#8FB39B;--vd-green:#6BBE93;--vd-red:#C96F5E;--vd-amber:#D9A43C;
+        --vd-seal:rgba(201,165,78,.38);--vd-flagline:rgba(201,111,94,.4);--vd-goldsoft:rgba(201,165,78,.36);
+        --vd-verdict-bg:linear-gradient(165deg,rgba(201,165,78,.1),rgba(12,26,19,.7))}
+      .vdesk *{box-sizing:border-box}
+      .vdesk h2,.vdesk h3,.vdesk h4{font-family:var(--vd-disp);font-weight:300;margin:0;letter-spacing:-.01em}
+      .vd-card{background:var(--vd-panel);border:1px solid var(--vd-line);border-radius:3px}
+      .vd-pad{padding:14px 15px}
+      .vd-lab{font-family:var(--vd-mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--vd-stone);margin:0 0 9px}
+      .vd-btn{font-family:var(--vd-mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;padding:6px 12px;border-radius:2px;background:transparent;border:1px solid var(--vd-line);color:var(--vd-stone);cursor:pointer}
+      .vd-btn:hover,.vd-btn:focus-visible{border-color:var(--vd-gold);color:var(--vd-gold)}
+
+      /* ── shell: 250px rail + main ── */
+      .vd-shell{display:grid;grid-template-columns:250px minmax(0,1fr);gap:12px;align-items:start;margin-top:12px}
+
+      /* ── persistent status rail ── */
+      .vd-rail>*+*{margin-top:11px}
+      .vd-donut{position:relative;display:grid;place-items:center;margin:2px 0 10px}
+      .vd-donut circle.vd-tr{stroke:var(--vd-track)}
+      .vd-donut circle.vd-pr{stroke:var(--vd-gold);transition:stroke-dashoffset .7s cubic-bezier(.3,.7,.2,1)}
+      .vd-donut .vd-mid{position:absolute;text-align:center}
+      .vd-donut .vd-mid b{display:block;font-family:var(--vd-disp);font-size:1.55rem;font-weight:300;color:var(--vd-gold);line-height:1}
+      .vd-donut .vd-mid span{font-family:var(--vd-mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--vd-stone)}
+      .vd-kv{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px solid var(--vd-line2);font-family:var(--vd-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--vd-stone)}
+      .vd-kv b{color:var(--vd-text);font-weight:400}
+      .vd-roster{list-style:none;margin:10px 0 0;padding:9px 0 0;border-top:1px solid var(--vd-line)}
+      .vd-roster li{display:grid;grid-template-columns:13px 1fr auto;gap:8px;align-items:center;padding:4px 0;font-family:var(--vd-mono);font-size:10px;letter-spacing:.1em}
+      .vd-roster b{font-weight:400;color:var(--vd-stone);transition:color .4s}
+      .vd-roster .vd-tick{width:9px;height:9px;border-radius:50%;border:1px solid var(--vd-line3);justify-self:center}
+      .vd-roster .vd-rst{font-style:normal;font-size:8.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--vd-stone)}
+      .vd-roster li.live .vd-tick{border-color:var(--hue);background:var(--hue);animation:vd-pulse 1.1s ease-in-out infinite}
+      .vd-roster li.live b,.vd-roster li.done b{color:var(--hue)}
+      .vd-roster li.done .vd-tick{border-color:var(--hue);background:var(--hue)}
+      @keyframes vd-pulse{50%{opacity:.35}}
+      .vd-cat{display:grid;grid-template-columns:1fr 54px 32px;gap:8px;align-items:center;font-size:11.5px;color:var(--vd-body2);padding:3px 0}
+      .vd-cm{height:3px;background:var(--vd-track);border-radius:2px;overflow:hidden}
+      .vd-cm i{display:block;height:100%;width:0;background:var(--vd-sage);transition:width .8s}
+      .vd-cm i.low{background:var(--vd-no)}
+      .vd-cat b{font-family:var(--vd-mono);font-size:9.5px;font-weight:400;text-align:right;color:var(--vd-stone)}
+
+      /* ── phase nav (2 steps in Step 4) ── */
+      .vd-pnav{display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+      .vd-pstep{display:flex;align-items:center;gap:9px;padding:9px 14px;border:1px solid var(--vd-line);border-radius:3px;background:var(--vd-panel);
+        font-family:var(--vd-mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--vd-stone);cursor:pointer;opacity:.55;transition:opacity .4s,border-color .4s,color .4s}
+      .vd-pstep .vd-n{width:18px;height:18px;border-radius:50%;border:1px solid currentColor;display:grid;place-items:center;font-size:9px}
+      .vd-pstep.on{opacity:1;border-color:var(--vd-gold);color:var(--vd-gold)}
+      .vd-pstep.did{opacity:.85;color:var(--vd-body2)}
+      .vd-pstep:disabled{cursor:default}
+      .vd-pconn{flex:0 0 22px;height:1px;background:var(--vd-line3)}
+      .vd-seeverdict{font-family:var(--vd-mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;
+        padding:9px 16px;border-radius:3px;border:1px solid var(--vd-goldsoft);background:var(--vd-verdict-bg);color:var(--vd-gold);cursor:pointer;opacity:0;pointer-events:none;transition:opacity .4s}
+      .vd-seeverdict.ready{opacity:1;pointer-events:auto;animation:vd-cta 1.9s ease-in-out infinite}
+      @keyframes vd-cta{0%,100%{box-shadow:0 0 0 0 rgba(138,106,34,0)}50%{box-shadow:0 0 0 4px rgba(138,106,34,.16)}}
+
+      .vd-screen{display:none}
+      .vd-screen.on{display:block;animation:vd-fade .45s ease}
+      @keyframes vd-fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+      .vd-shead{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+      .vd-shead h2{font-size:1.5rem}
+      .vd-shead p{margin:3px 0 0;font-size:13px;color:var(--vd-body2);max-width:62ch}
+      .vd-shead .vd-meta{font-family:var(--vd-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--vd-stone);white-space:nowrap}
+
+      /* ── screen 1: the read (accordion) ── */
+      .vd-reads{display:grid;grid-template-columns:1fr;gap:8px;align-items:start}
+      .vd-read{background:var(--vd-panel);border:1px solid var(--vd-line);border-radius:3px;padding:0;opacity:.62;transition:opacity .5s,border-color .5s;overflow:hidden}
+      .vd-read.open{opacity:1}
+      .vd-read.live{opacity:1;border-color:var(--hue)}
+      .vd-read.done{opacity:1}
+      .vd-full{display:none}
+      .vd-read.open .vd-full{display:grid;grid-template-columns:minmax(0,600px) minmax(0,1fr);gap:18px;align-items:start;padding:14px}
+      .vd-read.open .vd-strip{display:none}
+      .vd-detail{display:flex;flex-direction:column;gap:12px;min-width:0;height:100%}
+      .vd-detail .vd-say{margin-top:auto}
+      .vd-read.open .vd-bodyrow{grid-column:1/-1;padding-top:13px;border-top:1px solid var(--vd-line2)}
+      .vd-read.open .vd-chart{height:150px}
+      /* collapsed row */
+      .vd-strip{display:grid;grid-template-columns:38px minmax(0,1.15fr) auto minmax(0,1fr) auto;gap:14px;align-items:center;padding:9px 13px;cursor:pointer;min-height:56px}
+      .vd-strip:hover{background:var(--vd-panel2)}
+      .vd-strip:focus-visible{outline:2px solid var(--vd-gold);outline-offset:-2px}
+      .vd-strip .vd-th{display:block;width:38px;height:38px;border-radius:50%;overflow:hidden;border:1px solid var(--vd-line);background:var(--vd-medal)}
+      .vd-strip .vd-th img{width:100%;height:100%;object-fit:cover;display:block}
+      .vd-strip .vd-nm b{font-family:var(--vd-mono);font-size:10.5px;letter-spacing:.14em;color:var(--hue);display:block}
+      .vd-strip .vd-nm span{font-size:12px;color:var(--vd-role)}
+      .vd-strip .vd-hl{font-family:var(--vd-mono);font-size:11.5px;color:var(--vd-stone);white-space:nowrap}
+      .vd-strip .vd-hl b{color:var(--vd-text);font-weight:400}
+      .vd-strip .vd-sy{font-size:12.5px;color:var(--vd-body2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .vd-strip .vd-rt{display:flex;align-items:center;gap:10px;font-family:var(--vd-mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase}
+      .vd-strip .vd-rt .vd-t{color:var(--vd-stone)}
+      /* video banner */
+      .vd-ban{position:relative;margin:0;width:100%;aspect-ratio:16/9;overflow:hidden;background:var(--vd-medal);border-radius:2px}
+      .vd-ban img,.vd-ban video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;background:var(--vd-medal)}
+      .vd-ban img{filter:saturate(.96);opacity:.6;transition:opacity .8s}
+      .vd-read.live .vd-ban img,.vd-read.done .vd-ban img{opacity:1}
+      .vd-ban video{opacity:0;transition:opacity .5s;z-index:1}
+      .vd-read.live .vd-ban video{opacity:1}
+      .vd-ban::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;background:linear-gradient(to bottom,rgba(0,0,0,0) 62%,rgba(6,14,10,.62) 86%,rgba(6,14,10,.9) 100%)}
+      .vd-btitle{position:absolute;left:14px;bottom:11px;z-index:3;display:flex;align-items:baseline;gap:11px;flex-wrap:wrap}
+      .vd-btitle .vd-cn{font-family:var(--vd-mono);font-size:12px;letter-spacing:.18em;color:var(--hue)}
+      .vd-btitle .vd-role{font-size:12px;color:rgba(237,231,216,.72)}
+      .vd-bstate{position:absolute;right:14px;bottom:12px;z-index:3;display:flex;align-items:center;gap:9px}
+      .vd-bstate .vd-dur{font-family:var(--vd-mono);font-size:9px;letter-spacing:.1em;color:rgba(237,231,216,.6)}
+      .vd-waiting{font-family:var(--vd-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(237,231,216,.6)}
+      .vd-read.done .vd-waiting,.vd-read.live .vd-waiting.gone{display:none}
+      .vd-vchip{font-family:var(--vd-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;opacity:0;transition:opacity .35s}
+      .vd-vchip.show{opacity:1}
+      .vd-ok{color:var(--vd-ok)}.vd-warn{color:var(--vd-warn)}.vd-no{color:var(--vd-no)}.vd-goldc{color:var(--vd-gold)}
+      .vd-ban .vd-ok{color:#7FD4A6}.vd-ban .vd-warn{color:#E8BC63}.vd-ban .vd-no{color:#E08C7A}
+      /* evidence + narration */
+      .vd-ev{margin:0;padding:11px 0 0;border-top:1px solid var(--vd-line2)}
+      .vd-detail .vd-ev{border-top:0;padding-top:0}
+      .vd-evlab{font-family:var(--vd-mono);font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--vd-stone);display:flex;justify-content:space-between;gap:10px}
+      .vd-chart{width:100%;height:62px;display:block;margin-top:7px;overflow:visible}
+      .vd-chart .gln{fill:none;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+      .vd-chart text{font-family:var(--vd-mono);font-size:7px;fill:var(--vd-stone);letter-spacing:.06em}
+      .vd-say{margin:0;font-size:13.5px;color:var(--vd-body3);min-height:2.8em}
+      .vd-say.typing::after{content:"";display:inline-block;width:6px;height:12px;background:var(--vd-stone);vertical-align:-2px;margin-left:2px;animation:vd-blink 1s steps(2) infinite}
+      @keyframes vd-blink{50%{opacity:0}}
+      .vd-inputs{display:flex;flex-wrap:wrap;gap:5px;margin:0}
+      .vd-chip{font-family:var(--vd-mono);font-size:9px;letter-spacing:.06em;border:1px solid var(--vd-line);border-radius:2px;padding:3px 7px;color:var(--vd-stone)}
+      /* headline + tiles */
+      .vd-bodyrow{display:grid;grid-template-columns:112px minmax(0,1fr);gap:18px;align-items:center;margin:0}
+      .vd-head1{display:flex;flex-direction:column;justify-content:center;gap:1px;padding-right:16px;border-right:1px solid var(--vd-line2);min-width:0}
+      .vd-head1 span{font-family:var(--vd-mono);font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--vd-stone)}
+      .vd-head1 b{font-family:var(--vd-disp);font-size:1.95rem;font-weight:300;line-height:1;color:var(--vd-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .vd-head1 i{display:block;height:2px;width:0;background:var(--hue);margin-top:7px;border-radius:1px;transition:width .9s cubic-bezier(.3,.7,.2,1)}
+      .vd-head1 i.low{background:var(--vd-no)}
+      .vd-head1 em{font-style:normal;font-family:var(--vd-mono);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--vd-stone);margin-top:5px}
+      .vd-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+      .vd-tile{border:1px solid var(--vd-line);border-radius:2px;padding:6px 8px;min-width:0}
+      .vd-tile span{display:block;font-family:var(--vd-mono);font-size:7.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--vd-stone)}
+      .vd-tile b{font-family:var(--vd-mono);font-size:13px;font-weight:400;color:var(--vd-text);display:block;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .vd-tile em{font-style:normal;font-family:var(--vd-mono);font-size:7.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--vd-stone)}
+
+      /* ── screen 2: the argument ── */
+      .vd-arg{display:grid;grid-template-columns:minmax(0,1fr) 74px minmax(0,1fr);gap:0;align-items:stretch}
+      .vd-argside{background:var(--vd-panel);border:1px solid var(--vd-line);border-radius:3px;padding:18px 18px 20px;opacity:.45;transition:opacity .5s,border-color .5s}
+      .vd-argside.on{opacity:1}
+      .vd-argside.bull.on{border-color:var(--vd-green)}
+      .vd-argside.bear.on{border-color:var(--vd-red)}
+      .vd-sideban{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:2px;background:var(--vd-medal);margin-bottom:15px}
+      .vd-sideban img,.vd-sideban video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;background:var(--vd-medal)}
+      .vd-sideban video{opacity:0;transition:opacity .5s;z-index:1}
+      .vd-argside.speaking .vd-sideban video{opacity:1}
+      .vd-sideban::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;background:linear-gradient(to bottom,rgba(0,0,0,0) 70%,rgba(6,14,10,.55) 100%)}
+      .vd-sh{display:flex;gap:14px;align-items:center}
+      .vd-argside .vd-por{display:block;width:64px;height:64px;flex:0 0 64px;border-radius:50%;overflow:hidden;border:1px solid var(--vd-line);background:var(--vd-medal)}
+      .vd-argside .vd-por img{width:100%;height:100%;object-fit:cover;display:block}
+      .vd-argside.bull.on .vd-por{border-color:var(--vd-green)}
+      .vd-argside.bear.on .vd-por{border-color:var(--vd-red)}
+      .vd-sh h3{font-size:1.3rem;line-height:1.1}
+      .vd-sh .vd-cn2{font-family:var(--vd-mono);font-size:10px;letter-spacing:.16em;display:block;margin-bottom:2px}
+      .vd-sh .vd-rl{font-size:12.5px;color:var(--vd-role)}
+      .vd-argside.bull .vd-cn2{color:var(--vd-green)}.vd-argside.bear .vd-cn2{color:var(--vd-red)}
+      .vd-argside.bear{text-align:right}
+      .vd-argside.bear .vd-sh{flex-direction:row-reverse}
+      .vd-cases{list-style:none;margin:16px 0 0;padding:0}
+      .vd-cases li{padding:9px 0;border-top:1px solid var(--vd-line2);font-size:13.5px;color:var(--vd-body3);opacity:0;transform:translateY(5px);transition:opacity .4s,transform .4s}
+      .vd-cases li.show{opacity:1;transform:none}
+      .vd-cases .vd-src{display:block;font-family:var(--vd-mono);font-size:9px;letter-spacing:.08em;color:var(--vd-stone);margin-top:3px}
+      .vd-gutter{display:grid;place-items:center;position:relative}
+      .vd-gutter .vd-vline{position:absolute;top:0;bottom:0;width:1px;background:var(--vd-line);left:50%}
+      .vd-vs{width:42px;height:42px;border-radius:50%;border:1px solid var(--vd-line);background:var(--vd-panel);display:grid;place-items:center;font-family:var(--vd-mono);font-size:10px;letter-spacing:.1em;color:var(--vd-stone);position:relative;z-index:2}
+      .vd-dep{margin-top:12px;background:var(--vd-panel);border:1px solid var(--vd-flagline);border-radius:3px;padding:15px 16px;opacity:0;transition:opacity .6s}
+      .vd-dep.on{opacity:1}
+      .vd-dep .vd-lab{color:var(--vd-no)}
+      .vd-chain{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:4px}
+      .vd-node2{display:flex;align-items:center;gap:9px}
+      .vd-node2 .vd-m{display:block;width:34px;height:34px;border-radius:50%;overflow:hidden;border:1px solid var(--vd-line);background:var(--vd-medal);flex:0 0 34px}
+      .vd-node2 .vd-m img{width:100%;height:100%;object-fit:cover;display:block}
+      .vd-node2 .vd-nt{font-size:12.5px;color:var(--vd-body2);max-width:26ch}
+      .vd-node2 .vd-nt b{display:block;font-family:var(--vd-mono);font-size:9.5px;letter-spacing:.12em;font-weight:400}
+      .vd-arrow{color:var(--vd-stone);flex:0 0 auto}
+      .vd-dep p{margin:11px 0 0;padding-top:10px;border-top:1px solid var(--vd-line2);font-size:13.5px;color:var(--vd-body3)}
+
+      /* ── screen 3: the verdict (Step 5) ── */
+      .vd-hero{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr) auto;gap:24px;align-items:center;background:var(--vd-panel);border:1px solid var(--vd-line);border-radius:3px;padding:22px 24px;opacity:.55;transition:opacity .6s,border-color .6s,background .6s}
+      .vd-hero.on{opacity:1;border-color:var(--vd-goldsoft);background:var(--vd-verdict-bg)}
+      .vd-vban{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:2px;background:var(--vd-medal);border:1px solid var(--vd-seal)}
+      .vd-vban img,.vd-vban video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;background:var(--vd-medal)}
+      .vd-vban video{opacity:0;transition:opacity .5s;z-index:1}
+      .vd-hero.speaking .vd-vban video{opacity:1}
+      .vd-vbig{font-family:var(--vd-disp);font-size:2.9rem;font-weight:300;color:var(--vd-gold);line-height:1;display:block}
+      .vd-vsub{font-family:var(--vd-mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--vd-stone);margin-top:6px;display:block}
+      .vd-vstats{display:flex;gap:30px;flex-wrap:wrap;padding-left:24px;border-left:1px solid var(--vd-line2)}
+      .vd-vst{text-align:center}
+      .vd-vst span{display:block;font-family:var(--vd-mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--vd-stone)}
+      .vd-vst b{font-family:var(--vd-disp);font-size:1.4rem;font-weight:300}
+      .vd-flags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+      .vd-flag{font-family:var(--vd-mono);font-size:9px;letter-spacing:.07em;border:1px solid var(--vd-flagline);color:var(--vd-no);border-radius:2px;padding:4px 8px}
+      .vd-fgrid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;align-items:stretch;margin-top:12px}
+      .vd-fgrid>*{height:100%}
+      /* stepped reasoning */
+      .vd-reason{margin:0;text-align:left}
+      .vd-rstep{display:grid;grid-template-columns:22px minmax(0,1fr);gap:12px;padding:11px 0;opacity:0;transform:translateY(5px);transition:opacity .45s,transform .45s}
+      .vd-rstep.show{opacity:1;transform:none}
+      .vd-rstep+.vd-rstep{border-top:1px solid var(--vd-line2)}
+      .vd-rstep .vd-num{width:22px;height:22px;border-radius:50%;border:1px solid var(--vd-line3);display:grid;place-items:center;font-family:var(--vd-mono);font-size:9px;color:var(--vd-stone)}
+      .vd-rstep h4{font-family:var(--vd-mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--vd-stone);font-weight:400;margin-bottom:3px}
+      .vd-rstep p{margin:0;font-size:13.5px;color:var(--vd-body3)}
+      .vd-rstep.crux .vd-num{border-color:var(--vd-no);color:var(--vd-no)}
+      .vd-rstep.crux h4{color:var(--vd-no)}
+      .vd-rthen{display:grid;grid-template-columns:22px minmax(0,1fr);gap:12px;padding:13px 0 0;margin-top:4px;border-top:1px solid var(--vd-line);opacity:0;transition:opacity .5s}
+      .vd-rthen.show{opacity:1}
+      .vd-rthen .vd-num{width:22px;height:22px;border-radius:50%;border:1px solid var(--vd-goldsoft);display:grid;place-items:center;color:var(--vd-gold)}
+      .vd-rthen p{margin:0;font-size:13.5px;color:var(--vd-body3)}
+      /* risk card */
+      .vd-risk{background:var(--vd-panel);border:1px solid var(--vd-line);border-radius:3px;padding:18px;opacity:1}
+      .vd-risk.on{border-color:var(--vd-amber)}
+      .vd-risk .vd-por{display:block;width:56px;height:56px;flex:0 0 56px;border-radius:50%;overflow:hidden;border:1px solid var(--vd-line);background:var(--vd-medal)}
+      .vd-risk .vd-por img{width:100%;height:100%;object-fit:cover;display:block}
+      .vd-rgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}
+      .vd-rg{border:1px solid var(--vd-line);border-radius:2px;padding:9px 11px}
+      .vd-rg span{display:block;font-family:var(--vd-mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--vd-stone)}
+      .vd-rg b{font-family:var(--vd-disp);font-size:1.2rem;font-weight:300}
+      /* the record ledger */
+      .vd-ledger{margin-top:12px}
+      .vd-record{margin-top:9px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 22px}
+      .vd-record .vd-rec:nth-child(-n+4){border-top:0}
+      .vd-rec{display:grid;grid-template-columns:9px minmax(0,1fr);gap:10px;align-items:baseline;padding:8px 0;border-top:1px solid var(--vd-line2);opacity:0;transform:translateY(4px);transition:opacity .4s,transform .4s}
+      .vd-rec.show{opacity:1;transform:none}
+      .vd-rec .vd-dot{width:7px;height:7px;border-radius:50%;background:var(--hue);align-self:center}
+      .vd-rec .vd-top{display:flex;align-items:baseline;gap:9px}
+      .vd-rec .vd-who{font-family:var(--vd-mono);font-size:9.5px;letter-spacing:.12em;color:var(--hue)}
+      .vd-rec .vd-what{font-size:12.5px;color:var(--vd-body2);display:block;margin-top:2px;line-height:1.42}
+      .vd-rec .vd-vd{font-family:var(--vd-mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase}
+      /* decision controls */
+      .vd-decide{margin-top:12px}
+      .vd-decide-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+      .vd-dbtn{font-family:var(--vd-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:11px 18px;border-radius:3px;border:1px solid var(--vd-line);background:var(--vd-panel);color:var(--vd-body2);cursor:pointer;transition:border-color .3s,color .3s}
+      .vd-dbtn:hover,.vd-dbtn:focus-visible{border-color:var(--vd-gold);color:var(--vd-gold)}
+      .vd-dbtn.primary{border-color:var(--vd-ok);color:var(--vd-ok)}
+      .vd-dbtn.danger{border-color:var(--vd-flagline);color:var(--vd-no)}
+      .vd-override{margin-top:12px;display:none}
+      .vd-override.on{display:block;animation:vd-fade .3s ease}
+      .vd-override textarea{width:100%;min-height:64px;margin-top:8px;padding:9px 11px;border:1px solid var(--vd-line);border-radius:3px;background:var(--vd-panel);color:var(--vd-text);font-family:var(--vd-body);font-size:13px;resize:vertical}
+      .vd-override textarea:focus-visible{outline:2px solid var(--vd-gold);outline-offset:1px}
+      .vd-override .vd-orow{display:flex;gap:10px;align-items:center;margin-top:9px;flex-wrap:wrap}
+      .vd-orerr{color:var(--vd-no);font-size:12px;display:none}
+      .vd-orerr.on{display:inline}
+
+      /* ── responsive ── */
+      @media (max-width:1380px){
+        .vd-record{grid-template-columns:repeat(2,minmax(0,1fr))}
+        .vd-record .vd-rec:nth-child(-n+4){border-top:1px solid var(--vd-line2)}
+        .vd-record .vd-rec:nth-child(-n+2){border-top:0}
+      }
+      @media (max-width:1240px){
+        .vd-read.open .vd-full{grid-template-columns:1fr}
+        .vd-read.open .vd-ban{max-width:600px;margin:0 auto}
+        .vd-read.open .vd-chart{height:96px}
+        .vd-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+      }
+      @media (max-width:1180px){
+        .vd-shell{grid-template-columns:1fr}
+        .vd-roster{display:grid;grid-template-columns:repeat(2,1fr);gap:0 16px}
+        .vd-record{grid-template-columns:1fr}
+        .vd-record .vd-rec{border-top:1px solid var(--vd-line2)}
+        .vd-record .vd-rec:first-child{border-top:0}
+        .vd-hero{grid-template-columns:minmax(0,260px) minmax(0,1fr);row-gap:16px}
+        .vd-vstats{grid-column:1/-1;padding-left:0;border-left:0;padding-top:14px;border-top:1px solid var(--vd-line2)}
+        .vd-fgrid{grid-template-columns:1fr}
+        .vd-arg{grid-template-columns:1fr}
+        .vd-gutter{height:56px}.vd-gutter .vd-vline{left:0;right:0;top:50%;bottom:auto;height:1px;width:auto}
+        .vd-argside.bear{text-align:left}.vd-argside.bear .vd-sh{flex-direction:row}
+      }
+      @media (max-width:900px){
+        .vd-strip{grid-template-columns:38px minmax(0,1fr) auto}
+        .vd-strip .vd-sy,.vd-strip .vd-hl{display:none}
+      }
+      @media (prefers-reduced-motion:reduce){
+        .vd-ban video,.vd-sideban video,.vd-vban video{display:none}
+        .vd-say.typing::after,.vd-roster li.live .vd-tick{animation:none!important}
+        .vd-screen.on{animation:none}
+        .vd-cm i,.vd-donut circle.vd-pr,.vd-head1 i,.vd-cases li,.vd-rec,.vd-rstep,.vd-rthen{transition:none!important}
+      }
+    </style>
+
     <!-- ===== STAGE 4: AI Verification Desk ===== -->
     <div class="stage hidden" id="stage-4">
       <!-- Header -->
@@ -794,7 +1076,7 @@
             <div style="font-size:12px;color:var(--ink-muted)">8 independent AI agents analyze your trade from every angle</div>
           </div>
           <div style="display:flex;gap:6px;align-items:center">
-            <span style="font-size:9px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.06em" id="vp-phase-label">Phase 1 of 3</span>
+            <span style="font-size:9px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.06em" id="vp-phase-label">Three-phase desk</span>
             <span style="font-size:11px;font-family:var(--mono);color:var(--teal)" id="elapsed-timer">0.0s</span>
           </div>
         </div>
@@ -808,40 +1090,102 @@
         </div>
       </div>
 
-      <!-- Phase 1: Analysts -->
-      <div class="panel vp-phase-panel" data-phase="1" style="padding:14px 18px;margin-top:10px">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--teal);font-weight:600;margin-bottom:10px">Phase 1 — Analysts</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div class="vp-seat" data-agent="technical"><div class="vp-seat-head"><span>&#x1F4C8; Technical</span><span class="vp-seat-tier">NewLeaf Max</span></div><div class="vp-seat-finding" id="vp-find-technical">Waiting...</div><div class="vp-seat-tag" id="vp-tag-technical"></div><div class="vp-seat-transcript hidden" id="vp-tx-technical"></div></div>
-          <div class="vp-seat" data-agent="gamma"><div class="vp-seat-head"><span>&#x1F6E1; Gamma</span><span class="vp-seat-tier">NewLeaf Pro</span></div><div class="vp-seat-finding" id="vp-find-gamma">Waiting...</div><div class="vp-seat-tag" id="vp-tag-gamma"></div><div class="vp-seat-transcript hidden" id="vp-tx-gamma"></div></div>
-          <div class="vp-seat" data-agent="iv"><div class="vp-seat-head"><span>&#x1F4CA; IV / Skew</span><span class="vp-seat-tier">NewLeaf Fast</span></div><div class="vp-seat-finding" id="vp-find-iv">Waiting...</div><div class="vp-seat-tag" id="vp-tag-iv"></div><div class="vp-seat-transcript hidden" id="vp-tx-iv"></div></div>
-          <div class="vp-seat" data-agent="sentiment"><div class="vp-seat-head"><span>&#x1F4F0; Sentiment</span><span class="vp-seat-tier">NewLeaf Edge</span></div><div class="vp-seat-finding" id="vp-find-sentiment">Waiting...</div><div class="vp-seat-tag" id="vp-tag-sentiment"></div><div class="vp-seat-transcript hidden" id="vp-tx-sentiment"></div></div>
+      <div class="vdesk" data-theme="light" id="vd-stage4">
+        <div class="vd-shell">
+          <!-- persistent status rail (Step 4) -->
+          <aside class="vd-rail" id="vd-rail-4">
+            <div class="vd-card vd-pad">
+              <p class="vd-lab">Under review</p>
+              <h3 style="font-size:1.1rem" id="vd-ur-title">&mdash;</h3>
+              <p style="margin:3px 0 0;font-size:12px;color:var(--vd-stone)" id="vd-ur-sub">&mdash;</p>
+            </div>
+            <div class="vd-card vd-pad">
+              <p class="vd-lab">Desk progress</p>
+              <div class="vd-donut">
+                <svg width="120" height="120" viewBox="0 0 126 126" aria-hidden="true">
+                  <circle class="vd-tr" cx="63" cy="63" r="54" fill="none" stroke-width="6"/>
+                  <circle class="vd-pr" id="vd-ring-pr" cx="63" cy="63" r="54" fill="none" stroke-width="6" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3" transform="rotate(-90 63 63)"/>
+                </svg>
+                <div class="vd-mid"><b id="vd-donut-pct">0%</b><span>reported</span></div>
+              </div>
+              <div class="vd-kv"><span>Speaking now</span><b id="vd-r-now">&mdash;</b></div>
+              <div class="vd-kv"><span>Elapsed</span><b id="vd-r-eta">0.0s</b></div>
+              <div class="vd-kv"><span>Model calls</span><b id="vd-r-calls">0</b></div>
+              <ul class="vd-roster" id="vd-roster"></ul>
+            </div>
+            <div class="vd-card vd-pad">
+              <p class="vd-lab">Data coverage</p>
+              <p style="font-size:11.5px;color:var(--vd-stone);margin:0 0 9px">How much of each input the engine could populate.</p>
+              <div id="vd-coverage"></div>
+            </div>
+          </aside>
+
+          <!-- phase stage: The read + The argument -->
+          <main class="vd-main">
+            <nav class="vd-pnav" id="vd-pnav" aria-label="Desk phases">
+              <button class="vd-pstep on" data-s="0" type="button" disabled><span class="vd-n">1</span>The read</button>
+              <span class="vd-pconn"></span>
+              <button class="vd-pstep" data-s="1" type="button" disabled><span class="vd-n">2</span>The argument</button>
+              <span style="flex:1 1 auto"></span>
+              <button class="vd-btn" id="vd-replay" type="button">Replay</button>
+              <button class="vd-seeverdict" id="vd-seeverdict" type="button">See the verdict &#8594;</button>
+            </nav>
+
+            <!-- SCREEN 1 — the read (accordion, built by JS) -->
+            <section class="vd-screen on" id="vd-s0" aria-label="Phase one, the read">
+              <div class="vd-shead">
+                <div>
+                  <h2>The read</h2>
+                  <p>Four analysts read the same computed snapshot in parallel. Each sits beside the evidence it actually read &mdash; the engine produced every figure below.</p>
+                </div>
+                <span class="vd-meta">4 agents &middot; parallel</span>
+              </div>
+              <div class="vd-reads" id="vd-reads"></div>
+            </section>
+
+            <!-- SCREEN 2 — the argument -->
+            <section class="vd-screen" id="vd-s1" aria-label="Phase two, the argument">
+              <div class="vd-shead">
+                <div>
+                  <h2>The argument</h2>
+                  <p>Two researchers argue the same structure from opposite sides. Neither introduces a new number &mdash; they contest what the analysts' figures mean.</p>
+                </div>
+                <span class="vd-meta">2 agents &middot; adversarial</span>
+              </div>
+              <div class="vd-arg">
+                <div class="vd-argside bull" id="vd-side-bull">
+                  <div class="vd-sideban">
+                    <img id="vd-pos-titan" src="./public/agents/titan-poster.jpg" alt="" aria-hidden="true" width="640" height="360">
+                    <video id="vd-dvid-titan" muted loop playsinline preload="none" poster="./public/agents/titan-poster.jpg" aria-hidden="true"><source src="./public/agents/titan.mp4" type="video/mp4"></video>
+                  </div>
+                  <div class="vd-sh">
+                    <span class="vd-por"><img src="./public/agents/titan-256.jpg" alt="" aria-hidden="true" width="64" height="64"></span>
+                    <span><span class="vd-cn2">TITAN</span><h3>The case for</h3><span class="vd-rl">Bull researcher</span></span>
+                  </div>
+                  <ul class="vd-cases" id="vd-case-bull"></ul>
+                </div>
+                <div class="vd-gutter"><span class="vd-vline"></span><span class="vd-vs">VS</span></div>
+                <div class="vd-argside bear" id="vd-side-bear">
+                  <div class="vd-sideban">
+                    <img id="vd-pos-raven" src="./public/agents/raven-poster.jpg" alt="" aria-hidden="true" width="640" height="360">
+                    <video id="vd-dvid-raven" muted loop playsinline preload="none" poster="./public/agents/raven-poster.jpg" aria-hidden="true"><source src="./public/agents/raven.mp4" type="video/mp4"></video>
+                  </div>
+                  <div class="vd-sh">
+                    <span class="vd-por"><img src="./public/agents/raven-256.jpg" alt="" aria-hidden="true" width="64" height="64"></span>
+                    <span><span class="vd-cn2">RAVEN</span><h3>The case against</h3><span class="vd-rl">Bear researcher</span></span>
+                  </div>
+                  <ul class="vd-cases" id="vd-case-bear"></ul>
+                </div>
+              </div>
+              <div class="vd-dep" id="vd-dep">
+                <p class="vd-lab">Where the argument actually breaks</p>
+                <div class="vd-chain" id="vd-chain"></div>
+                <p id="vd-dep-note">A dependency, not a disagreement: the bull's strongest evidence is derived from the very input the gamma specialist flagged as unreliable, so the two cases are not independent.</p>
+              </div>
+            </section>
+          </main>
         </div>
       </div>
-
-      <!-- Phase 2: Debate -->
-      <div class="panel vp-phase-panel" data-phase="2" style="padding:14px 18px;margin-top:10px;opacity:0.4" id="vp-phase2">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--teal);font-weight:600;margin-bottom:10px">Phase 2 — Debate</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div class="vp-seat" data-agent="bull" style="border-left:3px solid var(--green)"><div class="vp-seat-head"><span>&#x1F4AA; Bull Researcher</span><span class="vp-seat-tier">NewLeaf Max</span></div><div class="vp-seat-finding" id="vp-find-bull">Waiting...</div><div class="vp-seat-transcript hidden" id="vp-tx-bull"></div></div>
-          <div class="vp-seat" data-agent="bear" style="border-left:3px solid var(--red)"><div class="vp-seat-head"><span>&#x26A0; Bear Researcher</span><span class="vp-seat-tier">NewLeaf Max</span></div><div class="vp-seat-finding" id="vp-find-bear">Waiting...</div><div class="vp-seat-transcript hidden" id="vp-tx-bear"></div></div>
-        </div>
-      </div>
-
-      <!-- Phase 3: Risk & Verdict -->
-      <div class="panel vp-phase-panel" data-phase="3" style="padding:14px 18px;margin-top:10px;opacity:0.4" id="vp-phase3">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--teal);font-weight:600;margin-bottom:10px">Phase 3 — Risk &amp; Verdict</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div class="vp-seat" data-agent="risk"><div class="vp-seat-head"><span>&#x1F4B0; Risk Manager</span><span class="vp-seat-tier">NewLeaf Pro</span></div><div class="vp-seat-finding" id="vp-find-risk">Waiting...</div><div class="vp-seat-transcript hidden" id="vp-tx-risk"></div></div>
-          <div class="vp-seat" data-agent="judge"><div class="vp-seat-head"><span>&#x2696; Judge</span><span class="vp-seat-tier">NewLeaf Max</span></div><div class="vp-seat-finding" id="vp-find-judge">Waiting...</div><div class="vp-seat-transcript hidden" id="vp-tx-judge"></div></div>
-        </div>
-      </div>
-
-      <div style="text-align:center;margin-top:10px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
-        <button onclick="toggleAllTranscripts()" style="background:none;border:none;color:var(--teal);font-size:11px;cursor:pointer;text-decoration:underline" id="vp-expand-all">Expand all transcripts</button>
-        <button onclick="toggleTraceInspector()" style="background:none;border:none;color:var(--teal);font-size:11px;cursor:pointer;text-decoration:underline" id="vp-trace-btn">Inspect model calls</button>
-      </div>
-      <div id="vp-trace-inspector" class="vp-traces hidden"></div>
     </div>
 
     <!-- ===== Gamma & Technical chart modal (opened from agent drawers / verdict) ===== -->
@@ -1085,6 +1429,9 @@
        ================================================================ */
     function goToStage(n, force) {
       if (!force && n > maxStage + 1) return; // can't skip ahead
+      // Step 5 (Verdict) stays disabled until the desk run completes for the
+      // current structure. The "See the verdict" control passes force=true.
+      if (n === 5 && !force && typeof deskReady === 'function' && !deskReady()) return;
       if (n > maxStage) maxStage = n;
       currentStage = n;
 
@@ -2772,36 +3119,6 @@
     let verifyTimer = null;
     let verifyStart = 0;
 
-    function toggleAllTranscripts() {
-      const txEls = $$('#stage-4 .vp-seat-transcript');
-      const anyVisible = Array.from(txEls).some(e => !e.classList.contains('hidden'));
-      txEls.forEach(e => e.classList.toggle('hidden', anyVisible));
-      const btn = $('#vp-expand-all');
-      if (btn) btn.textContent = anyVisible ? 'Expand all transcripts' : 'Collapse all transcripts';
-    }
-
-    function setSeatState(agent, state, finding, tag, transcript) {
-      const el = $(`#vp-find-${agent}`);
-      const tagEl = $(`#vp-tag-${agent}`);
-      const txEl = $(`#vp-tx-${agent}`);
-      const seat = el?.closest('.vp-seat');
-      if (!seat) return;
-      seat.className = 'vp-seat ' + (state || '');
-      if (finding) {
-        el.textContent = finding;
-        el.className = 'vp-seat-finding' + (state === 'processing' ? ' active' : '');
-      }
-      if (tag && tagEl) {
-        const cls = tag === 'supportive' ? 'tag-supportive' : tag === 'caution' ? 'tag-caution' : 'tag-neutral';
-        tagEl.innerHTML = `<span class="${cls}">${tag}</span>`;
-      }
-      if (transcript && txEl) {
-        // `transcript` is trusted HTML built by populateRealSeats (all model-derived
-        // text is escaped there). Render it, then append a collapse control.
-        txEl.innerHTML = transcript + '<button class="vp-seat-expand" onclick="this.parentElement.classList.toggle(\'hidden\')">collapse</button>';
-      }
-    }
-
     // ---- Rich drawer helpers -------------------------------------------------
     // Escape any model-derived string before it goes into innerHTML.
     function escHtml(s) {
@@ -2886,80 +3203,6 @@
           + `<div>${escHtml(side.thesis || '')}</div>`
           + (evs ? `<ul>${evs}</ul>` : '') + `</div>`;
       }).join('');
-    }
-
-    // Replace the scripted seat text with what the agents ACTUALLY returned,
-    // so Step 4 reflects the real desk run (findings + tag + full expandable analysis).
-    function populateRealSeats(vData) {
-      const ev = vData.evidence || {};
-      const rounds = vData.debate?.rounds || [];
-      const lastR = rounds[rounds.length - 1] || {};
-      const risk = vData.riskReport || {};
-      const verdict = vData.verdict || {};
-      const byRole = mapTraces(vData.traces);
-
-      const seat = (agent, finding, stance, transcript) => {
-        if (!finding) return;
-        setSeatState(agent, 'done', finding, stance, transcript);
-      };
-
-      if (ev.technical) seat('technical', ev.technical.summary, agentStance('technical', ev.technical, ev.technical.summary),
-        drawer([
-          bdg('Trend', ev.technical.trend),
-          bdg('RSI', ev.technical.rsi),
-          bdg('Breakout risk', ev.technical.breakoutRisk)
-        ], { body: escHtml(ev.technical.summary || ''), chartTabs: chartTabsFor('technical', ev.technical), meta: seatMeta(byRole, 'technical') }));
-
-      if (ev.gamma) seat('gamma', ev.gamma.summary, agentStance('gamma', ev.gamma, ev.gamma.summary),
-        drawer([
-          bdg('Wall integrity', ev.gamma.wallIntegrity),
-          bdg('Flip distance', ev.gamma.flipDistance),
-          bdg('Spot', ev.gamma.insideBand ? 'inside band' : 'outside band')
-        ], { body: escHtml(ev.gamma.summary || ''), chartTabs: chartTabsFor('gamma', ev.gamma), meta: seatMeta(byRole, 'gamma') }));
-
-      if (ev.iv) seat('iv', ev.iv.summary, agentStance('iv', ev.iv, ev.iv.summary),
-        drawer([
-          bdg('IV rank', ev.iv.ivRank ?? 'n/a'),
-          bdg('Term', ev.iv.termStructure),
-          bdg('Premium', ev.iv.premiumFairness)
-        ], { body: escHtml(ev.iv.summary || ''), chartTabs: chartTabsFor('iv', ev.iv), meta: seatMeta(byRole, 'iv') }));
-
-      if (ev.sentiment) {
-        const cats = (ev.sentiment.catalystsInWindow || []).filter(Boolean);
-        const pol = ev.sentiment.polarity;
-        seat('sentiment', ev.sentiment.summary, agentStance('sentiment', ev.sentiment, ev.sentiment.summary),
-          drawer([
-            bdg('Polarity', typeof pol === 'number' ? (pol > 0 ? '+' : '') + pol : pol),
-            bdg('Catalysts in window', cats.length ? cats.join(', ') : 'none')
-          ], { body: escHtml(ev.sentiment.summary || ''), meta: seatMeta(byRole, 'sentiment') }));
-      }
-
-      if (lastR.bull) seat('bull', lastR.bull.thesis, 'supportive',
-        drawer([], { body: debateBody('bull', rounds), meta: seatMeta(byRole, 'bull') }));
-      if (lastR.bear) seat('bear', lastR.bear.thesis, 'caution',
-        drawer([], { body: debateBody('bear', rounds), meta: seatMeta(byRole, 'bear') }));
-
-      if (risk.rationale) seat('risk', risk.rationale, risk.portfolioFit === 'cleared' ? 'supportive' : 'caution',
-        drawer([
-          bdg('Portfolio fit', risk.portfolioFit),
-          bdg('Theta', risk.thetaImpact),
-          bdg('Vega', risk.vegaImpact)
-        ], { body: escHtml(risk.rationale || ''), meta: seatMeta(byRole, 'risk') }));
-
-      if (verdict.rationale) {
-        const flips = (verdict.flipConditions || []).filter(Boolean);
-        seat('judge', verdict.rationale, 'neutral',
-          drawer([
-            bdg('Call', verdict.call),
-            bdg('Confidence', verdict.confidence != null ? verdict.confidence : undefined)
-          ], {
-            body: escHtml(verdict.rationale || '')
-              + (flips.length ? `<div class="vp-round"><div class="vp-round-h">Flip conditions</div><ul>${flips.map(f => `<li>${escHtml(f)}</li>`).join('')}</ul></div>` : ''),
-            meta: seatMeta(byRole, 'judge')
-          }));
-      }
-
-      renderTraceInspector(vData);
     }
 
     // Raw model-call inspector: every LLM call in the run with its prompts,
@@ -3236,160 +3479,643 @@
       activate(openTab);
     };
 
-    function setPhaseActive(phase) {
-      const label = $('#vp-phase-label');
-      if (label) label.textContent = `Phase ${phase} of 3`;
-      // Activate panels
-      for (let p = 1; p <= 3; p++) {
-        const panel = $(`.vp-phase-panel[data-phase="${p}"]`);
-        if (!panel) continue;
-        panel.style.opacity = p <= phase ? '1' : '0.4';
-      }
+    /* ================================================================
+       VERIFICATION DESK — three-phase. Deterministic code computes every
+       number; the agents only narrate and disagree. No figure rendered in
+       the desk DOM originates from a model response.
+       ================================================================ */
+    const DESK_AGENTS = [
+      { key:'technical', ord:1, cn:'ATLAS',    role:'Technical analyst', hue:'sage',  ph:1, por:'atlas' },
+      { key:'gamma',     ord:2, cn:'SIGMA',    role:'Gamma specialist',  hue:'gold',  ph:1, por:'sigma' },
+      { key:'iv',        ord:3, cn:'VEGA',     role:'Volatility expert',  hue:'sage',  ph:1, por:'vega' },
+      { key:'sentiment', ord:4, cn:'PULSE',    role:'Sentiment analyst',  hue:'sage',  ph:1, por:'pulse' },
+      { key:'bull',      ord:5, cn:'TITAN',    role:'Bull researcher',    hue:'green', ph:2, por:'titan' },
+      { key:'bear',      ord:6, cn:'RAVEN',    role:'Bear researcher',    hue:'red',   ph:2, por:'raven' },
+      { key:'risk',      ord:7, cn:'SENTINEL', role:'Risk manager',       hue:'amber', ph:3, por:'sentinel' },
+      { key:'judge',     ord:8, cn:'ORACLE',   role:'Chief judge',        hue:'gold',  ph:3, por:'oracle' }
+    ];
+    const AGENT_TAGS_DESK = { technical:'supportive', gamma:'supportive', iv:'caution', sentiment:'neutral', bull:'supportive', bear:'caution', risk:'caution', judge:'neutral' };
+    const VD_REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const VD_FLOOR_MS = 1200;  // real-run readability floor — a floor, not padding
+    const VD_DEMO_MS  = 4200;  // slower cinematic pace when there is no live desk (?demo)
+    const vdPace = () => isDemo ? VD_DEMO_MS : VD_FLOOR_MS;
+    const vdHue = key => 'var(--vd-' + ((DESK_AGENTS.find(a => a.key === key) || {}).hue || 'sage') + ')';
+
+    // Days to expiry — deterministic; reused by deskStructure and the sizing card.
+    function deskDte() {
+      if (state.selectedExpiry) return Math.max(1, Math.round((new Date(state.selectedExpiry + 'T16:00:00').getTime() - Date.now()) / 86400000));
+      return state.dte || 30;
     }
+
+    // Per-agent verdict chip: label + colour class. Stance is deterministic.
+    function deskChip(key, stance) {
+      if (key === 'judge') return { label:'Verdict', cls:'vd-goldc' };
+      if (key === 'bull')  return { label:'Advance', cls:'vd-ok' };
+      if (key === 'bear')  return { label:'Counter', cls:'vd-no' };
+      if (stance === 'supportive') return { label:'Pass', cls:'vd-ok' };
+      if (stance === 'caution')    return { label:'Concern', cls:'vd-no' };
+      return { label:'Noted', cls:'vd-warn' };
+    }
+
+    // The real inputs each agent reads — pulled from the deterministic engine
+    // snapshot (state), never from a model. Shown as chips beside each card.
+    function deskReadingInputs() {
+      const n = (v, d) => (v == null || v === '' || Number.isNaN(v)) ? d : v;
+      const oc = state.oiConf != null ? state.oiConf.toFixed(2) : 'n/a';
+      const iv = state.atmIv != null ? state.atmIv.toFixed(1) + '%' : 'n/a';
+      return {
+        technical: `RSI ${n(state.rsi,'—')} · ADX ${n(state.adx,'—')} · ATR ${state.atr14 ? ('$' + state.atr14.toFixed(2)) : '—'}`,
+        gamma: `walls ${n(state.putWall,'—')}/${n(state.callWall,'—')} · OI conf ${oc}`,
+        iv: `IV ${iv} · IV rank ${n(state.ivRank,'—')}`,
+        sentiment: 'catalysts · flow · insider activity',
+        bull: 'the four analyst reports',
+        bear: 'the four analyst reports',
+        risk: `portfolio & sizing (${state.qty} lot${state.qty === 1 ? '' : 's'})`,
+        judge: 'all seven reports'
+      };
+    }
+    // ---- Structure under review (all figures deterministic) ------------------
+    function deskStructure() {
+      const nc = computeNetCredit();
+      const ml = computeMaxLoss(nc);
+      const mp = computeMaxProfit(nc);
+      const dte = deskDte();
+      let pop = _estimatePoP(state.legs, state.qty, nc, state.spot, state.atmIv, dte);
+      if (pop != null && pop <= 1) pop = Math.round(pop * 100);
+      const title = (state.selectedStrategy && (state.selectedStrategy.strategy || state.selectedStrategy.id)) || 'Structure';
+      const legsStr = state.legs.map(l => `${l.side === 'short' ? 'S' : 'L'} ${l.strike}${l.type[0].toUpperCase()}`).join('  /  ');
+      const by = { call:{}, put:{} };
+      state.legs.forEach(l => { if (by[l.type]) by[l.type][l.side] = l.strike; });
+      let width = 0;
+      ['call','put'].forEach(t => { const s = by[t]; if (s.short != null && s.long != null) width = Math.max(width, Math.abs(s.long - s.short)); });
+      const emPct = (state.atmIv != null && dte) ? (state.atmIv / 100) * Math.sqrt(dte / 365) * 100 : null;
+      return { nc, ml, mp, dte, pop, title, legsStr, width, emPct, shortPut: by.put.short, shortCall: by.call.short };
+    }
+
+    // ---- Data coverage (honest per-input availability, no faking/flooring) ----
+    function vdPresentFrac(vals) {
+      const ok = vals.filter(v => v != null && v !== '' && !(typeof v === 'number' && Number.isNaN(v))).length;
+      return vals.length ? ok / vals.length : 0;
+    }
+    const vdClamp01 = v => v == null ? null : Math.max(0, Math.min(1, v));
+    function coverageRow(label, frac, opts) {
+      opts = opts || {};
+      const na = frac == null;
+      const pct = na ? 0 : Math.round(frac * 100);
+      const low = !na && !opts.blend && frac < 0.40;
+      const cls = 'vd-cat' + (low ? ' low' : '') + (opts.blend ? ' blend' : '') + (na ? ' na' : '');
+      const w = na ? '' : ` data-w="${pct}"`;
+      return `<div class="${cls}"><span>${label}</span><div class="vd-cm"><i${w}></i></div><b>${na ? 'n/a' : pct + '%'}</b></div>`;
+    }
+    function renderCoverageTile(reports) {
+      const rv = (state._techData && typeof state._techData.realizedVol30d === 'number') ? state._techData.realizedVol30d : null;
+      const technical = vdPresentFrac([state.rsi, state.adx, state.atr14]);
+      const flow = vdClamp01(state.oiConf) != null ? vdClamp01(state.oiConf) : 0;
+      const volatility = vdPresentFrac([state.atmIv, state.ivRank, rv]);
+      const chainRaw = vdClamp01(state.volConf != null ? state.volConf : state.deltaConf);
+      const chain = chainRaw != null ? chainRaw : 0;
+      let sentiment = null; // unknown until the desk's structured sentiment report lands
+      const sd = reports && reports.__sentiment;
+      if (sd) sentiment = vdPresentFrac([sd.polarity, sd.catalysts]);
+      const blended = vdClamp01(state.confScore);
+      $('#vd-coverage').innerHTML =
+        coverageRow('Technical', technical) +
+        coverageRow('Options flow', flow) +
+        coverageRow('Volatility', volatility) +
+        coverageRow('Sentiment', sentiment) +
+        coverageRow('Chain quality', chain) +
+        coverageRow('Blended input confidence', blended, { blend: true });
+      requestAnimationFrame(() => $$('#vd-coverage .vd-cm i').forEach(i => { if (i.dataset.w) i.style.width = i.dataset.w + '%'; }));
+    }
+
+    // ---- Build the desk reports from the real /verify response ---------------
+    function deskDuration(byRole, key) {
+      const ts = byRole[key];
+      if (!ts || !ts.length) return null;
+      return ts.reduce((s, t) => s + (t.durationMs || 0), 0) / 1000;
+    }
+    function buildDeskReports(vData) {
+      const ev = vData.evidence || {};
+      const rounds = vData.debate?.rounds || [];
+      const lastR = rounds[rounds.length - 1] || {};
+      const risk = vData.riskReport || {};
+      const verdict = vData.verdict || {};
+      const byRole = mapTraces(vData.traces);
+      const R = {};
+      const put = (key, finding, stance, tx) => { if (!finding) return; R[key] = { finding, stance, tx, calls: (byRole[key] || []).length || 1, dur: deskDuration(byRole, key) }; };
+
+      if (ev.technical) put('technical', ev.technical.summary, agentStance('technical', ev.technical, ev.technical.summary),
+        drawer([bdg('Trend', ev.technical.trend), bdg('RSI', ev.technical.rsi), bdg('Breakout risk', ev.technical.breakoutRisk)],
+          { body: escHtml(ev.technical.summary || ''), chartTabs: chartTabsFor('technical', ev.technical), meta: seatMeta(byRole, 'technical') }));
+      if (ev.gamma) put('gamma', ev.gamma.summary, agentStance('gamma', ev.gamma, ev.gamma.summary),
+        drawer([bdg('Wall integrity', ev.gamma.wallIntegrity), bdg('Flip distance', ev.gamma.flipDistance), bdg('Spot', ev.gamma.insideBand ? 'inside band' : 'outside band')],
+          { body: escHtml(ev.gamma.summary || ''), chartTabs: chartTabsFor('gamma', ev.gamma), meta: seatMeta(byRole, 'gamma') }));
+      if (ev.iv) put('iv', ev.iv.summary, agentStance('iv', ev.iv, ev.iv.summary),
+        drawer([bdg('IV rank', ev.iv.ivRank ?? 'n/a'), bdg('Term', ev.iv.termStructure), bdg('Premium', ev.iv.premiumFairness)],
+          { body: escHtml(ev.iv.summary || ''), chartTabs: chartTabsFor('iv', ev.iv), meta: seatMeta(byRole, 'iv') }));
+      if (ev.sentiment) {
+        const cats = (ev.sentiment.catalystsInWindow || []).filter(Boolean);
+        const pol = ev.sentiment.polarity;
+        put('sentiment', ev.sentiment.summary, agentStance('sentiment', ev.sentiment, ev.sentiment.summary),
+          drawer([bdg('Polarity', typeof pol === 'number' ? (pol > 0 ? '+' : '') + pol : pol), bdg('Catalysts in window', cats.length ? cats.join(', ') : 'none')],
+            { body: escHtml(ev.sentiment.summary || ''), meta: seatMeta(byRole, 'sentiment') }));
+        R.__sentiment = { polarity: typeof pol === 'number' ? pol : null, catalysts: (ev.sentiment.catalystsInWindow != null) ? cats : null };
+      }
+      if (lastR.bull) put('bull', lastR.bull.thesis, 'supportive', drawer([], { body: debateBody('bull', rounds), meta: seatMeta(byRole, 'bull') }));
+      if (lastR.bear) put('bear', lastR.bear.thesis, 'caution', drawer([], { body: debateBody('bear', rounds), meta: seatMeta(byRole, 'bear') }));
+      if (risk.rationale) put('risk', risk.rationale, risk.portfolioFit === 'cleared' ? 'supportive' : 'caution',
+        drawer([bdg('Portfolio fit', risk.portfolioFit), bdg('Theta', risk.thetaImpact), bdg('Vega', risk.vegaImpact)], { body: escHtml(risk.rationale || ''), meta: seatMeta(byRole, 'risk') }));
+      if (verdict.rationale) {
+        const flips = (verdict.flipConditions || []).filter(Boolean);
+        // NOTE: the judge's numeric confidence is intentionally NOT rendered — it is a
+        // model figure. Only the categorical call + rationale (narration) are shown.
+        put('judge', verdict.rationale, 'neutral',
+          drawer([bdg('Call', verdict.call)], {
+            body: escHtml(verdict.rationale || '') + (flips.length ? `<div class="vp-round"><div class="vp-round-h">Flip conditions</div><ul>${flips.map(f => `<li>${escHtml(f)}</li>`).join('')}</ul></div>` : ''),
+            meta: seatMeta(byRole, 'judge')
+          }));
+      }
+      R.__bull = (lastR.bull?.evidence || []).filter(Boolean);
+      R.__bear = (lastR.bear?.evidence || []).filter(Boolean);
+      return R;
+    }
+    function demoReport(key) { return { finding: AGENT_RESULTS[key] || 'Analysis complete', stance: AGENT_TAGS_DESK[key] || 'neutral', tx: '', calls: 1, dur: null }; }
+
+    // ---- Reveal helpers ------------------------------------------------------
+    function typeInto(el, text) {
+      return new Promise(res => {
+        if (!el) { res(); return; }
+        el.classList.remove('done');
+        if (VD_REDUCE) { el.textContent = text; el.classList.add('done'); res(); return; }
+        el.textContent = ''; let i = 0;
+        const chunk = text.length > 240 ? 3 : 1;
+        const step = () => {
+          i = Math.min(text.length, i + chunk);
+          el.textContent = text.slice(0, i);
+          if (i < text.length) setTimeout(step, 12);
+          else { el.classList.add('done'); res(); }
+        };
+        step();
+      });
+    }
+    function deskAllStances(reports) {
+      const out = {};
+      DESK_AGENTS.forEach(a => { out[a.key] = (reports && reports[a.key]) ? reports[a.key].stance : (AGENT_TAGS_DESK[a.key] || 'neutral'); });
+      return out;
+    }
+    // Blocking flags are derived from the deterministic engine snapshot + structured
+    // report enums (never from model prose).
+    function deskBlockingFlags(reports) {
+      const flags = [];
+      if (state.oiConf != null && state.oiConf < 0.40) flags.push('gamma_unreliable');
+      const chain = state.volConf != null ? state.volConf : state.deltaConf;
+      if (chain != null && chain < 0.40) flags.push('thin_chain');
+      const sd = reports && reports.__sentiment;
+      if (sd && Array.isArray(sd.catalysts) && sd.catalysts.length) flags.push('event_in_window');
+      const rr = state.riskReport || {};
+      if (rr.portfolioFit && rr.portfolioFit !== 'cleared') flags.push('portfolio_' + rr.portfolioFit);
+      return flags;
+    }
+    function deskVerdictSub(cls) { return cls === 'pass' ? 'The desk clears this trade' : cls === 'fail' ? 'The desk stands aside' : 'Take it smaller'; }
+    // ---- small formatters ----------------------------------------------------
+    const MONTHS_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    function fmtExpiry(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso + 'T16:00:00');
+      return isNaN(d.getTime()) ? iso : `${d.getDate()} ${MONTHS_ABBR[d.getMonth()]} ${d.getFullYear()}`;
+    }
+    const vdNum = (v, d = 0) => (v == null || v === '' || Number.isNaN(+v)) ? '—' : (+v).toFixed(d);
+    const vdClampPct = v => Math.max(0, Math.min(100, +v || 0));
+
+    // ---- structure hash + single-slot verify cache ---------------------------
+    // Mirrors the server key (api/src/routes/verify.ts): ticker + sorted legs +
+    // modelMode. Returning to Step 4 with the same structure restores completed
+    // state; changing any leg/strike/expiry/size produces a new hash → fresh run.
+    function structureHash() {
+      const legs = (state.legs || []).map(l => ({ t: l.type, s: l.side, k: l.strike, e: state.selectedExpiry }))
+        .sort((a, b) => (a.k - b.k) || a.t.localeCompare(b.t) || a.s.localeCompare(b.s));
+      return JSON.stringify({ t: state.ticker, q: state.qty, m: (window.USER_MODEL_MODE || 'budget-qwq'), l: legs });
+    }
+    let deskCache = { hash: null, vData: null, reports: null, done: false };
+    const deskReady = () => deskCache.done && deskCache.hash === structureHash();
+    function invalidateDesk() {
+      deskCache = { hash: null, vData: null, reports: null, done: false };
+      state.deskReports = null; state.override = null;
+      const btn = $('#vd-seeverdict'); if (btn) btn.classList.remove('ready');
+    }
+    // Exposed so Step-3 edits (leg/strike/expiry/size) can drop stale results.
+    window.invalidateDesk = invalidateDesk;
+
+    // ---- status rail ---------------------------------------------------------
+    function buildRoster() {
+      const el = $('#vd-roster'); if (!el) return;
+      el.innerHTML = DESK_AGENTS.map(a =>
+        `<li id="vd-ro-${a.key}" style="--hue:${vdHue(a.key)}"><span class="vd-tick"></span><b>${a.cn}</b><em class="vd-rst">Queued</em></li>`).join('');
+    }
+    function roState(key, cls, word, hueCls) {
+      const li = $('#vd-ro-' + key); if (!li) return;
+      li.classList.remove('live', 'done'); if (cls) li.classList.add(cls);
+      const w = li.querySelector('.vd-rst');
+      if (w) { w.className = 'vd-rst' + (hueCls ? ' ' + hueCls : ''); w.textContent = word; }
+    }
+    const uiNow = t => { const e = $('#vd-r-now'); if (e) e.textContent = t || '—'; };
+    const uiCalls = n => { const e = $('#vd-r-calls'); if (e) e.textContent = n; };
+    function uiProgress(reported) {
+      const pct = Math.round(reported / 8 * 100);
+      const p = $('#vd-donut-pct'); if (p) p.textContent = pct + '%';
+      const ring = $('#vd-ring-pr'); if (ring) ring.setAttribute('stroke-dashoffset', (339.3 * (1 - reported / 8)).toFixed(1));
+    }
+    function renderUnderReview() {
+      const s = deskStructure();
+      const t = $('#vd-ur-title'); if (t) t.textContent = `${state.ticker || '—'} ${s.title || ''}`.trim();
+      const sub = $('#vd-ur-sub'); if (sub) sub.textContent = `Exp ${fmtExpiry(state.selectedExpiry)} · ${s.dte}d · ${state.qty} lot${state.qty === 1 ? '' : 's'}`;
+    }
+
+    // ---- evidence mini-charts (drawn from real state numbers, never a model) --
+    function vdBars(items, hue) {
+      const W = 260, H = 74, base = H - 14, n = items.length, bw = (W - 16) / n;
+      let g = `<path class="grid" d="M0 ${base}H${W}" stroke="var(--vd-line2)" stroke-width="1"/>`;
+      items.forEach((it, i) => {
+        const frac = Math.max(0, Math.min(1, (it.max ? it.val / it.max : 0)));
+        const bh = frac * (H - 26), x = 8 + i * bw + bw * 0.18, w = bw * 0.64;
+        g += `<rect x="${x.toFixed(1)}" y="${(base - bh).toFixed(1)}" width="${w.toFixed(1)}" height="${bh.toFixed(1)}" fill="${hue}" opacity="${it.dim ? '.35' : '.8'}"/>`;
+        g += `<text x="${(x + w / 2).toFixed(1)}" y="${H - 3}" text-anchor="middle">${it.label}</text>`;
+      });
+      return `<svg class="vd-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${g}</svg>`;
+    }
+    function vdWallMap(putWall, callWall, spot, hue) {
+      const W = 260, H = 74, y = 40;
+      const vals = [putWall, callWall, spot].filter(v => v != null && !Number.isNaN(v));
+      if (vals.length < 2) return vdBars([{ label: 'walls', val: 0, max: 1 }], hue);
+      const lo = Math.min(...vals) * 0.985, hi = Math.max(...vals) * 1.015, r = (hi - lo) || 1;
+      const px = v => (8 + ((v - lo) / r) * (W - 16));
+      let g = `<path class="grid" d="M8 ${y}H${W - 8}" stroke="var(--vd-line3)" stroke-width="1"/>`;
+      const tick = (v, label, col) => v == null ? '' :
+        `<line x1="${px(v).toFixed(1)}" y1="${y - 10}" x2="${px(v).toFixed(1)}" y2="${y + 10}" stroke="${col}" stroke-width="2"/>` +
+        `<text x="${px(v).toFixed(1)}" y="${y + 22}" text-anchor="middle">${label} ${vdNum(v, 0)}</text>`;
+      g += tick(putWall, 'Put', 'var(--vd-no)') + tick(callWall, 'Call', 'var(--vd-no)') + tick(spot, 'Spot', hue);
+      return `<svg class="vd-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${g}</svg>`;
+    }
+
+    // ---- per-agent read specs (every figure from state / engine snapshot) -----
+    function buildReadSpecs(reports) {
+      const ev = state.evidence || {};
+      const rv = (state._techData && typeof state._techData.realizedVol30d === 'number') ? state._techData.realizedVol30d : null;
+      const pol = (typeof ev.sentiment?.polarity === 'number') ? ev.sentiment.polarity : null;
+      const cats = Array.isArray(ev.sentiment?.catalystsInWindow) ? ev.sentiment.catalystsInWindow.filter(Boolean) : [];
+      const chain = state.volConf != null ? state.volConf : state.deltaConf;
+      const inputs = deskReadingInputs();
+      const line = k => (reports && reports[k] && reports[k].finding) || ev[k]?.summary || '';
+      const S = {};
+      S.technical = {
+        head: 'RSI', val: state.rsi != null ? vdNum(state.rsi, 0) : '—', pct: vdClampPct(state.rsi),
+        note: state.rsi == null ? '' : state.rsi > 70 ? 'Overbought' : state.rsi < 30 ? 'Oversold' : 'Mid-range',
+        evTitle: 'RSI & trend strength', chart: vdBars([
+          { label: 'RSI', val: +state.rsi || 0, max: 100 }, { label: 'ADX', val: +state.adx || 0, max: 60 }], vdHue('technical')),
+        line: line('technical'), inputs: inputs.technical.split(' · '),
+        tiles: [['ADX', vdNum(state.adx, 1), (state.adx != null && state.adx < 20) ? 'No trend' : ''], ['ATR', state.atr14 != null ? '$' + vdNum(state.atr14, 2) : '—', ''], ['Trend', ev.technical?.trend || '—', ''], ['Breakout', ev.technical?.breakoutRisk || '—', '']]
+      };
+      S.gamma = {
+        head: 'OI conf', val: state.oiConf != null ? state.oiConf.toFixed(2) : '—', pct: state.oiConf != null ? state.oiConf * 100 : 0,
+        low: state.oiConf != null && state.oiConf < 0.40, note: state.oiConf == null ? '' : state.oiConf < 0.40 ? 'Unreliable' : 'Usable',
+        evTitle: 'Gamma walls vs spot', chart: vdWallMap(state.putWall, state.callWall, state.spot, vdHue('gamma')),
+        line: line('gamma'), inputs: inputs.gamma.split(' · '),
+        tiles: [['Put wall', vdNum(state.putWall, 0), ''], ['Call wall', vdNum(state.callWall, 0), ''], ['Flip dist', ev.gamma?.flipDistance != null ? vdNum(ev.gamma.flipDistance, 1) : '—', ''], ['Integrity', ev.gamma?.wallIntegrity != null ? vdNum(ev.gamma.wallIntegrity, 2) : '—', '']]
+      };
+      S.iv = {
+        head: 'IV rank', val: state.ivRank != null ? vdNum(state.ivRank, 0) : '—', pct: vdClampPct(state.ivRank),
+        note: state.ivRank == null ? '' : state.ivRank >= 60 ? 'Elevated' : state.ivRank <= 25 ? 'Low' : 'Moderate',
+        evTitle: 'Implied vs realised vol', chart: vdBars([
+          { label: 'IV', val: +state.atmIv || 0, max: Math.max(60, (+state.atmIv || 0), (+rv || 0)) },
+          { label: 'RV', val: +rv || 0, max: Math.max(60, (+state.atmIv || 0), (+rv || 0)), dim: true }], vdHue('iv')),
+        line: line('iv'), inputs: inputs.iv.split(' · '),
+        tiles: [['Implied', state.atmIv != null ? vdNum(state.atmIv, 1) + '%' : '—', ''], ['Realised', rv != null ? vdNum(rv, 1) + '%' : '—', ''], ['IV / RV', (state.atmIv && rv) ? (state.atmIv / rv).toFixed(2) : '—', ''], ['Premium', ev.iv?.premiumFairness || '—', '']]
+      };
+      const chainPct = chain != null ? Math.round(chain * 100) : null;
+      S.sentiment = {
+        head: 'Polarity', val: pol != null ? (pol > 0 ? '+' : '') + pol.toFixed(2) : '—', pct: pol != null ? (pol + 1) / 2 * 100 : 50,
+        note: pol == null ? '' : pol > 0.1 ? 'Positive' : pol < -0.1 ? 'Negative' : 'Balanced',
+        evTitle: 'Flow & chain depth', chart: vdBars([
+          { label: 'OI', val: +state.oiConf || 0, max: 1 }, { label: 'Chain', val: +chain || 0, max: 1 }], vdHue('sentiment')),
+        line: line('sentiment'), inputs: [`${cats.length} catalyst${cats.length === 1 ? '' : 's'}`, chainPct != null ? `chain ${chainPct}%` : 'chain n/a'],
+        tiles: [['Catalysts', String(cats.length), ''], ['Polarity', pol != null ? pol.toFixed(2) : '—', ''], ['OI conf', state.oiConf != null ? state.oiConf.toFixed(2) : '—', ''], ['Chain', chainPct != null ? chainPct + '%' : '—', '']]
+      };
+      return S;
+    }
+
+    // ---- build the accordion (screen 1) --------------------------------------
+    function buildReadCards(specs) {
+      const wrap = $('#vd-reads'); if (!wrap) return;
+      const analysts = DESK_AGENTS.filter(a => a.ph === 1);
+      wrap.innerHTML = analysts.map(a => {
+        const s = specs[a.key];
+        const chips = s.inputs.map(x => `<span class="vd-chip">${escHtml(x)}</span>`).join('');
+        const tiles = s.tiles.map(t => `<div class="vd-tile"><span>${escHtml(t[0])}</span><b>${escHtml(String(t[1]))}</b>${t[2] ? `<em>${escHtml(t[2])}</em>` : ''}</div>`).join('');
+        return `<article class="vd-read" id="vd-rd-${a.key}" style="--hue:${vdHue(a.key)}">
+          <div class="vd-strip" role="button" tabindex="0" aria-expanded="false">
+            <span class="vd-th"><img src="./public/agents/${a.por}-128.jpg" alt="" aria-hidden="true" width="38" height="38"></span>
+            <span class="vd-nm"><b>${a.cn}</b><span>${a.role}</span></span>
+            <span class="vd-hl">${escHtml(s.head)} <b>${escHtml(s.val)}</b></span>
+            <span class="vd-sy" id="vd-sy-${a.key}"></span>
+            <span class="vd-rt"><span class="vd-t" id="vd-st-${a.key}">Queued</span><span class="vd-vchip" id="vd-sc-${a.key}"></span></span>
+          </div>
+          <div class="vd-full">
+            <div class="vd-ban">
+              <img src="./public/agents/${a.por}-poster.jpg" alt="" aria-hidden="true" width="640" height="360">
+              <video id="vd-vid-${a.key}" muted loop playsinline preload="none" poster="./public/agents/${a.por}-poster.jpg" aria-hidden="true"><source src="./public/agents/${a.por}.mp4" type="video/mp4"></video>
+              <span class="vd-btitle"><b class="vd-cn">${a.cn}</b><span class="vd-role">${a.role}</span></span>
+              <span class="vd-bstate"><span class="vd-dur" id="vd-dur-${a.key}"></span><span class="vd-waiting" id="vd-wt-${a.key}">Queued</span><span class="vd-vchip" id="vd-vc-${a.key}"></span></span>
+            </div>
+            <div class="vd-detail">
+              <div class="vd-ev"><span class="vd-evlab"><span>${escHtml(s.evTitle)}</span><span>Computed by the engine</span></span>${s.chart}</div>
+              <p class="vd-say" id="vd-say-${a.key}"></p>
+              <div class="vd-inputs">${chips}</div>
+            </div>
+            <div class="vd-bodyrow">
+              <div class="vd-head1"><span>${escHtml(s.head)}</span><b>${escHtml(s.val)}</b><i id="vd-g-${a.key}"${s.low ? ' class="low"' : ''}></i>${s.note ? `<em>${escHtml(s.note)}</em>` : ''}</div>
+              <div class="vd-tiles">${tiles}</div>
+            </div>
+          </div>
+        </article>`;
+      }).join('');
+      // Accordion: one open at a time; completed rows are clickable + keyboard-operable.
+      wrap.querySelectorAll('.vd-read').forEach(card => {
+        const strip = card.querySelector('.vd-strip');
+        const toggle = () => {
+          const was = card.classList.contains('open');
+          wrap.querySelectorAll('.vd-read').forEach(r => { r.classList.remove('open'); const st = r.querySelector('.vd-strip'); if (st) st.setAttribute('aria-expanded', 'false'); });
+          if (!was) { card.classList.add('open'); strip.setAttribute('aria-expanded', 'true'); }
+        };
+        strip.addEventListener('click', toggle);
+        strip.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+      });
+    }
+
+    // ---- screens (phase nav within Step 4) -----------------------------------
+    function showScreen(n) {
+      ['vd-s0', 'vd-s1'].forEach((id, i) => { const s = $('#' + id); if (s) s.classList.toggle('on', i === n); });
+      $('#vd-pnav')?.querySelectorAll('.vd-pstep').forEach((b, i) => { b.classList.toggle('on', i === n); b.classList.toggle('did', i < n); });
+    }
+    function vdPlay(id) { if (VD_REDUCE) return; const v = $('#' + id); if (v) { try { v.currentTime = 0; v.play().catch(() => {}); } catch (e) {} } }
+    function vdPause(id) { const v = $('#' + id); if (v) { try { v.pause(); } catch (e) {} } }
+
+    // ---- read reveal (phase 1) ------------------------------------------------
+    async function revealAgentRead(a, rep, counts) {
+      const k = a.key, hue = vdHue(k);
+      const card = $('#vd-rd-' + k); if (!card) return;
+      $('#vd-reads').querySelectorAll('.vd-read').forEach(r => r.classList.remove('open'));
+      card.classList.add('live', 'open');
+      card.querySelector('.vd-strip')?.setAttribute('aria-expanded', 'true');
+      $('#vd-st-' + k).textContent = 'Reading…';
+      const wt = $('#vd-wt-' + k); if (wt) wt.textContent = 'Reading…';
+      roState(k, 'live', 'Reading', ''); uiNow(a.cn);
+      counts.calls += 2; uiCalls(counts.calls);
+      vdPlay('vd-vid-' + k);
+      const t0 = Date.now();
+      await typeInto($('#vd-say-' + k), rep.line || rep.finding || '');
+      const held = Date.now() - t0;
+      if (!VD_REDUCE && held < vdPace()) await sleep(vdPace() - held);
+      // land
+      card.classList.remove('live'); card.classList.add('done');
+      vdPause('vd-vid-' + k);
+      const chip = deskChip(k, rep.stance);
+      ['vd-sc-' + k, 'vd-vc-' + k].forEach(id => { const c = $('#' + id); if (c) { c.textContent = chip.label; c.className = 'vd-vchip show ' + chip.cls; } });
+      const dur = (rep.dur != null ? rep.dur : held / 1000).toFixed(1) + 's';
+      $('#vd-st-' + k).textContent = dur; const d = $('#vd-dur-' + k); if (d) d.textContent = dur;
+      $('#vd-sy-' + k).textContent = rep.line || rep.finding || '';
+      const wt2 = $('#vd-wt-' + k); if (wt2) wt2.classList.add('gone');
+      card.classList.remove('open');
+      const gg = $('#vd-g-' + k); if (gg) gg.style.width = Math.max(12, vdClampPct(rep.pct)) + '%';
+      roState(k, 'done', chip.label, chip.cls);
+      counts.reported++;
+      if (rep.stance === 'caution') counts.flags++;
+      counts.agree = counts.reported - counts.flags;
+      uiProgress(counts.reported);
+    }
+
+    // ---- argument reveal (phase 2) -------------------------------------------
+    function argBullets(rep, reports, side) {
+      const ev = (side === 'bull') ? (reports.__bull || []) : (reports.__bear || []);
+      const thesis = rep && rep.finding ? [rep.finding] : [];
+      const items = thesis.concat(ev).slice(0, 4);
+      return items.map((txt, i) => [txt, i === 0 ? (side === 'bull' ? 'TITAN · thesis' : 'RAVEN · thesis') : 'Cited evidence']);
+    }
+    async function revealSide(side, rep, reports) {
+      const key = side === 'bull' ? 'bull' : 'bear';
+      const vid = side === 'bull' ? 'vd-dvid-titan' : 'vd-dvid-raven';
+      const el = $('#vd-side-' + side); if (el) el.classList.add('on', 'speaking');
+      roState(key, 'live', 'Arguing', ''); uiNow(side === 'bull' ? 'TITAN' : 'RAVEN');
+      vdPlay(vid);
+      const ul = $('#vd-case-' + side); if (ul) ul.innerHTML = '';
+      for (const [txt, src] of argBullets(rep, reports, side)) {
+        const li = document.createElement('li');
+        li.innerHTML = escHtml(txt) + `<span class="vd-src">${escHtml(src)}</span>`;
+        ul.appendChild(li);
+        await sleep(VD_REDUCE ? 0 : 90);
+        li.classList.add('show');
+        await sleep(VD_REDUCE ? 0 : Math.min(vdPace() / 3, 420));
+      }
+      if (el) el.classList.remove('speaking');
+      vdPause(vid);
+      const chip = deskChip(key, rep ? rep.stance : (key === 'bull' ? 'supportive' : 'caution'));
+      roState(key, 'done', chip.label, chip.cls);
+    }
+    function revealDep() {
+      const chain = $('#vd-chain'); if (!chain) return;
+      const s = deskStructure();
+      const oc = state.oiConf != null ? state.oiConf.toFixed(2) : 'n/a';
+      const band = s.emPct != null ? '±' + s.emPct.toFixed(1) + '%' : 'the expected band';
+      const arrow = '<svg class="vd-arrow" width="18" height="12" viewBox="0 0 18 12" aria-hidden="true"><path d="M1 6h15M12 2l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      const node = (por, cn, txt) => `<span class="vd-node2"><span class="vd-m"><img src="./public/agents/${por}-128.jpg" alt="" aria-hidden="true" width="34" height="34"></span><span class="vd-nt"><b>${cn}</b>${txt}</span></span>`;
+      chain.innerHTML =
+        node('sigma', 'SIGMA', `flags the gamma walls unreliable — OI confidence ${oc}`) + arrow +
+        node('titan', 'TITAN', `derives the ${band} expected band from those same walls`) + arrow +
+        node('raven', 'RAVEN', 'objects that the band inherits the flaw');
+      $('#vd-dep')?.classList.add('on');
+    }
+
+    // ---- run the desk (Step 4: read + argument) ------------------------------
+    let vdElapsedTimer = null, vdStart = 0;
+    function vdStartClock() {
+      vdStart = Date.now();
+      const tick = () => { const s = ((Date.now() - vdStart) / 1000).toFixed(1) + 's'; const a = $('#vd-r-eta'); if (a) a.textContent = s; const b = $('#elapsed-timer'); if (b) b.textContent = s; };
+      tick(); vdElapsedTimer = setInterval(tick, 100);
+    }
+    function vdStopClock() { if (vdElapsedTimer) { clearInterval(vdElapsedTimer); vdElapsedTimer = null; } }
 
     function enterStage4() {
-      // Reset seats
-      ['technical','gamma','iv','sentiment','bull','bear','risk','judge'].forEach(a => {
-        setSeatState(a, '', 'Waiting...', null, null);
-        const tagEl = $(`#vp-tag-${a}`);
-        if (tagEl) tagEl.innerHTML = '';
-        const txEl = $(`#vp-tx-${a}`);
-        if (txEl) { txEl.textContent = ''; txEl.classList.add('hidden'); }
-      });
-      // Reset the raw-trace inspector so a prior run's calls don't linger.
-      const insp = $('#vp-trace-inspector');
-      if (insp) { insp.innerHTML = ''; insp.classList.add('hidden'); }
-      const inspBtn = $('#vp-trace-btn');
-      if (inspBtn) inspBtn.textContent = 'Inspect model calls';
-      setPhaseActive(1);
-      $('#elapsed-timer').textContent = '0.0s';
-
-      verifyStart = Date.now();
-      verifyTimer = setInterval(() => {
-        $('#elapsed-timer').textContent = ((Date.now() - verifyStart) / 1000).toFixed(1) + 's';
-      }, 100);
-
-      runVerificationAnimation();
+      showScreen(0);
+      if (deskReady()) { restoreCompleted(deskCache.reports); return; }
+      runVerificationDesk();
     }
 
-    async function runVerificationAnimation() {
-      // Rate limit check before verification
+    async function runVerificationDesk() {
+      // Rate limit before spending a real desk run.
       if (!isDemo && window.checkUsageLimit) {
-        try {
-          var usage = await window.checkUsageLimit();
-          if (!usage.allowed) {
-            alert('Daily limit reached (' + usage.used + '/' + usage.limit + '). Try again tomorrow.');
-            return;
-          }
-        } catch(e) { console.warn('Usage check failed:', e); }
+        try { const u = await window.checkUsageLimit(); if (!u.allowed) { alert('Daily limit reached (' + u.used + '/' + u.limit + '). Try again tomorrow.'); return; } }
+        catch (e) { console.warn('Usage check failed:', e); }
       }
-      // Track usage (metered — consumes daily credits)
+      // Reset UI + build pending state from the deterministic snapshot.
+      invalidateDesk();
+      buildRoster(); DESK_AGENTS.forEach(a => roState(a.key, null, 'Queued', ''));
+      renderUnderReview(); renderCoverageTile(null);
+      buildReadCards(buildReadSpecs(null));
+      showScreen(0);
+      $('#vd-dep')?.classList.remove('on');
+      ['vd-case-bull', 'vd-case-bear'].forEach(id => { const u = $('#' + id); if (u) u.innerHTML = ''; });
+      ['vd-side-bull', 'vd-side-bear'].forEach(id => $('#' + id)?.classList.remove('on', 'speaking'));
+      uiProgress(0); uiCalls(0); uiNow('Desk running…');
+      const hash = structureHash();
+      vdStartClock();
 
-      // Fire the /verify API call immediately (runs in parallel with the animation)
-      let verifyPromise;
-      if (!isDemo) {
-        verifyPromise = callVerify(state.legs);
-      }
+      const verifyPromise = isDemo ? null : callVerify(state.legs);
 
-      const AGENT_TAGS = { technical: 'supportive', gamma: 'supportive', iv: 'caution', sentiment: 'neutral', bull: 'supportive', bear: 'caution', risk: 'caution', judge: 'neutral' };
-
-      const timeline = [
-        { agent: 'technical', phase: 1, startAt: 300, doneAt: 3200, result: AGENT_RESULTS.technical },
-        { agent: 'gamma', phase: 1, startAt: 500, doneAt: 4100, result: AGENT_RESULTS.gamma },
-        { agent: 'iv', phase: 1, startAt: 800, doneAt: 5500, result: AGENT_RESULTS.iv },
-        { agent: 'sentiment', phase: 1, startAt: 1100, doneAt: 6800, result: AGENT_RESULTS.sentiment },
-        { agent: 'bull', phase: 2, startAt: 7200, doneAt: 12000, result: AGENT_RESULTS.bull },
-        { agent: 'bear', phase: 2, startAt: 7500, doneAt: 13500, result: AGENT_RESULTS.bear },
-        { agent: 'risk', phase: 3, startAt: 15000, doneAt: 20000, result: AGENT_RESULTS.risk },
-        { agent: 'judge', phase: 3, startAt: 15500, doneAt: 23500, result: AGENT_RESULTS.judge }
-      ];
-
-      const startTime = Date.now();
-      let activePhase = 0;
-      const thinkingIntervals = {};
-
-      for (const step of timeline) {
-        const waitStart = step.startAt - (Date.now() - startTime);
-        if (waitStart > 0) await sleep(waitStart);
-
-        if (step.phase !== activePhase) {
-          activePhase = step.phase;
-          setPhaseActive(activePhase);
+      // Pre-roll: the desk runs server-side for 20–60s, so cycle the analyst cards
+      // with video + "Reading" motion during the wait — never a frozen 0%. Stops
+      // the instant the engine responds.
+      let preOn = !isDemo && !VD_REDUCE;
+      const preAnalysts = DESK_AGENTS.filter(a => a.ph === 1);
+      if (preOn) preAnalysts.forEach(a => roState(a.key, 'live', 'Reading', ''));
+      const preroll = (async () => {
+        let i = 0;
+        while (preOn) {
+          const k = preAnalysts[i % preAnalysts.length].key;
+          $('#vd-reads')?.querySelectorAll('.vd-read').forEach(r => r.classList.remove('open', 'live'));
+          const card = $('#vd-rd-' + k);
+          if (card) { card.classList.add('live', 'open'); card.querySelector('.vd-strip')?.setAttribute('aria-expanded', 'true'); }
+          const st = $('#vd-st-' + k); if (st) st.textContent = 'Reading…';
+          vdPlay('vd-vid-' + k);
+          await sleep(2400);
+          if (!preOn) break;
+          vdPause('vd-vid-' + k);
+          i++;
         }
+      })();
+      const stopPreroll = () => {
+        preOn = false;
+        $('#vd-reads')?.querySelectorAll('.vd-read').forEach(r => r.classList.remove('open', 'live'));
+        preAnalysts.forEach(a => { vdPause('vd-vid-' + a.key); roState(a.key, null, 'Queued', ''); const st = $('#vd-st-' + a.key); if (st) st.textContent = 'Queued'; });
+      };
+      // Hang guard: a genuinely stuck /verify fails gracefully instead of spinning.
+      const withTimeout = pr => Promise.race([pr, new Promise((_, rej) => setTimeout(() => rej(new Error('The desk timed out. Please try again.')), 90000))]);
 
-        // Processing state with rotating messages
-        const msgs = THINKING_MESSAGES[step.agent] || ['Analyzing...'];
-        let msgIdx = 0;
-        setSeatState(step.agent, 'processing', msgs[0]);
-        thinkingIntervals[step.agent] = setInterval(() => {
-          msgIdx = (msgIdx + 1) % msgs.length;
-          setSeatState(step.agent, 'processing', msgs[msgIdx]);
-        }, 1500);
-      }
-
-      // Complete each agent
-      for (const step of timeline) {
-        const waitDone = step.doneAt - (Date.now() - startTime);
-        if (waitDone > 0) await sleep(waitDone);
-
-        clearInterval(thinkingIntervals[step.agent]);
-        setSeatState(step.agent, 'done', step.result, AGENT_TAGS[step.agent]);
-      }
-
-      setPhaseActive(3);
-
-      clearInterval(verifyTimer);
-      state.totalTime = (Date.now() - verifyStart) / 1000;
-
-      // In demo, just use hardcoded verdict. In real mode, the API call was
-      // fired in parallel with the animation — await the result now.
+      let reports = null, vData = null;
       if (isDemo) {
-        const demo = DEMO[state.ticker] || DEMO.SHOP;
-        state.verdict = demo.verdict;
-        state.mutations = demo.mutations;
-        state.debate = demo.debate;
-        state.totalCost += 0.05;
-        state.totalTokens = 12450;
-        state.apiCalls++;
-        updateBadge();
+        const demo = (typeof DEMO !== 'undefined' && (DEMO[state.ticker] || DEMO.SHOP)) || null;
+        if (demo) { state.verdict = demo.verdict; state.mutations = demo.mutations; state.debate = demo.debate; }
+        reports = {}; DESK_AGENTS.forEach(a => { reports[a.key] = demoReport(a.key); });
+        reports.__bull = ['Premium richness supports the structure']; reports.__bear = ['Risk factors require attention'];
       } else {
-        // Show "rendering verdict" if the API is still in-flight
-        const phaseLabel = $('#vp-phase-label');
-        if (phaseLabel) phaseLabel.textContent = 'Rendering verdict...';
         try {
-          const vData = await verifyPromise;
-          state.verifyData = vData; // store full response for stage 5
-          state.verifyError = null;
+          vData = await withTimeout(verifyPromise);
+          stopPreroll();
+          state.verifyData = vData; state.verifyError = null;
           applyVerifyResult(vData);
-          populateRealSeats(vData); // show what the agents actually found in Step 4
+          reports = buildDeskReports(vData);
+          renderCoverageTile(reports);
           state.totalTokens = (vData.cost?.totalInputTokens || 0) + (vData.cost?.totalOutputTokens || 0);
-          state.totalTime = (vData.durationMs || 0) / 1000;
           addCost(vData.cost);
         } catch (err) {
-          // Surface the failure — do NOT fall through to canned desk text.
+          stopPreroll(); vdStopClock();
           state.verifyError = err.message;
           state.evidence = {}; state.debateRounds = []; state.riskReport = {}; state.mutations = [];
           state.verdict = { verdictWord: 'Verification unavailable', confidence: 0, verdictClass: 'fail', summary: 'The desk could not complete this run: ' + err.message, flipConditions: [] };
+          uiNow('—');
+          await sleep(500); goToStage(5, true); renderStage5(); return;
         }
       }
 
-      // Track usage regardless of success/failure (if we got this far, credits were consumed)
-      if (!isDemo && window.trackUsage) {
-        try {
-          const models = state.verifyData?.cost?.calls?.map(c => c.model).filter(Boolean) || ['pipeline'];
-          const cost = state.verifyData?.cost?.totalCost || state.totalCost || 0.05;
-          const tokens = state.totalTokens || 10000;
-          console.log('[Usage] Tracking verify for', state.ticker, '| models:', models, '| cost:', cost, '| mode:', window.USER_MODEL_MODE);
-          await window.trackUsage('verify', state.ticker, { models: [...new Set(models)], cost, tokens });
-          console.log('[Usage] Track success');
-        } catch (e) { console.error('[Usage] Track error:', e); }
-      }
+      // Rebuild the read cards now that the engine enums are populated, then reveal.
+      const specs = buildReadSpecs(reports);
+      DESK_AGENTS.filter(a => a.ph === 1).forEach(a => { const s = specs[a.key]; if (reports[a.key]) reports[a.key].line = s.line; Object.assign(reports[a.key] || (reports[a.key] = {}), { pct: s.pct, stance: reports[a.key]?.stance || AGENT_TAGS_DESK[a.key] }); });
+      buildReadCards(specs);
 
-      // Brief pause then go to verdict
-      await sleep(800);
-      goToStage(5);
-      renderStage5();
+      const counts = { calls: 0, reported: 0, flags: 0, agree: 0 };
+      // Phase 1 — the read (accordion)
+      showScreen(0); $('#vd-pnav')?.querySelectorAll('.vd-pstep')[0]?.removeAttribute('disabled');
+      for (const a of DESK_AGENTS.filter(x => x.ph === 1)) {
+        await revealAgentRead(a, reports[a.key] || { stance: AGENT_TAGS_DESK[a.key], line: '', pct: 0 }, counts);
+      }
+      // Phase 2 — the argument
+      showScreen(1); $('#vd-pnav')?.querySelectorAll('.vd-pstep')[1]?.removeAttribute('disabled');
+      await sleep(VD_REDUCE ? 0 : 250);
+      await revealSide('bull', reports.bull, reports); counts.calls += 2; uiCalls(counts.calls); counts.reported++; uiProgress(counts.reported);
+      await revealSide('bear', reports.bear, reports); counts.calls += 2; uiCalls(counts.calls);
+      if (reports.bear && reports.bear.stance === 'caution') counts.flags++;
+      counts.reported++; uiProgress(counts.reported);
+      await sleep(VD_REDUCE ? 0 : 380); revealDep();
+
+      vdStopClock(); uiNow('Awaiting your review');
+      state.deskTime = (Date.now() - vdStart) / 1000;
+      state.phase3Shown = null; // force the Step-5 reveal to animate on first view
+      // Persist for Step 5 + caching; enable the verdict without auto-advancing.
+      deskCache = { hash, vData, reports, done: true };
+      state.deskReports = reports; state.deskCounts = counts;
+      const seeBtn = $('#vd-seeverdict'); if (seeBtn) seeBtn.classList.add('ready');
+      if (!isDemo && vData && typeof renderTraceInspector === 'function') { try { renderTraceInspector(vData); } catch (e) {} }
+      if (!isDemo && window.trackUsage) {
+        try { const models = state.verifyData?.cost?.calls?.map(c => c.model).filter(Boolean) || ['pipeline']; await window.trackUsage('verify', state.ticker, { models: [...new Set(models)], cost: state.verifyData?.cost?.totalCost || 0.05, tokens: state.totalTokens || 10000 }); }
+        catch (e) { console.error('[Usage] Track error:', e); }
+      }
     }
+
+    // ---- restore a completed run from cache (no fetch, no animation) ----------
+    function restoreCompleted(reports) {
+      vdStopClock();
+      buildRoster();
+      renderUnderReview(); renderCoverageTile(reports);
+      const specs = buildReadSpecs(reports);
+      DESK_AGENTS.filter(a => a.ph === 1).forEach(a => { if (reports[a.key]) { reports[a.key].line = specs[a.key].line; reports[a.key].pct = specs[a.key].pct; } });
+      buildReadCards(specs);
+      let reported = 0, flags = 0, calls = 0;
+      DESK_AGENTS.filter(a => a.ph === 1).forEach(a => {
+        const k = a.key, rep = reports[k] || { stance: AGENT_TAGS_DESK[k] };
+        const card = $('#vd-rd-' + k); if (card) card.classList.add('done');
+        const chip = deskChip(k, rep.stance);
+        ['vd-sc-' + k, 'vd-vc-' + k].forEach(id => { const c = $('#' + id); if (c) { c.textContent = chip.label; c.className = 'vd-vchip show ' + chip.cls; } });
+        $('#vd-sy-' + k).textContent = rep.line || rep.finding || '';
+        const wt = $('#vd-wt-' + k); if (wt) wt.classList.add('gone');
+        const gg = $('#vd-g-' + k); if (gg) gg.style.width = Math.max(12, vdClampPct(specs[k].pct)) + '%';
+        roState(k, 'done', chip.label, chip.cls);
+        reported++; if (rep.stance === 'caution') flags++; calls += 2;
+      });
+      // argument (completed)
+      ['bull', 'bear'].forEach(side => {
+        const key = side, rep = reports[key];
+        const el = $('#vd-side-' + side); if (el) el.classList.add('on');
+        const ul = $('#vd-case-' + side); if (ul) ul.innerHTML = argBullets(rep, reports, side).map(([t, s]) => `<li class="show">${escHtml(t)}<span class="vd-src">${escHtml(s)}</span></li>`).join('');
+        const chip = deskChip(key, rep ? rep.stance : (key === 'bull' ? 'supportive' : 'caution'));
+        roState(key, 'done', chip.label, chip.cls);
+        reported++; if (rep && rep.stance === 'caution') flags++; calls += 2;
+      });
+      revealDep();
+      uiCalls(calls); uiProgress(reported); uiNow('Awaiting your review');
+      DESK_AGENTS.filter(a => a.ph === 3).forEach(a => roState(a.key, 'done', deskChip(a.key, reports[a.key]?.stance).label, deskChip(a.key, reports[a.key]?.stance).cls));
+      $('#vd-pnav')?.querySelectorAll('.vd-pstep').forEach(b => b.removeAttribute('disabled'));
+      const seeBtn = $('#vd-seeverdict'); if (seeBtn) seeBtn.classList.add('ready');
+    }
+
+    // Replay re-runs the reveal animation from cache (no /verify).
+    async function replayDesk() {
+      if (!deskCache.reports) return;
+      const reports = deskCache.reports;
+      buildRoster(); DESK_AGENTS.forEach(a => roState(a.key, null, 'Queued', ''));
+      buildReadCards(buildReadSpecs(reports));
+      $('#vd-dep')?.classList.remove('on');
+      ['vd-side-bull', 'vd-side-bear'].forEach(id => $('#' + id)?.classList.remove('on', 'speaking'));
+      uiProgress(0); uiCalls(0); showScreen(0); vdStartClock();
+      const counts = { calls: 0, reported: 0, flags: 0, agree: 0 };
+      for (const a of DESK_AGENTS.filter(x => x.ph === 1)) await revealAgentRead(a, reports[a.key], counts);
+      showScreen(1);
+      await revealSide('bull', reports.bull, reports); counts.reported++; uiProgress(counts.reported);
+      await revealSide('bear', reports.bear, reports); counts.reported++; uiProgress(counts.reported);
+      await sleep(VD_REDUCE ? 0 : 380); revealDep(); vdStopClock(); uiNow('Awaiting your review');
+    }
+
+    // Phase-nav clicks (jump between completed screens) + controls.
+    $('#vd-pnav')?.addEventListener('click', e => { const b = e.target.closest('.vd-pstep'); if (b && !b.disabled) showScreen(+b.dataset.s); });
+    $('#vd-seeverdict')?.addEventListener('click', () => { if (deskReady()) { goToStage(5, true); renderStage5(); } });
+    $('#vd-replay')?.addEventListener('click', () => { const s4 = $('#stage-4'); if (s4 && !s4.classList.contains('hidden')) replayDesk(); });
 
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -3550,207 +4276,200 @@
     /* ================================================================
        STAGE 5: VERDICT & MUTATE
        ================================================================ */
+    // Coverage rows for the Step-5 rail (reuses the kept coverage helpers).
+    function vdCoverageHtml(reports) {
+      const rv = (state._techData && typeof state._techData.realizedVol30d === 'number') ? state._techData.realizedVol30d : null;
+      const chain = vdClamp01(state.volConf != null ? state.volConf : state.deltaConf);
+      const sd = reports && reports.__sentiment;
+      return coverageRow('Technical', vdPresentFrac([state.rsi, state.adx, state.atr14])) +
+        coverageRow('Options flow', vdClamp01(state.oiConf) != null ? vdClamp01(state.oiConf) : 0) +
+        coverageRow('Volatility', vdPresentFrac([state.atmIv, state.ivRank, rv])) +
+        coverageRow('Sentiment', sd ? vdPresentFrac([sd.polarity, sd.catalysts]) : null) +
+        coverageRow('Chain quality', chain != null ? chain : 0) +
+        coverageRow('Blended input confidence', vdClamp01(state.confScore), { blend: true });
+    }
+
     function renderStage5() {
       const v = state.verdict;
-      if (!v) {
-        $('#verdict-content').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">No verdict data available.</div>';
-        return;
-      }
-      // Failed desk run — show the real error, not a fabricated verdict.
+      if (!v) { $('#verdict-content').innerHTML = '<div style="padding:40px;text-align:center;color:var(--ink-muted)">No verdict data available.</div>'; return; }
+      // Failed desk run — surface the real error, never a fabricated verdict.
       if (state.verifyError) {
         $('#verdict-content').innerHTML = `
-          <div class="v5-banner fail" style="text-align:left">
-            <span class="v5-pill fail">Verification failed</span>
-            <div style="font-size:18px;font-weight:800;margin:8px 0">The desk couldn't complete this run</div>
-            <div style="font-size:13px;color:var(--ink-mid);line-height:1.5">${state.verifyError}</div>
-            <div style="font-size:12px;color:var(--ink-muted);margin-top:10px">No verdict is shown because the agents did not return a result — retrying re-runs the full desk.</div>
-          </div>
-          <div style="display:flex;gap:10px;margin-top:14px">
-            <button class="btn-primary" onclick="goToStage(4)" style="padding:10px 20px">Retry verification</button>
-            <button class="btn-primary" onclick="goToStage(3)" style="padding:10px 20px;background:var(--white);color:var(--ink);border:1px solid var(--border)">Back to strikes</button>
+          <div class="vdesk" data-theme="light" style="margin-top:0">
+            <div class="vd-card vd-pad" style="border-color:var(--vd-flagline)">
+              <p class="vd-lab" style="color:var(--vd-no)">Verification failed</p>
+              <h3 style="font-size:1.3rem;margin-bottom:6px">The desk couldn't complete this run</h3>
+              <p style="font-size:13px;color:var(--vd-body2);line-height:1.5">${escHtml(state.verifyError)}</p>
+              <p style="font-size:12px;color:var(--vd-stone);margin-top:10px">No verdict is shown because the agents did not return a result — retrying re-runs the full desk.</p>
+              <div class="vd-decide-row"><button class="vd-dbtn primary" onclick="goToStage(4,true)">Retry verification</button><button class="vd-dbtn" onclick="goToStage(3)">Back to strikes</button></div>
+            </div>
           </div>`;
         return;
       }
 
-      const ev = state.evidence || {};
-      const nc = computeNetCredit();
-      const ml = computeMaxLoss(nc);
-      const bk = computeBreakevens();
-      const totalCredit = nc * 100 * state.qty;
-      const legsStr = state.legs.map(l => `${l.side === 'short' ? 'S' : 'L'} ${l.strike}${l.type[0].toUpperCase()}`).join(' / ');
+      const reports = state.deskReports || {};
+      const stances = deskAllStances(reports);
+      const flags = deskBlockingFlags(reports);
+      const cautionCount = Object.values(stances).filter(s => s === 'caution').length;
+      const agree = 8 - cautionCount;
+      const s = deskStructure();
+      const risk = state.riskReport || {};
+      const isBlocking = v.verdictClass === 'fail' || flags.length > 0;
+      const deskTime = state.deskTime != null ? state.deskTime.toFixed(1) + 's' : (state.totalTime ? state.totalTime.toFixed(1) + 's' : '—');
+      const chain = state.volConf != null ? state.volConf : state.deltaConf;
+      const chainPct = chain != null ? Math.round(chain * 100) : null;
+      const oc = state.oiConf != null ? state.oiConf.toFixed(2) : null;
+      const band = s.emPct != null ? '±' + s.emPct.toFixed(1) + '%' : null;
 
-      // Desk summary: classify each agent by its structured report field.
-      // Sentiment also gets a catalyst line so the read is more than a polarity word.
-      const sentData = ev.sentiment;
-      const catalysts = Array.isArray(sentData?.catalystsInWindow) ? sentData.catalystsInWindow.filter(Boolean) : [];
-      const sentExtra = typeof sentData?.polarity === 'number'
-        ? ` · polarity ${sentData.polarity > 0 ? '+' : ''}${sentData.polarity.toFixed(2)} · ${catalysts.length ? 'catalysts: ' + catalysts.join(', ') : 'no catalysts in window'}`
-        : '';
-      const agents = [
-        { key: 'technical', name: 'Technical', data: ev.technical, summary: ev.technical?.summary || AGENT_RESULTS.technical },
-        { key: 'gamma', name: 'Gamma', data: ev.gamma, summary: ev.gamma?.summary || AGENT_RESULTS.gamma },
-        { key: 'iv', name: 'IV/Skew', data: ev.iv, summary: ev.iv?.summary || AGENT_RESULTS.iv },
-        { key: 'sentiment', name: 'Sentiment', data: ev.sentiment, summary: (ev.sentiment?.summary || AGENT_RESULTS.sentiment) + sentExtra },
+      // Stepped reasoning — deterministic prose; every number interpolated from the engine.
+      const passN = ['technical', 'gamma', 'iv', 'sentiment'].filter(k => stances[k] !== 'caution').length;
+      const reasonSteps = [
+        ['What the read established',
+          `${passN} of 4 analysts cleared the read${state.rsi != null ? ` — RSI ${vdNum(state.rsi, 0)}` : ''}${state.ivRank != null ? `, IV rank ${vdNum(state.ivRank, 0)}` : ''}. ` +
+          (flags.includes('gamma_unreliable') ? `The gamma specialist dissented on open-interest confidence ${oc}.` : 'No single input dominated the read.'), false],
+        ['Where the argument broke',
+          (flags.includes('gamma_unreliable') && band)
+            ? `The bull's ${band} expected band is derived from the same gamma walls rated ${oc} confidence — the case in favour is not independent of the input the desk already distrusts.`
+            : `The bear's strongest objection rests on ${chainPct != null ? `chain quality at ${chainPct}%` : 'thin chain liquidity'}, which the bull case does not fully answer.`, true],
+        ['What risk added',
+          `Portfolio fit ${risk.portfolioFit || 'n/a'}${chainPct != null ? `, chain ${chainPct}%` : ''}${risk.thetaImpact != null ? `, theta ${vdNum(risk.thetaImpact, 0)}/day` : ''}${risk.vegaImpact != null ? `, vega ${vdNum(risk.vegaImpact, 0)}` : ''}.`, false]
       ];
-      agents.forEach(a => { a.stance = agentStance(a.key, a.data, a.summary); });
-      const supportive = agents.filter(a => a.stance === 'supportive').length;
-      const cautious = agents.filter(a => a.stance === 'caution').length;
-      const neutralCount = agents.filter(a => a.stance === 'neutral').length;
+      const thenText = deskVerdictSub(v.verdictClass) + '.';
 
-      const ringColor = v.verdictClass === 'pass' ? 'var(--green)' : v.verdictClass === 'fail' ? 'var(--red)' : 'var(--yellow)';
-      const confPct = v.confidence || 0;
-      const scalePos = Math.max(0, Math.min(100, confPct));
+      // Seven positions on the record (Oracle is the judge, not evidence in its own judgment).
+      const ledgerKeys = ['technical', 'gamma', 'iv', 'sentiment', 'bull', 'bear', 'risk'];
+      const recordHtml = ledgerKeys.map(k => {
+        const a = DESK_AGENTS.find(x => x.key === k), rep = reports[k] || {}, chip = deskChip(k, stances[k]);
+        const what = escHtml((rep.finding || '').slice(0, 120));
+        return `<div class="vd-rec" style="--hue:${vdHue(k)}"><span class="vd-dot"></span><span><span class="vd-top"><b class="vd-who">${a.cn}</b><span class="vd-vd ${chip.cls}">${chip.label}</span></span><span class="vd-what">${what}</span></span></div>`;
+      }).join('');
 
-      // "What would change this verdict" — real flip conditions from the judge,
-      // falling back to the risk desk's reasoning. No longer a repeat of the summary.
-      const flips = v.flipConditions || [];
-      const flipInner = flips.length
-        ? `<strong>What would change this verdict:</strong><ul style="margin:6px 0 0;padding-left:18px">${flips.map(f => `<li style="margin-bottom:3px">${f}</li>`).join('')}</ul>`
-        : (state.riskReport?.rationale
-            ? `<strong>What drove the score:</strong> ${state.riskReport.rationale}`
-            : `<strong>What drove the score:</strong> The desk weighed analyst evidence, debate arguments, and risk factors.`);
+      const riskTiles = [
+        ['Max risk / lot', s.ml != null ? '$' + Math.round(Math.abs(s.ml) / Math.max(1, state.qty)).toLocaleString() : '—'],
+        ['Lots', String(state.qty)],
+        ['Theta / day', risk.thetaImpact != null ? vdNum(risk.thetaImpact, 0) : '—'],
+        ['Vega', risk.vegaImpact != null ? vdNum(risk.vegaImpact, 0) : '—']
+      ].map(t => `<div class="vd-rg"><span>${t[0]}</span><b>${escHtml(String(t[1]))}</b></div>`).join('');
 
-      // One-line read on how the debate resolved, tied to the verdict class.
-      const debateSummary = v.verdictClass === 'pass'
-        ? 'The desk judged the bull case stronger — evidence supports entry.'
-        : v.verdictClass === 'fail'
-          ? 'The desk judged the bear case stronger — risks outweigh the edge.'
-          : 'The desk found the case balanced — proceed smaller and watch the flip conditions.';
       $('#verdict-content').innerHTML = `
-        <!-- Verdict banner -->
-        <div class="v5-banner ${v.verdictClass}">
-          <span class="v5-pill ${v.verdictClass}">${v.verdictClass === 'pass' ? 'Pass' : v.verdictClass === 'fail' ? 'Fail' : 'Caution'}</span>
-          <div style="font-size:22px;font-weight:800;margin:6px 0">${v.verdictWord}</div>
-          <div style="font-size:13px;color:var(--ink-mid);max-width:600px;margin:0 auto;line-height:1.5">${v.summary}</div>
-          <div class="v5-ring" style="border:3px solid ${ringColor};color:${ringColor}">${confPct}</div>
-          <div style="font-size:10px;color:var(--ink-muted);margin-top:-4px">Confidence score</div>
-          <div class="v5-scale">
-            <div style="background:var(--red)"></div>
-            <div style="background:var(--yellow)"></div>
-            <div style="background:var(--green)"></div>
-          </div>
-          <div style="position:relative;max-width:300px;margin:-10px auto 0;height:4px">
-            <div style="position:absolute;left:${scalePos}%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:var(--ink);top:-2px"></div>
-          </div>
-        </div>
-
-        <!-- Trade card -->
-        <div class="panel" style="padding:14px 18px;margin-top:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-            <div>
-              <div style="font-size:15px;font-weight:700">${state.selectedStrategy?.strategy || 'Trade'}</div>
-              <div style="font-size:11px;color:var(--ink-muted)">${state.ticker} \u00b7 ${state.selectedExpiry} \u00b7 ${state.qty} contracts \u00b7 ${legsStr}</div>
+      <div class="vdesk" data-theme="light" id="vd-stage5" style="margin-top:0">
+        <div class="vd-shell">
+          <aside class="vd-rail" id="vd-rail-5">
+            <div class="vd-card vd-pad"><p class="vd-lab">Under review</p><h3 style="font-size:1.1rem">${escHtml((state.ticker || '') + ' ' + (s.title || ''))}</h3><p style="margin:3px 0 0;font-size:12px;color:var(--vd-stone)">Exp ${fmtExpiry(state.selectedExpiry)} · ${s.dte}d · ${state.qty} lot${state.qty === 1 ? '' : 's'}</p></div>
+            <div class="vd-card vd-pad">
+              <p class="vd-lab">Desk progress</p>
+              <div class="vd-donut"><svg width="120" height="120" viewBox="0 0 126 126" aria-hidden="true"><circle class="vd-tr" cx="63" cy="63" r="54" fill="none" stroke-width="6"/><circle class="vd-pr" cx="63" cy="63" r="54" fill="none" stroke-width="6" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="0" transform="rotate(-90 63 63)"/></svg><div class="vd-mid"><b>100%</b><span>reported</span></div></div>
+              <div class="vd-kv"><span>Agreement</span><b>${agree} of 8</b></div>
+              <div class="vd-kv"><span>Blocking flags</span><b>${flags.length}</b></div>
+              <div class="vd-kv"><span>Desk time</span><b>${deskTime}</b></div>
+              <ul class="vd-roster" id="vd5-roster"></ul>
             </div>
-            <div style="font-size:16px;font-weight:700;font-family:var(--mono);color:${totalCredit>=0?'var(--green)':'var(--red)'}">
-              ${totalCredit>=0?'+':''}$${Math.abs(totalCredit).toFixed(0)}
+            <div class="vd-card vd-pad"><p class="vd-lab">Data coverage</p><div id="vd5-coverage">${vdCoverageHtml(reports)}</div></div>
+          </aside>
+
+          <main class="vd-main">
+            <div class="vd-shead"><div><h2>The verdict</h2><p>Risk is sized against the account, then the judge weighs the full record. The engine computed every figure; Oracle only reasons over them.</p></div><span class="vd-meta">2 agents · sequential</span></div>
+
+            <div class="vd-hero" id="vd-hero">
+              <span class="vd-vban"><img src="./public/agents/oracle-poster.jpg" alt="" aria-hidden="true" width="640" height="360"><video id="vd-dvid-oracle" muted loop playsinline preload="none" poster="./public/agents/oracle-poster.jpg" aria-hidden="true"><source src="./public/agents/oracle.mp4" type="video/mp4"></video></span>
+              <div><b class="vd-vbig" id="vd-verdict">Pending</b><span class="vd-vsub" id="vd-vsub">Awaiting the eighth report</span><div class="vd-flags" id="vd-flags"></div></div>
+              <div class="vd-vstats"><span class="vd-vst"><span>Agreement</span><b id="vd-c-agree">—</b></span><span class="vd-vst"><span>Blocking flags</span><b id="vd-c-flags">0</b></span><span class="vd-vst"><span>Desk time</span><b id="vd-c-time">—</b></span></div>
             </div>
-          </div>
-          <div class="pnl-chart-wrap"><canvas id="s5-pnl-canvas" height="160"></canvas></div>
+
+            <div class="vd-fgrid">
+              <div class="vd-card vd-pad"><p class="vd-lab">How Oracle reached it</p><div class="vd-reason" id="vd-reason"></div></div>
+              <div class="vd-risk" id="vd-risk">
+                <div class="vd-sh" style="gap:12px"><span class="vd-por"><img src="./public/agents/sentinel-256.jpg" alt="" aria-hidden="true" width="56" height="56"></span><span><span class="vd-cn2" style="color:var(--vd-amber);font-family:var(--vd-mono);font-size:10px;letter-spacing:.16em">SENTINEL</span><h3 style="font-size:1.15rem">Risk sizing</h3><span class="vd-rl">Risk manager</span></span></div>
+                <div class="vd-rgrid">${riskTiles}</div>
+                <p style="margin:13px 0 0;font-size:13px;color:var(--vd-body3)" id="vd-risk-say"></p>
+              </div>
+            </div>
+
+            <div class="vd-card vd-pad vd-ledger"><p class="vd-lab">Seven positions on the record</p><div class="vd-record" id="vd-record">${recordHtml}</div></div>
+
+            <div class="vd-card vd-pad vd-decide">
+              <p class="vd-lab">Your decision</p>
+              <p style="font-size:12px;color:var(--vd-body2);margin:0">${isBlocking ? 'The desk raised blocking flags. To proceed you must state an override reason — it is recorded with the publication.' : 'The desk cleared this structure. Accept to move to publish, or adjust the structure.'}</p>
+              <div class="vd-decide-row">
+                <button class="vd-dbtn primary" id="vd-accept" type="button">${isBlocking ? 'Override &amp; proceed' : 'Accept'}</button>
+                ${isBlocking ? '' : '<button class="vd-dbtn" id="vd-override-btn" type="button">Override with reason</button>'}
+                <button class="vd-dbtn" id="vd-adjust" type="button">Adjust structure</button>
+                <button class="vd-dbtn danger" id="vd-discard" type="button">Discard</button>
+              </div>
+              <div class="vd-override${isBlocking ? ' on' : ''}" id="vd-override">
+                <textarea id="vd-override-reason" placeholder="State why you are proceeding against the desk verdict…" aria-label="Override reason"></textarea>
+                <div class="vd-orow"><button class="vd-dbtn primary" id="vd-override-go" type="button">Proceed with override &#8594;</button><span class="vd-orerr" id="vd-override-err">A reason is required to override.</span></div>
+              </div>
+              <div id="publish-status" class="hidden" style="padding:10px 14px;border-radius:8px;font-size:12px;margin-top:10px;border:1px solid var(--vd-line)"></div>
+            </div>
+          </main>
         </div>
+      </div>`;
 
-        <!-- What the desk found -->
-        <div class="panel" style="padding:14px 18px;margin-top:12px">
-          <div style="font-size:14px;font-weight:700;margin-bottom:10px">What the desk found</div>
-          <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap">
-            <span style="font-size:12px;padding:4px 10px;border-radius:6px;background:var(--pass-bg);color:var(--pass-text);font-weight:600">${supportive} supportive</span>
-            <span style="font-size:12px;padding:4px 10px;border-radius:6px;background:var(--concern-bg);color:var(--concern-text);font-weight:600">${cautious} caution</span>
-            ${neutralCount ? `<span style="font-size:12px;padding:4px 10px;border-radius:6px;background:var(--cream-dark);color:var(--ink-muted);font-weight:600">${neutralCount} neutral</span>` : ''}
-          </div>
-          ${agents.map(a => {
-            const tagCls = a.stance === 'supportive' ? 'tag-supportive' : a.stance === 'caution' ? 'tag-caution' : 'tag-neutral';
-            // Chart link(s) for this specific finding, right after the text.
-            const chips = chartTabsFor(a.key, a.data)
-              .map(c => `<a class="v5-chart-link" onclick="event.stopPropagation();window.showDeskChart('${c.tab}')">📈 ${escHtml(c.label)}</a>`)
-              .join('');
-            return `<div class="v5-desk-row">
-              <span style="font-weight:600;min-width:80px">${a.name}</span>
-              <span style="flex:1;color:var(--ink-muted)">${a.summary}${chips}</span>
-              <span class="vp-seat-tag"><span class="${tagCls}">${a.stance}</span></span>
-            </div>`;
-          }).join('')}
-          <div style="font-size:12px;color:var(--ink-muted);margin-top:12px;line-height:1.6;padding:10px;background:var(--cream);border-radius:6px">
-            ${flipInner}
-          </div>
-          <div style="margin-top:8px;text-align:center">
-            <button onclick="goToStage(4)" style="background:none;border:none;color:var(--teal);font-size:11px;cursor:pointer;text-decoration:underline">View full transcripts in Step 4</button>
-          </div>
-        </div>
+      // Fill the Step-5 roster (all eight reported).
+      const rosterEl5 = $('#vd5-roster');
+      if (rosterEl5) rosterEl5.innerHTML = DESK_AGENTS.map(a => { const chip = deskChip(a.key, stances[a.key]); return `<li class="done" style="--hue:${vdHue(a.key)}"><span class="vd-tick"></span><b>${a.cn}</b><em class="vd-rst ${chip.cls}">${chip.label}</em></li>`; }).join('');
+      requestAnimationFrame(() => $$('#vd5-coverage .vd-cm i').forEach(i => { if (i.dataset.w) i.style.width = i.dataset.w + '%'; }));
 
-        <!-- Suggested adjustments -->
-        ${state.mutations?.length ? `<div class="panel" style="padding:14px 18px;margin-top:12px">
-          <div style="font-size:14px;font-weight:700;margin-bottom:4px">Suggested adjustments</div>
-          <div style="font-size:11px;color:var(--ink-muted);margin-bottom:10px">Applying re-runs the desk on the new structure for a fresh score &mdash; no number is assumed.</div>
-          <div style="display:grid;grid-template-columns:repeat(${Math.min(state.mutations.length,3)},1fr);gap:8px">
-            ${state.mutations.map((m, i) => {
-              const isWait = m.kind === 'wait';
-              const change = m.kind === 'reduce_size'
-                ? `${state.qty} \u2192 ${Math.max(1, Math.round(state.qty * 0.5))} contracts`
-                : (m.legs ? m.legs.map(l => `${l.side === 'short' ? 'S' : 'L'} ${l.strike}${l.type[0].toUpperCase()}`).join(' / ') : '');
-              // Deterministic check: does the desk's proposed alternative actually net a credit?
-              const pricedHtml = m.priced
-                ? `<div style="font-size:10px;margin-top:5px;font-weight:700;color:${m.priced.isCredit ? 'var(--green)' : 'var(--red)'}">${m.priced.isCredit ? '\u2713 nets a credit' : '\u26a0 still a net debit'} $${Math.abs(m.priced.netCredit).toFixed(2)}</div>`
-                : (m.kind === 'suggestedFix' && m.legs ? `<div style="font-size:10px;margin-top:5px;color:var(--ink-muted)">credit not verifiable (missing chain price)</div>` : '');
-              return `
-              <div class="panel" style="padding:12px;${isWait ? '' : 'cursor:pointer;'}transition:all 0.15s;${i===0 && !isWait ? 'border-color:var(--teal);' : ''}" id="mutation-${i}" ${isWait ? '' : `onclick="handleMutation(${i})"`}>
-                ${i===0 && !isWait ? '<div style="font-size:8px;background:var(--teal);color:white;padding:1px 6px;border-radius:3px;display:inline-block;margin-bottom:4px;font-weight:700">SUGGESTED</div>' : ''}
-                ${isWait ? '<div style="font-size:8px;background:var(--concern-border);color:white;padding:1px 6px;border-radius:3px;display:inline-block;margin-bottom:4px;font-weight:700">DESK VERDICT</div>' : ''}
-                <div style="font-size:12px;font-weight:600;margin-bottom:2px">${m.label}</div>
-                ${m.rationale ? `<div style="font-size:10px;color:var(--ink-muted);line-height:1.4;margin-bottom:6px">${m.rationale}</div>` : ''}
-                ${change ? `<div style="font-size:11px;font-family:var(--mono);color:var(--ink)">${change}</div>` : ''}
-                ${pricedHtml}
-                ${isWait ? '' : `<div style="font-size:10px;color:var(--teal);font-weight:600;margin-top:6px">Apply &amp; re-verify \u2192</div>`}
-              </div>`;
-            }).join('')}
-          </div>
-        </div>` : ''}
+      wireDecisionControls(v, flags);
 
-        <!-- Bull vs Bear debate -->
-        ${state.debateRounds?.length || state.debate ? `<div class="panel" style="padding:14px 18px;margin-top:12px">
-          <div style="font-size:14px;font-weight:700;margin-bottom:4px">Bull vs Bear debate</div>
-          <div style="font-size:11px;color:var(--ink-muted);margin-bottom:10px">${debateSummary}</div>
-          ${state.debateRounds?.length
-            ? state.debateRounds.map((r, i) => `
-              <div style="margin-bottom:10px">
-                ${state.debateRounds.length > 1 ? `<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink-faint);margin-bottom:4px">Round ${i + 1}</div>` : ''}
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                  <div style="padding:10px;background:rgba(26,140,94,0.06);border-radius:8px;border-left:3px solid var(--green)">
-                    <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:4px">💪 Bull Researcher</div>
-                    <div style="font-size:11px;color:var(--ink);line-height:1.5">${r.bull?.thesis || '—'}</div>
-                    ${(r.bull?.evidence || []).length ? `<ul style="margin:6px 0 0;padding-left:16px;font-size:10px;color:var(--ink-muted);line-height:1.5">${r.bull.evidence.map(e => `<li>${e}</li>`).join('')}</ul>` : ''}
-                  </div>
-                  <div style="padding:10px;background:rgba(192,57,43,0.06);border-radius:8px;border-left:3px solid var(--red)">
-                    <div style="font-size:11px;font-weight:600;color:var(--red);margin-bottom:4px">⚠ Bear Researcher</div>
-                    <div style="font-size:11px;color:var(--ink);line-height:1.5">${r.bear?.thesis || '—'}</div>
-                    ${(r.bear?.evidence || []).length ? `<ul style="margin:6px 0 0;padding-left:16px;font-size:10px;color:var(--ink-muted);line-height:1.5">${r.bear.evidence.map(e => `<li>${e}</li>`).join('')}</ul>` : ''}
-                  </div>
-                </div>
-              </div>`).join('')
-            : `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                <div style="padding:10px;background:rgba(26,140,94,0.06);border-radius:8px;border-left:3px solid var(--green)">
-                  <div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:4px">💪 Bull Researcher</div>
-                  <div style="font-size:11px;color:var(--ink-muted);line-height:1.5">${state.debate?.bullWonOn || state.debate?.bull?.wonOn || 'Premium richness supports the structure'}</div>
-                </div>
-                <div style="padding:10px;background:rgba(192,57,43,0.06);border-radius:8px;border-left:3px solid var(--red)">
-                  <div style="font-size:11px;font-weight:600;color:var(--red);margin-bottom:4px">⚠ Bear Researcher</div>
-                  <div style="font-size:11px;color:var(--ink-muted);line-height:1.5">${state.debate?.bearWonOn || state.debate?.bear?.wonOn || 'Risk factors require attention'}</div>
-                </div>
-              </div>`}
-        </div>` : ''}
+      // Reveal phase 3 (Sentinel sizing → Oracle reasoning → verdict). Animate once
+      // per structure; subsequent visits show the completed conclusion immediately.
+      const animate = state.phase3Shown !== deskCache.hash;
+      revealVerdict({ reasonSteps, thenText, v, flags, agree, deskTime, risk, animate });
+      state.phase3Shown = deskCache.hash;
+    }
 
-        <!-- Actions -->
-        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
-          <button class="btn-primary" onclick="goToStage(3)" style="padding:10px 20px">Adjust strikes</button>
-          <button class="btn-primary" onclick="handleSaveTrace()" style="padding:10px 20px;background:var(--white);color:var(--ink);border:1px solid var(--border)">Save trace + watch</button>
-          <button class="btn-primary" onclick="goToStage(6);renderStage6()" style="padding:10px 20px">View Full Analysis &amp; Publish &#8594;</button>
-        </div>
-        <div id="publish-status" class="hidden" style="padding:10px 14px;border-radius:8px;font-size:12px;margin-top:8px;border:1px solid var(--border)"></div>
-        <div style="font-size:10px;color:var(--ink-faint);margin-top:10px;text-align:center">
-          $${state.totalCost.toFixed(3)} \u00b7 ${state.totalTime.toFixed(1)}s \u00b7 ${state.totalTokens.toLocaleString()} tokens
-        </div>
-      `;
+    async function revealVerdict(o) {
+      const setStats = () => { $('#vd-c-agree').textContent = o.agree + ' of 8'; $('#vd-c-flags').textContent = o.flags.length; $('#vd-c-time').textContent = o.deskTime; };
+      const finish = () => {
+        $('#vd-verdict').textContent = o.v.verdictWord || 'No trade';
+        $('#vd-vsub').textContent = deskVerdictSub(o.v.verdictClass);
+        $('#vd-flags').innerHTML = o.flags.map(f => `<span class="vd-flag">${escHtml(f)}</span>`).join('');
+        $('#vd-hero')?.classList.add('on');
+      };
+      $('#vd-risk')?.classList.add('on');
+      if (o.risk.rationale) $('#vd-risk-say').textContent = o.risk.rationale;
+      if (!o.animate || VD_REDUCE) {
+        const rz = $('#vd-reason'); if (rz) rz.innerHTML = o.reasonSteps.map((st, i) => `<div class="vd-rstep show${st[2] ? ' crux' : ''}"><span class="vd-num">${i + 1}</span><div><h4>${escHtml(st[0])}</h4><p>${escHtml(st[1])}</p></div></div>`).join('') + `<div class="vd-rthen show"><span class="vd-num">&#8756;</span><p>${escHtml(o.thenText)}</p></div>`;
+        setStats(); finish(); return;
+      }
+      $('#vd-hero')?.classList.add('speaking'); vdPlay('vd-dvid-oracle');
+      const rz = $('#vd-reason'); if (rz) rz.innerHTML = '';
+      let n = 1;
+      for (const [head, body, crux] of o.reasonSteps) {
+        const st = document.createElement('div'); st.className = 'vd-rstep' + (crux ? ' crux' : '');
+        st.innerHTML = `<span class="vd-num">${n++}</span><div><h4>${escHtml(head)}</h4><p></p></div>`;
+        rz.appendChild(st); await sleep(80); st.classList.add('show');
+        await typeInto(st.querySelector('p'), body); await sleep(220);
+      }
+      const th = document.createElement('div'); th.className = 'vd-rthen';
+      th.innerHTML = `<span class="vd-num">&#8756;</span><p>${escHtml(o.thenText)}</p>`;
+      rz.appendChild(th); await sleep(120); th.classList.add('show');
+      await sleep(280); setStats(); finish();
+      $('#vd-hero')?.classList.remove('speaking'); vdPause('vd-dvid-oracle');
+    }
 
-      // Draw P&L chart in verdict view
-      setTimeout(() => drawS5PnlChart(), 50);
+    // Accept / Override / Adjust / Discard.
+    function wireDecisionControls(v, flags) {
+      const isBlocking = v.verdictClass === 'fail' || flags.length > 0;
+      const proceed = (override) => {
+        state.override = override || null;
+        goToStage(6, true); renderStage6();
+      };
+      $('#vd-accept')?.addEventListener('click', () => {
+        if (isBlocking) { $('#vd-override')?.classList.add('on'); $('#vd-override-reason')?.focus(); }
+        else proceed(null);
+      });
+      $('#vd-override-btn')?.addEventListener('click', () => { $('#vd-override')?.classList.toggle('on'); $('#vd-override-reason')?.focus(); });
+      $('#vd-override-go')?.addEventListener('click', () => {
+        const reason = ($('#vd-override-reason')?.value || '').trim();
+        if (!reason) { $('#vd-override-err')?.classList.add('on'); return; }
+        $('#vd-override-err')?.classList.remove('on');
+        proceed({ reason, at: new Date().toISOString(), deskVerdict: v.verdictWord, verdictClass: v.verdictClass, blockingFlags: flags });
+      });
+      $('#vd-adjust')?.addEventListener('click', () => goToStage(3));
+      $('#vd-discard')?.addEventListener('click', () => { if (confirm('Discard this analysis and start over?')) { invalidateDesk(); goToStage(1, true); } });
     }
 
     // Delegated to shared/payoffChart.js (reuses drawS5PnLChart defined above)
@@ -4046,6 +4765,11 @@
           analysis: state.verifyData || null,
           // Invest Layer 1: engine gate values for position logging
           engineSnapshot: state.engineSnapshot || null,
+          // Desk decision record: the class the desk returned, any blocking flags,
+          // and — if the user proceeded against a blocking verdict — the override.
+          deskVerdict: (state.verdict && state.verdict.verdictClass) || null,
+          blockingFlags: (typeof deskBlockingFlags === 'function' ? deskBlockingFlags(state.deskReports || null) : []),
+          override: state.override || null,
         };
 
         const res = await apiCall('/api/publish-from-analysis', { method: 'POST', body: payload });
@@ -4089,7 +4813,6 @@
     window.onSliderMove = onSliderMove;
     window.onSliderDone = onSliderDone;
     window.updateLeg = updateLeg;
-    window.toggleAllTranscripts = toggleAllTranscripts;
     window.renderStage6 = renderStage6;
     window.publishFromDiscover = publishFromDiscover;
 
