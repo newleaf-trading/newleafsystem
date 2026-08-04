@@ -219,6 +219,7 @@
     .de-run { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 11px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--border); cursor: pointer; }
     .de-runs .de-run:first-child { border-top: 0; }
     .de-run:hover .de-rt { color: var(--gold); }
+    .de-run:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(201,169,110,.5); border-radius: 6px; }
     .de-rt { font-family: 'Space Mono', monospace; font-size: 11.5px; letter-spacing: .1em; color: var(--ink); }
     .de-rd { font-size: 12.5px; color: var(--ink-mid); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .de-rv { font-family: 'Space Mono', monospace; font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
@@ -547,8 +548,8 @@
     <div class="de-hero">
       <div>
         <span class="de-eyebrow">Verification Desk</span>
-        <h2 id="de-headline">Eight agents argue before you place the trade.</h2>
-        <p id="de-subhead">Give it a ticker. Deterministic code builds the structures and computes every number &mdash; RSI, gamma walls, expected move. Then eight AI agents argue about what those numbers mean, and you see where they disagree.</p>
+        <h2 id="de-headline">A verified options trade in about 40 seconds.</h2>
+        <p id="de-subhead">Enter a ticker and the desk hands back a sized structure with every number computed &mdash; credit, max loss, breakeven &mdash; plus a verdict from eight agents: take it, take it smaller, or skip it, with any dissent shown.</p>
         <div class="de-chips" id="de-chips" role="group" aria-label="Quick-run tickers"></div>
         <div class="de-startbar">
           <input id="de-tk" placeholder="Or type any ticker" aria-label="Ticker" onfocus="deskFunnelFocus()" onkeydown="if(event.key==='Enter')deskEmptyRun('de-tk')">
@@ -1762,10 +1763,12 @@
       const hl = document.getElementById('de-headline');
       const sub = document.getElementById('de-subhead');
       const hint = document.getElementById('de-hint');
-      if (hl) hl.textContent = isNew ? 'Eight agents argue before you place the trade.' : 'Run the desk.';
+      if (hl) hl.textContent = isNew
+        ? 'A verified options trade in about 40 seconds.'
+        : 'Your verdict in about 40 seconds.';
       if (sub) sub.textContent = isNew
-        ? 'Give it a ticker. Deterministic code builds the structures and computes every number — RSI, gamma walls, expected move. Then eight AI agents argue about what those numbers mean, and you see where they disagree.'
-        : 'Ticker in, structures out, eight agents on the record.';
+        ? 'Enter a ticker and the desk hands back a sized structure with every number computed — credit, max loss, breakeven — plus a verdict from eight agents: take it, take it smaller, or skip it, with any dissent shown.'
+        : 'Pick a ticker to get a sized structure, every number, and a verdict with any dissent shown.';
       if (hint) hint.style.display = isNew ? '' : 'none';
       renderDeskChips([]);   // liquid names show at once; recents appended by renderReturning
       deskStartCarousel();   // the agent video runs on both views
@@ -1774,6 +1777,9 @@
     // Six deep, liquid names shown as always-on chips. The user's own recent
     // tickers are appended (deduped) by renderDeskChips.
     const DESK_LIQUID = ['AAPL', 'NVDA', 'TSLA', 'AMD', 'META', 'SPY'];
+    // Neutral verdict-class labels for recent-verdict rows — no resize wording;
+    // "take it smaller" belongs in the opened verdict, not on the row.
+    const VERDICT_ROW_LABEL = { pass: 'Pass', concern: 'Concern', fail: 'Skip' };
     function renderDeskChips(recent) {
       const box = document.getElementById('de-chips');
       if (!box) return;
@@ -1854,8 +1860,11 @@
         statEl.innerHTML = parts.join('');
       }
       if (runsEl) {
+        // Rows open the full verdict (re-run the desk for that ticker); the
+        // resize instruction ("take it smaller") lives inside the verdict, not
+        // on the row — so the badge is a neutral class label, not the word.
         runsEl.innerHTML = hist.recentVerdicts.length
-          ? hist.recentVerdicts.map(v => `<li class="de-run" onclick="deskEmptyFill('de-tk','${v.ticker}')"><span class="de-rt">${v.ticker}</span><span class="de-rd">${v.line}</span><span class="de-rv ${v.cls}">${v.word}</span></li>`).join('')
+          ? hist.recentVerdicts.map(v => `<li class="de-run" role="button" tabindex="0" aria-label="Open ${v.ticker} verdict" onclick="deskRunTicker('${v.ticker}','recent_verdict')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();deskRunTicker('${v.ticker}','recent_verdict')}"><span class="de-rt">${v.ticker}</span><span class="de-rd">${v.line}</span><span class="de-rv ${v.cls}">${VERDICT_ROW_LABEL[v.cls] || 'Verdict'}</span></li>`).join('')
           : '<li class="de-empty-note" style="padding:9px 0;list-style:none">Complete a verify run and your verdicts appear here.</li>';
       }
     }
