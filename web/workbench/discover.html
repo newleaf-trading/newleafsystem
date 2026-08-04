@@ -224,6 +224,24 @@
     .de-rv { font-family: 'Space Mono', monospace; font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
     .de-rv.pass { color: var(--pass-text); } .de-rv.concern { color: var(--concern-text); } .de-rv.fail { color: var(--fail-text); }
     .de-empty-note { font-size: 12px; color: var(--ink-faint); font-style: italic; }
+    /* Pre-run verdict card — the most recent completed run, rendered in full. */
+    .de-lastverdict { background: var(--white); border: 1px solid var(--border-mid); border-radius: 12px; padding: 20px 22px; margin-bottom: 18px; }
+    .de-lv-top { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+    .de-lv-tk { font-family: 'Space Mono', monospace; font-size: 14px; letter-spacing: .1em; font-weight: 700; color: var(--ink); }
+    .de-lv-struct { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 600; color: var(--forest); }
+    .de-lv-ago { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); margin-left: auto; }
+    .de-lv-badge { font-family: 'Space Mono', monospace; font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; padding: 4px 10px; border-radius: 999px; border: 1px solid; }
+    .de-lv-badge.pass { color: var(--pass-text); background: var(--pass-bg); border-color: var(--pass-border); }
+    .de-lv-badge.concern { color: var(--concern-text); background: var(--concern-bg); border-color: var(--concern-border); }
+    .de-lv-badge.fail { color: var(--fail-text); background: var(--fail-bg); border-color: var(--fail-border); }
+    .de-lv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 14px; margin: 16px 0; padding: 15px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .de-lv-m span { display: block; font-family: 'Space Mono', monospace; font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 3px; }
+    .de-lv-m b { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; color: var(--ink); }
+    .de-lv-dissent { display: flex; gap: 9px; align-items: flex-start; font-size: 12.5px; line-height: 1.5; color: var(--ink-mid); margin: 0 0 16px; }
+    .de-lv-dissent b { font-family: 'Space Mono', monospace; font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--concern-text); flex: none; padding-top: 2px; }
+    .de-lv-cta { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; background: var(--forest); color: #F2EFE4; border: 0; border-radius: 6px; padding: 11px 20px; cursor: pointer; }
+    .de-lv-cta:hover { background: var(--forest-mid); }
+    .de-lv-cta:focus-visible { outline: none; box-shadow: 0 0 0 2px rgba(201,169,110,.5); }
     .de-whatis { font-family: 'Space Mono', monospace; font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); background: none; border: 0; cursor: pointer; padding: 0; border-bottom: 1px solid var(--border-mid); }
     .de-whatis:hover { color: var(--gold); }
     @media (max-width: 940px) {
@@ -568,8 +586,11 @@
       </div>
     </section>
 
-    <!-- RETURNING: recent tickers + verdicts -->
+    <!-- RETURNING: last verdict in full + recent tickers/verdicts -->
     <section class="de-view" id="de-back">
+      <!-- Pre-run verdict: the most recent completed desk run, rendered in full so
+           the page never lands empty. Populated by renderReturning from lastRun. -->
+      <div class="de-lastverdict" id="de-lastverdict" hidden></div>
       <div class="de-cols">
         <div class="de-card">
           <p class="de-lab">Pick up where you left off</p>
@@ -1817,6 +1838,7 @@
       const hist = (window.getDeskHistory ? await window.getDeskHistory() : null)
         || { recentTickers: [], recentVerdicts: [], stats: { runsThisMonth: 0, stoodAside: 0, medianDeskTime: null } };
       renderDeskChips(hist.recentTickers);   // append the user's own tickers to the liquid chips
+      renderLastVerdict(hist.lastRun);       // land with the last completed run in full — never an empty desk
       if (recEl) {
         recEl.innerHTML = hist.recentTickers.length
           ? hist.recentTickers.map(r => `<span class="de-tick" onclick="deskEmptyFill('de-tk','${r.ticker}')">${r.ticker}<span>${r.ago}</span></span>`).join('')
@@ -1836,6 +1858,35 @@
           ? hist.recentVerdicts.map(v => `<li class="de-run" onclick="deskEmptyFill('de-tk','${v.ticker}')"><span class="de-rt">${v.ticker}</span><span class="de-rd">${v.line}</span><span class="de-rv ${v.cls}">${v.word}</span></li>`).join('')
           : '<li class="de-empty-note" style="padding:9px 0;list-style:none">Complete a verify run and your verdicts appear here.</li>';
       }
+    }
+
+    // Render the most recent completed run in full (item C). Figures are the
+    // persisted deterministic snapshot; missing fields are omitted, never faked.
+    function renderLastVerdict(lastRun) {
+      const el = document.getElementById('de-lastverdict');
+      if (!el) return;
+      const r = lastRun;
+      if (!r || !r.ticker) { el.hidden = true; el.innerHTML = ''; return; }
+      const tiles = [];
+      if (r.credit != null) tiles.push([r.credit >= 0 ? 'Credit' : 'Debit', '$' + Math.abs(r.credit).toFixed(2)]);
+      if (r.maxLoss != null) tiles.push(['Max loss', '$' + r.maxLoss.toLocaleString()]);
+      if (r.breakevens && r.breakevens.length) tiles.push(['Breakeven', r.breakevens.map(b => '$' + Math.round(b)).join(' / ')]);
+      if (r.days != null) tiles.push(['Days', r.days + 'd']);
+      if (r.agree != null) tiles.push(['Agreement', r.agree + ' of 8']);
+      const grid = tiles.length
+        ? `<div class="de-lv-grid">${tiles.map(t => `<div class="de-lv-m"><span>${t[0]}</span><b>${t[1]}</b></div>`).join('')}</div>` : '';
+      const dissent = r.dissentLine
+        ? `<p class="de-lv-dissent"><b>Dissent</b><span>${r.dissentLine}</span></p>` : '';
+      const meta = ['Last run', r.ago, r.deskTime ? r.deskTime + 's' : null].filter(Boolean).join(' · ');
+      el.innerHTML =
+        `<div class="de-lv-top">` +
+          `<span class="de-lv-tk">${r.ticker}</span>` +
+          `<span class="de-lv-struct">${r.structure || 'Structure'}</span>` +
+          `<span class="de-lv-badge ${r.cls}">${r.word || '—'}</span>` +
+          `<span class="de-lv-ago">${meta}</span>` +
+        `</div>${grid}${dissent}` +
+        `<button type="button" class="de-lv-cta" onclick="deskRunTicker('${r.ticker}','last_verdict')">Run ${r.ticker} again &#8594;</button>`;
+      el.hidden = false;
     }
 
     // Pause the carousel when the tab is hidden; resume on first-visit view.
@@ -4527,6 +4578,26 @@
           const v = state.verdict || {};
           const structure = state.selectedStrategy?.name || state.selectedStrategy?.strategy || '';
           const reason = (v.summary || '').replace(/\s+/g, ' ').trim().slice(0, 140);
+          // Deterministic engine figures for the pre-run verdict card. Captured
+          // here (not recomputed on the landing page) so the last verdict renders
+          // in full. Numbers come from the engine only; dissentLine is narration.
+          let snap = {};
+          try {
+            const ds = deskStructure();
+            const bes = ((typeof computeBreakevens === 'function' && computeBreakevens()) || []).filter(b => typeof b === 'number' && !Number.isNaN(b)).map(b => +b.toFixed(2));
+            const stances = deskAllStances(reports);
+            const order = ['technical', 'gamma', 'iv', 'sentiment', 'bull', 'bear', 'risk', 'judge'];
+            const dissentKey = order.find(k => stances[k] === 'caution');
+            snap = {
+              credit: typeof ds.nc === 'number' ? +ds.nc.toFixed(2) : null,
+              maxLoss: typeof ds.ml === 'number' ? Math.round(Math.abs(ds.ml)) : null,
+              breakevens: bes,
+              days: typeof ds.dte === 'number' ? ds.dte : null,
+              agree: 8 - order.filter(k => stances[k] === 'caution').length,
+              expiry: state.selectedExpiry || '',
+              dissentLine: dissentKey ? String((reports[dissentKey] || {}).finding || (reports[dissentKey] || {}).line || '').replace(/\s+/g, ' ').trim().slice(0, 160) : ''
+            };
+          } catch (e) { console.warn('[desk] verdict snapshot failed', e); }
           await window.trackUsage('verify', state.ticker, {
             models: [...new Set(models)],
             cost: state.verifyData?.cost?.totalCost || 0.05,
@@ -4535,7 +4606,8 @@
             verdictClass: v.verdictClass || '',
             structure,
             reason,
-            deskTime: state.deskTime
+            deskTime: state.deskTime,
+            snap
           });
         }
         catch (e) { console.error('[Usage] Track error:', e); }
@@ -5474,7 +5546,31 @@ window.getDeskHistory = async function () {
     };
   });
 
-  return { recentTickers, recentVerdicts, stats: { runsThisMonth: monthRuns.length, stoodAside, medianDeskTime } };
+  // Newest completed run, in full — powers the pre-run verdict card so the page
+  // never lands empty. All figures are the deterministic snapshot persisted at
+  // run time (nothing recomputed here); dissentLine is agent narration.
+  const num = v => (typeof v === 'number' && !Number.isNaN(v)) ? v : null;
+  const lastEvent = verifyEvents.find(e => e.verdictWord);
+  let lastRun = null;
+  if (lastEvent) {
+    const s = lastEvent.snap || {};
+    lastRun = {
+      ticker: esc((lastEvent.ticker || '').toUpperCase()),
+      structure: esc(lastEvent.structure || ''),
+      word: esc(lastEvent.verdictWord || ''),
+      cls: ['pass', 'concern', 'fail'].includes(lastEvent.verdictClass) ? lastEvent.verdictClass : 'concern',
+      ago: relTime(tsMs(lastEvent.timestamp)),
+      deskTime: num(lastEvent.deskTime) != null ? lastEvent.deskTime.toFixed(1) : null,
+      credit: num(s.credit),
+      maxLoss: num(s.maxLoss),
+      breakevens: Array.isArray(s.breakevens) ? s.breakevens.filter(b => typeof b === 'number') : [],
+      days: num(s.days),
+      agree: num(s.agree),
+      dissentLine: esc(s.dissentLine || '')
+    };
+  }
+
+  return { recentTickers, recentVerdicts, lastRun, stats: { runsThisMonth: monthRuns.length, stoodAside, medianDeskTime } };
 };
 
 // Read the signed-in user's active Invest positions (users/{uid}/positions in
@@ -5559,6 +5655,9 @@ window.trackUsage = async function(action, ticker, opts) {
     eventDoc.structure = opts.structure || null;
     eventDoc.reason = opts.reason || null;
     if (typeof opts.deskTime === 'number') eventDoc.deskTime = opts.deskTime;
+    // Deterministic engine figures for the pre-run verdict card (item C). Only
+    // persisted when present; older events without it degrade gracefully.
+    if (opts.snap && typeof opts.snap === 'object') eventDoc.snap = opts.snap;
   }
   await addDoc(eventsRef, eventDoc);
 
