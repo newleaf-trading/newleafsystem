@@ -185,6 +185,14 @@
     .de-go:hover { background: var(--forest-mid); }
     .de-hint { font-family: 'Space Mono', monospace; font-size: 9.5px; letter-spacing: .08em; color: var(--ink-faint); margin: 9px 0 0; }
     .de-hint b { color: var(--teal); font-weight: 400; cursor: pointer; border-bottom: 1px solid var(--border-mid); }
+    /* One-tap ticker chips — six liquid names + the user's own recent tickers.
+       A chip runs the desk immediately; the free-text input is the fallback. */
+    .de-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+    .de-chip { font-family: 'Space Mono', monospace; font-size: 12px; letter-spacing: .06em; background: var(--white); border: 1px solid var(--border-mid); border-radius: 999px; padding: 7px 15px; color: var(--ink); cursor: pointer; display: inline-flex; align-items: baseline; gap: 6px; transition: border-color .15s, color .15s; }
+    .de-chip:hover { border-color: var(--forest); color: var(--forest); }
+    .de-chip:focus-visible { outline: none; border-color: var(--forest); box-shadow: 0 0 0 2px rgba(201,169,110,.4); }
+    .de-chip.recent { background: var(--cream); }
+    .de-chip .ago { color: var(--ink-faint); font-size: 9px; letter-spacing: .04em; }
     .de-strip { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-top: 4px; }
     .de-st { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 15px 16px; opacity: .55; transition: opacity .5s, border-color .5s; }
     .de-st.on { opacity: 1; border-color: var(--border-mid); }
@@ -523,11 +531,11 @@
         <span class="de-eyebrow">Verification Desk</span>
         <h2 id="de-headline">Eight agents argue before you place the trade.</h2>
         <p id="de-subhead">Give it a ticker. Deterministic code builds the structures and computes every number &mdash; RSI, gamma walls, expected move. Then eight AI agents argue about what those numbers mean, and you see where they disagree.</p>
+        <div class="de-chips" id="de-chips" role="group" aria-label="Quick-run tickers"></div>
         <div class="de-startbar">
-          <input id="de-tk" placeholder="AAPL" aria-label="Ticker" onfocus="deskFunnelFocus()" onkeydown="if(event.key==='Enter')deskEmptyRun('de-tk')">
+          <input id="de-tk" placeholder="Or type any ticker" aria-label="Ticker" onfocus="deskFunnelFocus()" onkeydown="if(event.key==='Enter')deskEmptyRun('de-tk')">
           <button class="de-go" onclick="deskEmptyRun('de-tk')">Run the desk</button>
         </div>
-        <p class="de-hint" id="de-hint">Try <b onclick="deskEmptyFill('de-tk','TSLA')">TSLA</b> &middot; <b onclick="deskEmptyFill('de-tk','SPY')">SPY</b> &middot; <b onclick="deskEmptyFill('de-tk','NVDA')">NVDA</b></p>
       </div>
       <div class="de-stage" id="de-stage">
         <img id="de-stageimg" alt="" aria-hidden="true">
@@ -1738,9 +1746,36 @@
         ? 'Give it a ticker. Deterministic code builds the structures and computes every number — RSI, gamma walls, expected move. Then eight AI agents argue about what those numbers mean, and you see where they disagree.'
         : 'Ticker in, structures out, eight agents on the record.';
       if (hint) hint.style.display = isNew ? '' : 'none';
+      renderDeskChips([]);   // liquid names show at once; recents appended by renderReturning
       deskStartCarousel();   // the agent video runs on both views
     }
     function deskEmptyFill(id, t) { const el = document.getElementById(id); if (el) { el.value = t; el.focus(); } }
+    // Six deep, liquid names shown as always-on chips. The user's own recent
+    // tickers are appended (deduped) by renderDeskChips.
+    const DESK_LIQUID = ['AAPL', 'NVDA', 'TSLA', 'AMD', 'META', 'SPY'];
+    function renderDeskChips(recent) {
+      const box = document.getElementById('de-chips');
+      if (!box) return;
+      const seen = new Set();
+      const chips = DESK_LIQUID.map(t => { seen.add(t); return { t, source: 'chip' }; });
+      (recent || []).forEach(r => {
+        const t = (r.ticker || '').toUpperCase();
+        if (!t || seen.has(t)) return;
+        seen.add(t);
+        chips.push({ t, source: 'recent', ago: r.ago });
+      });
+      // Tickers are [A-Z.] only and `ago` comes from relTime — safe to inline.
+      box.innerHTML = chips.map(c =>
+        `<button type="button" class="de-chip${c.source === 'recent' ? ' recent' : ''}" onclick="deskRunTicker('${c.t}','${c.source}')">${c.t}${c.ago ? `<span class="ago">${c.ago}</span>` : ''}</button>`
+      ).join('');
+    }
+    // One tap = one run. Fills the input (so the run flow is identical to typing)
+    // then hands straight to the existing load path — no second click.
+    function deskRunTicker(t, source) {
+      const el = document.getElementById('de-tk');
+      if (el) el.value = t;
+      deskEmptyRun('de-tk', source || 'chip');
+    }
     function deskEmptyRun(id, source) {
       const el = document.getElementById(id);
       const t = ((el && el.value) || '').trim().toUpperCase();
@@ -1781,6 +1816,7 @@
       const runsEl = document.getElementById('de-runs');
       const hist = (window.getDeskHistory ? await window.getDeskHistory() : null)
         || { recentTickers: [], recentVerdicts: [], stats: { runsThisMonth: 0, stoodAside: 0, medianDeskTime: null } };
+      renderDeskChips(hist.recentTickers);   // append the user's own tickers to the liquid chips
       if (recEl) {
         recEl.innerHTML = hist.recentTickers.length
           ? hist.recentTickers.map(r => `<span class="de-tick" onclick="deskEmptyFill('de-tk','${r.ticker}')">${r.ticker}<span>${r.ago}</span></span>`).join('')
