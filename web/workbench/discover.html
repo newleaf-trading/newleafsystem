@@ -250,7 +250,8 @@
       .de-strip { grid-template-columns: 1fr; }
       .de-cols { grid-template-columns: 1fr; }
     }
-    @media (prefers-reduced-motion: reduce) { .de-stage video { display: none; } }
+    /* Reduced motion keeps the poster visible (poster-only); deskHeroStart skips
+       playback. The old rule hid the whole element, blanking the poster too. */
 
     /* Stage 1 */
     .demo-toggles { display: flex; gap: 6px; margin-bottom: 16px; }
@@ -557,9 +558,11 @@
         </div>
       </div>
       <div class="de-stage" id="de-stage">
-        <img id="de-stageimg" alt="" aria-hidden="true">
-        <video id="de-stagevideo" muted loop playsinline aria-hidden="true"></video>
-        <div class="de-cap"><span id="de-capL">&mdash;</span><b id="de-capR" style="--hue:#C9A96E">&mdash;</b></div>
+        <!-- Hero video slot: muted/loop/playsinline, poster fallback. Autoplay,
+             source, and preload are driven by deskHeroStart so small screens stay
+             poster-only (preload="none") and reduced-motion never plays. -->
+        <video id="de-stagevideo" muted loop playsinline preload="none" aria-hidden="true" poster="./public/agents/atlas-poster.jpg"></video>
+        <div class="de-cap"><span id="de-capL">Verification desk</span><b id="de-capR" style="--hue:#C9A96E">~40s</b></div>
       </div>
     </div>
 
@@ -1716,44 +1719,41 @@
     });
 
     // ── Stage 1 empty state (first-visit hero + returning view) ──────────────
-    // Landing surface shown before any ticker is loaded. First-visit shows a
-    // hero with a cycling agent carousel + story cards; returning visits show
-    // the ticker bar plus the user's own recent tickers and verdicts.
-    const DESK_CLIPS = [
-      { k: 'atlas',  cap: 'Reading trend and momentum', who: 'ATLAS',  hue: '#1a8c5e' },
-      { k: 'sigma',  cap: 'Mapping the gamma walls',    who: 'SIGMA',  hue: '#C9A96E' },
-      { k: 'titan',  cap: 'Making the case for',        who: 'TITAN',  hue: '#0d6e56' },
-      { k: 'raven',  cap: 'Making the case against',    who: 'RAVEN',  hue: '#c0392b' },
-      { k: 'oracle', cap: 'Weighing the record',        who: 'ORACLE', hue: '#C9A96E' }
-    ];
+    // Landing surface shown before any ticker is loaded. First-visit shows the
+    // hero video + story cards; returning visits show the ticker bar plus the
+    // user's own recent tickers and verdicts.
     const DESK_BASE = './public/agents/';
+    // Single hero video slot (replaces the old decorative agent carousel). Swap
+    // these for a dedicated desk-run asset when one lands.
+    const HERO_SRC = DESK_BASE + 'atlas.mp4';
+    const HERO_POSTER = DESK_BASE + 'atlas-poster.jpg';
     const deskReduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let deskCi = 0, deskTimer = null;
+    const deskHeroSmall = () => matchMedia('(max-width: 700px)').matches;
 
-    function deskShowClip(i) {
-      const c = DESK_CLIPS[i];
-      const im = document.getElementById('de-stageimg');
+    // Start the hero: reduced-motion OR below 700px stays poster-only (no fetch,
+    // no playback); otherwise attach the source and autoplay muted/looping.
+    function deskHeroStart() {
       const v = document.getElementById('de-stagevideo');
-      if (!im || !v || !c) return;
-      im.src = DESK_BASE + c.k + '-poster.jpg';
-      document.getElementById('de-capL').textContent = c.cap;
-      const r = document.getElementById('de-capR'); r.textContent = c.who; r.style.setProperty('--hue', c.hue);
-      // Light the story card that maps to this carousel position.
-      document.querySelectorAll('#de-new .de-st').forEach((s, n) =>
-        s.classList.toggle('on', n === Math.min(2, Math.floor(i * 3 / DESK_CLIPS.length))));
-      if (!deskReduce) {
-        v.poster = DESK_BASE + c.k + '-poster.jpg';
-        v.innerHTML = '<source src="' + DESK_BASE + c.k + '.mp4" type="video/mp4">';
-        v.load(); v.play().catch(() => {});
+      if (!v) return;
+      v.poster = HERO_POSTER;
+      if (deskReduce || deskHeroSmall()) {
+        v.preload = 'none';
+        v.innerHTML = '';
+        v.removeAttribute('src');
+        try { v.pause(); } catch (e) {}
+        return;
       }
+      v.preload = 'auto';
+      if (!v.querySelector('source')) {
+        v.innerHTML = '<source src="' + HERO_SRC + '" type="video/mp4">';
+        v.load();
+      }
+      v.play().catch(() => {});
     }
-    function deskStartCarousel() {
-      deskShowClip(deskCi);
-      if (deskReduce) return;                 // reduced motion: posters only, no cycling
-      clearInterval(deskTimer);
-      deskTimer = setInterval(() => { deskCi = (deskCi + 1) % DESK_CLIPS.length; deskShowClip(deskCi); }, 5200);
+    function deskHeroStop() {
+      const v = document.getElementById('de-stagevideo');
+      if (v) { try { v.pause(); } catch (e) {} }
     }
-    function deskStopCarousel() { clearInterval(deskTimer); deskTimer = null; }
 
     function deskEmptySetView(which) {
       const isNew = which === 'new';
@@ -1762,16 +1762,16 @@
       if (b) b.classList.toggle('on', !isNew);
       const hl = document.getElementById('de-headline');
       const sub = document.getElementById('de-subhead');
-      const hint = document.getElementById('de-hint');
       if (hl) hl.textContent = isNew
         ? 'A verified options trade in about 40 seconds.'
         : 'Your verdict in about 40 seconds.';
       if (sub) sub.textContent = isNew
         ? 'Enter a ticker and the desk hands back a sized structure with every number computed — credit, max loss, breakeven — plus a verdict from eight agents: take it, take it smaller, or skip it, with any dissent shown.'
         : 'Pick a ticker to get a sized structure, every number, and a verdict with any dissent shown.';
-      if (hint) hint.style.display = isNew ? '' : 'none';
+      // No carousel to cycle them now — show all three story cards.
+      document.querySelectorAll('#de-new .de-st').forEach(s => s.classList.add('on'));
       renderDeskChips([]);   // liquid names show at once; recents appended by renderReturning
-      deskStartCarousel();   // the agent video runs on both views
+      deskHeroStart();       // hero video runs on both views (poster-only on small/reduced-motion)
     }
     function deskEmptyFill(id, t) { const el = document.getElementById(id); if (el) { el.value = t; el.focus(); } }
     // Six deep, liquid names shown as always-on chips. The user's own recent
@@ -1815,7 +1815,7 @@
     function hideDeskEmpty() {
       const de = document.getElementById('desk-empty');
       if (de) de.style.display = 'none';
-      deskStopCarousel();
+      deskHeroStop();
       const nav = document.getElementById('progress-nav'); if (nav) nav.style.display = '';
       const ip = document.getElementById('stage1-input-panel'); if (ip) ip.style.display = '';
     }
@@ -1900,9 +1900,9 @@
 
     // Pause the carousel when the tab is hidden; resume on first-visit view.
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) { deskStopCarousel(); return; }
+      if (document.hidden) { deskHeroStop(); return; }
       const de = document.getElementById('desk-empty');
-      if (de && de.style.display !== 'none') deskStartCarousel();
+      if (de && de.style.display !== 'none') deskHeroStart();
     });
 
     async function handleLoad() {
