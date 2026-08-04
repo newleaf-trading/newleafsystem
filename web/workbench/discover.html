@@ -167,6 +167,64 @@
     .btn-sm { padding: 8px 14px; font-size: 12px; }
     .inline-row { display: flex; gap: 8px; align-items: flex-end; }
 
+    /* Stage 1 empty state — first-visit hero + returning view */
+    #desk-empty { max-width: 1080px; margin: 0 auto 22px; }
+    .de-view { display: none; } .de-view.on { display: block; }
+    .de-eyebrow { font-family: 'Space Mono', monospace; font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--gold); display: block; margin-bottom: 12px; }
+    .de-hero { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.04fr); gap: 34px; align-items: center; padding: 4px 0 26px; border-bottom: 1px solid var(--border); margin-bottom: 22px; }
+    .de-hero h2 { font-family: 'Playfair Display', serif; font-size: 2.15rem; line-height: 1.12; font-weight: 700; color: var(--forest); margin: 0; letter-spacing: -0.02em; }
+    .de-hero p { font-size: 15px; color: var(--ink-mid); line-height: 1.6; margin: 13px 0 18px; max-width: 46ch; }
+    .de-stage { position: relative; aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; background: #07110C; border: 1px solid var(--border-mid); }
+    .de-stage video, .de-stage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+    .de-cap { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 22px 14px 11px; background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(6,14,10,.86)); font-family: 'Space Mono', monospace; font-size: 9.5px; letter-spacing: .13em; text-transform: uppercase; color: rgba(242,239,228,.9); display: flex; justify-content: space-between; gap: 12px; }
+    .de-cap b { color: var(--hue, #C9A96E); font-weight: 700; }
+    .de-startbar { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; align-items: center; background: var(--white); border: 1px solid var(--border-mid); border-radius: 8px; padding: 6px 8px; max-width: 520px; }
+    .de-startbar input { font-family: 'Space Mono', monospace; font-size: 15px; letter-spacing: .1em; text-transform: uppercase; border: 0; background: transparent; color: var(--ink); padding: 8px; width: 100%; outline: none; }
+    .de-startbar input::placeholder { color: var(--ink-faint); }
+    .de-go { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; background: var(--forest); color: #F2EFE4; border: 0; border-radius: 6px; padding: 12px 20px; cursor: pointer; white-space: nowrap; }
+    .de-go:hover { background: var(--forest-mid); }
+    .de-hint { font-family: 'Space Mono', monospace; font-size: 9.5px; letter-spacing: .08em; color: var(--ink-faint); margin: 9px 0 0; }
+    .de-hint b { color: var(--teal); font-weight: 400; cursor: pointer; border-bottom: 1px solid var(--border-mid); }
+    .de-strip { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-top: 4px; }
+    .de-st { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 15px 16px; opacity: .55; transition: opacity .5s, border-color .5s; }
+    .de-st.on { opacity: 1; border-color: var(--border-mid); }
+    .de-st .n { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: .16em; color: var(--ink-faint); display: block; margin-bottom: 6px; }
+    .de-st h3 { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 600; color: var(--forest); margin: 0 0 4px; }
+    .de-st p { margin: 0; font-size: 12.5px; color: var(--ink-mid); line-height: 1.5; }
+    .de-st .who { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: .1em; text-transform: uppercase; margin-top: 9px; display: block; }
+    .de-st .who.code { color: var(--teal); }
+    .de-st .who.ai { color: #8A6A22; }
+    .de-rethead { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
+    .de-rethead h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; color: var(--forest); margin: 0; }
+    .de-rethead p { margin: 4px 0 0; font-size: 13.5px; color: var(--ink-mid); }
+    .de-cols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; margin-top: 18px; }
+    .de-card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 15px 16px; }
+    .de-lab { font-family: 'Space Mono', monospace; font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 10px; }
+    .de-recent { display: flex; flex-wrap: wrap; gap: 7px; }
+    .de-tick { font-family: 'Space Mono', monospace; font-size: 11.5px; letter-spacing: .1em; border: 1px solid var(--border); border-radius: 6px; padding: 7px 12px; color: var(--ink-mid); cursor: pointer; background: var(--cream); }
+    .de-tick:hover { border-color: var(--gold); color: var(--forest); }
+    .de-tick span { color: var(--ink-faint); font-size: 9.5px; margin-left: 7px; }
+    .de-statline { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--border); }
+    .de-sv span { display: block; font-family: 'Space Mono', monospace; font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); }
+    .de-sv b { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; color: var(--forest); }
+    .de-runs { list-style: none; margin: 0; padding: 0; }
+    .de-run { display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 11px; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--border); cursor: pointer; }
+    .de-runs .de-run:first-child { border-top: 0; }
+    .de-run:hover .de-rt { color: var(--gold); }
+    .de-rt { font-family: 'Space Mono', monospace; font-size: 11.5px; letter-spacing: .1em; color: var(--ink); }
+    .de-rd { font-size: 12.5px; color: var(--ink-mid); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .de-rv { font-family: 'Space Mono', monospace; font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
+    .de-rv.pass { color: var(--pass-text); } .de-rv.concern { color: var(--concern-text); } .de-rv.fail { color: var(--fail-text); }
+    .de-empty-note { font-size: 12px; color: var(--ink-faint); font-style: italic; }
+    .de-whatis { font-family: 'Space Mono', monospace; font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); background: none; border: 0; cursor: pointer; padding: 0; border-bottom: 1px solid var(--border-mid); }
+    .de-whatis:hover { color: var(--gold); }
+    @media (max-width: 940px) {
+      .de-hero { grid-template-columns: 1fr; gap: 22px; }
+      .de-strip { grid-template-columns: 1fr; }
+      .de-cols { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) { .de-stage video { display: none; } }
+
     /* Stage 1 */
     .demo-toggles { display: flex; gap: 6px; margin-bottom: 16px; }
     .demo-toggle { padding: 6px 16px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); border-radius: 6px; background: var(--cream-dark); color: var(--ink-muted); cursor: pointer; }
@@ -456,21 +514,67 @@
   <!-- App content — hidden until authenticated -->
   <div id="app-content" style="display:none">
 
-  <!-- Hero description -->
-  <div style="max-width:900px;margin:0 auto 28px;text-align:center;padding:0 20px">
-    <h2 style="font-size:22px;font-weight:800;color:#1a5632;margin:0 0 8px">Verification Desk</h2>
-    <p style="font-size:14px;color:#6b7280;line-height:1.7;margin:0">
-      Verify any options setup in 5 steps. Enter a ticker to get a real-time snapshot with computed RSI, MACD, ADX, and gamma walls.
-      AI analyzes the setup and recommends strategies. Drill into any structure, verify with our 8-agent pipeline, and get a
-      pass/fail verdict with confidence score &mdash; all before you place a trade.
-    </p>
-    <div style="display:flex;justify-content:center;gap:20px;margin-top:14px;font-size:12px;color:#9ca3af">
-      <span>Powered by NewLeaf models</span>
-      <span>&bull;</span>
-      <span>Real-time data</span>
-      <span>&bull;</span>
-      <span>Gamma analysis</span>
+  <!-- Stage 1 empty state — first-visit hero / returning view -->
+  <div id="desk-empty">
+
+    <!-- Always-on hero: heading + ticker + cycling agent video -->
+    <div class="de-hero">
+      <div>
+        <span class="de-eyebrow">Verification Desk</span>
+        <h2 id="de-headline">Eight agents argue before you place the trade.</h2>
+        <p id="de-subhead">Give it a ticker. Deterministic code builds the structures and computes every number &mdash; RSI, gamma walls, expected move. Then eight AI agents argue about what those numbers mean, and you see where they disagree.</p>
+        <div class="de-startbar">
+          <input id="de-tk" placeholder="AAPL" aria-label="Ticker" onkeydown="if(event.key==='Enter')deskEmptyRun('de-tk')">
+          <button class="de-go" onclick="deskEmptyRun('de-tk')">Run the desk</button>
+        </div>
+        <p class="de-hint" id="de-hint">Try <b onclick="deskEmptyFill('de-tk','TSLA')">TSLA</b> &middot; <b onclick="deskEmptyFill('de-tk','SPY')">SPY</b> &middot; <b onclick="deskEmptyFill('de-tk','NVDA')">NVDA</b></p>
+      </div>
+      <div class="de-stage" id="de-stage">
+        <img id="de-stageimg" alt="" aria-hidden="true">
+        <video id="de-stagevideo" muted loop playsinline aria-hidden="true"></video>
+        <div class="de-cap"><span id="de-capL">&mdash;</span><b id="de-capR" style="--hue:#C9A96E">&mdash;</b></div>
+      </div>
     </div>
+
+    <!-- FIRST VISIT: the three-step story -->
+    <section class="de-view on" id="de-new">
+      <div class="de-strip">
+        <div class="de-st" id="de-st0">
+          <span class="n">01</span>
+          <h3>The engine builds it</h3>
+          <p>Strikes, credit, maximum loss, expected move &mdash; computed by deterministic code shaped by back-testing. Run it twice, get the same answer twice.</p>
+          <span class="who code">Deterministic code</span>
+        </div>
+        <div class="de-st" id="de-st1">
+          <span class="n">02</span>
+          <h3>Eight agents read it</h3>
+          <p>Four analysts in parallel, then a bull and a bear arguing opposite sides. They never produce a number &mdash; only an interpretation of one.</p>
+          <span class="who ai">AI agents</span>
+        </div>
+        <div class="de-st" id="de-st2">
+          <span class="n">03</span>
+          <h3>You see the disagreement</h3>
+          <p>A pass or fail verdict with every dissent visible &mdash; including when the case for the trade rests on an input the desk already distrusts.</p>
+          <span class="who ai">AI agents</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- RETURNING: recent tickers + verdicts -->
+    <section class="de-view" id="de-back">
+      <div class="de-cols">
+        <div class="de-card">
+          <p class="de-lab">Pick up where you left off</p>
+          <div class="de-recent" id="de-recent"></div>
+          <div class="de-statline" id="de-statline"></div>
+        </div>
+        <div class="de-card">
+          <p class="de-lab">Recent verdicts</p>
+          <ul class="de-runs" id="de-runs"></ul>
+        </div>
+      </div>
+    </section>
+
   </div>
 
   <!-- Stage progress nav -->
@@ -499,7 +603,7 @@
     <!-- ===== STAGE 1: Snapshot ===== -->
     <div class="stage" id="stage-1">
       <!-- Input row -->
-      <div class="panel" style="padding:16px 20px">
+      <div class="panel" id="stage1-input-panel" style="padding:16px 20px">
         <div class="demo-toggles" id="demo-toggles" style="display:none;margin-bottom:8px">
           <button class="demo-toggle active" data-ticker="SHOP" onclick="loadDemoTicker('SHOP')">SHOP</button>
           <button class="demo-toggle" data-ticker="NET" onclick="loadDemoTicker('NET')">NET</button>
@@ -514,6 +618,13 @@
             <select id="expiry-select" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--mono)"><option value="">Select expiry...</option></select>
           </div>
           <button class="btn-primary" id="load-btn" onclick="handleLoad()" style="padding:8px 20px;white-space:nowrap">Load</button>
+        </div>
+        <!-- Earnings-inside-expiry risk banner (shown when the next earnings date falls on/before the selected expiry) -->
+        <div id="earnings-warn" class="hidden" style="margin-top:12px;display:flex;gap:10px;align-items:flex-start;padding:11px 14px;border:1px solid var(--fail-border);background:var(--fail-bg);border-radius:8px">
+          <span aria-hidden="true" style="font-size:15px;line-height:1.25">&#9888;</span>
+          <div style="font-size:12.5px;line-height:1.5;color:var(--fail-text)">
+            <b id="earnings-warn-title" style="font-weight:700"></b><span id="earnings-warn-body"></span>
+          </div>
         </div>
       </div>
 
@@ -635,7 +746,8 @@
             <span class="strat-strip-label">Strategy:</span>
             <div class="strat-chip strat-type-card" data-strat="iron_condor"><svg viewBox="0 0 80 32"><polyline points="0,28 15,28 25,4 55,4 65,28 80,28" fill="none" stroke="var(--pass-text)" stroke-width="2.5"/></svg><span class="strat-chip-name">Iron Condor</span></div>
             <div class="strat-chip strat-type-card" data-strat="iron_butterfly"><svg viewBox="0 0 80 32"><polyline points="0,28 25,28 40,4 55,28 80,28" fill="none" stroke="var(--pass-text)" stroke-width="2.5"/></svg><span class="strat-chip-name">Iron Butterfly</span></div>
-            <div class="strat-chip strat-type-card" data-strat="vertical_spread"><svg viewBox="0 0 80 32"><polyline points="0,28 30,28 50,4 80,4" fill="none" stroke="var(--accent)" stroke-width="2.5"/></svg><span class="strat-chip-name">Bull Put</span></div>
+            <div class="strat-chip strat-type-card" data-strat="bull_call_spread"><svg viewBox="0 0 80 32"><polyline points="0,28 30,28 50,6 80,6" fill="none" stroke="var(--teal)" stroke-width="2.5"/></svg><span class="strat-chip-name">Bull Call</span></div>
+            <div class="strat-chip strat-type-card" data-strat="bull_put_spread"><svg viewBox="0 0 80 32"><polyline points="0,28 30,28 50,4 80,4" fill="none" stroke="var(--accent)" stroke-width="2.5"/></svg><span class="strat-chip-name">Bull Put</span></div>
             <div class="strat-chip strat-type-card" data-strat="bear_call_spread"><svg viewBox="0 0 80 32"><polyline points="0,4 30,4 50,28 80,28" fill="none" stroke="var(--fail-text)" stroke-width="2.5"/></svg><span class="strat-chip-name">Bear Call</span></div>
             <div class="strat-chip strat-type-card" data-strat="short_strangle"><svg viewBox="0 0 80 32"><polyline points="0,28 20,28 30,4 50,4 60,28 80,28" fill="none" stroke="var(--concern-text)" stroke-width="2.5"/></svg><span class="strat-chip-name">Strangle</span></div>
             <div class="strat-chip strat-type-card" data-strat="broken_wing_butterfly"><svg viewBox="0 0 80 32"><polyline points="0,22 20,28 35,4 50,28 65,22 80,22" fill="none" stroke="#a78bfa" stroke-width="2.5"/></svg><span class="strat-chip-name">BWB</span></div>
@@ -679,7 +791,8 @@
           <div class="strat-strip" style="margin-bottom:0">
             <div class="strat-chip strat-type-card" data-strat="iron_condor"><svg viewBox="0 0 80 32"><polyline points="0,28 15,28 25,4 55,4 65,28 80,28" fill="none" stroke="var(--pass-text)" stroke-width="2.5"/></svg><span class="strat-chip-name">Iron Condor</span></div>
             <div class="strat-chip strat-type-card" data-strat="iron_butterfly"><svg viewBox="0 0 80 32"><polyline points="0,28 25,28 40,4 55,28 80,28" fill="none" stroke="var(--pass-text)" stroke-width="2.5"/></svg><span class="strat-chip-name">Iron Butterfly</span></div>
-            <div class="strat-chip strat-type-card" data-strat="vertical_spread"><svg viewBox="0 0 80 32"><polyline points="0,28 30,28 50,4 80,4" fill="none" stroke="var(--accent)" stroke-width="2.5"/></svg><span class="strat-chip-name">Bull Put</span></div>
+            <div class="strat-chip strat-type-card" data-strat="bull_call_spread"><svg viewBox="0 0 80 32"><polyline points="0,28 30,28 50,6 80,6" fill="none" stroke="var(--teal)" stroke-width="2.5"/></svg><span class="strat-chip-name">Bull Call</span></div>
+            <div class="strat-chip strat-type-card" data-strat="bull_put_spread"><svg viewBox="0 0 80 32"><polyline points="0,28 30,28 50,4 80,4" fill="none" stroke="var(--accent)" stroke-width="2.5"/></svg><span class="strat-chip-name">Bull Put</span></div>
             <div class="strat-chip strat-type-card" data-strat="bear_call_spread"><svg viewBox="0 0 80 32"><polyline points="0,4 30,4 50,28 80,28" fill="none" stroke="var(--fail-text)" stroke-width="2.5"/></svg><span class="strat-chip-name">Bear Call</span></div>
             <div class="strat-chip strat-type-card" data-strat="short_strangle"><svg viewBox="0 0 80 32"><polyline points="0,28 20,28 30,4 50,4 60,28 80,28" fill="none" stroke="var(--concern-text)" stroke-width="2.5"/></svg><span class="strat-chip-name">Strangle</span></div>
             <div class="strat-chip strat-type-card" data-strat="broken_wing_butterfly"><svg viewBox="0 0 80 32"><polyline points="0,22 20,28 35,4 50,28 65,22 80,22" fill="none" stroke="#a78bfa" stroke-width="2.5"/></svg><span class="strat-chip-name">BWB</span></div>
@@ -842,14 +955,36 @@
         padding:9px 16px;border-radius:3px;border:1px solid var(--vd-goldsoft);background:var(--vd-verdict-bg);color:var(--vd-gold);cursor:pointer;opacity:0;pointer-events:none;transition:opacity .4s}
       .vd-seeverdict.ready{opacity:1;pointer-events:auto;animation:vd-cta 1.9s ease-in-out infinite}
       @keyframes vd-cta{0%,100%{box-shadow:0 0 0 0 rgba(138,106,34,0)}50%{box-shadow:0 0 0 4px rgba(138,106,34,.16)}}
+      /* completion call-to-action — tells first-time users the desk is done and what to do next */
+      .vd-donecta{display:none;margin-top:20px;padding:16px 20px;border:1px solid var(--vd-gold);border-radius:6px;
+        background:var(--vd-verdict-bg);align-items:center;justify-content:space-between;gap:16px 20px;flex-wrap:wrap}
+      .vd-donecta.show{display:flex;animation:vd-fade .45s ease}
+      .vd-donecta-txt{display:flex;align-items:center;gap:12px;font-size:14px;color:var(--vd-body);line-height:1.4}
+      .vd-donecta-tick{flex:none;width:26px;height:26px;border-radius:50%;background:var(--vd-gold);color:#fff;
+        display:grid;place-items:center;font-size:14px;font-weight:700}
+      .vd-donecta-btn{flex:none;font-family:var(--vd-mono);font-size:11px;letter-spacing:.11em;text-transform:uppercase;
+        padding:12px 22px;border-radius:4px;border:1px solid var(--vd-gold);background:var(--vd-gold);color:#fff;
+        cursor:pointer;animation:vd-cta 1.9s ease-in-out infinite}
+      .vd-donecta-btn:hover{opacity:.92}
 
       .vd-screen{display:none}
       .vd-screen.on{display:block;animation:vd-fade .45s ease}
       @keyframes vd-fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-      .vd-shead{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+      .vd-shead{margin-bottom:12px}
+      .vd-shead::after{content:"";display:table;clear:both}
       .vd-shead h2{font-size:1.5rem}
-      .vd-shead p{margin:3px 0 0;font-size:13px;color:var(--vd-body2);max-width:62ch}
+      .vd-shead p{margin:3px 0 0;font-size:13px;color:var(--vd-body2);max-width:none}
       .vd-shead .vd-meta{font-family:var(--vd-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--vd-stone);white-space:nowrap}
+      .vd-shead > .vd-meta{float:right;margin:6px 0 8px 18px}
+      .vd-shead-tr{float:right;display:flex;flex-direction:row-reverse;align-items:center;gap:12px;margin:2px 0 8px 18px}
+      .vd-checklist-pop{position:relative}
+      .vd-checklist-pop > summary{border:1px solid var(--vd-line);border-radius:6px;padding:7px 11px;gap:14px;background:var(--vd-panel);white-space:nowrap}
+      .vd-checklist-pop > summary:hover{border-color:var(--vd-line3)}
+      .vd-checklist-pop[open] .vd-cl-body{position:absolute;top:calc(100% + 8px);right:0;width:330px;max-width:82vw;background:var(--vd-panel);border:1px solid var(--vd-line);border-radius:8px;padding:14px 16px;box-shadow:0 12px 32px rgba(11,45,35,.16);z-index:40;text-align:left}
+      @media (max-width:820px){
+        .vd-shead > .vd-meta,.vd-shead-tr{float:none;margin:10px 0 0}
+        .vd-checklist-pop[open] .vd-cl-body{position:static;width:auto;max-width:none;box-shadow:none;margin-top:9px}
+      }
 
       /* ── screen 1: the read (accordion) ── */
       .vd-reads{display:grid;grid-template-columns:1fr;gap:8px;align-items:start}
@@ -872,6 +1007,20 @@
       .vd-strip .vd-th img{width:100%;height:100%;object-fit:cover;display:block}
       .vd-strip .vd-nm b{font-family:var(--vd-mono);font-size:10.5px;letter-spacing:.14em;color:var(--hue);display:block}
       .vd-strip .vd-nm span{font-size:12px;color:var(--vd-role)}
+      .vd-checks{display:block;font-style:normal;font-size:10.5px;line-height:1.35;color:var(--vd-stone);margin-top:2px;max-width:34ch}
+      .vd-argside .vd-checks{max-width:none;margin-top:5px}
+      @media (max-width:820px){.vd-strip .vd-checks{display:none}}
+      .vd-checklist summary{list-style:none;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+      .vd-checklist summary::-webkit-details-marker{display:none}
+      .vd-checklist .vd-cl-x{font-family:var(--vd-mono);font-size:13px;color:var(--vd-stone);transition:transform .25s}
+      .vd-checklist[open] .vd-cl-x{transform:rotate(45deg)}
+      .vd-cl-body{margin-top:11px}
+      .vd-cl-ph{font-family:var(--vd-mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--vd-stone);margin:11px 0 5px;display:flex;gap:8px;align-items:baseline}
+      .vd-cl-ph:first-child{margin-top:0}
+      .vd-cl-ph em{font-style:normal;color:var(--vd-stone);opacity:.6;font-size:8px}
+      .vd-cl-body ul{list-style:none;margin:0;padding:0}
+      .vd-cl-body li{font-size:11px;color:var(--vd-body2);padding:3px 0;line-height:1.4}
+      .vd-cl-body li b{font-family:var(--vd-mono);font-size:9.5px;letter-spacing:.1em;color:var(--vd-body3);margin-right:5px}
       .vd-strip .vd-hl{font-family:var(--vd-mono);font-size:11.5px;color:var(--vd-stone);white-space:nowrap}
       .vd-strip .vd-hl b{color:var(--vd-text);font-weight:400}
       .vd-strip .vd-sy{font-size:12.5px;color:var(--vd-body2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1134,11 +1283,35 @@
             <!-- SCREEN 1 — the read (accordion, built by JS) -->
             <section class="vd-screen on" id="vd-s0" aria-label="Phase one, the read">
               <div class="vd-shead">
+                <div class="vd-shead-tr">
+                  <details class="vd-checklist vd-checklist-pop">
+                    <summary><span class="vd-lab" style="margin:0">What the desk checks</span><span class="vd-cl-x">&#43;</span></summary>
+                    <div class="vd-cl-body">
+                      <p class="vd-cl-ph">1 &middot; The read <em>parallel</em></p>
+                      <ul>
+                        <li><b>ATLAS</b> Technical &mdash; RSI, ADX, ATR, trend, breakout risk</li>
+                        <li><b>SIGMA</b> Gamma &mdash; dealer walls, OI confidence, flip distance, wall integrity</li>
+                        <li><b>VEGA</b> Volatility &mdash; IV rank, implied vs realised, premium fairness</li>
+                        <li><b>PULSE</b> Sentiment &mdash; news polarity, catalysts in window, crowd tone</li>
+                      </ul>
+                      <p class="vd-cl-ph">2 &middot; The argument <em>adversarial</em></p>
+                      <ul>
+                        <li><b>TITAN</b> Bull &mdash; the strongest case for the trade</li>
+                        <li><b>RAVEN</b> Bear &mdash; the strongest case against</li>
+                      </ul>
+                      <p class="vd-cl-ph">3 &middot; The verdict</p>
+                      <ul>
+                        <li><b>SENTINEL</b> Risk &mdash; max loss, position sizing, portfolio fit</li>
+                        <li><b>ORACLE</b> Judge &mdash; take it, take it smaller, or skip it &mdash; with dissent shown</li>
+                      </ul>
+                    </div>
+                  </details>
+                  <span class="vd-meta">4 agents &middot; parallel</span>
+                </div>
                 <div>
                   <h2>The read</h2>
-                  <p>Four analysts read the same computed snapshot in parallel. Each sits beside the evidence it actually read &mdash; the engine produced every figure below.</p>
+                  <p>Four analysts read the same computed snapshot in parallel &mdash; one each on technicals, gamma, volatility and sentiment. Each sits beside the evidence it actually read; the engine produced every figure below.</p>
                 </div>
-                <span class="vd-meta">4 agents &middot; parallel</span>
               </div>
               <div class="vd-reads" id="vd-reads"></div>
             </section>
@@ -1146,11 +1319,11 @@
             <!-- SCREEN 2 — the argument -->
             <section class="vd-screen" id="vd-s1" aria-label="Phase two, the argument">
               <div class="vd-shead">
+                <span class="vd-meta">2 agents &middot; adversarial</span>
                 <div>
                   <h2>The argument</h2>
                   <p>Two researchers argue the same structure from opposite sides. Neither introduces a new number &mdash; they contest what the analysts' figures mean.</p>
                 </div>
-                <span class="vd-meta">2 agents &middot; adversarial</span>
               </div>
               <div class="vd-arg">
                 <div class="vd-argside bull" id="vd-side-bull">
@@ -1160,7 +1333,7 @@
                   </div>
                   <div class="vd-sh">
                     <span class="vd-por"><img src="./public/agents/titan-256.jpg" alt="" aria-hidden="true" width="64" height="64"></span>
-                    <span><span class="vd-cn2">TITAN</span><h3>The case for</h3><span class="vd-rl">Bull researcher</span></span>
+                    <span><span class="vd-cn2">TITAN</span><h3>The case for</h3><span class="vd-rl">Bull researcher</span><em class="vd-checks">Builds the strongest case for the trade from the analysts’ figures</em></span>
                   </div>
                   <ul class="vd-cases" id="vd-case-bull"></ul>
                 </div>
@@ -1172,7 +1345,7 @@
                   </div>
                   <div class="vd-sh">
                     <span class="vd-por"><img src="./public/agents/raven-256.jpg" alt="" aria-hidden="true" width="64" height="64"></span>
-                    <span><span class="vd-cn2">RAVEN</span><h3>The case against</h3><span class="vd-rl">Bear researcher</span></span>
+                    <span><span class="vd-cn2">RAVEN</span><h3>The case against</h3><span class="vd-rl">Bear researcher</span><em class="vd-checks">Builds the strongest case against — where the setup breaks</em></span>
                   </div>
                   <ul class="vd-cases" id="vd-case-bear"></ul>
                 </div>
@@ -1181,6 +1354,13 @@
                 <p class="vd-lab">Where the argument actually breaks</p>
                 <div class="vd-chain" id="vd-chain"></div>
                 <p id="vd-dep-note">A dependency, not a disagreement: the bull's strongest evidence is derived from the very input the gamma specialist flagged as unreliable, so the two cases are not independent.</p>
+              </div>
+              <div class="vd-donecta" id="vd-donecta" role="status">
+                <div class="vd-donecta-txt">
+                  <span class="vd-donecta-tick">&#10003;</span>
+                  <span><b>Bull &amp; bear analysis complete.</b> You&#8217;ve seen both sides &mdash; open the verdict for the desk&#8217;s final call.</span>
+                </div>
+                <button class="vd-donecta-btn" id="vd-donecta-btn" type="button">See the verdict &#8594;</button>
               </div>
             </section>
           </main>
@@ -1481,9 +1661,134 @@
       handleLoad();
     }
 
+    // ── Stage 1 empty state (first-visit hero + returning view) ──────────────
+    // Landing surface shown before any ticker is loaded. First-visit shows a
+    // hero with a cycling agent carousel + story cards; returning visits show
+    // the ticker bar plus the user's own recent tickers and verdicts.
+    const DESK_CLIPS = [
+      { k: 'atlas',  cap: 'Reading trend and momentum', who: 'ATLAS',  hue: '#1a8c5e' },
+      { k: 'sigma',  cap: 'Mapping the gamma walls',    who: 'SIGMA',  hue: '#C9A96E' },
+      { k: 'titan',  cap: 'Making the case for',        who: 'TITAN',  hue: '#0d6e56' },
+      { k: 'raven',  cap: 'Making the case against',    who: 'RAVEN',  hue: '#c0392b' },
+      { k: 'oracle', cap: 'Weighing the record',        who: 'ORACLE', hue: '#C9A96E' }
+    ];
+    const DESK_BASE = './public/agents/';
+    const deskReduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let deskCi = 0, deskTimer = null;
+
+    function deskShowClip(i) {
+      const c = DESK_CLIPS[i];
+      const im = document.getElementById('de-stageimg');
+      const v = document.getElementById('de-stagevideo');
+      if (!im || !v || !c) return;
+      im.src = DESK_BASE + c.k + '-poster.jpg';
+      document.getElementById('de-capL').textContent = c.cap;
+      const r = document.getElementById('de-capR'); r.textContent = c.who; r.style.setProperty('--hue', c.hue);
+      // Light the story card that maps to this carousel position.
+      document.querySelectorAll('#de-new .de-st').forEach((s, n) =>
+        s.classList.toggle('on', n === Math.min(2, Math.floor(i * 3 / DESK_CLIPS.length))));
+      if (!deskReduce) {
+        v.poster = DESK_BASE + c.k + '-poster.jpg';
+        v.innerHTML = '<source src="' + DESK_BASE + c.k + '.mp4" type="video/mp4">';
+        v.load(); v.play().catch(() => {});
+      }
+    }
+    function deskStartCarousel() {
+      deskShowClip(deskCi);
+      if (deskReduce) return;                 // reduced motion: posters only, no cycling
+      clearInterval(deskTimer);
+      deskTimer = setInterval(() => { deskCi = (deskCi + 1) % DESK_CLIPS.length; deskShowClip(deskCi); }, 5200);
+    }
+    function deskStopCarousel() { clearInterval(deskTimer); deskTimer = null; }
+
+    function deskEmptySetView(which) {
+      const isNew = which === 'new';
+      const n = document.getElementById('de-new'), b = document.getElementById('de-back');
+      if (n) n.classList.toggle('on', isNew);
+      if (b) b.classList.toggle('on', !isNew);
+      const hl = document.getElementById('de-headline');
+      const sub = document.getElementById('de-subhead');
+      const hint = document.getElementById('de-hint');
+      if (hl) hl.textContent = isNew ? 'Eight agents argue before you place the trade.' : 'Run the desk.';
+      if (sub) sub.textContent = isNew
+        ? 'Give it a ticker. Deterministic code builds the structures and computes every number — RSI, gamma walls, expected move. Then eight AI agents argue about what those numbers mean, and you see where they disagree.'
+        : 'Ticker in, structures out, eight agents on the record.';
+      if (hint) hint.style.display = isNew ? '' : 'none';
+      deskStartCarousel();   // the agent video runs on both views
+    }
+    function deskEmptyFill(id, t) { const el = document.getElementById(id); if (el) { el.value = t; el.focus(); } }
+    function deskEmptyRun(id) {
+      const el = document.getElementById(id);
+      const t = ((el && el.value) || '').trim().toUpperCase();
+      if (!t) { if (el) el.focus(); return; }
+      const ti = document.getElementById('ticker-input');
+      if (ti) ti.value = t;
+      handleLoad();                            // hands off to the existing Stage 2 flow
+    }
+    function hideDeskEmpty() {
+      const de = document.getElementById('desk-empty');
+      if (de) de.style.display = 'none';
+      deskStopCarousel();
+      const nav = document.getElementById('progress-nav'); if (nav) nav.style.display = '';
+      const ip = document.getElementById('stage1-input-panel'); if (ip) ip.style.display = '';
+    }
+    window.initDeskEmpty = async function () {
+      const de = document.getElementById('desk-empty');
+      if (!de) return;
+      if (state.ticker) { hideDeskEmpty(); return; }   // a run is already loaded
+      de.style.display = '';
+      const nav = document.getElementById('progress-nav'); if (nav) nav.style.display = 'none';
+      const ip = document.getElementById('stage1-input-panel'); if (ip) ip.style.display = 'none';
+      let seen = false;
+      try { seen = localStorage.getItem('nl_desk_seen') === '1'; } catch (e) {}
+      if (seen) {
+        deskEmptySetView('back');
+        try { await renderReturning(); } catch (e) { console.warn('[desk] history render failed', e); }
+      } else {
+        deskEmptySetView('new');
+      }
+      try { localStorage.setItem('nl_desk_seen', '1'); } catch (e) {}
+    };
+
+    async function renderReturning() {
+      const recEl = document.getElementById('de-recent');
+      const statEl = document.getElementById('de-statline');
+      const runsEl = document.getElementById('de-runs');
+      const hist = (window.getDeskHistory ? await window.getDeskHistory() : null)
+        || { recentTickers: [], recentVerdicts: [], stats: { runsThisMonth: 0, stoodAside: 0, medianDeskTime: null } };
+      if (recEl) {
+        recEl.innerHTML = hist.recentTickers.length
+          ? hist.recentTickers.map(r => `<span class="de-tick" onclick="deskEmptyFill('de-tk','${r.ticker}')">${r.ticker}<span>${r.ago}</span></span>`).join('')
+          : '<span class="de-empty-note">No runs yet &mdash; enter a ticker above.</span>';
+      }
+      if (statEl) {
+        const parts = [
+          `<span class="de-sv"><span>Runs this month</span><b>${hist.stats.runsThisMonth}</b></span>`,
+          `<span class="de-sv"><span>Stood aside</span><b>${hist.stats.stoodAside}</b></span>`
+        ];
+        if (hist.stats.medianDeskTime != null)
+          parts.push(`<span class="de-sv"><span>Median desk time</span><b>${hist.stats.medianDeskTime}s</b></span>`);
+        statEl.innerHTML = parts.join('');
+      }
+      if (runsEl) {
+        runsEl.innerHTML = hist.recentVerdicts.length
+          ? hist.recentVerdicts.map(v => `<li class="de-run" onclick="deskEmptyFill('de-tk','${v.ticker}')"><span class="de-rt">${v.ticker}</span><span class="de-rd">${v.line}</span><span class="de-rv ${v.cls}">${v.word}</span></li>`).join('')
+          : '<li class="de-empty-note" style="padding:9px 0;list-style:none">Complete a verify run and your verdicts appear here.</li>';
+      }
+    }
+
+    // Pause the carousel when the tab is hidden; resume on first-visit view.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { deskStopCarousel(); return; }
+      const de = document.getElementById('desk-empty');
+      if (de && de.style.display !== 'none') deskStartCarousel();
+    });
+
     async function handleLoad() {
       const ticker = $('#ticker-input').value.trim().toUpperCase();
       if (!ticker) return;
+      if (typeof hideDeskEmpty === 'function') hideDeskEmpty();
+      $('#earnings-warn')?.classList.add('hidden');
 
       // Snapshot is free — no rate limit check here (metering on verify/recommend only)
       // New ticker → wipe EVERYTHING derived from the previous one so no stale data
@@ -1610,6 +1915,7 @@
         }
 
         show($('#snapshot-content'));
+        updateEarningsWarning();
       } catch (err) {
         alert('Failed to load: ' + err.message);
       } finally {
@@ -1623,9 +1929,50 @@
       $('#find-strategies-btn').disabled = !state.selectedExpiry;
       $$('.manual-strat-btn').forEach(b => b.disabled = !state.selectedExpiry);
       if (state.selectedExpiry) loadGammaChart();
+      updateEarningsWarning();
     });
 
     const R2_BASE = 'https://pub-04bbb919022645b3a3f318b2ebdf48c0.r2.dev';
+
+    // ── Earnings-inside-expiry risk warning ──────────────────────────────────
+    // The next earnings date is a binary event: if it lands on/before the chosen
+    // expiry, premium-selling and defined-risk structures can fail on the gap. We
+    // read the same earnings calendar the scanner uses (R2, daily-refreshed; the
+    // deployed copy is the fallback) and warn the moment such an expiry is picked.
+    async function loadEarningsCalendar() {
+      if (state._earningsCal) return state._earningsCal;
+      let data = null;
+      try { const r = await fetch(`${R2_BASE}/reports/earnings-calendar.json`); if (r.ok) data = await r.json(); } catch (e) {}
+      if (!data) { try { const r = await fetch('earnings-calendar.json'); if (r.ok) data = await r.json(); } catch (e) {} }
+      state._earningsCal = (data && data.symbols) ? data.symbols : {};
+      return state._earningsCal;
+    }
+    async function earningsDateFor(ticker) {
+      if (!ticker) return null;
+      const cal = await loadEarningsCalendar();
+      const v = cal[ticker.toUpperCase()];
+      if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
+      if (v && typeof v === 'object' && typeof v.earnings === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v.earnings)) return v.earnings.slice(0, 10);
+      return null;
+    }
+    async function updateEarningsWarning() {
+      const el = $('#earnings-warn'); if (!el) return;
+      const hide = () => el.classList.add('hidden');
+      const ticker = state.ticker, expiry = state.selectedExpiry;
+      if (!ticker || !expiry) return hide();
+      let ed;
+      try { ed = await earningsDateFor(ticker); } catch (e) { return hide(); }
+      // Guard against a stale async result after the user changed ticker/expiry.
+      if (state.ticker !== ticker || state.selectedExpiry !== expiry) return;
+      if (!ed) return hide();
+      const today = new Date().toISOString().slice(0, 10);
+      if (ed < today || ed > expiry) return hide();   // already passed, or safely after expiry
+      const days = Math.max(0, Math.round((new Date(ed + 'T16:00:00').getTime() - Date.now()) / 86400000));
+      const when = days <= 0 ? 'today' : `in ~${days}d`;
+      $('#earnings-warn-title').textContent = `Earnings ${when} (${ed}) fall inside this expiry. `;
+      $('#earnings-warn-body').textContent = 'High risk the strategy fails on the binary earnings move — pick an expiry before this date, or size for a gap.';
+      el.classList.remove('hidden');
+    }
 
     async function loadGammaChart(retryCount = 0) {
       if (!state.ticker || !state.selectedExpiry) return;
@@ -2357,6 +2704,14 @@
           { side: 'short', type: 'call', strike: find(+1).strike },
           { side: 'long', type: 'call', strike: find(+3).strike },
         ]; break;
+        case 'bull_call_spread': legs = [   // debit call vertical, bullish
+          { side: 'long', type: 'call', strike: find(0).strike },
+          { side: 'short', type: 'call', strike: find(+2).strike },
+        ]; break;
+        case 'bull_put_spread': legs = [    // credit put vertical, bullish (same as vertical_spread)
+          { side: 'short', type: 'put', strike: find(-1).strike },
+          { side: 'long', type: 'put', strike: find(-3).strike },
+        ]; break;
         case 'iron_butterfly': legs = [
           { side: 'long', type: 'put', strike: find(-2).strike },
           { side: 'short', type: 'put', strike: find(0).strike },
@@ -2383,7 +2738,7 @@
       state.legs.forEach(function(l) { nc += l.side === 'short' ? l.mid : -l.mid; });
       console.log('[manualStrategy] net credit:', nc);
 
-      var nameMap = { iron_condor: 'Iron Condor', vertical_spread: 'Bull Put Spread', bear_call_spread: 'Bear Call Spread', broken_wing_butterfly: 'BWB', short_strangle: 'Strangle', calendar: 'Calendar', diagonal: 'Diagonal', iron_butterfly: 'Iron Butterfly' };
+      var nameMap = { iron_condor: 'Iron Condor', vertical_spread: 'Bull Put Spread', bull_put_spread: 'Bull Put Spread', bear_call_spread: 'Bear Call Spread', bull_call_spread: 'Bull Call Spread', bear_put_spread: 'Bear Put Spread', broken_wing_butterfly: 'BWB', short_strangle: 'Strangle', calendar: 'Calendar', calendar_spread: 'Calendar', diagonal: 'Diagonal', iron_butterfly: 'Iron Butterfly' };
       state.selectedStrategy = { strategy: strategyType, name: nameMap[strategyType] || strategyType, score: 0, rationale: 'Manual selection', netCredit: nc, legDetails: state.legs };
       state.selectedStrategyIndex = -1;
       state.qty = 10;
@@ -3495,14 +3850,14 @@
        the desk DOM originates from a model response.
        ================================================================ */
     const DESK_AGENTS = [
-      { key:'technical', ord:1, cn:'ATLAS',    role:'Technical analyst', hue:'sage',  ph:1, por:'atlas' },
-      { key:'gamma',     ord:2, cn:'SIGMA',    role:'Gamma specialist',  hue:'gold',  ph:1, por:'sigma' },
-      { key:'iv',        ord:3, cn:'VEGA',     role:'Volatility expert',  hue:'sage',  ph:1, por:'vega' },
-      { key:'sentiment', ord:4, cn:'PULSE',    role:'Sentiment analyst',  hue:'sage',  ph:1, por:'pulse' },
-      { key:'bull',      ord:5, cn:'TITAN',    role:'Bull researcher',    hue:'green', ph:2, por:'titan' },
-      { key:'bear',      ord:6, cn:'RAVEN',    role:'Bear researcher',    hue:'red',   ph:2, por:'raven' },
-      { key:'risk',      ord:7, cn:'SENTINEL', role:'Risk manager',       hue:'amber', ph:3, por:'sentinel' },
-      { key:'judge',     ord:8, cn:'ORACLE',   role:'Chief judge',        hue:'gold',  ph:3, por:'oracle' }
+      { key:'technical', ord:1, cn:'ATLAS',    role:'Technical analyst', hue:'sage',  ph:1, por:'atlas',    checks:'RSI · ADX · ATR — trend strength, momentum & breakout risk' },
+      { key:'gamma',     ord:2, cn:'SIGMA',    role:'Gamma specialist',  hue:'gold',  ph:1, por:'sigma',    checks:'Dealer gamma walls & OI confidence — are the support/resistance walls real' },
+      { key:'iv',        ord:3, cn:'VEGA',     role:'Volatility expert',  hue:'sage',  ph:1, por:'vega',     checks:'IV rank & implied-vs-realised vol — is option premium rich or cheap' },
+      { key:'sentiment', ord:4, cn:'PULSE',    role:'Sentiment analyst',  hue:'sage',  ph:1, por:'pulse',    checks:'News polarity & catalysts in the window — crowd tone and event risk' },
+      { key:'bull',      ord:5, cn:'TITAN',    role:'Bull researcher',    hue:'green', ph:2, por:'titan',    checks:'Builds the strongest case for the trade from the analysts’ figures' },
+      { key:'bear',      ord:6, cn:'RAVEN',    role:'Bear researcher',    hue:'red',   ph:2, por:'raven',    checks:'Builds the strongest case against — where the setup breaks' },
+      { key:'risk',      ord:7, cn:'SENTINEL', role:'Risk manager',       hue:'amber', ph:3, por:'sentinel', checks:'Max loss, position sizing & fit against your open portfolio' },
+      { key:'judge',     ord:8, cn:'ORACLE',   role:'Chief judge',        hue:'gold',  ph:3, por:'oracle',   checks:'Weighs both cases and rules — take it, take it smaller, or skip it' }
     ];
     const AGENT_TAGS_DESK = { technical:'supportive', gamma:'supportive', iv:'caution', sentiment:'neutral', bull:'supportive', bear:'caution', risk:'caution', judge:'neutral' };
     const VD_REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -3712,6 +4067,7 @@
       deskCache = { hash: null, vData: null, reports: null, done: false };
       state.deskReports = null; state.override = null;
       const btn = $('#vd-seeverdict'); if (btn) btn.classList.remove('ready');
+      $('#vd-donecta')?.classList.remove('show');
     }
     // Exposed so Step-3 edits (leg/strike/expiry/size) can drop stale results.
     window.invalidateDesk = invalidateDesk;
@@ -3720,7 +4076,7 @@
     function buildRoster() {
       const el = $('#vd-roster'); if (!el) return;
       el.innerHTML = DESK_AGENTS.map(a =>
-        `<li id="vd-ro-${a.key}" style="--hue:${vdHue(a.key)}"><span class="vd-tick"></span><b>${a.cn}</b><em class="vd-rst">Queued</em></li>`).join('');
+        `<li id="vd-ro-${a.key}" style="--hue:${vdHue(a.key)}" title="${escHtml(a.cn + ' · ' + a.role + ' — ' + (a.checks || ''))}"><span class="vd-tick"></span><b>${a.cn}</b><em class="vd-rst">Queued</em></li>`).join('');
     }
     function roState(key, cls, word, hueCls) {
       const li = $('#vd-ro-' + key); if (!li) return;
@@ -3730,6 +4086,20 @@
     }
     const uiNow = t => { const e = $('#vd-r-now'); if (e) e.textContent = t || '—'; };
     const uiCalls = n => { const e = $('#vd-r-calls'); if (e) e.textContent = n; };
+    // Real number of model calls the pipeline made, from verify telemetry. Falls back to
+    // the agent count only when telemetry is absent (e.g. demo) so the tile is never a bare 0.
+    function deskCallCount() {
+      const n = state.verifyData?.cost?.calls?.length;
+      return (typeof n === 'number' && n > 0) ? n : DESK_AGENTS.length;
+    }
+    let vdCallsAnim = null;
+    function animateCalls(target) {
+      clearInterval(vdCallsAnim);
+      target = Math.max(0, target | 0);
+      if (VD_REDUCE || target <= 0) { uiCalls(target); return; }
+      let cur = 0; const step = Math.max(1, Math.round(target / 20));
+      vdCallsAnim = setInterval(() => { cur = Math.min(target, cur + step); uiCalls(cur); if (cur >= target) clearInterval(vdCallsAnim); }, 45);
+    }
     function uiProgress(reported) {
       const pct = Math.round(reported / 8 * 100);
       const p = $('#vd-donut-pct'); if (p) p.textContent = pct + '%';
@@ -3843,7 +4213,7 @@
         return `<article class="vd-read" id="vd-rd-${a.key}" style="--hue:${vdHue(a.key)}">
           <div class="vd-strip" role="button" tabindex="0" aria-expanded="false">
             <span class="vd-th"><img src="./public/agents/${a.por}-128.jpg" alt="" aria-hidden="true" width="38" height="38"></span>
-            <span class="vd-nm"><b>${a.cn}</b><span>${a.role}</span></span>
+            <span class="vd-nm"><b>${a.cn}</b><span>${a.role}</span><em class="vd-checks">${escHtml(a.checks || '')}</em></span>
             <span class="vd-hl">${escHtml(s.head)} <b>${escHtml(s.val)}</b></span>
             <span class="vd-sy" id="vd-sy-${a.key}"></span>
             <span class="vd-rt"><span class="vd-t" id="vd-st-${a.key}">Queued</span><span class="vd-vchip" id="vd-sc-${a.key}"></span></span>
@@ -3898,7 +4268,6 @@
       $('#vd-st-' + k).textContent = 'Reading…';
       const wt = $('#vd-wt-' + k); if (wt) wt.textContent = 'Reading…';
       roState(k, 'live', 'Reading', ''); uiNow(a.cn);
-      counts.calls += 2; uiCalls(counts.calls);
       vdPlay('vd-vid-' + k);
       const t0 = Date.now();
       await typeInto($('#vd-say-' + k), rep.line || rep.finding || '');
@@ -3993,7 +4362,7 @@
       $('#vd-dep')?.classList.remove('on');
       ['vd-case-bull', 'vd-case-bear'].forEach(id => { const u = $('#' + id); if (u) u.innerHTML = ''; });
       ['vd-side-bull', 'vd-side-bear'].forEach(id => $('#' + id)?.classList.remove('on', 'speaking'));
-      uiProgress(0); uiCalls(0); uiNow('Desk running…');
+      uiProgress(0); uiCalls(isDemo ? 0 : '…'); uiNow('Desk running…');
       const hash = structureHash();
       vdStartClock();
 
@@ -4058,6 +4427,9 @@
       const specs = buildReadSpecs(reports);
       DESK_AGENTS.filter(a => a.ph === 1).forEach(a => { const s = specs[a.key]; if (reports[a.key]) reports[a.key].line = s.line; Object.assign(reports[a.key] || (reports[a.key] = {}), { pct: s.pct, stance: reports[a.key]?.stance || AGENT_TAGS_DESK[a.key] }); });
       buildReadCards(specs);
+      // The pipeline has already made every model call server-side by the time vData
+      // returns, so show the real total (count-up) rather than a fabricated per-agent tally.
+      animateCalls(deskCallCount());
 
       const counts = { calls: 0, reported: 0, flags: 0, agree: 0 };
       // Phase 1 — the read (accordion)
@@ -4068,8 +4440,8 @@
       // Phase 2 — the argument
       showScreen(1); $('#vd-pnav')?.querySelectorAll('.vd-pstep')[1]?.removeAttribute('disabled');
       await sleep(VD_REDUCE ? 0 : 250);
-      await revealSide('bull', reports.bull, reports); counts.calls += 2; uiCalls(counts.calls); counts.reported++; uiProgress(counts.reported);
-      await revealSide('bear', reports.bear, reports); counts.calls += 2; uiCalls(counts.calls);
+      await revealSide('bull', reports.bull, reports); counts.reported++; uiProgress(counts.reported);
+      await revealSide('bear', reports.bear, reports);
       if (reports.bear && reports.bear.stance === 'caution') counts.flags++;
       counts.reported++; uiProgress(counts.reported);
       await sleep(VD_REDUCE ? 0 : 380); revealDep();
@@ -4081,9 +4453,25 @@
       deskCache = { hash, vData, reports, done: true };
       state.deskReports = reports; state.deskCounts = counts;
       const seeBtn = $('#vd-seeverdict'); if (seeBtn) seeBtn.classList.add('ready');
+      $('#vd-donecta')?.classList.add('show');
       if (!isDemo && vData && typeof renderTraceInspector === 'function') { try { renderTraceInspector(vData); } catch (e) {} }
       if (!isDemo && window.trackUsage) {
-        try { const models = state.verifyData?.cost?.calls?.map(c => c.model).filter(Boolean) || ['pipeline']; await window.trackUsage('verify', state.ticker, { models: [...new Set(models)], cost: state.verifyData?.cost?.totalCost || 0.05, tokens: state.totalTokens || 10000 }); }
+        try {
+          const models = state.verifyData?.cost?.calls?.map(c => c.model).filter(Boolean) || ['pipeline'];
+          const v = state.verdict || {};
+          const structure = state.selectedStrategy?.name || state.selectedStrategy?.strategy || '';
+          const reason = (v.summary || '').replace(/\s+/g, ' ').trim().slice(0, 140);
+          await window.trackUsage('verify', state.ticker, {
+            models: [...new Set(models)],
+            cost: state.verifyData?.cost?.totalCost || 0.05,
+            tokens: state.totalTokens || 10000,
+            verdictWord: v.verdictWord || '',
+            verdictClass: v.verdictClass || '',
+            structure,
+            reason,
+            deskTime: state.deskTime
+          });
+        }
         catch (e) { console.error('[Usage] Track error:', e); }
       }
     }
@@ -4125,9 +4513,10 @@
         if (ph3Done) { const c = deskChip(a.key, reports[a.key]?.stance); roState(a.key, 'done', c.label, c.cls); reported++; }
         else roState(a.key, null, 'Queued', '');
       });
-      uiCalls(calls); uiProgress(reported); uiNow(ph3Done ? 'Desk complete' : 'Awaiting your review');
+      uiCalls(deskCallCount()); uiProgress(reported); uiNow(ph3Done ? 'Desk complete' : 'Awaiting your review');
       $('#vd-pnav')?.querySelectorAll('.vd-pstep').forEach(b => b.removeAttribute('disabled'));
       const seeBtn = $('#vd-seeverdict'); if (seeBtn) seeBtn.classList.add('ready');
+      $('#vd-donecta')?.classList.add('show');
     }
 
     // Replay re-runs the reveal animation from cache (no /verify).
@@ -4139,6 +4528,7 @@
       $('#vd-dep')?.classList.remove('on');
       ['vd-side-bull', 'vd-side-bear'].forEach(id => $('#' + id)?.classList.remove('on', 'speaking'));
       uiProgress(0); uiCalls(0); showScreen(0); vdStartClock();
+      animateCalls(deskCallCount());
       const counts = { calls: 0, reported: 0, flags: 0, agree: 0 };
       for (const a of DESK_AGENTS.filter(x => x.ph === 1)) await revealAgentRead(a, reports[a.key], counts);
       showScreen(1);
@@ -4150,6 +4540,7 @@
     // Phase-nav clicks (jump between completed screens) + controls.
     $('#vd-pnav')?.addEventListener('click', e => { const b = e.target.closest('.vd-pstep'); if (b && !b.disabled) showScreen(+b.dataset.s); });
     $('#vd-seeverdict')?.addEventListener('click', () => { if (deskReady()) { goToStage(5, true); renderStage5(); } });
+    $('#vd-donecta-btn')?.addEventListener('click', () => { if (deskReady()) { goToStage(5, true); renderStage5(); } });
     $('#vd-replay')?.addEventListener('click', () => { const s4 = $('#stage-4'); if (s4 && !s4.classList.contains('hidden')) replayDesk(); });
 
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -4403,7 +4794,7 @@
           </aside>
 
           <main class="vd-main">
-            <div class="vd-shead"><div><h2>The verdict</h2><p>Risk is sized against the account, then the judge weighs the full record. The engine computed every figure; Oracle only reasons over them.</p></div><span class="vd-meta">2 agents · sequential</span></div>
+            <div class="vd-shead"><span class="vd-meta">2 agents · sequential</span><div><h2>The verdict</h2><p>Risk is sized against the account, then the judge weighs the full record. The engine computed every figure; Oracle only reasons over them.</p></div></div>
 
             <div class="vd-hero" id="vd-hero">
               <span class="vd-vban"><img src="./public/agents/oracle-poster.jpg" alt="" aria-hidden="true" width="640" height="360"><video id="vd-dvid-oracle" muted loop playsinline preload="none" poster="./public/agents/oracle-poster.jpg" aria-hidden="true"><source src="./public/agents/oracle.mp4" type="video/mp4"></video></span>
@@ -4858,6 +5249,10 @@
     window.updateLeg = updateLeg;
     window.renderStage6 = renderStage6;
     window.publishFromDiscover = publishFromDiscover;
+    // Stage 1 empty-state handlers (referenced from onclick= attributes)
+    window.deskEmptyRun = deskEmptyRun;
+    window.deskEmptyFill = deskEmptyFill;
+    window.deskEmptySetView = deskEmptySetView;
 
     /* ================================================================
        INIT
@@ -4883,7 +5278,7 @@
      ═══════════════════════════════════════════════════════════════ -->
 <script type="module">
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, serverTimestamp, increment }
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, serverTimestamp, increment, query, orderBy, limit }
   from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 import { getAuth, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
@@ -4909,6 +5304,7 @@ onAuthStateChanged(auth, user => {
   if (user) {
     gate.style.display = 'none';
     app.style.display = '';
+    if (window.initDeskEmpty) window.initDeskEmpty();
   } else {
     gate.style.display = '';
     app.style.display = 'none';
@@ -4948,6 +5344,72 @@ function todayKey() {
 function userDocId(email) {
   return email.replace(/[^a-zA-Z0-9]/g, '_');
 }
+
+// Read the signed-in user's own desk history for the returning empty-state view.
+// Source: discover_usage/{uid}/events (client-readable per firestore.rules). Recent
+// tickers come from any action; verdicts + median desk time come from 'verify' events
+// that now carry verdictWord/structure/reason/deskTime.
+window.getDeskHistory = async function () {
+  if (!auth.currentUser) return null;
+  const uid = userDocId(auth.currentUser.email);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
+    c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const tsMs = t => (t && typeof t.toMillis === 'function') ? t.toMillis() : (t && t.seconds ? t.seconds * 1000 : 0);
+  const relTime = ms => {
+    if (!ms) return '';
+    const diff = Date.now() - ms;
+    const mins = Math.round(diff / 60000), hrs = Math.round(diff / 3600000), days = Math.round(diff / 86400000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + 'm ago';
+    if (hrs < 24) return hrs + 'h ago';
+    if (days === 1) return 'yesterday';
+    if (days < 7) return days + 'd ago';
+    return Math.round(days / 7) + 'w ago';
+  };
+
+  let events = [];
+  try {
+    const evCol = collection(db, 'discover_usage', uid, 'events');
+    const snap = await getDocs(query(evCol, orderBy('timestamp', 'desc'), limit(60)));
+    events = snap.docs.map(d => d.data());
+  } catch (e) { console.warn('[desk] events read failed', e); return null; }
+
+  // Recent distinct tickers (any action), latest first.
+  const seen = new Set(), recentTickers = [];
+  for (const e of events) {
+    const tk = (e.ticker || '').toUpperCase();
+    if (!tk || seen.has(tk)) continue;
+    seen.add(tk);
+    recentTickers.push({ ticker: esc(tk), ago: relTime(tsMs(e.timestamp)) });
+    if (recentTickers.length >= 6) break;
+  }
+
+  // Stats — verify runs this month, stood-aside count, median desk time (real data only).
+  const now = new Date();
+  const monthKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  const verifyEvents = events.filter(e => e.action === 'verify');
+  const monthRuns = verifyEvents.filter(e => (e.date || '').startsWith(monthKey));
+  const stoodAside = monthRuns.filter(e => e.verdictClass === 'fail').length;
+  const times = verifyEvents.map(e => e.deskTime).filter(t => typeof t === 'number' && t > 0).sort((a, b) => a - b);
+  let medianDeskTime = null;
+  if (times.length >= 3) {                       // omit the figure until it's grounded in real runs
+    const mid = Math.floor(times.length / 2);
+    medianDeskTime = (times.length % 2 ? times[mid] : (times[mid - 1] + times[mid]) / 2).toFixed(1);
+  }
+
+  // Last four verify events that carry a verdict.
+  const recentVerdicts = verifyEvents.filter(e => e.verdictWord).slice(0, 4).map(e => {
+    const raw = [e.structure, e.reason].filter(Boolean).join(' — ').slice(0, 120);
+    return {
+      ticker: esc((e.ticker || '').toUpperCase()),
+      line: esc(raw),
+      word: esc(e.verdictWord),
+      cls: ['pass', 'concern', 'fail'].includes(e.verdictClass) ? e.verdictClass : 'concern'
+    };
+  });
+
+  return { recentTickers, recentVerdicts, stats: { runsThisMonth: monthRuns.length, stoodAside, medianDeskTime } };
+};
 
 // Read the signed-in user's active Invest positions (users/{uid}/positions in
 // newleafdb — the same collection the Invest app writes) and return a compact
@@ -5019,10 +5481,20 @@ window.trackUsage = async function(action, ticker, opts) {
 
   // Log individual event with model + cost
   const eventsRef = collection(db, 'discover_usage', uid, 'events');
-  await addDoc(eventsRef, {
+  const eventDoc = {
     action, ticker, models, cost, tokens,
     date: day, timestamp: serverTimestamp(),
-  });
+  };
+  // Verify runs also carry the verdict so the returning view can show recent
+  // verdicts + a real median desk time (nothing else persists these today).
+  if (opts && opts.verdictWord) {
+    eventDoc.verdictWord = opts.verdictWord;
+    eventDoc.verdictClass = opts.verdictClass || null;
+    eventDoc.structure = opts.structure || null;
+    eventDoc.reason = opts.reason || null;
+    if (typeof opts.deskTime === 'number') eventDoc.deskTime = opts.deskTime;
+  }
+  await addDoc(eventsRef, eventDoc);
 
   // Update user profile (lifetime stats)
   const userRef = doc(db, 'discover_usage', uid);
