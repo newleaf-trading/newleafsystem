@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewLeaf — Social Video Pipeline · Design Doc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Pulled from web/src/shared/styles/tokens.css — the real brand */
+    --nl-green:#0B2D23; --nl-gold:#C9A96E; --nl-bg:#F7F5F0; --nl-card:#FFFFFF;
+    --nl-text:#111827; --nl-text-muted:#6b7280; --nl-border:rgba(17,24,39,.10);
+    --nl-profit:#0B7A52; --nl-loss:#C94F4F; --nl-warn:#B7791F;
+    --ink:#07110C;
+    --disp:'Playfair Display',Georgia,serif;
+    --body:'Inter',-apple-system,sans-serif;
+    --mono:'Space Mono',monospace;
+    --radius:14px; --radius-lg:18px; --pill:999px;
+    --shadow-sm:0 1px 3px rgba(17,24,39,.04);
+    --shadow-md:0 4px 12px rgba(17,24,39,.06);
+    --shadow-lg:0 8px 24px rgba(17,24,39,.10);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--body);color:var(--nl-text);background:var(--nl-bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+  /* ─── Kicker / labels ─── */
+  .kicker{font-family:var(--body);font-weight:800;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--nl-green)}
+  .pill{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:var(--nl-gold);color:var(--nl-green);padding:5px 12px;border-radius:var(--pill)}
+
+  /* ─── Hero ─── */
+  header.hero{background:linear-gradient(135deg,#04120c 0%,var(--nl-green) 100%);color:var(--nl-bg);padding:72px 0 64px;position:relative;overflow:hidden}
+  header.hero::after{content:"";position:absolute;right:-160px;top:-80px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(201,169,110,.18),transparent 68%)}
+  .logo{display:flex;align-items:center;gap:12px;margin-bottom:40px}
+  .logo .mark{width:38px;height:38px;border-radius:10px;background:var(--nl-gold);display:grid;place-items:center;color:var(--nl-green);font-family:var(--disp);font-weight:900;font-size:22px}
+  .logo .word{font-family:var(--disp);font-weight:700;font-size:22px;color:var(--nl-bg)}
+  .logo .word em{font-style:italic;color:var(--nl-gold)}
+  header.hero h1{font-family:var(--disp);font-weight:900;font-size:clamp(38px,5.4vw,60px);line-height:1.05;letter-spacing:-1.5px;max-width:16ch;margin-bottom:20px}
+  header.hero p.lede{font-size:19px;max-width:60ch;color:rgba(247,245,240,.82)}
+  header.hero .meta{margin-top:28px;display:flex;gap:10px;flex-wrap:wrap}
+  header.hero .tag{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:rgba(247,245,240,.7);border:1px solid rgba(247,245,240,.22);padding:5px 11px;border-radius:var(--pill)}
+
+  /* ─── Sections ─── */
+  section{padding:56px 0;border-bottom:1px solid var(--nl-border)}
+  section h2{font-family:var(--disp);font-weight:900;font-size:clamp(26px,3.4vw,36px);letter-spacing:-.8px;margin:10px 0 6px}
+  section .sub{color:var(--nl-text-muted);font-size:16px;max-width:64ch;margin-bottom:28px}
+  h3{font-family:var(--disp);font-weight:700;font-size:21px;margin:28px 0 12px}
+  p{margin-bottom:14px} p:last-child{margin-bottom:0}
+  .num{font-family:var(--mono);color:var(--nl-gold);font-weight:700}
+  strong{font-weight:700}
+  code{font-family:var(--mono);font-size:.86em;background:rgba(11,45,35,.06);padding:2px 6px;border-radius:6px;color:var(--nl-green)}
+
+  /* ─── Cards / grid ─── */
+  .card{background:var(--nl-card);border:1px solid var(--nl-border);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);padding:24px}
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:820px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+  /* ─── Drift table ─── */
+  table{width:100%;border-collapse:collapse;font-size:14px;background:var(--nl-card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm)}
+  th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--nl-border)}
+  th{font-family:var(--body);font-weight:800;font-size:11px;letter-spacing:.1em;text-transform:uppercase;background:rgba(11,45,35,.04);color:var(--nl-green)}
+  tr.truth td{background:rgba(11,122,82,.06)}
+  tr.truth td:first-child{font-weight:700;color:var(--nl-profit)}
+  tr.drift td:first-child{color:var(--nl-loss)}
+  .swatch{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:-2px;margin-right:6px;border:1px solid rgba(0,0,0,.12)}
+
+  /* ─── Color swatches ─── */
+  .swatches{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px}
+  .sw{width:120px}
+  .sw .chip{height:72px;border-radius:var(--radius);box-shadow:var(--shadow-sm);border:1px solid var(--nl-border)}
+  .sw .name{font-weight:700;font-size:13px;margin-top:8px}
+  .sw .hex{font-family:var(--mono);font-size:12px;color:var(--nl-text-muted)}
+
+  /* ─── Type scale demo ─── */
+  .lawcard{padding:22px;border-radius:var(--radius-lg);border:1px solid var(--nl-border)}
+  .law-good{background:rgba(11,122,82,.06);border-color:rgba(11,122,82,.22)}
+  .law-bad{background:rgba(201,79,79,.06);border-color:rgba(201,79,79,.22)}
+  .verdict{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;display:inline-flex;align-items:center;gap:6px;margin-bottom:12px}
+  .verdict.ok{color:var(--nl-profit)} .verdict.no{color:var(--nl-loss)}
+  .dot{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}
+
+  /* ─── Format / aspect mockups ─── */
+  .formats{display:flex;gap:22px;align-items:flex-end;flex-wrap:wrap;justify-content:center;margin-top:10px}
+  .fmt{text-align:center}
+  .frame{background:var(--ink);border-radius:10px;box-shadow:var(--shadow-lg);position:relative;overflow:hidden;display:grid;place-items:center}
+  .frame .cap{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:10px}
+  .frame .ttl{font-family:var(--disp);font-weight:900;color:var(--nl-bg);line-height:1.05;letter-spacing:-.5px}
+  .frame .kick{margin-bottom:8px}
+  .r169{width:280px;height:157px} .r45{width:150px;height:187px} .r916{width:112px;height:200px} .r11{width:170px;height:170px}
+  .fmt .label{font-weight:700;font-size:14px;margin-top:12px}
+  .fmt .dims{font-family:var(--mono);font-size:11px;color:var(--nl-text-muted)}
+  .fmt .use{font-size:12px;color:var(--nl-text-muted);max-width:150px;margin:2px auto 0}
+  .logobug{position:absolute;left:10px;bottom:9px;font-family:var(--disp);font-weight:700;font-size:11px;color:var(--nl-bg);opacity:.85}
+  .logobug em{color:var(--nl-gold);font-style:italic}
+
+  /* ─── Thumbnail mockups ─── */
+  .thumb{aspect-ratio:16/9;background:var(--nl-bg);border-radius:12px;border:1px solid var(--nl-border);box-shadow:var(--shadow-md);position:relative;overflow:hidden;padding:20px;display:flex;flex-direction:column;justify-content:space-between}
+  .thumb .medallion{position:absolute;right:-40px;top:-30px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(11,45,35,.14),transparent 70%)}
+  .thumb .t-kick{align-self:flex-start;position:relative;z-index:2}
+  .thumb h4{font-family:var(--disp);font-weight:900;font-size:30px;line-height:1;letter-spacing:-1px;color:var(--nl-green);position:relative;z-index:2}
+  .thumb .t-foot{display:flex;align-items:center;gap:8px;position:relative;z-index:2}
+  .chip-ticker{font-family:var(--mono);font-weight:700;font-size:12px;background:var(--nl-green);color:var(--nl-bg);padding:4px 10px;border-radius:8px}
+  .badge{font-family:var(--body);font-weight:800;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:var(--pill)}
+  .badge.buy{background:rgba(11,122,82,.14);color:var(--nl-profit)}
+  .badge.risk{background:rgba(201,79,79,.14);color:var(--nl-loss)}
+  .variant-tag{font-family:var(--mono);font-size:11px;color:var(--nl-text-muted);margin-top:8px}
+
+  /* ─── Safe area diagram ─── */
+  .safe{width:200px;height:356px;background:linear-gradient(160deg,#0d3327,#07110c);border-radius:16px;position:relative;overflow:hidden;box-shadow:var(--shadow-lg);flex:none}
+  .reserve{position:absolute;background:repeating-linear-gradient(45deg,rgba(201,79,79,.22),rgba(201,79,79,.22) 6px,transparent 6px,transparent 12px);border:1px dashed rgba(201,79,79,.6)}
+  .reserve .rl{font-family:var(--mono);font-size:9px;color:#ffd9d3;padding:3px 5px;white-space:nowrap}
+  .r-top{top:0;left:0;right:0;height:20%} .r-bottom{bottom:0;left:0;right:0;height:30%} .r-right{top:20%;bottom:30%;right:0;width:26%}
+  .safe .content-ok{position:absolute;left:8px;right:30%;top:22%;bottom:32%;border:1px solid rgba(201,169,110,.6);border-radius:8px;display:grid;place-items:center;text-align:center}
+  .safe .content-ok span{font-family:var(--mono);font-size:9px;color:var(--nl-gold);letter-spacing:.05em}
+  .caption-band{position:absolute;left:8px;right:30%;bottom:33%;background:rgba(7,17,12,.75);border-radius:6px;padding:5px 7px;text-align:center}
+  .caption-band span{font-family:var(--body);font-weight:700;font-size:9px;color:var(--nl-bg)}
+
+  /* ─── Deliverables checklist ─── */
+  .deliver{list-style:none}
+  .deliver li{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--nl-border);align-items:flex-start}
+  .deliver li:last-child{border-bottom:none}
+  .check{flex:none;width:22px;height:22px;border-radius:6px;background:rgba(11,122,82,.12);color:var(--nl-profit);display:grid;place-items:center;font-weight:800;font-size:13px;margin-top:1px}
+  .deliver .d-name{font-weight:700} .deliver .d-desc{color:var(--nl-text-muted);font-size:14px}
+  .deliver .d-dim{font-family:var(--mono);font-size:11px;color:var(--nl-green);background:rgba(11,45,35,.06);padding:2px 7px;border-radius:6px;margin-left:6px;white-space:nowrap}
+
+  /* ─── Phase timeline ─── */
+  .phase{display:flex;gap:18px;padding:20px 0;border-bottom:1px solid var(--nl-border)}
+  .phase:last-child{border-bottom:none}
+  .phase .pn{flex:none;width:44px;height:44px;border-radius:12px;background:var(--nl-green);color:var(--nl-gold);font-family:var(--disp);font-weight:900;font-size:20px;display:grid;place-items:center}
+  .phase .pbody{flex:1}
+  .phase h4{font-family:var(--disp);font-weight:700;font-size:19px;margin-bottom:4px}
+  .phase .est{font-family:var(--mono);font-size:11px;color:var(--nl-warn);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  .phase .files{font-family:var(--mono);font-size:12px;color:var(--nl-text-muted);margin-top:6px}
+  .phase.unblocked{background:rgba(11,122,82,.04);border-radius:var(--radius);padding:20px 16px;border-bottom:none;margin-bottom:2px}
+
+  /* ─── Open questions ─── */
+  .q{background:var(--nl-card);border-left:3px solid var(--nl-gold);border-radius:0 var(--radius) var(--radius) 0;padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
+  .q .qh{font-weight:700;margin-bottom:2px}
+  .q .qd{font-size:14px;color:var(--nl-text-muted)}
+
+  footer{background:var(--nl-green);color:rgba(247,245,240,.75);padding:40px 0;font-size:13px}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  footer .mono{font-family:var(--mono);font-size:12px}
+
+  .callout{background:rgba(183,121,31,.08);border:1px solid rgba(183,121,31,.28);border-radius:var(--radius);padding:16px 18px;font-size:14px}
+  .callout b{color:var(--nl-warn)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="logo">
+      <div class="mark">N</div>
+      <div class="word">NewLeaf <em>System</em></div>
+    </div>
+    <span class="pill">Design Doc · rev 2</span>
+    <h1>Social Video Pipeline</h1>
+    <p class="lede">One command turns a finished NewLeaf video into on-brand YouTube, Reels, and Instagram deliverables — thumbnails, intros, outros, and captions, all derived from the live site tokens so they can never drift again.</p>
+    <div class="meta">
+      <span class="tag">YouTube 16:9</span>
+      <span class="tag">YT Shorts 9:16</span>
+      <span class="tag">Reels 9:16</span>
+      <span class="tag">IG Feed 4:5</span>
+      <span class="tag">Updated 2026-08-06</span>
+    </div>
+  </div>
+</header>
+
+<!-- 1 · THE FIND -->
+<section>
+  <div class="wrap">
+    <span class="kicker">01 · The find</span>
+    <h2>The videos were already off-brand</h2>
+    <p class="sub">Three different “NewLeaf” palettes exist across the video code, and none of them match the website. The Fraunces / DM Sans / <span class="num">#0F2E1E</span> set that <em>felt</em> like the brand is itself a drifted copy. This doc makes the website the single source of truth.</p>
+    <table>
+      <thead><tr><th>Source</th><th>Forest green</th><th>Gold</th><th>Headline</th><th>Body</th></tr></thead>
+      <tbody>
+        <tr class="truth"><td>Website — source of truth<br><code>tokens.css</code></td><td><span class="swatch" style="background:#0B2D23"></span>#0B2D23</td><td><span class="swatch" style="background:#C9A96E"></span>#C9A96E</td><td>Playfair Display</td><td>Inter</td></tr>
+        <tr class="drift"><td>NewLeafBrand.jsx</td><td><span class="swatch" style="background:#0F2E1E"></span>#0F2E1E</td><td><span class="swatch" style="background:#C9A54E"></span>#C9A54E</td><td>Fraunces</td><td>DM Sans</td></tr>
+        <tr class="drift"><td>series BRAND_BIBLE</td><td><span class="swatch" style="background:#16271C"></span>#16271C</td><td><span class="swatch" style="background:#B68F3E"></span>#B68F3E</td><td>Fraunces / Anton</td><td>Archivo Black</td></tr>
+        <tr class="drift"><td>style-constants.js</td><td><span class="swatch" style="background:#16271C"></span>#16271C</td><td>—</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:18px" class="callout"><b>Fix:</b> a <code>sync-brand-tokens.mjs</code> generator parses the site’s <code>tokens.css</code> and emits <code>brand-tokens.js</code> for the video kit — with a <code>--check</code> drift guard modeled on the TIQ <code>sync.js</code> release blocker. Everything below derives from this one file.</p>
+  </div>
+</section>
+
+<!-- 2 · BRAND SYSTEM -->
+<section>
+  <div class="wrap">
+    <span class="kicker">02 · Brand system</span>
+    <h2>The system this doc is built in</h2>
+    <p class="sub">This page renders in the real tokens — so it’s also a proof. Core palette and the two legibility laws that keep thumbnails readable at feed scale.</p>
+
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:#0B2D23"></div><div class="name">Forest</div><div class="hex">#0B2D23</div></div>
+      <div class="sw"><div class="chip" style="background:#C9A96E"></div><div class="name">Gold</div><div class="hex">#C9A96E</div></div>
+      <div class="sw"><div class="chip" style="background:#F7F5F0"></div><div class="name">Cream</div><div class="hex">#F7F5F0</div></div>
+      <div class="sw"><div class="chip" style="background:#0B7A52"></div><div class="name">Profit</div><div class="hex">#0B7A52</div></div>
+      <div class="sw"><div class="chip" style="background:#C94F4F"></div><div class="name">Loss</div><div class="hex">#C94F4F</div></div>
+      <div class="sw"><div class="chip" style="background:#07110C"></div><div class="name">Ink (intro bg)</div><div class="hex">#07110C</div></div>
+    </div>
+
+    <h3>The two legibility laws</h3>
+    <div class="grid g2">
+      <div class="lawcard law-good">
+        <div class="verdict ok"><span class="dot"></span>Law 1 · Playfair floor</div>
+        <div style="font-family:var(--disp);font-weight:900;font-size:34px;color:var(--nl-green);line-height:1">Playfair 900 ≥ 40px</div>
+        <p style="font-size:13px;color:var(--nl-text-muted);margin-top:8px">Big and heavy: the Didone contrast reads clean.</p>
+        <div style="font-family:var(--body);font-weight:700;font-size:13px;color:var(--nl-green);margin-top:6px">Below 40px → Inter takes over (like this line).</div>
+      </div>
+      <div class="lawcard law-bad">
+        <div class="verdict no"><span class="dot"></span>Never: small Playfair / gold text</div>
+        <div style="font-family:var(--disp);font-weight:400;font-size:13px;color:var(--nl-green);line-height:1.2">Thin Playfair at 13px turns to grey mush once the feed compresses it.</div>
+        <div style="font-family:var(--disp);font-weight:900;font-size:22px;color:var(--nl-gold);margin-top:8px">Gold on cream ≈ 2:1 — illegible</div>
+        <p style="font-size:13px;color:var(--nl-text-muted);margin-top:8px">Law 2: gold is a <strong>surface</strong> (pill fill), never text on light. Text on cream is forest (~13.7:1).</p>
+      </div>
+    </div>
+    <p style="margin-top:16px;font-size:14px;color:var(--nl-text-muted)">Both laws are encoded as constants in <code>brand-tokens.js</code> (<code>minDisplaySize:40</code>, <code>thumbHeadlineMin:64</code>, <code>goldIsSurfaceOnly:true</code>) and enforced by a golden-frame regression — not left to per-comp judgement.</p>
+  </div>
+</section>
+
+<!-- 3 · WHAT WE PRODUCE -->
+<section>
+  <div class="wrap">
+    <span class="kicker">03 · What we produce</span>
+    <h2>Four formats from one master</h2>
+    <p class="sub">Every finished video is rendered <strong>natively</strong> into each aspect ratio (never cropped) with the intro, outro, logo bug, and safe areas repositioned per surface.</p>
+
+    <div class="formats">
+      <div class="fmt">
+        <div class="frame r169">
+          <div class="cap"><span class="pill kick">Discover</span><div class="ttl" style="font-size:19px">Know your<br>number</div></div>
+          <div class="logobug">NewLeaf <em>System</em></div>
+        </div>
+        <div class="label">YouTube long-form</div><div class="dims">1920×1080 · 16:9</div>
+        <div class="use">Full walkthrough + soft .srt captions</div>
+      </div>
+      <div class="fmt">
+        <div class="frame r45">
+          <div class="cap"><span class="pill kick" style="font-size:9px">Discover</span><div class="ttl" style="font-size:15px">Know<br>your<br>number</div></div>
+          <div class="logobug" style="font-size:9px">NewLeaf <em>System</em></div>
+        </div>
+        <div class="label">Instagram Feed</div><div class="dims">1080×1350 · 4:5</div>
+        <div class="use">In-feed post, tallest allowed ratio</div>
+      </div>
+      <div class="fmt">
+        <div class="frame r916">
+          <div class="cap"><span class="pill kick" style="font-size:8px;padding:3px 8px">TIQ</span><div class="ttl" style="font-size:12px">Know<br>your<br>number</div></div>
+          <div class="caption-band" style="right:8px;bottom:14%"><span style="font-size:8px">burned-in caption</span></div>
+          <div class="logobug" style="left:8px;top:9px;bottom:auto;font-size:9px">NewLeaf <em>System</em></div>
+        </div>
+        <div class="label">Reels / Shorts</div><div class="dims">1080×1920 · 9:16</div>
+        <div class="use">Muted autoplay → burned-in captions</div>
+      </div>
+      <div class="fmt">
+        <div class="frame r11">
+          <div class="cap"><span class="pill kick" style="font-size:9px">Discover</span><div class="ttl" style="font-size:16px">Know your<br>number</div></div>
+          <div class="logobug" style="font-size:9px">NewLeaf <em>System</em></div>
+        </div>
+        <div class="label">Square (optional)</div><div class="dims">1080×1080 · 1:1</div>
+        <div class="use">IG grid fallback</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 · THUMBNAILS -->
+<section>
+  <div class="wrap">
+    <span class="kicker">04 · Thumbnail system</span>
+    <h2>Three thumbnail variants per video</h2>
+    <p class="sub">Prop-driven Remotion stills off the same tokens. Playfair 900 headline (≥64px), gold kicker <em>pill</em> with forest text, ticker chip, verdict badge, logo bug. We render three angles and pick the winner — thumbnail choice moves CTR more than anything else here.</p>
+    <div class="grid g3">
+      <div>
+        <div class="thumb">
+          <div class="medallion"></div>
+          <span class="pill t-kick">Discover</span>
+          <h4>Is NVDA<br>still a buy?</h4>
+          <div class="t-foot"><span class="chip-ticker">NVDA</span><span class="badge buy">Bull spread</span></div>
+        </div>
+        <div class="variant-tag">variant A · headline-led</div>
+      </div>
+      <div>
+        <div class="thumb" style="background:linear-gradient(135deg,#0b2d23,#07110c)">
+          <div class="medallion" style="background:radial-gradient(circle at 30% 30%,rgba(201,169,110,.25),transparent 70%)"></div>
+          <span class="pill t-kick">Verdict</span>
+          <h4 style="color:var(--nl-bg)">The wall<br>held.</h4>
+          <div class="t-foot"><span class="chip-ticker" style="background:var(--nl-gold);color:var(--nl-green)">SPY</span><span class="badge buy">Defended</span></div>
+        </div>
+        <div class="variant-tag">variant B · dark / verdict-led</div>
+      </div>
+      <div>
+        <div class="thumb">
+          <div class="medallion"></div>
+          <span class="pill t-kick" style="background:var(--nl-green);color:var(--nl-gold)">Risk desk</span>
+          <h4>Three legs.<br>One thesis.</h4>
+          <div class="t-foot"><span class="chip-ticker">TSLA</span><span class="badge risk">Watch</span></div>
+        </div>
+        <div class="variant-tag">variant C · ticker-led</div>
+      </div>
+    </div>
+    <p style="margin-top:18px;font-size:14px;color:var(--nl-text-muted)">Rendered by <code>render-thumb.mjs</code> → <code>episodes/&lt;ep&gt;/thumbnails/&lt;ratio&gt;-v&lt;N&gt;.png</code>, path recorded in the manifest. Headline copy is a <strong>manual field with a script-derived default</strong> — the one string whose job is to hook, where determinism isn’t the goal.</p>
+  </div>
+</section>
+
+<!-- 5 · SAFE AREAS + CAPTIONS -->
+<section>
+  <div class="wrap">
+    <span class="kicker">05 · Safe areas &amp; captions</span>
+    <h2>Numbers, not “clear the UI”</h2>
+    <p class="sub">Vertical platforms overlay their own chrome. Content sits inside a <code>&lt;SafeArea&gt;</code> with pinned reserves so nothing is guessed — and Reels ship with burned-in captions above the caption reserve, because Reels autoplay muted and captions are the top completion-rate lever.</p>
+    <div style="display:flex;gap:32px;align-items:center;flex-wrap:wrap">
+      <div class="safe">
+        <div class="reserve r-top"><span class="rl">top ~120px</span></div>
+        <div class="reserve r-right"><span class="rl" style="writing-mode:vertical-rl;padding:5px 3px">right ~200px · action rail</span></div>
+        <div class="reserve r-bottom"><span class="rl">bottom ~340px · caption + audio</span></div>
+        <div class="content-ok"><span>SAFE<br>CONTENT<br>ZONE</span></div>
+        <div class="caption-band"><span>burned-in caption sits here</span></div>
+      </div>
+      <div style="flex:1;min-width:260px">
+        <table>
+          <thead><tr><th>Surface</th><th>Reserve</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Reels 9:16</strong></td><td>bottom ~340px · right ~200px · top ~120px</td></tr>
+            <tr><td><strong>Feed 4:5</strong></td><td>bottom ~100px · minimal top</td></tr>
+            <tr><td><strong>YT 16:9</strong></td><td>keep outro CTA out of lower-right + right third (end screens)</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:14px;font-size:14px;color:var(--nl-text-muted)">Captions come from a per-episode <code>captions.json</code> (word-level timings from the <code>voice</code> step). The same source emits a YouTube <code>.srt</code> sidecar — verticals get burned-in, long-form gets soft captions.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 · DELIVERABLES -->
+<section>
+  <div class="wrap">
+    <span class="kicker">06 · Per-video output</span>
+    <h2>Exactly what lands per episode</h2>
+    <p class="sub">Running the pipeline on one finished episode produces this bundle, all recorded in the episode manifest.</p>
+    <ul class="deliver">
+      <li><div class="check">✓</div><div><span class="d-name">YouTube master<span class="d-dim">1920×1080</span></span><div class="d-desc">Intro + capture + outro + lower-thirds, soft <code>.srt</code> captions, loudnorm −14 LUFS</div></div></li>
+      <li><div class="check">✓</div><div><span class="d-name">Vertical cut — Reels + YT Shorts<span class="d-dim">1080×1920</span></span><div class="d-desc">Native reframe, burned-in captions, vertical intro/outro, top-left logo bug</div></div></li>
+      <li><div class="check">✓</div><div><span class="d-name">Instagram Feed cut<span class="d-dim">1080×1350</span></span><div class="d-desc">4:5 native reframe for in-feed autoplay</div></div></li>
+      <li><div class="check">✓</div><div><span class="d-name">YouTube thumbnails ×3<span class="d-dim">1280×720</span></span><div class="d-desc">Three variants (headline / verdict / ticker-led) — pick the winner</div></div></li>
+      <li><div class="check">✓</div><div><span class="d-name">Instagram cover ×3<span class="d-dim">1080×1350</span></span><div class="d-desc">Matched thumbnail for the Feed post + Reel cover</div></div></li>
+      <li><div class="check">✓</div><div><span class="d-name">Caption assets<span class="d-dim">captions.json + .srt</span></span><div class="d-desc">Word-level timings → burned-in (vertical) and sidecar (YouTube)</div></div></li>
+      <li><div class="check">✓</div><div><span class="d-name">Distribution manifest block</span><div class="d-desc">Titles, description, tags, caption, cover paths, publish flags — the one input to the publish step</div></div></li>
+    </ul>
+  </div>
+</section>
+
+<!-- 7 · THE PLAN -->
+<section>
+  <div class="wrap">
+    <span class="kicker">07 · The plan</span>
+    <h2>Four phases</h2>
+    <p class="sub">Phase 1 is fully unblocked and corrects every existing video the moment it lands.</p>
+
+    <div class="phase unblocked">
+      <div class="pn">1</div>
+      <div class="pbody">
+        <h4>Brand truth <span class="est">· ~½ day · unblocked</span></h4>
+        <p style="margin:0">CSS→JS token generator + <code>--check</code> guard; rewire <code>NewLeafBrand.jsx</code> to the site’s real colors + Playfair/Inter; fix the <code>#16271C</code> pad/dip; add the two legibility laws to the bible.</p>
+        <div class="files">sync-brand-tokens.mjs · brand-tokens.js · NewLeafBrand.jsx · style-constants.js · BRAND_BIBLE.md</div>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="pn">2</div>
+      <div class="pbody">
+        <h4>Presets · thumbnails · captions · golden frames <span class="est">· ~1.5 days</span></h4>
+        <p style="margin:0">Native reframe presets with numeric safe areas; 3-variant thumbnails; burned-in caption component; loudnorm retarget; golden-frame regression that catches silent font fallback.</p>
+        <div class="files">presets.js · Thumbnail.jsx · Captions.jsx · render-thumb.mjs · golden-frame.mjs</div>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="pn">3</div>
+      <div class="pbody">
+        <h4>Intro / outro per ratio <span class="est">· ~½ day</span></h4>
+        <p style="margin:0">Vertical + 4:5 intro variants; outro CTA as the site’s gold pill, kept clear of the YT end-screen zone.</p>
+        <div class="files">NewLeafBrand.jsx · presets.js · Root.jsx</div>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="pn">4</div>
+      <div class="pbody">
+        <h4>Publish adapters <span class="est">· gated on admin + audit</span></h4>
+        <p style="margin:0">YouTube Data API (quota-aware — ~6 uploads/day; <b>verify the audit gate first</b>) then Instagram Graph API (container-only, manual publish). Start the IG Business/Creator + Facebook Page linkage <strong>today, in parallel</strong> — it has an approval lag and zero code.</p>
+        <div class="files">youtube.js · instagram.js · publish.js · .env.example · CLAUDE.md</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 · OPEN QUESTIONS -->
+<section style="border-bottom:none">
+  <div class="wrap">
+    <span class="kicker">08 · Needs you, not code</span>
+    <h2>Four decisions to unblock Phase 4</h2>
+    <p class="sub">None block Phases 1–3. Publishing is free (API quotas are rate limits, not dollars) — the only real cost in the pipeline is clip generation, unchanged by this work.</p>
+    <div class="q"><div class="qh">1 · YouTube audit gate</div><div class="qd">Is the API project already audited so uploads honor <code>privacyStatus</code>? If not, uploads force to private → Phase 4 YT is thumbnail-only until the audit clears.</div></div>
+    <div class="q"><div class="qh">2 · Instagram account</div><div class="qd">Confirm a Business/Creator account linked to a Facebook Page (required by the Graph API). Start the linkage now — it’s the long pole.</div></div>
+    <div class="q"><div class="qh">3 · R2 exposure for IG</div><div class="qd">Graph API fetches the master from R2 over minutes — public <code>public/social/</code> prefix, or presign ≥1h? A small security-posture call.</div></div>
+    <div class="q"><div class="qh">4 · YouTube OAuth</div><div class="qd">Do we have client credentials for the channel, or ship thumbnails-only for YT until we do?</div></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>NewLeaf System · Social Video Pipeline · Design Doc rev 2</div>
+    <div class="mono">videos/docs/YOUTUBE-INSTAGRAM-PIPELINE.md · 2026-08-06</div>
+  </div>
+</footer>
+
+</body>
+</html>
