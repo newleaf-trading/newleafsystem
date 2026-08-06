@@ -116,6 +116,49 @@ export const Intro = ({ eyebrow = 'NEWLEAF SYSTEM', title, sub }) => {
   );
 };
 
+/* ═══════════ INTRO (VERTICAL / FEED) — centered stack for 9:16 & 4:5 ═══════════ */
+// Purpose-built for portrait: content is centered (no right-bleed medallion, which
+// crops badly at 9:16), type is sized for a 1080-wide frame, and a small brand
+// medallion sits top-center. Works at 1080×1920 (Reels/Shorts) and 1080×1350 (Feed).
+export const IntroVertical = ({ eyebrow = 'NEWLEAF SYSTEM', title, sub }) => {
+  const f = useCurrentFrame();
+  const { fps, durationInFrames } = useVideoConfig();
+  const rise = (delay) => spring({ frame: f - delay, fps, config: { damping: 200, mass: 0.6 } });
+  const rule = interpolate(f, [22, 48], [0, 1], { extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic) });
+  const out = interpolate(f, [durationInFrames - 14, durationInFrames], [1, 0], { extrapolateLeft: 'clamp' });
+
+  return (
+    <AbsoluteFill style={{ backgroundColor: C.ink, opacity: out }}>
+      <Img
+        src={staticFile('agents/oracle-256.jpg')}
+        style={{
+          position: 'absolute', top: 160, left: '50%', transform: 'translateX(-50%)',
+          width: 300, height: 300, borderRadius: '50%',
+          opacity: interpolate(f, [0, 40], [0, 0.28], { extrapolateRight: 'clamp' }), filter: 'blur(1px)',
+        }}
+      />
+      <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '0 80px' }}>
+        <div style={{
+          fontFamily: F.mono, fontSize: 20, letterSpacing: 7, color: C.gold, marginBottom: 22,
+          opacity: rise(0), transform: `translateY(${(1 - rise(0)) * 14}px)`,
+        }}>{eyebrow}</div>
+        <div style={{
+          fontFamily: F.disp, fontSize: 78, lineHeight: 1.05, color: C.cream, fontWeight: 400,
+          letterSpacing: '-0.02em', whiteSpace: 'pre-line',
+          opacity: rise(8), transform: `translateY(${(1 - rise(8)) * 20}px)`,
+        }}>{title}</div>
+        <div style={{ height: 1, background: C.gold, marginTop: 34, width: `${rule * 180}px`, opacity: 0.85 }} />
+        {sub && (
+          <div style={{
+            fontFamily: F.body, fontSize: 30, color: '#B4AFA1', fontWeight: 300, marginTop: 30,
+            maxWidth: 820, lineHeight: 1.4, opacity: rise(26), transform: `translateY(${(1 - rise(26)) * 14}px)`,
+          }}>{sub}</div>
+        )}
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
 /* ═══════════ CONTEXT INTRO — multi-screen problem→solution setup ═══════════ */
 // One beat = one screen. Each beat fades in/out and plays its own VO clip.
 const IntroBeat = ({ beat }) => {
@@ -297,8 +340,9 @@ export const Outro = ({
         }}>
           <div style={{
             fontFamily: F.mono, fontSize: 26, letterSpacing: 3,
-            color: C.ink, background: C.gold,
-            padding: '22px 42px', borderRadius: 4, textTransform: 'uppercase',
+            color: C.forest, background: C.gold,
+            padding: '22px 46px', borderRadius: 999, textTransform: 'uppercase',
+            fontWeight: 700,
           }}>
             {cta}
           </div>

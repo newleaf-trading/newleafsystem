@@ -42,7 +42,7 @@ import { TiqOverlay, TIQ_OVERLAY_DURATION } from './TiqOverlay.jsx';
 import { LogoLockup, LOGO_LOCKUP_W, LOGO_LOCKUP_H } from './LogoLockup.jsx';
 import { TiqOverlayVertical, TIQ_OVERLAY_VERTICAL_DURATION } from './TiqOverlayVertical.jsx';
 // Branded wrappers for screen recordings (intro / outro / lower-third).
-import { FeatureVideo, Intro, Outro } from './NewLeafBrand.jsx';
+import { FeatureVideo, Intro, IntroVertical, Outro } from './NewLeafBrand.jsx';
 import { Thumbnail } from './Thumbnail.jsx';
 import { TiqFeed, TIQ_FEED_DURATION } from './TiqFeed.jsx';
 import { DISCOVER_VO } from './discover-vo.js';
@@ -153,6 +153,18 @@ export const RemotionRoot = () => {
           url: 'newleafsystem.com',
           note: 'No card. Bring your own watchlist.',
         }}
+      />
+
+      {/* ── vertical + feed intros (Reels/Shorts 9:16, Feed 4:5) ── */}
+      <Composition
+        id="IntroVertical" component={IntroVertical}
+        width={1080} height={1920} fps={30} durationInFrames={s(4)}
+        defaultProps={{ title: 'Know your\nnumber.', sub: 'Before you place the trade.' }}
+      />
+      <Composition
+        id="IntroFeed" component={IntroVertical}
+        width={1080} height={1350} fps={30} durationInFrames={s(4)}
+        defaultProps={{ title: 'Know your\nnumber.', sub: 'Before you place the trade.' }}
       />
 
       {/* ── vertical cut for shorts (1080×1920) ── */}
