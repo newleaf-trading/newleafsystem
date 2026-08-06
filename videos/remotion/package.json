@@ -1,0 +1,26 @@
+{
+  "name": "newleaf-remotion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NewLeaf video experiments — Remotion (JS/JSX) with brand kit",
+  "scripts": {
+    "start": "remotion studio src/index.js",
+    "studio": "remotion studio src/index.js",
+    "render": "remotion render src/index.js WarRoomOpen out/warroom-open.mp4",
+    "still": "remotion still src/index.js WarRoomOpen out/warroom-open.png --frame=60",
+    "sync:brand": "node ../scripts/sync-brand-tokens.mjs",
+    "check:brand": "node ../scripts/sync-brand-tokens.mjs --check",
+    "check:golden": "node ../scripts/golden-frame.mjs",
+    "thumbs": "node ../scripts/render-thumb.mjs",
+    "upgrade": "remotion upgrade"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.495",
+    "@remotion/google-fonts": "^4.0.495",
+    "highcharts": "^13.0.0",
+    "highcharts-react-official": "^3.2.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.495"
+  }
+}
