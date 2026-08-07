@@ -44,6 +44,7 @@ import { TiqOverlayVertical, TIQ_OVERLAY_VERTICAL_DURATION } from './TiqOverlayV
 // Branded wrappers for screen recordings (intro / outro / lower-third).
 import { FeatureVideo, Intro, IntroVertical, Outro } from './NewLeafBrand.jsx';
 import { Thumbnail } from './Thumbnail.jsx';
+import { ThumbnailReel } from './ThumbnailReel.jsx';
 import { TiqFeed, TIQ_FEED_DURATION } from './TiqFeed.jsx';
 import { DISCOVER_VO } from './discover-vo.js';
 import { DISCOVER_INTRO, DISCOVER_INTRO_LEN } from './discover-intro.js';
@@ -189,6 +190,11 @@ export const RemotionRoot = () => {
         id="ThumbnailIG" component={Thumbnail}
         width={1080} height={1350} fps={30} durationInFrames={1}
         defaultProps={{ title: 'Know your\nnumber.', kicker: 'Trading IQ', verdict: { label: 'Take the test', kind: 'neutral' }, variant: 'a' }}
+      />
+      <Composition
+        id="ThumbnailReel" component={ThumbnailReel}
+        width={1080} height={1920} fps={30} durationInFrames={1}
+        defaultProps={{ bg: 'covers/host.png', kicker: 'Trading IQ', title: 'Know your\nnumber.', sub: 'A 4-minute test for how you actually trade.', focus: '50% 28%' }}
       />
       <Composition
         id="TiqFeed" component={TiqFeed}
